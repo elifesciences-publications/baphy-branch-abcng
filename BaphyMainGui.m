@@ -64,7 +64,7 @@ handles.output = hObject;
 guidata(hObject, handles);
 
 % Center the gui:
-%movegui(hObject,'center');
+moveguiPlusRemote(hObject,'center');
 % loading the fields
 set(handles.popupmenu1,'String',BaphyMainGuiItems('Tester'));
 if get(handles.popupmenu1,'Value')>length(get(handles.popupmenu1,'String')),
@@ -82,8 +82,6 @@ if exist([BAPHYHOME filesep 'Config' filesep 'BaphyMainGuiSettings.mat']);
     load_settings(handles);
 end
 popupmenu2_Callback([], [], handles);
-
-
 
 % UIWAIT makes BaphyMainGui wait for user response (see UIRESUME)
 uiwait(handles.figure1);
@@ -332,12 +330,12 @@ handles.globalparams.AOTriggerType = 'HWDigital';
 if handles.globalparams.HWSetup>0
     set(handles.figure1,'visible','off');
     cmdstr=[handles.globalparams.TuningCurveCommand,'(handles.globalparams);'];
-    try
+    %try
         eval(cmdstr);
-        set(handles.figure1,'visible','on');
-    catch
-        set(handles.figure1,'visible','on');
-    end
+    %catch
+    %    disp('error on quit');
+    %end
+    set(handles.figure1,'visible','on');
 end
 
 % --- Executes on selection change in popupmenu7.
@@ -552,7 +550,31 @@ function pushbutton7_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % analysis push button:
-baphy_remote;
+global BAPHYDATAROOT
+
+t1=get(handles.popupmenu7,'Value');
+t2=get(handles.popupmenu7,'String');
+HWsetupID = (t2{t1}(1:3));
+ColonIndex = strfind(HWsetupID,':');
+globalparams.HWSetup = str2num(t2{t1}(1:ColonIndex-1));          % output 6: Hardware Setup
+t2=get(handles.popupmenu4,'String');
+globalparams.Physiology = 'Yes -- Passive';                         % output 4: Physiology
+t1=get(handles.popupmenu1,'Value');
+t2=get(handles.popupmenu1,'String');
+globalparams.Tester = t2{t1};                       % output 1: Tester
+
+sFrom=BaphyMainGuiItems('outpath',globalparams);
+sTo=BAPHYDATAROOT;
+
+prompt={'Root to flush FROM:','Flush TO:','Verbose (provides debugging infos)','Email Address for Results'};
+name='Flush data to server?';
+numlines=1;
+defaultanswer={sFrom,sTo,'0',''};  % no notification email
+answer=inputdlg(prompt,name,numlines,defaultanswer);
+if length(answer)==0  disp('Flush cancelled'); return; end
+
+flush_data_to_server(answer{1},answer{2},str2num(answer{3}),answer{4});
+
 
 
 % --- Executes during object creation, after setting all properties.

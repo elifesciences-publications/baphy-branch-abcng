@@ -298,6 +298,7 @@ function file_name_input_Callback(hObject, eventdata, handles)
 % Hints: get(hObject,'String') returns contents of file_name_input as text
 %        str2double(get(hObject,'String')) returns contents of file_name_input as a double
 global maxchans
+global BAPHY_LAB
 
 mfile=get(handles.file_name_input,'String');
 
@@ -316,14 +317,43 @@ elseif ~isempty(mfile),
     for i=1:min(maxchans,electrodes),
       eval(['set(handles.spike' num2str(i) ',''Enable'',''On'')']);
     end
-    set(handles.ChannelChooser,'String',['1:',num2str(electrodes)]);
-        
+     if strcmpi(BAPHY_LAB,'lbhb') && ~isempty(get(handles.ChannelChooser,'String')),
+       % don't do anything
+     else
+       set(handles.ChannelChooser,'String',['1:',num2str(electrodes)]);
+     end
+     
     % Current repetitions
     if isfield(exptparams,'Repetition'),
         set(handles.current_repetition,'String',exptparams.Repetition);
     end
     % Analyzed repetitions
     set(handles.analyzed_repetition,'String',0);
+    
+    % SET THRESHOLD BASED ON RECORDER
+    if ~isfield(globalparams.HWparams,'DAQSystem')
+      if globalparams.NumberOfElectrodes >8
+        globalparams.HWparams.DAQSystem = 'MANTA';
+      else
+        globalparams.HWparams.DAQSystem = 'AO';
+      end
+    end
+    if strcmpi(BAPHY_LAB,'lbhb') %, && globalparams.NumberOfElectrodes<8,
+       % don't do anything
+    else
+       switch globalparams.HWparams.DAQSystem
+         case 'MANTA';
+           set(handles.editSigThreshold,'String','0');
+         otherwise,
+           set(handles.editSigThreshold,'String','4');
+       end
+    end
+    switch globalparams.HWparams.DAQSystem
+      case 'MANTA';
+        set(handles.butt2evp,'Visible','off');
+      otherwise,
+        set(handles.butt2evp,'Visible','on');
+    end
     
     %status fields
     set(handles.experiment_input,'String',basename(mfile));
@@ -481,7 +511,11 @@ while ~STOP_RUNNING,
     
     set(handles.status,'String','Status: Computing STRFs');
     drawnow;
-    if any(handles.globalparams.HWparams.HWSetup==[7,8,10])
+    if handles.globalparams.ExperimentComplete,
+       trialcount=handles.globalparams.rawfilecount;
+    elseif any(handles.globalparams.HWparams.HWSetup==[7,8,10,12]) ||...
+        (isfield(handles.globalparams.HWparams,'DAQSystem') &&...
+        strcmpi(handles.globalparams.HWparams.DAQSystem,'MANTA')),
       LoadMFile(mfile);
       trialcount=exptevents(end).Trial;
     else
@@ -601,7 +635,7 @@ Identifier = handles.filename(1:cPos-1);
  
 fprintf(['[ Computing CSD for ',Identifier,' ]\n']);
 
-cFIG = randint(1,1,1e8);
+cFIG = round(1e8*rand)+1;
 MD_computeCSD('Identifier',Identifier,'Electrodes',Electrodes,'Trials',Trials,'FIG',cFIG);
 
 UH = []; 
@@ -695,18 +729,24 @@ function buttFlush_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % DEFAULTS
-global LOCAL_DATA_ROOT
+global LOCAL_DATA_ROOT BAPHY_LAB USECOMMONREFERENCE
 
 sFrom=LOCAL_DATA_ROOT;
 if isfield(handles,'dirname'),
   sFrom=fileparts(fileparts(handles.dirname));
 end
-sTo='M:\daq\';
+if strcmpi(BAPHY_LAB,'LBHB'),
+   sTo='H:\daq\';
+   email='';
+else
+   sTo='M:\daq\';
+   email='benglitz@gmail.com';
+end
 
 prompt={'Root to flush FROM:','Flush TO:','Verbose (provides debugging infos)','Email Address for Results'};
 name='Flush data to server?';
 numlines=1;
-defaultanswer={sFrom,sTo,'0','benglitz@gmail.com'};
+defaultanswer={sFrom,sTo,'0',email};
 answer=inputdlg(prompt,name,numlines,defaultanswer);
 if length(answer)==0  disp('Flush cancelled'); return; end
 
