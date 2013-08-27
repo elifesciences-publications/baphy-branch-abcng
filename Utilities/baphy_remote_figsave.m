@@ -22,6 +22,11 @@ elseif exist('H:\web\analysis','dir'),
         mkdir('H:\web\analysis',lower(globalparams.Ferret));
     end
     jpegpath=['H:\web\analysis' filesep lower(globalparams.Ferret) filesep yearstr];
+elseif exist('H:\web\celldb\analysis','dir'),
+    if ~exist(['H:\web\celldb\analysis' filesep lower(globalparams.Ferret)]),
+        mkdir('H:\web\celldb\analysis',lower(globalparams.Ferret));
+    end
+    jpegpath=['H:\web\celldb\analysis' filesep lower(globalparams.Ferret) filesep yearstr];
 elseif exist('/auto/data/web/analysis','dir'),
     if ~exist(['/auto/data/web/analysis' filesep lower(globalparams.Ferret)]),
         mkdir('/auto/data/web/analysis',lower(globalparams.Ferret));

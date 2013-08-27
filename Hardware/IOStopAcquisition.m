@@ -51,11 +51,12 @@ if strcmpi(IODriver(HW),'NIDAQMX'),
     niStop(HW.AO);
   end
   
-  % IF COMMUNICATING WITH MANTA
-  if strcmp(HW.params.DAQSystem,'MANTA')
-    MSG = ['STOP',HW.MANTA.COMterm,HW.MANTA.MSGterm];
-    [RESP,HW] = IOSendMessageManta(HW,MSG,'STOP OK','',1);
-  end
+%   % IF COMMUNICATING WITH MANTA
+%   if strcmp(HW.params.DAQSystem,'MANTA')
+%     MSG = ['STOP',HW.MANTA.COMterm,HW.MANTA.MSGterm]
+%     [RESP,HW] = IOSendMessageManta(HW,MSG,'STOP OK','',1)
+%     disp('manta stopped');
+%   end
 
   ev.StartTime=IOGetTimeStamp(HW);
   ev.StopTime=ev.StartTime;

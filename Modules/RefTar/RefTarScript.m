@@ -106,8 +106,7 @@ while ContinueExp == 1
       end
 
       % force at least 500 ms pause between trials in SPR2
-      if ~niIsDriver(HW) && (HW.params.HWSetup == 3 || HW.params.HWSetup == 11) || ...
-          strcmp(BAPHY_LAB,'lbhb'),
+      if ~niIsDriver(HW) && (HW.params.HWSetup == 3 || HW.params.HWSetup == 11),
         while str2num(datestr(now-laststoptime,'SS.FFF'))<0.1,
           pause(0.05);
           fprintf('.');
@@ -166,14 +165,19 @@ while ContinueExp == 1
           %disp('Stopping AI task');
           niStop(HW);
       end
+      % IF COMMUNICATING WITH MANTA
+      if strcmp(HW.params.DAQSystem,'MANTA')
+          MSG = ['STOP',HW.MANTA.COMterm,HW.MANTA.MSGterm];
+          [RESP,HW] = IOSendMessageManta(HW,MSG,'STOP OK','',1);
+      end
       
       % PLOT BEHAVIOR ANALYSIS
       exptparams = BehaviorDisplay(BehaveObject, HW, StimEvents, globalparams, ...
-        exptparams, TrialIndex, Data.Responses, TrialSound);
+          exptparams, TrialIndex, Data.Responses, TrialSound);
       
       % SAVE LICK/TOUCH/MICROPHONE DATA TO EVP FILE
       if ~isempty(globalparams.mfilename),
-        evpwrite(globalparams.localevpfile,Data.Spike,[Data.Responses Data.Microphone],HW.params.fsSpike,HW.params.fsAux);
+          evpwrite(globalparams.localevpfile,Data.Spike,[Data.Responses Data.Microphone],HW.params.fsSpike,HW.params.fsAux);
       end
       
       % DISPLAY MICROPHONE WAVEFORM
@@ -188,21 +192,28 @@ while ContinueExp == 1
         if ~ContinueExp, break; end
       end
       
+      if strcmpi(BAPHY_LAB,'lbhb') && ~mod(TrialIndex,20) && ...
+              iTrial<get(exptparams.TrialObject,'NumberOfTrials') &&...
+              ~isempty(globalparams.mfilename),
+          fprintf('Saving parmfile for safety.\n');
+          WriteMFile(globalparams,exptparams,exptevents,1);
+      end
+          
       %% RANDOMIZE WITH FLAG 0 (TRIAL CALL)
       % Used in adaptive schemes, where trialset is modified based on animals performance
       % Needs to change NumberOfTrials and Modify the IndexSets
       exptparams = RandomizeSequence(exptparams.TrialObject, exptparams, globalparams, iTrial, 0);
-           
+      
     end % END OF TRIAL LOOP
     exptparams.TotalRepetitions = exptparams.TotalRepetitions + 1;
-   
+    
     %% FINISH UP REPETITION
     % TELL MANTA TO SAVE ONLINE SPIKETIMES
-   if strcmp(HW.params.DAQSystem,'MANTA')
-       MSG = ['SETVAR',HW.MANTA.COMterm,...
-         'M_saveSpiketimes; ',HW.MANTA.MSGterm];
-       IOSendMessageManta(HW,MSG,'SETVAR OK');
-   end
+    if strcmp(HW.params.DAQSystem,'MANTA')
+        MSG = ['SETVAR',HW.MANTA.COMterm,...
+            'M_saveSpiketimes; ',HW.MANTA.MSGterm];
+        IOSendMessageManta(HW,MSG,'SETVAR OK');
+    end
     
     % WRITE LOCAL FILE TO TEMP AND WRITE M-FILE
     if ~isempty(globalparams.mfilename) && exist(globalparams.localevpfile,'file')
