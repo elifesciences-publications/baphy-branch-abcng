@@ -1,4 +1,5 @@
 *.m~
+*.txt~
 LastSettings.mat
 LastValues.mat
 BaphyHWSetup.mat
@@ -7,5 +8,7 @@ MeskaSettings.mat
 baphy.mat
 *.asv
 *#
-@Torc2/Sounds/*
+SoundObjects/@Torc2/Sounds/*.txt
+SoundObjects/@Torc2/Sounds/*.wav
 save_comp_phs.mat
+Config/BaphyConfigPath.m
