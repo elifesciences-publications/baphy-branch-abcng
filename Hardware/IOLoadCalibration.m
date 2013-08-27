@@ -1,0 +1,31 @@
+function Calibration = IOLoadCalibration(varargin)
+% IOLoadCalibration loads the calibration file 
+% for a certain combination of Speaker and Microphone
+
+% PARSE ARGUMENTS
+if length(varargin)==1 % Arguments provided as a struct
+  P = varargin{1};
+else
+  P = parsePairs(varargin);
+end
+if ~isfield(P,'Speaker') error('A speaker must be specified!'); end
+if ~isfield(P,'Microphone') error('A microphone must be specified'); end
+
+Sep = HF_getSep; Path = which('baphy');
+Path = [Path(1:find(Path==Sep,1,'last')),'Hardware',Sep,'Speakers',Sep];
+FileName = [Path,'SpeakerCalibration_',P.Speaker,'_',P.Microphone,'.mat'];
+if exist(FileName,'file')
+  tmp = load(FileName); R = tmp.R;
+else
+  error(['Calibration File "',escapeMasker(FileName),'" does not exist.']);
+end
+
+% Return what has been passed (Speaker and Microphone names)
+Calibration = P;
+% Inverse impulse response which is scaled to have a norm of 1
+% for translating white noise from the original signal to the speaker signal
+Calibration.IIR = R.IIR80dB;
+% SR is passed in case a different SR is used and downsampling is necessary
+Calibration.SR = R.SR;
+% Calibration delay is used to shift the stimulus according to the time due to calibration
+Calibration.Delay = R.ConvDelay;

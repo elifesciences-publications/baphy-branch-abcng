@@ -1,2 +1,8 @@
 *.m~
 LastSettings.mat
+BaphyHWSetup.mat
+BaphyMainGuiSettings.mat
+MeskaSettings.mat
+baphy.mat
+*.asv
+*#
