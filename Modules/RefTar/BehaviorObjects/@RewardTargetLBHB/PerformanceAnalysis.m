@@ -47,8 +47,10 @@ for cnt1 = 1:length(StimEvents);
             RefResponseWin = StimEvents(cnt1).StartTime + parms.EarlyWindow;
         elseif strcmpi(StimRefOrTar,'Target'),
             FirstTarTime= StimEvents(cnt1).StartTime;
-             TarResponseWin = [StimEvents(cnt1).StartTime + parms.EarlyWindow ...
-                StimEvents(cnt1).StartTime + parms.ResponseWindow + parms.EarlyWindow];
+            TarResponseWin = [StimEvents(cnt1).StartTime + parms.EarlyWindow ...
+                StimEvents(cnt1).StartTime + parms.ResponseWindow + ...
+                              parms.EarlyWindow];
+            TarResponseWin=round(TarResponseWin*100)./100;
             TarEarlyWin = [StimEvents(cnt1).StartTime ...
                 StimEvents(cnt1).StartTime + parms.EarlyWindow];
             % force end of reference window to match begining of early
@@ -56,9 +58,17 @@ for cnt1 = 1:length(StimEvents);
             RefResponseWin(2)=TarEarlyWin(1);
             TarOffTime=StimEvents(cnt1).StopTime;
             ThisTargetNote=Note;
+            
+            if StimEvents(1).Trial==1,
+                if strcmpi(get(exptparams.TrialObject, 'Descriptor'),'MultiRefTar'),
+                    tar=get(exptparams.TrialObject,'TargetHandle');
+                    exptparams.UniqueTargets=get(tar,'Names');
+                end
+                exptparams.UniqueTarResponseWinStart=[];
+            end
             if ~isfield(exptparams,'UniqueTargets') || isempty(exptparams.UniqueTargets),
-              exptparams.UniqueTargets={ThisTargetNote};
-              exptparams.UniqueTarResponseWinStart=TarResponseWin(1);
+                exptparams.UniqueTargets={ThisTargetNote};
+                exptparams.UniqueTarResponseWinStart=[];
             elseif ~iscell(exptparams.UniqueTargets),
                 td=exptparams.UniqueTargets;
                 exptparams.UniqueTargets={};
@@ -66,14 +76,11 @@ for cnt1 = 1:length(StimEvents);
                     exptparams.UniqueTargets{taridx}=num2str(td(taridx));
                 end
                 exptparams.UniqueTargets=union(exptparams.UniqueTargets,{ThisTargetNote});
-                exptparams.UniqueTarResponseWinStart=...
-                    union(exptparams.UniqueTarResponseWinStart,TarResponseWin(1));
-           else
-                
-              exptparams.UniqueTargets=union(exptparams.UniqueTargets,{ThisTargetNote});
-              exptparams.UniqueTarResponseWinStart=...
-                union(exptparams.UniqueTarResponseWinStart,TarResponseWin(1));
+            elseif ~any(strcmpi(ThisTargetNote,exptparams.UniqueTargets)),
+                exptparams.UniqueTargets=union(exptparams.UniqueTargets,{ThisTargetNote});
             end
+            exptparams.UniqueTarResponseWinStart=...
+                union(exptparams.UniqueTarResponseWinStart,TarResponseWin(1));
         end
     end
 end
@@ -368,3 +375,6 @@ exptparams.Performance(cnt2+1) = perfPer;
 if isfield(exptparams,'Water')
     exptparams.Performance(end).Water = exptparams.Water .* globalparams.PumpMlPerSec.Pump;
 end
+
+
+

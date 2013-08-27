@@ -171,6 +171,12 @@ end
 function pushbutton5_Callback(hObject, eventdata, handles)
 % Performance Analysis
 % LoadMFile([handles.pathname filesep handles.filename]);
+
+replicate_behavior_analysis([handles.pathname filesep ...
+                    handles.filename]);
+return
+
+
 exptevents = handles.exptevents;
 exptparams = handles.exptparams;
 globalparams = handles.globalparams;

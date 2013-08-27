@@ -42,7 +42,8 @@ if ~mod(TrialIndex,exptparams.TrialBlock) || (isempty(AIData) && isempty(TrialSo
     else
         ind = 1-(floor(TrialIndex/exptparams.TrialBlock))/25;
     end
-    subplot(4,4,[11 12 15 16]);axis off;
+    %subplot(4,4,[11 12 15 16]);axis off;
+    subplot(5,4,[ 15 16 19 20]);axis off;
     if ind==.96 % this it the first time:
         text(  0,1  ,'Trial','FontWeight','bold','HorizontalAlignment','center');
         text(0.1,1  ,'HR','FontWeight','bold','HorizontalAlignment','center','color','b');
@@ -75,6 +76,8 @@ if ~mod(TrialIndex,exptparams.TrialBlock) || (isempty(AIData) && isempty(TrialSo
         %         text( 1, ind, [num2str(exptparams.Performance(end).EarlyTrial(1),'%2.0f') '/' num2str(exptparams.Performance(end).EarlyTrial(2),'%2.0f')],'FontWeight','bold','color','b','HorizontalAlignment','center');
     end
 end
+%disp('stopping in BehaviorDisplay');
+%keyboard
 if isempty(AIData) && isempty(TrialSound)
     % this is the end, things has been displayed already:
     subplot(4,4,1:4);
@@ -150,7 +153,6 @@ subplot(4,4,9:10)
 hold off;
 BinSize = 0.04;
 MaxBinTime=nanmax([exptparams.FirstLick.Tar exptparams.FirstLick.Tar])+BinSize;
-
 if isfield(exptparams,'UniqueTargets') && length(exptparams.UniqueTargets)>1 &&...
         ~strcmpi(get(exptparams.TrialObject,'descriptor'),'RepDetect');
   targetid={exptparams.Performance(1:TrialIndex).ThisTargetNote};
@@ -180,8 +182,9 @@ if isfield(exptparams,'UniqueTargets') && length(exptparams.UniqueTargets)>1 &&.
     end
     RT(jj)=nanmean(exptparams.FirstLick.Tar(thistargetii));
     DI=exptparams.Performance(end).uDiscriminationIndex;
-    LegendLabels{jj}=sprintf('%s(HR:%.2f RT:%.2f DI %d)',...
-                             exptparams.UniqueTargets{jj},HR(jj),RT(jj),DI(jj));
+    LegendLabels{jj}=sprintf('%s(HR:%.2f RT:%.2f DI:%d n:%d)',...
+                             exptparams.UniqueTargets{jj},HR(jj),RT(jj),DI(jj),...
+                             length(thistargetii)-thisFAcount);
   end
   LegendLabels{end+1}=sprintf('Ref(FAR:%.2f)',FAR);
 else
@@ -200,7 +203,10 @@ if ~isempty(h1)
     h=legend(LegendLabels);
     LegPos = get(h,'position');
     set(h,'fontsize',8);
-    LegPos(1) = 0.005; % put the legend on the far left of the screen
+    xlim=get(gca,'Xlim');
+    ylim=get(gca,'Ylim');
+    %LegPos(1:2) = [0.005 ylim(2)]; % put the legend on the far left of the screen
+    LegPos(1:2) = [0.4 0.425]; % put the legend on the far left of the screen
     set(h,'position', LegPos);
 end
 title('First Lick Histogram');

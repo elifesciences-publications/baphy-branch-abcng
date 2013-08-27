@@ -75,16 +75,16 @@ for cnt1 = 1:TotalTrial
         exptparams = PerformanceAnalysis(exptparams.BehaveObject, HW, StimEvents, ...
             globalparams, exptparams, ThisTrial, Lick);
         % disabled display per Block
-        if ~mod(cnt1,exptparams.TrialBlock)
+        if ~mod(cnt1,exptparams.TrialBlock) || cnt1==TotalTrial,
             exptparams = BehaviorDisplay(exptparams.BehaveObject, HW, StimEvents, globalparams, ...
                 exptparams, ThisTrial, Lick, []);
+            set(gcf,'Name',basename);
         end
     end
 end
 exptparams.TotalTrials = ThisTrial;
 exptparams = BehaviorDisplay(exptparams.BehaveObject, HW, StimEvents, globalparams, ...
     exptparams, ThisTrial, [], []);
-set(gcf,'Name',basename);
 drawnow;
 
 if savetodb,
@@ -106,5 +106,18 @@ for cnt1 = 1:3:length(fields)
         o = set(o,fields{cnt1},values.(fields{cnt1}));
     catch
         %warning(['property ' fields{cnt1} ' can not be found, using default']);
+    end
+end
+
+
+return
+if 0,
+    dbopen;
+    sql=['SELECT * FROM gDataRaw where training and not(bad)',...
+         ' and parmfile like "Portabello%TSP%"'];
+    rawdata=mysql(sql);
+    for ii=1:5:length(rawdata),
+        parmfile=[rawdata(ii).resppath rawdata(ii).parmfile];
+        replicate_behavior_analysis(parmfile);
     end
 end
