@@ -1,0 +1,16 @@
+Base Amplitude                  = 50 dB
+Voltage at 50dB                 = 64.16 mV
+Sampling frequency              = 10000 Hz
+Ripple peak                     = 90 %
+Lower frequency component       = 125 Hz
+Upper frequency component       = 4000 Hz
+Number of components            = 500
+Components harmonically spaced  = 0
+Harmonic spacing                = 0 Hz
+Spectral Power Decay            = 0 dB/octave
+Components random phase         = 1
+Time duration                   = 3.00
+Ripple amplitudes               = (1.00  1.00  1.00  1.00  )
+Ripple frequencies              = (-1.00  -1.00  -1.00  -1.00  ) cyc/oct
+Ripple phase shifts             = (86.82  -82.12  -147.00  -107.02  ) deg
+Angular frequencies             = (1.00  3.00  5.00  7.00  ) Hz
