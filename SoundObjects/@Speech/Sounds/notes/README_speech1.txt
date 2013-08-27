@@ -1,0 +1,1 @@
+Speech 1 is the first set from timit. 15 male and 15 female speakers. 

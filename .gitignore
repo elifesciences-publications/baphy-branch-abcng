@@ -1,8 +1,11 @@
 *.m~
 LastSettings.mat
+LastValues.mat
 BaphyHWSetup.mat
 BaphyMainGuiSettings.mat
 MeskaSettings.mat
 baphy.mat
 *.asv
 *#
+@Torc2/Sounds/*
+save_comp_phs.mat
