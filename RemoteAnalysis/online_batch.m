@@ -65,7 +65,7 @@ else % ELECTRODE MATRIX HAS BEEN SPECIFIED AS GRID
 end
 Tiling  = max(ElectrodesXY,[],1); 
 if length(ElectrodesXY)<4,
-    Tiling(end)=length(ElectrodesXY);
+    Tiling(end)=size(ElectrodesXY,1);
     ElectrodesXY(:,2)=ElectrodesXY(:,2)-min(ElectrodesXY(:,2))+1;
 end
 %% SETUP FIGURE
