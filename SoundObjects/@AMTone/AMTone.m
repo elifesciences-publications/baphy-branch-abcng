@@ -47,6 +47,7 @@ case {0,1}
                   'TonesPerOctave','edit',20,...
                   'SimulCount','edit',1,...
                   'RefRepCount','edit',1,...
+                  'LightStimPerRep','edit',0,...
                   'SilentStimPerRep','edit',0});
     
     o.PreStimSilence=0.5;
@@ -64,6 +65,7 @@ case {0,1}
     o.TonesPerOctave=20;
     o.SimulCount=1;
     o.RefRepCount=1;
+    o.LightStimPerRep=0;
     o.SilentStimPerRep=0;
     o.LoBounds=[];
     o.HiBounds=[];
