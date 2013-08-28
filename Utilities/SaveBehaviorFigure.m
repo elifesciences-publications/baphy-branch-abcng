@@ -10,7 +10,8 @@ function SaveBehaviorFigure(globalparams,exptparams)
 global BEHAVIOR_CHART_PATH DB_USER
 
 if isfield(exptparams,'ResultsFigure') && exist(BEHAVIOR_CHART_PATH,'dir'),
-    jpegpath=[BEHAVIOR_CHART_PATH lower(globalparams.Ferret) filesep datestr(now,'yyyy')];
+    jpegpath=[BEHAVIOR_CHART_PATH lower(globalparams.Ferret)...,
+        filesep globalparams.date(1:4)];
     jpegfile=[basename(globalparams.mfilename(1:end-1)) 'jpg'];
     if ~exist([BEHAVIOR_CHART_PATH lower(globalparams.Ferret)],'file'),
         mkdir(BEHAVIOR_CHART_PATH,lower(globalparams.Ferret));

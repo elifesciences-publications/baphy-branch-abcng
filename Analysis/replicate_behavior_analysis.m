@@ -114,10 +114,12 @@ return
 if 0,
     dbopen;
     sql=['SELECT * FROM gDataRaw where training and not(bad)',...
-         ' and parmfile like "Portabello%TSP%"'];
+         ' and parmfile like "Portabello%TSP%" ORDER BY parmfile'];
     rawdata=mysql(sql);
-    for ii=1:5:length(rawdata),
+    for ii=1:length(rawdata),
+        close all
         parmfile=[rawdata(ii).resppath rawdata(ii).parmfile];
-        replicate_behavior_analysis(parmfile);
+        fprintf('processing %d : %s\n',ii,parmfile);
+        replicate_behavior_analysis(parmfile,1);
     end
 end
