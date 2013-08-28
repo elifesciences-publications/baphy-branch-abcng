@@ -66,7 +66,7 @@ elseif spikechancount>0,
   fprintf('pre-caching sigma threshold events for %d channels.\n',spikechancount);
   for channel=1:spikechancount,
     if spikechancount<=8,
-      cachefile=cacheevpspikes(evpfile,channel,sigthreshold,2);
+      cachefile=cacheevpspikes(evpfile,channel,unique([sigthreshold -4 4]),2);
     elseif strcmpi(BAPHY_LAB,'lbhb'),
       % also cache with threshold of 3.7 for array recordings.
       cachefile=cacheevpspikes(evpfile,channel,unique([sigthreshold -4 4 -3.8 3.8 -3.5 3.5]));

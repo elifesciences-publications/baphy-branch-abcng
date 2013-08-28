@@ -85,7 +85,7 @@ for ii=1:length(RecsDB),
   end
   
   %% FIX cellDB
-  if isempty(RecsDB(ii).trials),
+  if isempty(RecsDB(ii).trials) && exist('globalparams','var'),
      fprintf('fixing celldb entries for possibily crashed baphy file\n');
      dbSaveBaphyData(globalparams,exptparams);
   end
