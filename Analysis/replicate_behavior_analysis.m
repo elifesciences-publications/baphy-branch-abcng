@@ -34,7 +34,9 @@ if strcmpi(globalparams.Module,'Reference Target')
     exptparams.TrialObject = TrialObject;
     exptparams.BehaveObject = BehaveObject;
 end
-exptparams = rmfield(exptparams,'Performance');
+if isfield(exptparams,'Performance'),
+    exptparams = rmfield(exptparams,'Performance');
+end
 exptparams.OfflineAnalysis = 1;
 
 HW.params = globalparams.HWparams;
@@ -54,7 +56,9 @@ end
 [spikecount, auxcount, TotalTrial, spikefs, auxfs] = evpgetinfo(evpfile);
 include = ''; 
 ThisTrial = 0;
-exptparams = rmfield(exptparams,'ResultsFigure');
+if isfield(exptparams,'ResultsFigure'),
+    exptparams = rmfield(exptparams,'ResultsFigure');
+end
 for cnt1 = 1:TotalTrial
     % Stim events are between TrialStart and Last PostStimSilence events:
     [t1,t2,t3,t4,StimStart] = evtimes(exptevents,'TrialStart',cnt1);
