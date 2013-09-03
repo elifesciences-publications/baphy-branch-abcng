@@ -19,9 +19,16 @@ PreStimSilence = get(o,'PreStimSilence');
 PostStimSilence = get(o,'PostStimSilence');
 TonesPerOctave=get(o,'TonesPerOctave');
 Names = get(o,'Names');
+SilentStimPerRep=get(o,'SilentStimPerRep');
+LightStimPerRep=get(o,'LightStimPerRep');
 
 Frequencies=round(exp(linspace(log(LowFreq),log(HighFreq),Count+1)));
 logfreq=log(Frequencies);
+if LightStimPerRep>0,
+   Frequencies=[Frequencies -ones(1,LightStimPerRep)];
+   logfreq=[logfreq -ones(1,LightStimPerRep)];
+   Count=Count+LightStimPerRep;
+end
 
 if ~isnumeric(FirstSubsetIdx),
     FirstSubsetIdx=str2num(FirstSubsetIdx);
@@ -76,18 +83,27 @@ if index<=TotalCount,
    i1AM=floor((i1-1)./Count)+1;
    
    w0=zeros(size(w));
-   TonesPerBurst=ceil(Frequencies(i1freq+1)./Frequencies(i1freq) .* TonesPerOctave);
-   lfrange=linspace(logfreq(i1freq),logfreq(i1freq+1),TonesPerBurst.*2+1);
-   lfrange=lfrange(2:2:end);
+   if i1freq<=Count-LightStimPerRep,
+      TonesPerBurst=ceil(Frequencies(i1freq+1)./Frequencies(i1freq) .* TonesPerOctave);
+      lfrange=linspace(logfreq(i1freq),logfreq(i1freq+1),TonesPerBurst.*2+1);
+      lfrange=lfrange(2:2:end);
+      
+      for lf=lfrange,
+         %round(exp(lf))
+         phase=rand* 2.*pi;
+         w0 = w0 + sin(2*pi*round(exp(lf))*timesamples+phase);
+      end
    
-   for lf=lfrange,
-      %round(exp(lf))
-      phase=rand* 2.*pi;
-      w0 = w0 + sin(2*pi*round(exp(lf))*timesamples+phase);
+      % normalize each w0 before adding
+      w0=w0./max(abs(w0(:)));
+      
+      LightStim=0;
+   else
+      % light stim, no carrier
+      w0(:)=1;
+      LightStim=1;
    end
-   
-   % normalize each w0 before adding
-   w0=w0./max(abs(w0(:)));
+      
    if AM(i1AM)>0,
       w0=w0.*(1-ModDepth(i1AM) + ModDepth(i1AM) .* ...
          abs(sin(pi*AM(i1AM)*timesamples)) ./ 0.4053);
@@ -147,6 +163,11 @@ end
 
 % Now, put it in the silence:
 w = [zeros(PreStimSilence*SamplingRate,1) ; w(:) ;zeros(PostStimSilence*SamplingRate,1)];
+if LightStim,
+   w=[zeros(size(w)) w];
+elseif LightStimPerRep>0,
+   w=[w zeros(size(w))];
+end
 
 % and generate the event structure:
 event = struct('Note',['PreStimSilence , ' Names{index}],...

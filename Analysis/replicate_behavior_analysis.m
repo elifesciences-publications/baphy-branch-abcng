@@ -114,7 +114,7 @@ return
 if 0,
     dbopen;
     sql=['SELECT * FROM gDataRaw where training and not(bad)',...
-         ' and parmfile like "Portabello%TSP%" ORDER BY parmfile'];
+         ' and parmfile like "oyster%RDT%" ORDER BY parmfile'];
     rawdata=mysql(sql);
     for ii=1:length(rawdata),
         close all

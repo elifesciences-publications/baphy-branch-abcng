@@ -16,6 +16,7 @@ FirstSubsetIdx=get(o,'FirstSubsetIdx');
 SecondSubsetIdx=get(o,'SecondSubsetIdx');
 Count=get(o,'Count');
 SilentStimPerRep=get(o,'SilentStimPerRep');
+LightStimPerRep=get(o,'LightStimPerRep');
 
 if ~isnumeric(FirstSubsetIdx),
     FirstSubsetIdx=str2num(FirstSubsetIdx);
@@ -30,6 +31,12 @@ Frequencies=round(2.^(lfset(1:2:end)));
 
 % log2 centers of noise bands:
 MidFreqs=round(2.^(lfset(2:2:end)));
+
+if LightStimPerRep>0,
+   Frequencies=[Frequencies -ones(1,LightStimPerRep)]
+   MidFreqs=[MidFreqs -ones(1,LightStimPerRep)];
+   Count=Count+LightStimPerRep;
+end
 
 if isempty(AM),
    AM=0;
@@ -62,8 +69,11 @@ for ii=1:TotalCount,
    i1=FirstSubsetIdx(mod((ii-1),Count1)+1);
    i1freq=mod(i1-1,Count)+1;
    i1AM=floor((i1-1)./Count)+1;
-   
-   Names{ii}=num2str(MidFreqs(i1freq),'%05d');
+   if MidFreqs(i1freq)>0,
+      Names{ii}=num2str(MidFreqs(i1freq),'%05d');
+   else
+      Names{ii}='Light';
+   end
    if AM(i1AM)>0,
       Names{ii}=[Names{ii} ':A:' num2str(AM(i1AM))];
       if ModDepth(i1AM)<1,
