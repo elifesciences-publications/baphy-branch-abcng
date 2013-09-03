@@ -180,7 +180,7 @@ while CurrentTime < exptparams.LogDuration  % while trial is not over
             LickEvents = AddEvent(LickEvents, ev, TrialIndex);
         end
         if strcmpi(get(o,'TurnOffLight'),'FalseAlarm'),
-           ev = IOLightSwitch(HW,0,ifstr2num(get(o,'TimeOut')),'Start',0,0,'Light2');
+           ev = IOLightSwitch(HW,1,ifstr2num(get(o,'TimeOut')),'Start',0,0,'Light2');
         end
         if strcmpi(get(o,'Shock'),'FalseAlarm')
             ev = IOControlShock (HW, .2, 'Start');
