@@ -193,7 +193,7 @@ if isfield(exptparams,'UniqueTargets') && length(exptparams.UniqueTargets)>1 &&.
     UniqueCount=length(exptparams.UniqueTargets);
     for tt=1:cnt2,
         trialtargetid(tt)=find(strcmp(perf(tt).ThisTargetNote,...
-                                      exptparams.UniqueTargets));
+                                      exptparams.UniqueTargets),1);
     end
 else
     UniqueCount=1;

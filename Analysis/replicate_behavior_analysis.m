@@ -113,8 +113,8 @@ end
 return
 if 0,
     dbopen;
-    sql=['SELECT * FROM gDataRaw where training and not(bad)',...
-         ' and parmfile like "oyster%RDT%" ORDER BY parmfile'];
+    sql=['SELECT * FROM gDataRaw where id>=95696 and behavior="active" and not(bad)',...
+         ' and parmfile like "por%TSP%" ORDER BY id'];
     rawdata=mysql(sql);
     for ii=1:length(rawdata),
         close all
