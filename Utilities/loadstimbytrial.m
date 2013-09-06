@@ -1,4 +1,4 @@
-% function [stim,stimparam]=loadstimfrombaphy(parmfile,options);
+% function [stim,stimparam]=loadstimbytrial(parmfile,options);
 %
 % inputs: 
 %  parmfile - a baphy m-file
@@ -55,7 +55,7 @@ end
 preprocfile=sprintf('%sloadstimbytrial_%s_ff%s_fs%d_cc%d_trunc%d.mat',...
              ppdir,basename(parmfile),filtfmt,fsout,...
              chancount,truncatetargets);
-    
+
 if ~forceregen && exist(preprocfile,'file')
    fprintf('Loading saved stimulus from %s\n',basename(preprocfile));
    
@@ -153,7 +153,8 @@ TrialCount=globalparams.rawfilecount;
 %
 % generate the stimulus signal for each trial
 %
-if strcmpi(exptparams.TrialObjectClass,'StreamNoise'),
+if strcmpi(exptparams.TrialObjectClass,'StreamNoise') || ...
+        strcmpi(exptparams.TrialObjectClass,'RepDetect'),
     maxstreams=3;
 else
     maxstreams=1;
@@ -179,7 +180,8 @@ for trialidx=1:TrialCount,
     for evidx=1:length(t2),
         
         NoteParts=strsep(Note{evidx},',',1);
-        if ~isempty(findstr(NoteParts{3},'Target')),
+        if ~isempty(findstr(NoteParts{3},'Target')) &&...
+                ~isempty(TarObject),
             o=TarObject;
             istar=1;
         else
@@ -196,7 +198,8 @@ for trialidx=1:TrialCount,
         ff=find(strcmp(strtrim(NoteParts{2}),n),1);
         
         
-        if strcmpi(exptparams.TrialObjectClass,'StreamNoise'),
+        if strcmpi(exptparams.TrialObjectClass,'StreamNoise') ||...
+                strcmpi(exptparams.TrialObjectClass,'RepDetect'),
             
             % special treatment for stream noise
             stimidxs=strsep(NoteParts{2},'+',1);

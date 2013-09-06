@@ -8,7 +8,7 @@ if strcmp(caller(1).name,'baphy') && ...
     clear classes;
 end
 
-% important globals
+% Set up globals
 global BAPHYHOME BAPHYDATAROOT SERVER_PATH BEHAVIOR_CHART_PATH 
 global BAPHY_CONFIG_PATH BAPHY_LAB
 global LOCAL_DATA_ROOT LOCAL_DATA_LIMIT MD
@@ -43,11 +43,14 @@ addpathWithoutVC([BAPHYHOME filesep 'UtilitiesBernhard']);
 %% set lab-specific variables (use default values if not set in BaphyConfigPath)
 %% SVD added 2012-05-25
 if exist('BaphyConfigPath.m','file'),
-  BaphyConfigPath;
+    BaphyConfigPath;
+else
+    baphy_learn_config_path;
 end
 
+% if any lab-specific variables are missing, set them to defaults
 if ~exist('BAPHY_CONFIG_PATH') || isempty(BAPHY_CONFIG_PATH),
-  BAPHY_CONFIG_PATH='default';
+    BAPHY_CONFIG_PATH='default';
 end
 if ~exist('BAPHY_LAB') || isempty(BAPHY_LAB),
     if strcmpi(BAPHY_CONFIG_PATH,'default'),

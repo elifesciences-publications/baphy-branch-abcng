@@ -72,18 +72,22 @@ for f=1:filecount,
    
    % step 1: figure out when targets happened on every trial
    TarEventList=[];
+   TargetTimes=[];
    for evidx=1:length(exptevents),
       if ~isempty(findstr(exptevents(evidx).Note,'Stim ,')) &&...
             ~isempty(findstr(exptevents(evidx).Note,'Target')) &&...
             ismember(exptevents(evidx).Trial,trialset),
          TarEventList=cat(1,TarEventList,evidx);
+         TargetTimes=[TargetTimes;exptevents(evidx).StartTime];
       end
    end
    fprintf('Found %d tar events in %d trials.\n',length(TarEventList),trialcount);
    
-   % concatenate all the matching fields from the struct array into a vector
+   % fancy quick Matlab way to concatenate all the matching fields from the
+   % struct array into a vector 
    TargetTimes=cat(1,exptevents(TarEventList).StartTime);
    TargetBins=round(TargetTimes.*options.rasterfs);
+   
    MinTargetTime=min(TargetTimes);
    MaxTargetTime=max(TargetTimes);
    fprintf('Target onset times range from %.1f to %.1f sec\n',...
@@ -95,8 +99,8 @@ for f=1:filecount,
    ReferencePreStimSilence=exptparams.TrialObject.ReferenceHandle.PreStimSilence;
    ReferencePreBins=round(ReferencePreStimSilence.*options.rasterfs);
    
-   % step 2. compute probability of response given stimulus identity -- 
-   % (0)reference, or (1)target
+   % step 2. train classifier by computing probability of response given
+   % stimulus identity -- (0)reference, or (1)target
    DecodeWindowLen=0.1;
    DecodeWindowBins=round(DecodeWindowLen.*options.rasterfs);
    
@@ -105,9 +109,11 @@ for f=1:filecount,
    FirstDecodeBin=round(FirstDecodeTime*options.rasterfs);
    
    % process the response matrix to indicate the number of spikes that
-   % occured during the last DecodeWindowLen period.
+   % occured during the last DecodeWindowLen period, which happens to be
+   % 100ms
    rnonan=r_per_trial;
    rnonan(isnan(rnonan))=0; % remove nans because these mess up convolution
+   
    % sumfilter is a quick way of counting spikes in the preceding bins. 
    % if DecodeWindowBins==3 then sumfilter=[1; 1; 1; 0; 0]
    sumfilter=[zeros(DecodeWindowBins-1,1);ones(DecodeWindowBins,1)];
@@ -151,6 +157,8 @@ for f=1:filecount,
    % When decoding, P(r)=1, so we can ignore it.
    
    Psr=Prs.*repmat(Ps,[rmax+1 1]);
+   Psr=Psr./repmat(sum(Psr,2),[1 2]);
+     
    
    % step 4. construct a big matrix indicating whether the current stimulus is
    % a reference (0) or target (1)
@@ -174,7 +182,7 @@ for f=1:filecount,
    
    figure(CurrentFig);
    subplot(3,filecount,f+0);
-   plot(0:rmax,Psr(:,2)./sum(Psr,2));
+   plot(0:rmax,Psr);
    aa=axis;
    axis([0 rmax 0 1]);
    title(basename(parmfile),'Interpreter','none');
