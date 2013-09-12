@@ -193,7 +193,7 @@ if isfield(exptparams,'UniqueTargets') && length(exptparams.UniqueTargets)>1 &&.
     UniqueCount=length(exptparams.UniqueTargets);
     for tt=1:cnt2,
         trialtargetid(tt)=find(strcmp(perf(tt).ThisTargetNote,...
-                                      exptparams.UniqueTargets));
+                                      exptparams.UniqueTargets),1);
     end
 else
     UniqueCount=1;
@@ -221,22 +221,28 @@ if perf(cnt2).Ineffective, perf(cnt2).ThisTrial = 'Ineffective';end
 trialparms=get(exptparams.TrialObject);
 if strcmpi(trialparms.descriptor,'MultiRefTar'),
     % "strict" - FA is response to any possible target slot preceeding the target
+    TarPreStimSilence=get(trialparms.TargetHandle,'PreStimSilence');
     if trialparms.SingleRefSegmentLen>0,
-        TarPreStimSilence=get(trialparms.TargetHandle,'PreStimSilence');
         PossibleRefTimes=(find(trialparms.ReferenceCountFreq(:))-1).*...
             trialparms.SingleRefSegmentLen+perf(1).FirstRefTime+TarPreStimSilence;
-        resptime=[];
-        stimtype=[];
-        stimtime=[];
-        tcounter=[];
-        for tt=1:cnt2,
-            RefCount=sum(PossibleRefTimes<perf(tt).FirstTarTime);
-            stimtime=cat(1,stimtime,PossibleRefTimes(1:RefCount),...
-                         perf(tt).FirstTarTime);
-            resptime=cat(1,resptime,ones(RefCount+1,1).*perf(tt).FirstLickTime);
-            stimtype=cat(1,stimtype,zeros(RefCount,1),1);
-            tcounter=cat(1,tcounter,ones(RefCount+1,1).*trialtargetid(tt));
-        end
+    else
+        RefSegLen=get(trialparms.ReferenceHandle,'PreStimSilence')+...
+            get(trialparms.ReferenceHandle,'Duration')+...
+            get(trialparms.ReferenceHandle,'PostStimSilence');
+        PossibleRefTimes=(find(trialparms.ReferenceCountFreq(:))-1).*...
+            RefSegLen+TarPreStimSilence;
+    end
+    resptime=[];
+    stimtype=[];
+    stimtime=[];
+    tcounter=[];
+    for tt=1:cnt2,
+        RefCount=sum(PossibleRefTimes<perf(tt).FirstTarTime);
+        stimtime=cat(1,stimtime,PossibleRefTimes(1:RefCount),...
+            perf(tt).FirstTarTime);
+        resptime=cat(1,resptime,ones(RefCount+1,1).*perf(tt).FirstLickTime);
+        stimtype=cat(1,stimtype,zeros(RefCount,1),1);
+        tcounter=cat(1,tcounter,ones(RefCount+1,1).*trialtargetid(tt));
     end
 elseif strcmpi(trialparms.descriptor,'RepDetect'),
     % "strict" - FA is response to any possible target start slot
@@ -265,7 +271,8 @@ else
     tcounter=trialtargetid([1:cnt2 1:cnt2]');
 end
 
-keepidx=find(stimtype==0 | stimtime<resptime);
+%keepidx=find(stimtype==0 | stimtime<resptime);
+keepidx=find(stimtime<resptime);
 stimtime=stimtime(keepidx);
 stimtype=stimtype(keepidx);
 resptime=resptime(keepidx);
