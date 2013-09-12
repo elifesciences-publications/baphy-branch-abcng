@@ -271,7 +271,8 @@ else
     tcounter=trialtargetid([1:cnt2 1:cnt2]');
 end
 
-keepidx=find(stimtype==0 | stimtime<resptime);
+%keepidx=find(stimtype==0 | stimtime<resptime);
+keepidx=find(stimtime<resptime);
 stimtime=stimtime(keepidx);
 stimtype=stimtype(keepidx);
 resptime=resptime(keepidx);
