@@ -35,8 +35,13 @@ elseif ~isempty(strfind(mfile,'MTS')),
 end
 % integrate this into gui someday:
 %options.includeincorrect=1
-
-[r,tags]=raster_load(mfile,channel,unit,options);
+try,
+    [r,tags]=raster_load(mfile,channel,unit,options);
+catch
+    disp('error loading data, pausing and reloading');
+    pause(1);
+    [r,tags]=raster_load(mfile,channel,unit,options);
+end
 
 if ~isempty(strfind(mfile,'DMS')),
    %keyboard
