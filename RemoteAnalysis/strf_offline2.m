@@ -115,6 +115,7 @@ StStims = stimprofile(waveParams,W,Omega,StimParam.lfreq,...
     StimParam.hfreq,numcomp,StimParam.basep,saf);
 StStims = stimscale(StStims,'moddep',0.9,[],10*saf*StimParam.basep/1000,...
     floor(10*numcomp/noct));
+StimParam.StStims=StStims;
 
 [stimX,stimT,numstims] = size(StStims);
 

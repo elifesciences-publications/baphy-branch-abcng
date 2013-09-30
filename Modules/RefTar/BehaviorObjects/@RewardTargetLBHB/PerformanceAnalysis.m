@@ -272,13 +272,14 @@ else
 end
 
 %keepidx=find(stimtype==0 | stimtime<resptime);
+resptime(resptime==0)=inf;
 keepidx=find(stimtime<resptime);
 stimtime=stimtime(keepidx);
 stimtype=stimtype(keepidx);
 resptime=resptime(keepidx);
 tcounter=tcounter(keepidx);
 stop_respwin=get(exptparams.BehaveObject,'EarlyWindow')+...
-    get(exptparams.BehaveObject,'ResponseWindow');
+    get(exptparams.BehaveObject,'ResponseWindow')+0.5;
 
 [di,hits,fas,tsteps]=compute_di(stimtime,resptime,stimtype,stop_respwin);
 %[perf(cnt2).FirstLickTime di max(hits) max(fas)]
