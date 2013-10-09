@@ -45,24 +45,26 @@ if strcmpi(SyncBands,'Yes'),
    end
    
 else
-   MaxIndex=BandCount1*BandCount2*AMCount1*AMCount2;
+   MaxIndex=(BandCount1*AMCount1)+(BandCount2*AMCount2);
    IdxMtx=zeros(MaxIndex,4);
    Names = cell(1,MaxIndex);
    idx=0;
    for cnt1 = 1:BandCount1,
       for cnt2=1:AMCount1,
-         for cnt3=1:BandCount2,
-            for cnt4=1:AMCount2,
-               idx=idx+1;
-               Names{idx}=sprintf('%05d-%05d:A:%.1f:%05d-%05d:A:%.1f',...
-                  LowFreq1(cnt1),HighFreq1(cnt1),AM1(cnt2),...
-                  LowFreq2(cnt3),HighFreq2(cnt3),AM2(cnt4));
-               IdxMtx(idx,:)=[cnt1 cnt2 cnt3 cnt4];
-            end
-         end
+          idx=idx+1;
+          Names{idx}=sprintf('1:%05d-%05d:A:%.1f',...
+              LowFreq1(cnt1),HighFreq1(cnt1),AM1(cnt2));
+          IdxMtx(idx,:)=[1 cnt1 cnt2];
       end
    end
-    
+    for cnt1 = 1:BandCount2,
+      for cnt2=1:AMCount2,
+          idx=idx+1;
+          Names{idx}=sprintf('2:%05d-%05d:A:%.1f',...
+              LowFreq2(cnt1),HighFreq2(cnt1),AM2(cnt2));
+          IdxMtx(idx,:)=[2 cnt1 cnt2];
+      end
+   end
 end
 
 o = set(o,'Names',Names);
