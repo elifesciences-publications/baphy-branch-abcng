@@ -13,3 +13,5 @@ SoundObjects/@Torc2/Sounds/*.txt
 SoundObjects/@Torc2/Sounds/*.wav
 save_comp_phs.mat
 Config/BaphyConfigPath.m
+Config/lbhb/SoundObjects/@NoiseSample/cache/*.wav
+Config/lbhb/SoundObjects/@NoiseSample/cache/*.mat

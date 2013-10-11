@@ -46,7 +46,7 @@ if strcmpi(SyncBands,'Yes'),
    
 else
    MaxIndex=(BandCount1*AMCount1)+(BandCount2*AMCount2);
-   IdxMtx=zeros(MaxIndex,4);
+   IdxMtx=zeros(MaxIndex,3);
    Names = cell(1,MaxIndex);
    idx=0;
    for cnt1 = 1:BandCount1,

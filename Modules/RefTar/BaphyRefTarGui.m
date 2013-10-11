@@ -405,7 +405,11 @@ for cnt1 = 1:3:length(fields)-1;
     % if its a popupmenu, find the 'value' property:
     tmp1 = strfind(fields{cnt1+2},'|');
     tmp2 = strfind(fields{cnt1+2},get(handles.TrialHandles(1+(cnt1-1)/3), 'value'));
-    popvalue = find(tmp1>tmp2,1);
+    if ~isempty(tmp2),
+        popvalue = find(tmp1>tmp2,1);
+    else
+        popvalue=[];
+    end
     if isempty(popvalue), popvalue = length(tmp1)+1;end
     default = fields{cnt1+2};
     default = {fields{cnt1+2}, get(handles.TrialHandles(1+(cnt1-1)/3), 'value')};

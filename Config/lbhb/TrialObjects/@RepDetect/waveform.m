@@ -29,7 +29,7 @@ PreTargetScaleBy=10^(-par.PreTargetAttenuatedB/20);
 Names=get(RefObject,'Names');
 SampleCount=size(RefTrialIndex,1);
 for cnt1 = 1:SampleCount  % go through all the sound samples in the trial
-    for jj=1:size(RefTrialIndex,2),
+    for jj=1:max(find(RefTrialIndex(cnt1,:)>0)),
         [tw,ev]=waveform(RefObject, RefTrialIndex(cnt1,jj),TrialIndex);
         if jj==1,
             w=tw;
@@ -59,6 +59,8 @@ for cnt1 = 1:SampleCount  % go through all the sound samples in the trial
           ev(cnt2).Note = [Note ' , Reference'];
        elseif cnt1==RefCount+1,
           ev(cnt2).Note = [Note ' , Target'];
+          fprintf('Target %d at bin %d\n',...
+              RefTrialIndex(cnt1,1),RefCount+1);
        else
           ev(cnt2).Note = [Note ' , TargetRep'];
        end
@@ -115,7 +117,6 @@ if par.OnsetRampSec>0,
    OnsetRamp=linspace(0,1,OnsetRampBins)';
    TrialSound(1:OnsetRampBins)=TrialSound(1:OnsetRampBins).*OnsetRamp;
 end
-
 
 events(end+1).Note=['PostStimSilence , ',par.ReferenceClass,' , Reference'];
 events(end).StartTime = LastEvent;

@@ -30,6 +30,7 @@ case 0
    RefTarO.SequenceCategories=[];
    RefTarO.SequenceIdx=[];
    RefTarO.ThisRepIdx=[];
+   RefTarO.Mode='RepDetect';
    
    RefTarO.RunClass = 'RDT';
    RefTarO.UserDefinableFields = ...
@@ -45,6 +46,7 @@ case 0
       'RefStaticNoiseFrac','edit',0,...
       'TarStaticNoiseFrac','edit',0,...
       'OnsetRampSec','edit',0,...
+      'Mode','popupmenu','RepDetect|RandOnly|RandAndRep'
       };
       
    RefTarO = class(RefTarO,'RepDetect');
