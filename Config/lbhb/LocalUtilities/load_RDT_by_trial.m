@@ -49,7 +49,7 @@ function [r,params]=load_RDT_by_trial(parmfile,spikefile,options)
     Sequences=cell(TrialCount,1);
     params.TargetStartBin=zeros(TrialCount,1);
     for trialidx=1:TrialCount,
-        [ev,~,Note]=evtimes(exptevents,'Stim ,*',trialidx);
+        eval('[ev,~,Note]=evtimes(exptevents,''Stim ,*'',trialidx);');
         for ee=1:length(ev),
             tnote=strsep(Note{ee},',',1);
             TypeNote=strtrim(tnote{3});
@@ -69,9 +69,10 @@ function [r,params]=load_RDT_by_trial(parmfile,spikefile,options)
     PreBins=round(params.PreStimSilence.*options.rasterfs);
     PostBins=round(params.PostStimSilence.*options.rasterfs);
     
-    params.SampleStartTimes=round((0:params.SamplesPerTrial).* ...
-                                   params.SampleDur+params.PreStimSilence);
+    params.SampleStartTimes=(0:params.SamplesPerTrial).* ...
+                                   params.SampleDur+params.PreStimSilence;
     params.TargetStartTime=params.SampleStartTimes(params.TargetStartBin);
+    params.TargetStartTime=params.TargetStartTime(:);
     params.SampleStarts=round(((0:params.SamplesPerTrial).* ...
                                params.SampleDur+params.PreStimSilence).*options.rasterfs)+1;
     
@@ -85,6 +86,7 @@ function [r,params]=load_RDT_by_trial(parmfile,spikefile,options)
                                  1:size(Sequences{ss},2),ss)=Sequences{ss};
     end
     
+    params.TargetIdx=exptparams.TrialObject.TargetIdx;
     
     % if behavior, pull out some performance data
     
