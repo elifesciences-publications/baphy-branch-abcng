@@ -74,7 +74,7 @@ if isfield(exptparams,'TrialObject')
                     fields{end} = 'LastTrial: ';
                 end
                 value = exptparams.Performance(end).(PerfFields{cnt1});
-                if isnumeric(value)
+                if isnumeric(value) && ~isempty(value),
                     fields{end+1} = value(1);
                     if isnumeric(fields{end}) % limit it to 2 deciaml points:
                         fields{end} = floor(100*fields{end})/100;
@@ -82,6 +82,8 @@ if isfield(exptparams,'TrialObject')
                     if length(value)>1
                         fields{end} = [num2str(fields{end}) '/' num2str(value(2))];
                     end
+                elseif isempty(value),
+                    fields{end+1}='EMPTY';
                 else
                     fields{end+1} = value;
                 end
