@@ -103,6 +103,13 @@ plot(100*cat(1,exptparams.Performance(1:end-1).DiscriminationIndex),'-',...
 AllIneffective = cat(1,exptparams.Performance(1:TrialIndex).Ineffective);
 AllIneffective(find(AllIneffective==0))=nan;
 plot(110*AllIneffective,'r*','markersize',10);
+if isfield(exptparams.Performance,'NullTrial'),
+    AllNull = cat(1,exptparams.Performance(1:TrialIndex).NullTrial);
+    AllNull=find(AllNull==1);
+    if ~isempty(AllNull),
+        plot(AllNull,110,'rs','markersize',10);
+    end
+end
 axis ([0 (TrialIndex+1) 0 115]);
 title(titleMes,'FontWeight','bold','interpreter','none');
 h=legend({'HR','FAR','DI','Inef'},'Location','SouthWest');
@@ -140,14 +147,17 @@ for cnt1 = 1:2:length(exptparams.RefResponseWin)
     line([fs*exptparams.RefResponseWin(cnt1) fs*exptparams.RefResponseWin(cnt1+1)],[1.1 1.1],'color','k','LineStyle','-','LineWidth',2);
     text(fs*(mean(exptparams.RefResponseWin(cnt1:cnt1+1))), 1.15, 'Res','Color',[.1 .5 .1],'HorizontalAlignment','center');
 end
-line([fs*exptparams.TarResponseWin(1) fs*exptparams.TarResponseWin(2)],[1.1 1.1],...
-    'color','k','LineStyle','-','LineWidth',2);
-text(fs*(mean(exptparams.TarResponseWin)), 1.15, 'Res','Color',c,...
-    'HorizontalAlignment','center');
-line([fs*exptparams.TarEarlyWin(1) fs*exptparams.TarEarlyWin(2)],[1.3 1.3],...
-    'color','k','LineStyle','-','LineWidth',2);
-text(fs*(mean(exptparams.TarEarlyWin)), 1.35, 'Erl','Color',c,...
-    'HorizontalAlignment','center');
+if ~isempty(exptparams.TarResponseWin),
+    line([fs*exptparams.TarResponseWin(1) fs*exptparams.TarResponseWin(2)],[1.1 1.1],...
+        'color','k','LineStyle','-','LineWidth',2);
+    text(fs*(mean(exptparams.TarResponseWin)), 1.15, 'Res','Color',c,...
+        'HorizontalAlignment','center');
+    line([fs*exptparams.TarEarlyWin(1) fs*exptparams.TarEarlyWin(2)],[1.3 1.3],...
+        'color','k','LineStyle','-','LineWidth',2);
+    text(fs*(mean(exptparams.TarEarlyWin)), 1.35, 'Erl','Color',c,...
+        'HorizontalAlignment','center');
+end
+
 % First lick Histogram for target and reference
 subplot(4,4,9:10)
 hold off;

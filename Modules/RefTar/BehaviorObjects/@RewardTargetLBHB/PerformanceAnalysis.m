@@ -1,3 +1,4 @@
+
 function exptparams = PerformanceAnalysis (o, HW, StimEvents, globalparams, exptparams, TrialIndex, LickData)
 % EarlyResponse: lick during the Early window after target. Early response causes the trial to stop immediately and a timeout.
 % Hit: lick during Response window after the target. This is a correct response to the target and the water reward will be given.
@@ -24,14 +25,17 @@ LickData(LickData>=0.5)=1;
 
 global StopExperiment;
 fs = HW.params.fsAI;
-StopTargetFA = get(o,'StopTargetFA');
 
 % Recalculate response windows to permit offline analysis
 NumRef = 0;
 parms=get(o);
+StopTargetFA=parms.StopTargetFA;
 ThisTargetNote=[];
 FirstRefTime=nan;
-FirstTarTime=nan;
+FirstTarTime=inf;
+TarResponseWin=nan;
+TarEarlyWin=nan;
+TarOffTime=0;
 for cnt1 = 1:length(StimEvents);
     [Type, Note, StimRefOrTar] = ParseStimEvent(StimEvents(cnt1));
     if strcmpi(Type,'Stim')
@@ -44,7 +48,8 @@ for cnt1 = 1:length(StimEvents);
               RefEarlyWin=[StimEvents(cnt1).StartTime ...
                 StimEvents(cnt1).StartTime + parms.EarlyWindow];
             end
-            RefResponseWin = StimEvents(cnt1).StartTime + parms.EarlyWindow;
+            RefResponseWin = [StimEvents(cnt1).StartTime + parms.EarlyWindow ...
+                StimEvents(cnt1).StopTime + parms.EarlyWindow];
         elseif strcmpi(StimRefOrTar,'Target'),
             FirstTarTime= StimEvents(cnt1).StartTime;
             TarResponseWin = [StimEvents(cnt1).StartTime + parms.EarlyWindow ...
@@ -84,14 +89,12 @@ for cnt1 = 1:length(StimEvents);
         end
     end
 end
-% Doesn't work offline: Load saved parameters about response windows, generated in
-% BehaviorControl.m
-% RefResponseWin = exptparams.RefResponseWin;
-% RefEarlyWin = exptparams.RefEarlyWin;
-% TarResponseWin = exptparams.TarResponseWin;
-% TarEarlyWin=exptparams.TarEarlyWin;
-% NumRef=exptparams.NumRef;
-% 
+if isnan(TarResponseWin),
+    NullTrial=1;
+else
+    NullTrial=0;
+end
+
 LickData = max(0,diff(LickData));
 % what we need to procude here are:
 %  1) histogram of first lick for each reference and target
@@ -109,20 +112,29 @@ for cnt2 = 1:NumRef
     if ~isempty(temp), RefFirstLick(cnt2) = temp; else RefFirstLick(cnt2) = nan;end
     RefFalseAlarm(cnt2) = double(~isempty([find(RefEarlyLicks{cnt2});find(RefResponseLicks{cnt2})]));
 end
-TarResponseLick = LickData(max(1,round(fs*TarResponseWin(1))):min(length(LickData),round(fs*TarResponseWin(2))));
-% in an ineffective trial, discard the lick during target because target
-% was never played:
-FalseAlarm = sum(RefFalseAlarm)/NumRef;
-TarEarlyLick = LickData(round(fs*max(1,TarEarlyWin(1))):round(min(length(LickData),fs*TarEarlyWin(2))));
-if (FalseAlarm>=StopTargetFA)  % in ineffective
-    TarResponseLick = zeros(size(TarResponseLick));
-    TarEarlyLick    = zeros(size(TarEarlyLick));
+%FalseAlarm = sum(RefFalseAlarm)/NumRef;
+if NullTrial,
+    RefFalseAlarm=sum(LickData)>0;
+    FalseAlarm=sum(LickData)>0;
+    TarResponseLick=0;
+    TarEarlyLick=0;
+    TarFirstLick=nan;
+else
+    RefFalseAlarm=(sum(LickData(1:min(length(LickData),fs*TarResponseWin(1))))>0);
+    FalseAlarm=(sum(LickData(1:min(length(LickData),fs*TarResponseWin(1))))>0);
+    TarResponseLick = LickData(max(1,round(fs*TarResponseWin(1))):min(length(LickData),round(fs*TarResponseWin(2))));
+    TarEarlyLick = LickData(round(fs*max(1,TarEarlyWin(1))):round(min(length(LickData),fs*TarEarlyWin(2))));
+    if (FalseAlarm>=StopTargetFA)  % in ineffective
+        TarResponseLick = zeros(size(TarResponseLick));
+        TarEarlyLick    = zeros(size(TarEarlyLick));
+    end
+    if ~isempty(find(TarEarlyLick,1)) % in early
+        TarResponseLick = zeros(size(TarResponseLick));
+    end
+    TarFirstLick = find([zeros(size(TarEarlyLick)) ;TarResponseLick],1)/fs;
+    if isempty(TarFirstLick), TarFirstLick = nan;end
 end
-if ~isempty(find(TarEarlyLick,1)) % in early 
-    TarResponseLick = zeros(size(TarResponseLick));
-end
-TarFirstLick = find([zeros(size(TarEarlyLick)) ;TarResponseLick],1)/fs;
-if isempty(TarFirstLick), TarFirstLick = nan;end
+
 % a special performance is calculated here for the graph that shows the hit
 % and false alram based on the position of the target/reference:
 % record the first lick time for ref and tar
@@ -155,34 +167,36 @@ perf(cnt2).EarlyTrial   = double(perf(cnt2).WarningTrial && ~isempty(find(TarEar
 perf(cnt2).Hit          = double(perf(cnt2).WarningTrial && ~perf(cnt2).EarlyTrial && ~isempty(find(TarResponseLick,1))); % if there is a lick in target response window, its a hit
 perf(cnt2).Miss         = double(perf(cnt2).WarningTrial && ~perf(cnt2).EarlyTrial && ~perf(cnt2).Hit);
 perf(cnt2).ReferenceLickTrial = double((perf(cnt2).FalseAlarm>0));
-%
+perf(cnt2).NullTrial=NullTrial;
+NullTrial=cat(1,perf.NullTrial);
 perf(cnt2).LickRate = length(find(LickData)) / length(LickData);
 
 perf(cnt2).FirstLickTime = min([find(LickData,1)./fs Inf]);
 perf(cnt2).FirstRefTime = FirstRefTime;
 perf(cnt2).FirstTarTime = FirstTarTime;
 % Now calculate hit and miss rates:
-TotalWarn                   = sum(cat(1,perf.WarningTrial));
-perf(cnt2).HitRate          = sum(cat(1,perf.Hit)) / TotalWarn;
-perf(cnt2).MissRate         = sum(cat(1,perf.Miss)) / TotalWarn;
-perf(cnt2).EarlyRate        = sum(cat(1,perf.EarlyTrial))/TotalWarn;
-perf(cnt2).WarningRate      = sum(cat(1,perf.WarningTrial))/TrialIndex;
-perf(cnt2).IneffectiveRate  = sum(cat(1,perf.Ineffective))/TrialIndex;
+TotalWarn                   = sum(cat(1,perf.WarningTrial) & ~NullTrial);
+perf(cnt2).HitRate          = sum(cat(1,perf.Hit) & ~NullTrial) / TotalWarn;
+perf(cnt2).MissRate         = sum(cat(1,perf.Miss) & ~NullTrial) / TotalWarn;
+perf(cnt2).EarlyRate        = sum(cat(1,perf.EarlyTrial) & ~NullTrial)/TotalWarn;
+perf(cnt2).WarningRate      = sum(cat(1,perf.WarningTrial) & ~NullTrial)/sum(~NullTrial);
+perf(cnt2).IneffectiveRate  = sum(cat(1,perf.Ineffective) & ~NullTrial)/sum(~NullTrial);
 % this is for trials without Reference. We dont count them in FalseAlarm
 % calculation:
-tt = cat(1,perf.FalseAlarm);
+tt = cat(1,perf(find(~NullTrial)).FalseAlarm);
 tt(find(isnan(tt)))=[];
 perf(cnt2).FalseAlarmRate   = sum(tt)/length(tt);
 perf(cnt2).DiscriminationRate = perf(cnt2).HitRate * (1-perf(cnt2).FalseAlarmRate);
 %also, calculate the stuff for this trial block:
 RecentIndex = max(1 , TrialIndex-exptparams.TrialBlock+1):TrialIndex;
-tt = cat(1,perf(RecentIndex).FalseAlarm);
+tt = cat(1,perf(RecentIndex(find(~NullTrial(RecentIndex)))).FalseAlarm);
 tt(find(isnan(tt)))=[];
 perf(cnt2).RecentFalseAlarmRate   = sum(tt)/length(tt);
-perf(cnt2).RecentHitRate         = sum(cat(1,perf(RecentIndex).Hit))/sum(cat(1,perf(RecentIndex).WarningTrial));
+perf(cnt2).RecentHitRate         = sum(cat(1,perf(RecentIndex).Hit) & ~NullTrial(RecentIndex))/sum(cat(1,perf(RecentIndex).WarningTrial));
 perf(cnt2).RecentDiscriminationRate = perf(cnt2).RecentHitRate * (1-perf(cnt2).RecentFalseAlarmRate);
 %
 perf(cnt2).TarResponseWinStart=TarResponseWin(1);
+
 
 % target-specific HR / RT
 perf(cnt2).ThisTargetNote=ThisTargetNote;
@@ -197,23 +211,26 @@ if isfield(exptparams,'UniqueTargets') && length(exptparams.UniqueTargets)>1 &&.
     end
 else
     UniqueCount=1;
+    trialtargetid=double(~NullTrial);
 end
 
 perf(cnt2).uWarningTrial=zeros(1,UniqueCount);
 perf(cnt2).uHit=zeros(1,UniqueCount).*nan;
-if perf(cnt2).WarningTrial,
+if perf(cnt2).WarningTrial && trialtargetid(cnt2)>0,
     perf(cnt2).uWarningTrial(trialtargetid(cnt2))=perf(cnt2).WarningTrial;
     perf(cnt2).uHit(trialtargetid(cnt2))=perf(cnt2).Hit;
 end
 perf(cnt2).uHitRate = nanmean(cat(1,perf.uHit),1);
 perf(cnt2).ReactionTime=exptparams.FirstLick.Tar(cnt2);
 perf(cnt2).uReactionTime=zeros(1,UniqueCount).*nan;
-perf(cnt2).uReactionTime(trialtargetid(cnt2))=perf(cnt2).ReactionTime;
-
+if trialtargetid(cnt2)>0,
+    perf(cnt2).uReactionTime(trialtargetid(cnt2))=perf(cnt2).ReactionTime;
+end
 
 % now determine what this trial outcome is:
 if perf(cnt2).Hit, perf(cnt2).ThisTrial = 'Hit';end
-if perf(cnt2).Miss, perf(cnt2).ThisTrial = 'Miss';end
+if perf(cnt2).Miss && ~perf(cnt2).NullTrial, perf(cnt2).ThisTrial = 'Miss';end
+if perf(cnt2).Miss && perf(cnt2).NullTrial, perf(cnt2).ThisTrial = 'Corr.Rej.';end
 if perf(cnt2).EarlyTrial, perf(cnt2).ThisTrial = 'Early';end
 if perf(cnt2).Ineffective, perf(cnt2).ThisTrial = 'Ineffective';end
 
@@ -255,12 +272,14 @@ elseif strcmpi(trialparms.descriptor,'RepDetect'),
     stimtime=[];
     tcounter=[];
     for tt=1:cnt2,
-        RefCount=sum(PossibleRefTimes<perf(tt).FirstTarTime);
-        stimtime=cat(1,stimtime,PossibleRefTimes(1:RefCount),...
-                     perf(tt).FirstTarTime);
-        resptime=cat(1,resptime,ones(RefCount+1,1).*perf(tt).FirstLickTime);
-        stimtype=cat(1,stimtype,zeros(RefCount,1),1);
-        tcounter=cat(1,tcounter,ones(RefCount+1,1).*trialtargetid(tt));
+        if ~perf(tt).NullTrial,
+            RefCount=sum(PossibleRefTimes<perf(tt).FirstTarTime);
+            stimtime=cat(1,stimtime,PossibleRefTimes(1:RefCount),...
+                perf(tt).FirstTarTime);
+            resptime=cat(1,resptime,ones(RefCount+1,1).*perf(tt).FirstLickTime);
+            stimtype=cat(1,stimtype,zeros(RefCount,1),1);
+            tcounter=cat(1,tcounter,ones(RefCount+1,1).*trialtargetid(tt));
+        end
     end
 else
     % "easy" -- either respond to sound onset or target
@@ -272,13 +291,14 @@ else
 end
 
 %keepidx=find(stimtype==0 | stimtime<resptime);
+resptime(resptime==0)=inf;
 keepidx=find(stimtime<resptime);
 stimtime=stimtime(keepidx);
 stimtype=stimtype(keepidx);
 resptime=resptime(keepidx);
 tcounter=tcounter(keepidx);
 stop_respwin=get(exptparams.BehaveObject,'EarlyWindow')+...
-    get(exptparams.BehaveObject,'ResponseWindow');
+    get(exptparams.BehaveObject,'ResponseWindow')+0.5;
 
 [di,hits,fas,tsteps]=compute_di(stimtime,resptime,stimtype,stop_respwin);
 %[perf(cnt2).FirstLickTime di max(hits) max(fas)]
@@ -310,7 +330,7 @@ for cnt1 = 1:length(PerfFields)
         %not divide by number of trials, just make it percentage:
         perfPer.(PerfFields{cnt1}) = round(perf(cnt2).(PerfFields{cnt1})*100);
     else
-        if isnumeric(perf(cnt2).(PerfFields{cnt1}))
+        if isnumeric(perf(cnt2).(PerfFields{cnt1})) && ~isempty(perf(cnt2).(PerfFields{cnt1}))
             perfPer.(PerfFields{cnt1})(1) = sum(cat(1,perf.(PerfFields{cnt1})));
             perfPer.(PerfFields{cnt1})(2) = TotalWarn; % by default
         else
@@ -332,25 +352,25 @@ if TrialIndex==1 && isfield(exptparams,'PositionHit'),
   exptparams.PositionFalseAlarm(:)=0;
 end
 if isfield(exptparams,'UniqueTarResponseWinStart'),
+  if ~NullTrial
+      PositionThisTrial=find(exptparams.UniqueTarResponseWinStart==TarResponseWin(1));
   
-  PositionThisTrial=find(exptparams.UniqueTarResponseWinStart==TarResponseWin(1));
-  
-  if ~isfield(exptparams,'PositionHit')  || (size(exptparams.PositionHit,1)<PositionThisTrial)
-    exptparams.PositionHit(PositionThisTrial,1:2) = 0;
-  end
-  if (PositionThisTrial>0) && ((~isfield(exptparams,'PositionFalseAlarm')) ...
-      || (size(exptparams.PositionFalseAlarm,1)<PositionThisTrial))
-    exptparams.PositionFalseAlarm(PositionThisTrial,1:2) = 0;
-  end
-  if perf(cnt2).WarningTrial
-    exptparams.PositionHit(PositionThisTrial,1) = exptparams.PositionHit(PositionThisTrial,1) + perf(cnt2).Hit;
-    exptparams.PositionHit(PositionThisTrial,2) = exptparams.PositionHit(PositionThisTrial,2) + 1;
-  end
-  for cnt1 = 1:PositionThisTrial
-    exptparams.PositionFalseAlarm (cnt1,1) = exptparams.PositionFalseAlarm(cnt1,1) + RefFalseAlarm(1);
-    exptparams.PositionFalseAlarm (cnt1,2) = exptparams.PositionFalseAlarm(cnt1,2) + 1;
-  end
-  
+      if ~isfield(exptparams,'PositionHit')  || (size(exptparams.PositionHit,1)<PositionThisTrial)
+          exptparams.PositionHit(PositionThisTrial,1:2) = 0;
+      end
+      if perf(cnt2).WarningTrial
+          exptparams.PositionHit(PositionThisTrial,1) = exptparams.PositionHit(PositionThisTrial,1) + perf(cnt2).Hit;
+          exptparams.PositionHit(PositionThisTrial,2) = exptparams.PositionHit(PositionThisTrial,2) + 1;
+      end
+      if (PositionThisTrial>0) && ((~isfield(exptparams,'PositionFalseAlarm')) ...
+              || (size(exptparams.PositionFalseAlarm,1)<PositionThisTrial))
+          exptparams.PositionFalseAlarm(PositionThisTrial,1:2) = 0;
+      end
+      for cnt1 = 1:PositionThisTrial
+          exptparams.PositionFalseAlarm (cnt1,1) = exptparams.PositionFalseAlarm(cnt1,1) + RefFalseAlarm(1);
+          exptparams.PositionFalseAlarm (cnt1,2) = exptparams.PositionFalseAlarm(cnt1,2) + 1;
+      end
+  end  
 else
   if ~isfield(exptparams,'PositionHit')  || (size(exptparams.PositionHit,1)<NumRef+1)
     exptparams.PositionHit(NumRef+1,1:2) = 0;

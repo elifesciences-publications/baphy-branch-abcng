@@ -132,9 +132,20 @@ elseif ~isempty(tag_masks) && length(tag_masks{1})>=16 && strcmp(tag_masks{1}(1:
         end
         
         % check for discrim arrangement, ie, if every other post-stim
-        % silence is zero
+        % silence is zero (special check for CLK tasks with gap by
+        % simply asking if there are two targets per trial)
+        tarstim=zeros(size(eventtime));
+        for ii=1:length(Note),
+            if ~isempty(findstr(Note{ii},'Target')),
+                tarstim(ii)=1;
+            end
+        end
+        [btar,~,jjtar]=unique(evtrials(find(tarstim)));
         dd=eventtimeoff-xx;
-        if (sum(dd(1:2:end)>0)==0 & sum(dd(2:2:end)==0)==0)
+        if length(jjtar)==length(btar).*2 ||... 
+                (sum(dd(1:2:end)>0)==0 & sum(dd(2:2:end)==0)==0)
+            % ie, two targets per trial or funny case of 0 gap
+            % between pairs of stimuli
             eventtime=eventtime(1:2:end);
             evtrials=evtrials(1:2:end);
             eventtimeoff=eventtimeoff(2:2:end);
