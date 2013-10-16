@@ -13,7 +13,9 @@ function [LickEvents, exptparams] = BehaviorControl(o, HW, StimEvents, ...
 BehaviorParms=get(o);
 NumRef = 0;
 BehaviorParms.TrainingPumpDur=ifstr2num(BehaviorParms.TrainingPumpDur);
-
+TarResponseWin=[];
+TarEarlyWin=[];
+TarOffTime=0;
 for cnt1 = 1:length(StimEvents);
     [Type, ~, StimRefOrTar] = ParseStimEvent(StimEvents(cnt1));
     if strcmpi(Type,'Stim')
@@ -21,7 +23,8 @@ for cnt1 = 1:length(StimEvents);
             NumRef=NumRef+1;
             RefEarlyWin=[StimEvents(cnt1).StartTime ...
                 StimEvents(cnt1).StartTime + BehaviorParms.EarlyWindow];
-            RefResponseWin = StimEvents(cnt1).StartTime + BehaviorParms.EarlyWindow;
+            RefResponseWin = [StimEvents(cnt1).StartTime + BehaviorParms.EarlyWindow ...
+                StimEvents(cnt1).StopTime + BehaviorParms.EarlyWindow];
         elseif strcmpi(StimRefOrTar,'Target'),
             TarResponseWin = [StimEvents(cnt1).StartTime + BehaviorParms.EarlyWindow ...
                 StimEvents(cnt1).StartTime + BehaviorParms.ResponseWindow + BehaviorParms.EarlyWindow];
@@ -34,6 +37,11 @@ for cnt1 = 1:length(StimEvents);
         end
     end
 end
+if isempty(TarResponseWin),
+    NullTrial=1;
+else
+    NullTrial=0;
+end
 
 disp('');
 disp('------------------------------------------------------------------');
@@ -42,7 +50,8 @@ fprintf('  BehaviorControl --- starting trial %d (%d for this rep)\n',...
 disp('------------------------------------------------------------------');
 disp('');
 
-RewardThisTrial=1;
+RewardHits=1;
+RewardFAs=1;
 
 TrialObject=exptparams.TrialObject;
 TrialObjectParms=get(TrialObject);
@@ -63,9 +72,14 @@ if strcmp(TrialObjectParms.descriptor,'MultiRefTar'),
   end
   TargetIdxFreq=TargetIdxFreq./sum(TargetIdxFreq);
   if TargetIdxFreq(ThisTargetIdx)<BehaviorParms.RewardTargetMinFrequency,
-    RewardThisTrial=0;
+    RewardHits=0;
     disp('Rare target: Not rewarding this trial');
   end
+end
+if NullTrial && strcmpi(BehaviorParms.RewardNullTrials,'No'),
+    RewardFAs=0;
+    RewardHits=0;
+    disp('Null trial: Not rewarding this trial');
 end
 
 CommonTarget=1;
@@ -155,7 +169,8 @@ while CurrentTime < exptparams.LogDuration  % while trial is not over
     LastLick = ThisLick;
     
     % find out if we are in the reference or target part
-    if ~isempty(RefResponseWin) && CurrentTime<RefResponseWin(end)   
+    if (~isempty(RefResponseWin) && CurrentTime<RefResponseWin(end)) ||...
+            NullTrial,
         StimPos = length(find(RefResponseWin<CurrentTime)); 
         % stim pos tells us whether we
         % are "IN" the windows calculated above or outside of it
@@ -175,28 +190,32 @@ while CurrentTime < exptparams.LogDuration  % while trial is not over
         ev.StartTime=IOGetTimeStamp(HW);
         ev.StopTime=ev.StartTime;
         LickEvents=AddEvent(LickEvents,ev,TrialIndex);
-        if strcmpi(get(o,'TurnOnLight'),'FalseAlarm')
-            [~,ev] = IOLightSwitch (HW, 1, .2);
+        if RewardFAs,
+            if strcmpi(get(o,'TurnOnLight'),'FalseAlarm')
+                [~,ev] = IOLightSwitch (HW, 1, .2);
+                LickEvents = AddEvent(LickEvents, ev, TrialIndex);
+            end
+            if strcmpi(get(o,'TurnOffLight'),'FalseAlarm'),
+                ev = IOLightSwitch(HW,1,ifstr2num(get(o,'TimeOut')),'Start',0,0,'Light2');
+            end
+            if strcmpi(get(o,'Shock'),'FalseAlarm')
+                ev = IOControlShock (HW, .2, 'Start');
+                LickEvents = AddEvent(LickEvents, ev, TrialIndex);
+            end
+            disp('Stopping sound');
+            ev = IOStopSound(HW);
             LickEvents = AddEvent(LickEvents, ev, TrialIndex);
+            FAThisTrial=1;
+            break;
+        else
+            disp('Null trial, recording lick, no behavior impact');
         end
-        if strcmpi(get(o,'TurnOffLight'),'FalseAlarm'),
-           ev = IOLightSwitch(HW,1,ifstr2num(get(o,'TimeOut')),'Start',0,0,'Light2');
-        end
-        if strcmpi(get(o,'Shock'),'FalseAlarm')
-            ev = IOControlShock (HW, .2, 'Start');
-            LickEvents = AddEvent(LickEvents, ev, TrialIndex);
-        end
-        disp('Stopping sound');
-        ev = IOStopSound(HW);
-        LickEvents = AddEvent(LickEvents, ev, TrialIndex);
-        FAThisTrial=1;
-        break;
     end
 
     % CHECK FOR HIT - Lick in target response window
-    if (Lick) && mod(StimPos,2) && ~isequal(TarFlag,StimPos) && ~Ref && RewardThisTrial,
+    if (Lick) && mod(StimPos,2) && ~isequal(TarFlag,StimPos) && ~Ref && RewardHits,
        HitThisTrial = 1;
-       if RewardThisTrial, 
+       if RewardHits, 
           disp('Hit -- Starting pump.');
           if StopTargetFA<1
              WaterFraction = 1-FalseAlarm;
@@ -240,19 +259,20 @@ while CurrentTime < exptparams.LogDuration  % while trial is not over
 end
 IOStopSound(HW);
 
-if FAThisTrial,
-  PauseTime = ifstr2num(get(o,'TimeOut'));
-  fprintf('FA -- time out %.1f sec\n',PauseTime);
+if FAThisTrial && RewardFAs,
+    % don't punish FAs if NullTrial and RewardNullTrials=='No'
+   PauseTime = ifstr2num(get(o,'TimeOut'));
+   fprintf('FA -- time out %.1f sec\n',PauseTime);
 
-elseif HitThisTrial && RewardThisTrial,
+elseif HitThisTrial && RewardHits,
   PauseTime = ifstr2num(get(o,'CorrectITI'));
   fprintf('Hit -- pausing %.1f sec\n',PauseTime);
   
-elseif HitThisTrial && ~RewardThisTrial,
+elseif HitThisTrial && ~RewardHits,
   PauseTime = ifstr2num(get(o,'CorrectITI'));
   fprintf('Hit -- not rewarded -- pausing %.1f sec\n',PauseTime);
   
-elseif RewardThisTrial,
+elseif RewardHits,
   % TRUE MISS
   PauseTime = ifstr2num(get(o,'TimeOut'));
   ev=[];
@@ -264,25 +284,8 @@ elseif RewardThisTrial,
   
 else
   PauseTime = ifstr2num(get(o,'CorrectITI'));
-  fprintf('Correct reject -- pausing %.1f sec\n',PauseTime);
+  fprintf('Correct reject/unrewarded trial -- pausing %.1f sec\n',PauseTime);
 end
-
-% if ~HitThisTrial && RewardThisTrial,
-%   PauseTime = ifstr2num(get(o,'TimeOut'));
-%   if ~FAThisTrial, % not a hit or FA so must be a MISS
-%     ev=[];
-%     ev.Note='OUTCOME,MISS';
-%     ev.StartTime=IOGetTimeStamp(HW);
-%     ev.StopTime=ev.StartTime;
-%     LickEvents=AddEvent(LickEvents,ev,TrialIndex);
-%     fprintf('Miss -- time out %.1f sec\n',PauseTime);
-%   else
-%   end
-%   %TimeOut = TimeOut * (1+2*FalseAlarm);
-% else
-%   PauseTime = ifstr2num(get(o,'CorrectITI'));
-%   fprintf('Hit / successful no response  -- pausing %.1f sec\n',PauseTime);
-% end
 
 if strcmpi(BehaviorParms.ITICarryOverToPreTrial,'No'),
     ThisTime = clock;
