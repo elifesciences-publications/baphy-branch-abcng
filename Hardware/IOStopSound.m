@@ -13,7 +13,7 @@ function ev = IOStopSound (HW);
 
 if strcmpi(IODriver(HW),'NIDAQMX'),
   if HW.params.HWSetup==0,
-      %disp('stopping Test mode sound');
+      disp('stopping Test mode sound');
       stop(HW.AO);                % stop interfaces
   else
     

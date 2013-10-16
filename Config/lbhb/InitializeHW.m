@@ -24,7 +24,8 @@ switch globalparams.HWSetup
     % create an audioplayer object which lets us control
     % start, stop, smapling rate , etc.
     HW.AO = audioplayer(rand(4000,1), HW.params.fsAO);
-    HW.AI = HW.AO;
+    %HW=IOMicTTLSetup(HW);
+    %start(HW.AI);
     HW.DIO.Line.LineName = {'Touch','TouchL','TouchR'};
     
   case 1,  % (SB-1) SMALL BOOTH 1

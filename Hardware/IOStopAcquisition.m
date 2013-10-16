@@ -1,4 +1,4 @@
-function [ev,HW] = IOStopAcquisition (HW);
+function [ev,HW] = IOStopAcquisition (HW)
 % function ev = IOStopAcquisition (HW);
 %
 % This function stops the data acquisition which can mean different things:
@@ -20,7 +20,10 @@ ev.Note='TRIALSTOP';
 if strcmpi(IODriver(HW),'NIDAQMX'),
   if HW.params.HWSetup==0,
     % don't do anything
-    
+    %if isrunning(HW.AO),
+    stop(HW.AO);
+    %end
+    stop(HW.AI);
   else
     
     % Configure Triggers

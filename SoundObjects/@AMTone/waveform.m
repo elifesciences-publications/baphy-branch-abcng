@@ -67,7 +67,7 @@ end
 
 timesamples = (1 : round(Duration*SamplingRate))' / SamplingRate;
 w=zeros(size(timesamples));
-
+LightStim=0;
 if index<=TotalCount,
    % ie, only run this if not a silent trial
    
@@ -100,11 +100,12 @@ if index<=TotalCount,
       LightStim=0;
    else
       % light stim, no carrier
-      w0(:)=1;
+      w0 = sin(2*pi*100*timesamples);
+      %w0(:)=1;
       LightStim=1;
    end
       
-   if AM(i1AM)>0,
+   if AM(i1AM)>0; % & ~LightStim,
       w0=w0.*(1-ModDepth(i1AM) + ModDepth(i1AM) .* ...
          abs(sin(pi*AM(i1AM)*timesamples)) ./ 0.4053);
    end
@@ -164,9 +165,13 @@ end
 % Now, put it in the silence:
 w = [zeros(PreStimSilence*SamplingRate,1) ; w(:) ;zeros(PostStimSilence*SamplingRate,1)];
 if LightStim,
-   w=[zeros(size(w)) w];
+    fprintf('light trial (min/max = %.1f/%.1f)\n',min(w(:)),max(w(:)));
+    %w=[w w]*2;
+    w=[zeros(size(w)) w]*2;
 elseif LightStimPerRep>0,
-   w=[w zeros(size(w))];
+    disp('sound trial');
+    w=[w zeros(size(w))];
+    %w=[zeros(size(w)) w];
 end
 
 % and generate the event structure:

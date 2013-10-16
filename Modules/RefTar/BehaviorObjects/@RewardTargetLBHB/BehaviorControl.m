@@ -110,7 +110,6 @@ elseif strcmpi(BehaviorParms.Light3,'OnTarget2Blocks') && CommonTarget==2,
     IOLightSwitch(HW, 1, 0,'Start',0,0,'Light3');
 end
 
-
 % save parameters for PerformanceAnalysis:
 exptparams.RefResponseWin  = RefResponseWin;
 exptparams.RefEarlyWin  = RefEarlyWin;
@@ -142,7 +141,7 @@ else
 end
 fprintf('Target window: %.1f-%.1f sec\n',TarResponseWin(1:2));
 while CurrentTime < exptparams.LogDuration  % while trial is not over
-    ThisLick = IOLickRead(HW);  
+    ThisLick = IOLickRead(HW);
     Lick = ThisLick & ~LastLick;
     if Lick,
         ev=[];
@@ -237,6 +236,9 @@ while CurrentTime < exptparams.LogDuration  % while trial is not over
     end
     
     CurrentTime = IOGetTimeStamp(HW);
+    if globalparams.HWSetup==0,
+        pause(0.01);
+    end
 end
 IOStopSound(HW);
 
