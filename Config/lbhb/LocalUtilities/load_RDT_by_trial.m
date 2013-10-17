@@ -10,7 +10,7 @@
 % created SVD 2013-10-11
 %
 function [r,params]=load_RDT_by_trial(parmfile,spikefile,options)
-
+    
     if ~exist('options','var'),
         options=struct();
         options.lfp=getparm(options,'lfp',0);

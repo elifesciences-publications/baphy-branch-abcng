@@ -12,6 +12,16 @@ function [HW, globalparams] = InitializeHW (globalparams)
 
 global FORCESAMPLINGRATE
 
+if ~exist('globalparams','var')
+    globalparams=struct();
+end
+if ~isfield(globalparams,'HWSetup'),
+    globalparams.HWSetup=0;
+end
+if ~isfield(globalparams,'Physiology'),
+    globalparams.Physiology='No';
+end
+
 % create a default HW structure
 HW=HWDefaultNidaq(globalparams);
 
