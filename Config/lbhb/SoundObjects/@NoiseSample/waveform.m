@@ -31,7 +31,7 @@ elseif isempty(STREAMNOISEWAV),
       p.Count,round(p.Duration.*1000),p.LowFreq,p.HighFreq,...
       40,p.FreqCorr,p.TempCorr,.5,p.SamplingRate,1);
    for t=1:p.Count,
-      STREAMNOISEWAV(t,:)=hann(temp_wav(t,:),10,p.SamplingRate);
+      STREAMNOISEWAV(t,:)=hann(STREAMNOISEWAV(t,:),10,p.SamplingRate);
    end
    
    % restore random number generator to previous state

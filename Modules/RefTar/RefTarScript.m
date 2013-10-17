@@ -19,7 +19,8 @@ global BAPHY_LAB
 
 BehaveObject = exptparams.BehaveObject;
 
-if strcmpi(exptparams.BehaveObjectClass,'MriPassive'),
+if strcmpi(exptparams.BehaveObjectClass,'MriPassive') && ...
+        get(BehaveObject,'DelayAfterScanTTL')==0,
    disp('MriPassive: press a key to synchronize with start of MRI scan ...');
    pause
 end

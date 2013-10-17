@@ -21,8 +21,8 @@ events(1).Trial = TrialIndex;
 LastEvent = PreTrialSilence;
 
 % generate the reference sound
-RefTrialIndex=par.Sequences{par.SequenceIdx(TrialIndex)};
-RefCount=par.SequenceCategories(par.SequenceIdx(TrialIndex));
+RefTrialIndex=par.Sequences{par.ThisRepIdx(TrialIndex)};
+RefCount=par.ReferenceCount(par.ThisRepIdx(TrialIndex));
 RandStreamScaleBy=10^(par.RelativeTarRefdB/20);
 PreTargetScaleBy=10^(-par.PreTargetAttenuatedB/20);
 
@@ -30,7 +30,7 @@ Names=get(RefObject,'Names');
 SampleCount=size(RefTrialIndex,1);
 for cnt1 = 1:SampleCount  % go through all the sound samples in the trial
     for jj=1:max(find(RefTrialIndex(cnt1,:)>0)),
-        [tw,ev]=waveform(RefObject, RefTrialIndex(cnt1,jj),TrialIndex);
+        [tw,ev]=waveform(RefObject, RefTrialIndex(cnt1,jj));
         if jj==1,
             w=tw;
             Note=ev(2).Note;

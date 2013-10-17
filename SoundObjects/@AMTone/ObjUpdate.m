@@ -33,7 +33,7 @@ Frequencies=round(2.^(lfset(1:2:end)));
 MidFreqs=round(2.^(lfset(2:2:end)));
 
 if LightStimPerRep>0,
-   Frequencies=[Frequencies -ones(1,LightStimPerRep)]
+   Frequencies=[Frequencies -ones(1,LightStimPerRep)];
    MidFreqs=[MidFreqs -ones(1,LightStimPerRep)];
    Count=Count+LightStimPerRep;
 end
