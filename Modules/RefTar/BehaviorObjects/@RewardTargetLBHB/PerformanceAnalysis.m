@@ -168,31 +168,31 @@ perf(cnt2).Hit          = double(perf(cnt2).WarningTrial && ~perf(cnt2).EarlyTri
 perf(cnt2).Miss         = double(perf(cnt2).WarningTrial && ~perf(cnt2).EarlyTrial && ~perf(cnt2).Hit);
 perf(cnt2).ReferenceLickTrial = double((perf(cnt2).FalseAlarm>0));
 perf(cnt2).NullTrial=NullTrial;
-NullTrial=cat(1,perf.NullTrial);
+NullTrials=cat(1,perf.NullTrial);
 perf(cnt2).LickRate = length(find(LickData)) / length(LickData);
 
 perf(cnt2).FirstLickTime = min([find(LickData,1)./fs Inf]);
 perf(cnt2).FirstRefTime = FirstRefTime;
 perf(cnt2).FirstTarTime = FirstTarTime;
 % Now calculate hit and miss rates:
-TotalWarn                   = sum(cat(1,perf.WarningTrial) & ~NullTrial);
-perf(cnt2).HitRate          = sum(cat(1,perf.Hit) & ~NullTrial) / TotalWarn;
-perf(cnt2).MissRate         = sum(cat(1,perf.Miss) & ~NullTrial) / TotalWarn;
-perf(cnt2).EarlyRate        = sum(cat(1,perf.EarlyTrial) & ~NullTrial)/TotalWarn;
-perf(cnt2).WarningRate      = sum(cat(1,perf.WarningTrial) & ~NullTrial)/sum(~NullTrial);
-perf(cnt2).IneffectiveRate  = sum(cat(1,perf.Ineffective) & ~NullTrial)/sum(~NullTrial);
+TotalWarn                   = sum(cat(1,perf.WarningTrial) & ~NullTrials);
+perf(cnt2).HitRate          = sum(cat(1,perf.Hit) & ~NullTrials) / TotalWarn;
+perf(cnt2).MissRate         = sum(cat(1,perf.Miss) & ~NullTrials) / TotalWarn;
+perf(cnt2).EarlyRate        = sum(cat(1,perf.EarlyTrial) & ~NullTrials)/TotalWarn;
+perf(cnt2).WarningRate      = sum(cat(1,perf.WarningTrial) & ~NullTrials)/sum(~NullTrials);
+perf(cnt2).IneffectiveRate  = sum(cat(1,perf.Ineffective) & ~NullTrials)/sum(~NullTrials);
 % this is for trials without Reference. We dont count them in FalseAlarm
 % calculation:
-tt = cat(1,perf(find(~NullTrial)).FalseAlarm);
+tt = cat(1,perf(find(~NullTrials)).FalseAlarm);
 tt(find(isnan(tt)))=[];
 perf(cnt2).FalseAlarmRate   = sum(tt)/length(tt);
 perf(cnt2).DiscriminationRate = perf(cnt2).HitRate * (1-perf(cnt2).FalseAlarmRate);
 %also, calculate the stuff for this trial block:
 RecentIndex = max(1 , TrialIndex-exptparams.TrialBlock+1):TrialIndex;
-tt = cat(1,perf(RecentIndex(find(~NullTrial(RecentIndex)))).FalseAlarm);
+tt = cat(1,perf(RecentIndex(find(~NullTrials(RecentIndex)))).FalseAlarm);
 tt(find(isnan(tt)))=[];
 perf(cnt2).RecentFalseAlarmRate   = sum(tt)/length(tt);
-perf(cnt2).RecentHitRate         = sum(cat(1,perf(RecentIndex).Hit) & ~NullTrial(RecentIndex))/sum(cat(1,perf(RecentIndex).WarningTrial));
+perf(cnt2).RecentHitRate         = sum(cat(1,perf(RecentIndex).Hit) & ~NullTrials(RecentIndex))/sum(cat(1,perf(RecentIndex).WarningTrial));
 perf(cnt2).RecentDiscriminationRate = perf(cnt2).RecentHitRate * (1-perf(cnt2).RecentFalseAlarmRate);
 %
 perf(cnt2).TarResponseWinStart=TarResponseWin(1);
@@ -211,7 +211,7 @@ if isfield(exptparams,'UniqueTargets') && length(exptparams.UniqueTargets)>1 &&.
     end
 else
     UniqueCount=1;
-    trialtargetid=double(~NullTrial);
+    trialtargetid=double(~NullTrials);
 end
 
 perf(cnt2).uWarningTrial=zeros(1,UniqueCount);

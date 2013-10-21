@@ -106,7 +106,9 @@ plot(110*AllIneffective,'r*','markersize',10);
 if isfield(exptparams.Performance,'NullTrial'),
     AllNull = cat(1,exptparams.Performance(1:TrialIndex).NullTrial);
     AllNull=find(AllNull==1);
-    plot(AllNull,110,'rs','markersize',10);
+    if ~isempty(AllNull),
+        plot(AllNull,110,'rs','markersize',10);
+    end
 end
 axis ([0 (TrialIndex+1) 0 115]);
 title(titleMes,'FontWeight','bold','interpreter','none');

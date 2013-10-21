@@ -69,9 +69,9 @@ for cnt1 = 1:SampleCount  % go through all the sound samples in the trial
        ev(cnt2).Trial = TrialIndex;
     end
     LastEvent = ev(end).StopTime;
-    if cnt1<=RefCount,
+    if cnt1>RefCount,
         % attenuate pre-target samples if PreTargetAttenuatedB>0
-        w=w.*PreTargetScaleBy;  
+        w=w./PreTargetScaleBy;
     end
     TrialSound = [TrialSound ;w];
     events = [events ev];
