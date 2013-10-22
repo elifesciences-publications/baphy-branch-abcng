@@ -216,6 +216,16 @@ for trialidx=1:TrialCount,
             end
             tw(:,end)=sum(tw(:,1:(end-1)),2);
             startbin=round(t2(evidx).*TrialFs);
+            
+            if isfield(exptparams.TrialObject,'PreTargetAttenuatedB'),
+                if strcmpi(strtrim(NoteParts{3}),'Reference'),
+                    PreTargetScaleBy=10^(-exptparams.TrialObject.PreTargetAttenuatedB/20);
+
+                    tw=tw.*PreTargetScaleBy;
+                end
+            end
+            
+            
             w(startbin+(1:size(tw,1)),1:size(tw,2))=tw;
             
         elseif istar && truncatetargets
@@ -257,6 +267,12 @@ for trialidx=1:TrialCount,
     
     if strcmpi(filtfmt,'none') || strcmpi(filtfmt,'wav') ||...
             strcmpi(filtfmt,'envelope'),
+        tstim=[];
+        for ww=1:size(w,2),
+            tstim=cat(2,tstim,resample(w(:,ww),fsout,...
+                exptparams.TrialObject.SamplingRate));
+        end
+        w=tstim;
         if trialidx==1,
             stim=zeros(size(w,2),MaxTrialLen,TrialCount).*nan;
         end
