@@ -31,8 +31,10 @@ HW.StimLength = size(stim,1)/HW.params.fsAO;
 % Nima, November 2005
 switch HW.params.HWSetup
   case {0},
-    HW.AO = audioplayer (stim/5, HW.params.fsAO); % the range for audioplayer is +-1,
-
+      disp('loading sound');
+      stop(HW.AO);
+      HW.AO = audioplayer(stim/10, HW.params.fsAO); % the range for audioplayer is +-1,
+      HW=IOMicTTLSetup(HW);
   otherwise    
 
     % INTRODUCE STEREO IF NOT RETURNED BY SOUND OBJECT

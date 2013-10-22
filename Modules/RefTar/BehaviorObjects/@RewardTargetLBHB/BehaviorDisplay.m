@@ -163,8 +163,7 @@ subplot(4,4,9:10)
 hold off;
 BinSize = 0.04;
 MaxBinTime=nanmax([exptparams.FirstLick.Tar exptparams.FirstLick.Tar])+BinSize;
-if isfield(exptparams,'UniqueTargets') && length(exptparams.UniqueTargets)>1 &&...
-        ~strcmpi(get(exptparams.TrialObject,'descriptor'),'RepDetect');
+if isfield(exptparams,'UniqueTargets') && length(exptparams.UniqueTargets)>1
   targetid={exptparams.Performance(1:TrialIndex).ThisTargetNote};
   
   % if multiple different targets (eg, catch trials) plot first lick

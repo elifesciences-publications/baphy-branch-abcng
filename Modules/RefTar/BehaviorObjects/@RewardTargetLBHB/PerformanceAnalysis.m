@@ -68,9 +68,20 @@ for cnt1 = 1:length(StimEvents);
                 if strcmpi(get(exptparams.TrialObject, 'Descriptor'),'MultiRefTar'),
                     tar=get(exptparams.TrialObject,'TargetHandle');
                     exptparams.UniqueTargets=get(tar,'Names');
+                elseif strcmpi(get(exptparams.TrialObject, 'Descriptor'),'RepDetect'),
+                    tar=get(exptparams.TrialObject,'TargetIdx');
+                    exptparams.UniqueTargets=cell(1,length(tar));
+                    for ii=1:length(tar),
+                        exptparams.UniqueTargets{ii}=sprintf('%02d',tar(ii));
+                    end
                 end
                 exptparams.UniqueTarResponseWinStart=[];
             end
+            if strcmpi(get(exptparams.TrialObject,'descriptor'),'RepDetect'),
+                ThisTargetNote=strsep(ThisTargetNote,'+',1);
+                ThisTargetNote=ThisTargetNote{1};
+            end
+            
             if ~isfield(exptparams,'UniqueTargets') || isempty(exptparams.UniqueTargets),
                 exptparams.UniqueTargets={ThisTargetNote};
                 exptparams.UniqueTarResponseWinStart=[];
@@ -202,8 +213,9 @@ perf(cnt2).TarResponseWinStart=TarResponseWin(1);
 perf(cnt2).ThisTargetNote=ThisTargetNote;
 
 trialtargetid=ones(cnt2,1);
-if isfield(exptparams,'UniqueTargets') && length(exptparams.UniqueTargets)>1 &&...
-        ~strcmpi(get(exptparams.TrialObject,'descriptor'),'RepDetect'),
+if isfield(exptparams,'UniqueTargets') && length(exptparams.UniqueTargets)>1,
+    %&&...
+    %    ~strcmpi(get(exptparams.TrialObject,'descriptor'),'RepDetect'),
     UniqueCount=length(exptparams.UniqueTargets);
     for tt=1:cnt2,
         trialtargetid(tt)=find(strcmp(perf(tt).ThisTargetNote,...

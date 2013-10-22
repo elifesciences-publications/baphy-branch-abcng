@@ -17,23 +17,28 @@ if ~iscell(LickNames) && ischar(LickNames) LickNames = {LickNames}; end
 
 switch HW.params.HWSetup
   case 0     % Test mode
-      global BAPHYHOME TOUCHSTATE0
-      TestFile=[BAPHYHOME filesep 'Config' filesep 'BaphyTestSettings.mat'];
-      if exist(TestFile,'file'),
-          g=[];
-          cc=0;
-          while cc<5 && isempty(g),
-              try
-                  g=load(TestFile);
-                  TOUCHSTATE0=g.TOUCHSTATE0;
-              catch
-                  disp('error loading test licks. trying again');
-              end
-          end
-          Lick=TOUCHSTATE0;
+      if isfield(HW,'AI') && ~isempty(HW.AI),
+        Lick=IOMicTTL(HW);
+
       else
-          %     Lick = TOUCHSTATE0; Lick = rand(size(LickNames))<0.01;
-          Lick=1;
+          global BAPHYHOME TOUCHSTATE0
+          TestFile=[BAPHYHOME filesep 'Config' filesep 'BaphyTestSettings.mat'];
+          if exist(TestFile,'file'),
+              g=[];
+              cc=0;
+              while cc<5 && isempty(g),
+                  try
+                      g=load(TestFile);
+                      TOUCHSTATE0=g.TOUCHSTATE0;
+                  catch
+                      disp('error loading test licks. trying again');
+                  end
+              end
+              Lick=TOUCHSTATE0;
+          else
+              %     Lick = TOUCHSTATE0; Lick = rand(size(LickNames))<0.01;
+              Lick=1;
+          end
       end
   otherwise % Real setups
     % finds appropriate digital line based on the name
