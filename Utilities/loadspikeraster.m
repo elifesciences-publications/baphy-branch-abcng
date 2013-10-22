@@ -649,7 +649,7 @@ if lfpclean
 end
 
 
-trialset=[];
+trialset=zeros(1,referencecount);
 for trialidx=trialrange,
     starttime=starttimes(find(starttrials==trialidx));
     stoptime=stoptimes(find(stoptrials==trialidx));
@@ -735,7 +735,7 @@ for trialidx=trialrange,
                r(1:rl,repidx,refidx)=raster((startbin+1):end);
             end
             trialset(repidx,refidx)=trialidx;
-            
+           
         end
     end
     drawnow;
