@@ -41,7 +41,7 @@ if ~isempty(HW) && isfield(HW,'aw'),
     end;
 end
 
-if isfield(HW.params,'HWSetup') && (HW.params.HWSetup==0),
+if isfield(HW,'params') && isfield(HW.params,'HWSetup') && (HW.params.HWSetup==0),
     if isfield(HW,'AI')
         stop(HW.AI);
     end

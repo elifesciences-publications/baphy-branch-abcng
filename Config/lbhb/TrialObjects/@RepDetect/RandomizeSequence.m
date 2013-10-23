@@ -48,7 +48,7 @@ if RepIndex==1 && RepOrTrial,
         switch par.Mode,
             case 'RepDetect',
                 if TrialIdx>TrialCount,
-                    refcount=refcount+par.TargetRepCount;
+                    refcount=refcount+round(par.TargetRepCount./2);
                     tarcount=0;
                     SequenceCategory=1;
                 else
@@ -57,14 +57,30 @@ if RepIndex==1 && RepOrTrial,
                 end
                 ThisSequence=zeros(refcount+tarcount,2);
                 for rr=1:refcount,
-                    if isempty(RefPool)
-                        RefPool=shuffle(1:par.ReferenceMaxIndex);
+                    if length(RefPool)<3,
+                        RefPool=[RefPool shuffle(1:par.ReferenceMaxIndex)];
                     end
+                    if rr>1,
+                        cc=0;
+                        while cc<10 && any(RefPool(1)==ThisSequence(rr-1,:)),
+                            % move repeating sample to end of RefPool;
+                            RefPool=[RefPool(2:end) RefPool(1)];
+                            cc=cc+1;
+                        end
+                        cc=0;
+                        while cc<10 && any(RefPool(2)==ThisSequence(rr-1,:)),
+                            % move repeating sample to end of RefPool;
+                            RefPool=[RefPool(1) RefPool(3:end) RefPool(2)];
+                            cc=cc+1;
+                        end
+                    end
+                    
                     ThisSequence(rr,:)=RefPool(1:2);
                     RefPool=RefPool(3:end);
                     if ismember(ThisSequence(rr,2),TargetIdx),
                         ThisSequence(rr,1:2)=ThisSequence(rr,[2 1]);
                     end
+                    
                 end
                 for tt=1:tarcount,
                     if isempty(RefDuringTarPool)
@@ -157,10 +173,11 @@ if ~RepOrTrial,
         InsertNull=0;
         RepeatLast=0;
     else
-        if strcmpi(exptparams.Performance(end).ThisTrial,'Miss'),
+        if strcmpi(exptparams.Performance(end).ThisTrial,'Miss')||...
+                strcmpi(exptparams.Performance(end).ThisTrial,'Corr.Rej.'),
             % no null trials after miss
             InsertNull=0;
-        else            
+        else
             % insert a Null trial if NullTrials flag selected
             InsertNull=par.NullTrials;
         end

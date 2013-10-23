@@ -6,7 +6,7 @@ if isempty(tar) && isempty(ref),
 elseif isempty(tar),
     
     switch  upper(get(ref,'descriptor'))
-      case {'TORC','TORC2'},
+      case {'TORC','TORC2','SUBTORC'},
             runclass = 'TOR';
         case 'PHONEME'
             runclass = 'PHN';
