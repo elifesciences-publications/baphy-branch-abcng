@@ -2,7 +2,7 @@ function o = ObjUpdate (o);
 %
 
 
-object_spec = what('MouseVocal');
+object_spec = what('SubTorc');
 soundset=get(o,'Subsets');
 if soundset>=10
     soundset=round(soundset/10); end

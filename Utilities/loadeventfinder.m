@@ -290,4 +290,31 @@ else
     else
         [eventtime,evtrials,Note,eventtimeoff]=evtimes(exptevents,['Stim*']);
     end
+    
+    % special case --remove reference period with overlapping targets
+    if ~isempty(tag_masks) && strcmpi(tag_masks{1},'Reference'),
+        [ttime,ttrial,tnote]=evtimes(exptevents,['Stim*']);
+        validevents=ones(size(eventtime));
+        for ee=1:length(ttime),
+            if ~isempty(findstr(tnote{ee},', Target')),
+                ff=find(eventtimeoff>ttime(ee) & evtrials==ttrial(ee));
+                for gg=ff(:)',
+                    if gg==ee || eventtime(gg)>ttime(ee),
+                        validevents(gg)=0;
+                    elseif eventtimeoff(gg)>ttime(ee),
+                        eventtimeoff(gg)=ttime(ee);
+                    end
+                end
+            end
+        end
+        eventtime=eventtime(find(validevents));
+        evtrials=evtrials(find(validevents));
+        Note={Note{find(validevents)}}';
+        eventtimeoff=eventtimeoff(find(validevents));
+        if sum(1-validevents)>0
+            fprintf('removed %d/%d invalid target overlap events\n',...
+                    sum(1-validevents),length(validevents));
+        end
+    end
+
 end
