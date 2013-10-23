@@ -212,14 +212,16 @@ perf(cnt2).TarResponseWinStart=TarResponseWin(1);
 % target-specific HR / RT
 perf(cnt2).ThisTargetNote=ThisTargetNote;
 
-trialtargetid=ones(cnt2,1);
+trialtargetid=zeros(cnt2,1);
 if isfield(exptparams,'UniqueTargets') && length(exptparams.UniqueTargets)>1,
     %&&...
     %    ~strcmpi(get(exptparams.TrialObject,'descriptor'),'RepDetect'),
     UniqueCount=length(exptparams.UniqueTargets);
     for tt=1:cnt2,
-        trialtargetid(tt)=find(strcmp(perf(tt).ThisTargetNote,...
-                                      exptparams.UniqueTargets),1);
+        if ~perf(tt).NullTrial,
+            trialtargetid(tt)=find(strcmp(perf(tt).ThisTargetNote,...
+                                          exptparams.UniqueTargets),1);
+        end
     end
 else
     UniqueCount=1;
