@@ -1,8 +1,7 @@
 % smrbatch
 
-addpath e:\McCormick_Lab\Son_Spike2_Matlab\
+addpath h:\code\Son_Spike2_Matlab\
 baphy_set_path
-
 
 triggerchannel=23;
 pumpchannel=22;
@@ -10,6 +9,17 @@ lickchannel=21;
 walkchannels=17:18;
 datachannels=[7 20];
 auxchannels=[lickchannel pumpchannel walkchannels];
+
+smrpath='h:\daq\McGinley\smr2\';
+cd (smrpath);
+cd evp
+
+parmfiles={'Mouse167_2013_10_24_TOR_5','Mous167_2013_10_24_TOR_6'};
+smrfile=[smrpath '10_24_13_Mouse167_whole_cell2_5TORCs_all_TORCs_silence_Rm_excellent.smr'];
+evpfiles=smr2evp(parmfiles,smrfile,triggerchannel,datachannels,auxchannels);
+
+
+
 
 
 smrpath='g:\Work_computer_backups\Recording_rig\Recordings\';
