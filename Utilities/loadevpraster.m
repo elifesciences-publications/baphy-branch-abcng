@@ -47,65 +47,24 @@ global C_r C_raw C_mfilename C_rasterfs C_sigthreshold
 % WAYS OF PASSING PARAMETERS. SORRY! SVD 2008-01-01
 %
 if ~exist('channel','var'),
-    options=[]';
+    options=[];
     options.channel=1;
     verbose = 1;
 elseif isstruct(channel),
    options=channel;
-   if ~isfield(options,'channel'),
-      channel=1;
-   else
-      channel=options.channel;
-   end
-   if ~isfield(options,'sigthreshold'),
-      sigthreshold=4;
-   else
-      sigthreshold=options.sigthreshold;
-   end
-   if ~isfield(options,'rasterfs'),
-      rasterfs=1000;
-   else
-      rasterfs=options.rasterfs;
-   end
-   if ~isfield(options,'includeprestim'),
-      includeprestim=0;
-   else
-      includeprestim=options.includeprestim;
-   end
-   if ~isfield(options,'tag_masks'),
-      tag_masks={};
-   else
-      tag_masks=options.tag_masks;
-   end
-   if ~isfield(options,'psthonly'),
-      psthonly=-1;
-   else
-      psthonly=options.psthonly;
-   end
-   if ~isfield(options,'lfp'),
-      lfp=0;
-   else
-      lfp=options.lfp;
-   end
-   if ~isfield(options,'mua'),
-      mua=0;
-   else
-      mua=options.mua;
-   end
-   if isfield(options,'verbose')
-     verbose = options.verbose;
-   else
-     verbose =1;
-   end
-   if isfield(options,'trialrange'),
-      trialrange=options.trialrange;
-   end
-   if ~isfield(options,'includeincorrect'),
-      includeincorrect=0;
-   else
-      includeincorrect=options.includeincorrect;
-   end
+   channel=getparm(options,'channel',1);
+   sigthreshold=getparm(options,'sigthreshold',4);
+   rasterfs=getparm(options,'rasterfs',1000);
+   includeprestim=getparm(options,'includeprestim',1);
+   tag_masks=getparm(options,'tag_masks',{});
+   psthonly=getparm(options,'psthonly',-1);
+   lfp=getparm(options,'lfp',0);
+   mua=getparm(options,'mua',0);
+   verbose=getparm(options,'verbose',1);
+   trialrange=getparm(options,'trialrange',[]);
+   includeincorrect=getparm(options,'includeincorrect',0);
    lfp_clean=getparm(options,'lfp_clean',0);
+   rawtrace=getparm(options,'rawtrace',1);
 else
    if ~exist('channel'),
       channel=1;
@@ -337,7 +296,7 @@ end
 if trialcount<1 || ~globalparams.ExperimentComplete,
     trialcount=exptevents(end).Trial;
 end
-if ~exist('trialrange','var'),
+if ~exist('trialrange','var') || isempty(trialrange),
     if ~includeincorrect && ~isempty(hittrials),
         disp('including only correct trials.');
         trialrange=hittrials(:)';
@@ -397,6 +356,30 @@ for trialidx=trialrange,
                      round((shockstop(shockidx)+0.3).*rasterfs))=0;
            end
         end
+    elseif rawtrace==1,
+
+        % read the raw data from the evp file
+        if isempty(big_rs),
+            [~,~,~,spikefs]=evpgetinfo(evpfile);
+            [big_rs,strialidx]=evpread(evpfile,channel,[],trialidx:trialcount);
+            strialidx=[zeros(trialidx-1,1); strialidx; length(big_rs)+1];
+        end
+        
+        raster=resample(...
+            big_rs(strialidx(trialidx):(strialidx(trialidx+1)-1)),...
+            rasterfs,spikefs);
+        
+        shockhappened=find(shocktrials==trialidx);
+        for tt=1:length(shockhappened),
+            shockidx=shockhappened(tt);
+            if verbose
+            fprintf('trial %d: zeroing shock %.1f-%.1f sec\n',...
+                    trialidx,shockstart(shockidx),shockstop(shockidx)+0.3);
+            end
+            raster(round(shockstart(shockidx).*rasterfs):...
+                   round((shockstop(shockidx)+0.3).*rasterfs))=0;
+        end
+        
     elseif mua==1,
 
         if isempty(big_rs),
@@ -418,7 +401,7 @@ for trialidx=trialrange,
                    round((shockstop(shockidx)+0.3).*rasterfs))=0;
         end
         
-    elseif lfp==2,
+     elseif lfp==2,
        channel=1;  % force lick
        if isempty(big_rs),
           [rs0,strialidx0,big_rs,atrialidx]=...

@@ -38,8 +38,9 @@ fid=fopen(smrfile);
 fprintf('loading trigger channel\n');
 [triggerdata,triggerhdr]=SONGetChannel(fid,triggerchannel);
 
-triggerdata(triggerdata<1000)=0;
-triggerdata(triggerdata>=1000)=1;
+triggerthreshold=27000;
+triggerdata(triggerdata<triggerthreshold)=0;
+triggerdata(triggerdata>=triggerthreshold)=1;
 triggerbins=find(diff(triggerdata)>0);
 triggeroffbins=find(diff(triggerdata)<0);
 
@@ -97,7 +98,7 @@ fclose(fid);
 % parm files are in the order that the data was collected
 lasttrigger=0;
 for baphyidx=1:baphyfilecount,
-   
+   lasttrigger
    for trialidx=1:TrialCount(baphyidx),
       fprintf('%s trial %d ',basename(parmfiles{baphyidx}),trialidx);
       lasttrigger=lasttrigger+1;
