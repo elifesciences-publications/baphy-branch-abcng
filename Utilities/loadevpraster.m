@@ -64,7 +64,7 @@ elseif isstruct(channel),
    trialrange=getparm(options,'trialrange',[]);
    includeincorrect=getparm(options,'includeincorrect',0);
    lfp_clean=getparm(options,'lfp_clean',0);
-   rawtrace=getparm(options,'rawtrace',1);
+   rawtrace=getparm(options,'rawtrace',0);
 else
    if ~exist('channel'),
       channel=1;
