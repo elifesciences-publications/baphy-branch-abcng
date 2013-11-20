@@ -65,7 +65,8 @@ while ContinueExp == 1
           exptparams.TrialObject = set(exptparams.TrialObject,'PumpProfile',PumpProfile);
       end
       
-      [TrialSound, StimEvents, exptparams.TrialObject] = waveform(exptparams.TrialObject, iTrial);
+      % Yves; 2013/11: I added an input to 'waveform' methods
+      [TrialSound, StimEvents, exptparams.TrialObject] = waveform(exptparams.TrialObject, iTrial, TrialIndex);
       [HW,globalparams,exptparams] = LF_setSamplingRate(HW,globalparams,exptparams);
       HW = IOSetLoudness(HW, 80-get(exptparams.TrialObject, 'OveralldB'));
       
