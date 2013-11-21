@@ -94,7 +94,7 @@ drawnow;
 if savetodb,
     disp('saving perf data to database');
     [Parameters, Performance] = PrepareDatabaseData ( globalparams, exptparams);
-    %dbWriteData(globalparams.rawid, Parameters, 0, 0);  % this is parameter and dont keep previous data
+    dbWriteData(globalparams.rawid, Parameters, 0, 0);  % this is parameter and dont keep previous data
     dbWriteData(globalparams.rawid, Performance, 1, 0); % this is performance and dont keep previous data
     
     SaveBehaviorFigure(globalparams,exptparams);
