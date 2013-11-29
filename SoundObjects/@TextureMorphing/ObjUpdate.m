@@ -20,12 +20,14 @@ Par.FrequencyRange_LB = 200;
 Par.FrequencyRange_UB = 2500;
 Par.ToneDuration = 0.03;
 Par.TonesPerOctave = 2;
-Par.Stimulus2Duration = 2;
+% Par.Stimulus2Duration = 3;        % set in GUI
 Par.D1MinimalDuration = 0;
 Par.ToneInterval = 12;
 Par.XDistriInterval = 24;
-o = set(o,'AllTargetPositions',{'center'});   % for Bernhard script [PerformanceAnaysis.m]
+Par.MorphingDuration = 0;
+o = set(o,'AllTargetPositions',{'center'});   % for Bernhard script [PerformanceAnalysis.m]
 o = set(o,'CurrentTargetPositions',{'center'});
+o = set(o,'MorphingDuration',Par.MorphingDuration);
 
 MorphingNb = 2;
 DifficultyLvlNb = max([length(Par.DifficultyLvl_KeepTails) length(Par.DifficultyLvl_KeepBody)]);
