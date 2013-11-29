@@ -1,4 +1,4 @@
-function [w, event,o]=waveform(o,void,IsRef);
+function [w, event,o]=waveform(o,void,IsRef,Mode,Global_TrialNb);
 % function w=waveform(t);
 % this function is the waveform generator for object Tone
 

@@ -80,6 +80,8 @@ for cnt1 = writeidx,
               end
             end
             fprintf(fid,'};\n');
+          elseif strcmp( class(data(cnt1).(fields{cnt2}){1}) , 'function_handle' )  % array of functions; Yves 2013/10
+            % not saved
           else % this is a cell array of something else (structure, object, etc)
             for cnt3=1:length(data(cnt1).(fields{cnt2}))
               AddToMFile (fname, [StructName '(' num2str(cnt1) ').' fields{cnt2} ...
@@ -92,6 +94,7 @@ for cnt1 = writeidx,
       case 'struct' % if its structure in structure, call recursively
         AddToMFile (fname, [StructName '(' num2str(cnt1) ').' fields{cnt2}], ...
           data(cnt1).(fields{cnt2}),[],1);
+      case 'function_handle'   % Yves 2013/10; function not saved; I resynthetize them ad hoc        
       otherwise  % then it has to be a user defined object!!
         fprintf(fid, '\n%% %s(%d).%s = %s\n', StructName, cnt1, ...
           fields{cnt2}, ['handle of a ' class(data(cnt1).(fields{cnt2})) ' object']);
