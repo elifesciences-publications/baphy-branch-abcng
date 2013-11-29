@@ -1,6 +1,7 @@
 function o = set (o,varargin)
 % This is a generic set function for all userdefined classes. Copy this 
 % function in your objects directory.
+% 2013/11: YB; I removed the call to ObjUpdate to be able to set object properties.
 
 % Nima Mesgarani, October 2005, mnima@umd.edu
 
@@ -29,14 +30,15 @@ switch nargin
     otherwise 
         error('%s \n%s','Error using ==> set','Too many input arguments.');
 end
-caller = dbstack;
-if length(caller)>1
-    if ~strcmpi(caller(2).name, 'ObjUpdate')
-        % if its not called from ObjUpdate function, run it. 
-        % without this check, it will become a close loop.
-%         disp(sprintf('called by %s',caller(2).name));
-        o = ObjUpdate (o);
-    end
-else
-    o = ObjUpdate(o);
-end
+% 2013/11; YB
+% caller = dbstack;
+% if length(caller)>1
+%     if ~strcmpi(caller(2).name, 'ObjUpdate')
+%         % if its not called from ObjUpdate function, run it. 
+%         % without this check, it will become a close loop.
+% %         disp(sprintf('called by %s',caller(2).name));
+%         o = ObjUpdate (o);
+%     end
+% else
+%     o = ObjUpdate(o);
+% end

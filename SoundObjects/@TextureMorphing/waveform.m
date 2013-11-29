@@ -33,7 +33,8 @@ CurrentRepetitionNb = ceil(Global_TrialNb/MaxIndex);
 % GENERATE Timing of Change [ToC]
 RToC = RandStream('mrg32k3a','Seed',IniSeed*Global_TrialNb);   % mcg16807 is fucked up
 lambda = 0.15; 
-ToC = PoissonProcessPsychophysics(lambda,P.MaxToC,1,RToC);
+ToC = PoissonProcessPsychophysics(lambda,P.MaxToC-P.MinToC,1,RToC);
+ToC = ToC + P.MinToC;
 
 % GET PARAMETERS OF CURRENT Index
 tmp = get(O,'MorphingTypeByInd'); MorphingType = tmp(Index); MorphingNb = max(tmp);

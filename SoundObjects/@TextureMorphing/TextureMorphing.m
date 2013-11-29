@@ -30,7 +30,7 @@ switch nargin
       'Inverse_D1D2','popupmenu','no',...    %|yes',...   
       'MinToC','edit','0',...   
       'MaxToC','edit','8',... 
-      'MorphingDuration','edit','0',...
+      'Stimulus2Duration','edit','3',...
       'FrozenPatternsAdress','popupmenu','C:\Users\Booth1\Dropbox\FrozenPatterns',... %'C:\Code\baphy\UtilitiesYves\FrozenPatterns',... %, ...'C:\Users\Yves\Dropbox\ABCng\FrozenPatterns',
       'FrozenPatternsNb','edit','0'};      
 
@@ -96,7 +96,7 @@ switch nargin
 %       'DifficultyLvl_KeepBody','edit','3.5 , 6.5 , 12.5 , 21.5',...
   
   
-    s = SoundObject ('TextureMorphing', 44100, 0,0.4, 0, {''}, 1, Fields);
+    s = SoundObject ('TextureMorphing', 100000, 0,0.4, 0, {''}, 1, Fields);
     for i=1:length(Fields)/3; o.(Fields{(i-1)*3+1}) = Fields{i*3}; end
     o.Fields = Fields;
     o.FieldNames = Fields(1:3:end-2); 
@@ -107,7 +107,7 @@ switch nargin
     
     o.FrequencySpace = []; o.XDistri = []; o.F0 = [];
     o.D1 = []; o.D2_KeepTails = []; o.MergedD_KeepTails = []; o.D2_KeepBody = []; o.MergedD_KeepBody = [];  
-    o.IniSeed = [];
+    o.IniSeed = []; o.MorphingDuration = [];
     o.MorphingTypeByInd = []; o.DifficultyLvlByInd = []; o.ReverseByInd = [];
     o.AllTargetPositions = []; o.CurrentTargetPositions = [];
     
