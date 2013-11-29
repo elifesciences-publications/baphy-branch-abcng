@@ -45,7 +45,7 @@ Simulick = get(O,'Simulick'); if Simulick LickTime = rand*(TarWindow(2)+1); end
 %% PREPARE FOR PREWARD
 cPositions = {'center'};
 % IF MULTIPLE POSSIBLE : RANDOM REWARD or ALWAYS REWARD (comment out next line)
-cRandInd = randi(1,1,[1,length(cPositions)]);
+cRandInd = 1; %randi(1,1,[1,length(cPositions)]);
 TargetSensors = IOMatchPosition2Sensor(cPositions);
 PumpNames = IOMatchPosition2Pump(cPositions);
 PumpName = PumpNames{cRandInd};
