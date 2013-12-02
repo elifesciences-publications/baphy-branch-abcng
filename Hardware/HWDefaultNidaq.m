@@ -34,7 +34,7 @@ switch upper(computer),
       HW.params.ptrType='uint32Ptr';
       HW.params.longType='uint32Ptr';
   case 'PCWIN64',
-      HW.params.ptrType='voidPtrPtr';
+      HW.params.ptrType='voidPtr';
       HW.params.longType='ulongPtr';
 end
 HW.params.syncAIAO=1;

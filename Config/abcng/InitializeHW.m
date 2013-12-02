@@ -84,7 +84,7 @@ switch globalparams.HWSetup
     HW=niCreateAO(HW,DAQID,'ao0:1','SoundOutL,SoundOutR',['/',DAQID,'/PFI1']);
     
     %% SETUP SPEAKER CALIBRATION
-    HW.Calibration.Speaker = 'ATHM50';
+    HW.Calibration.Speaker = 'SHHD380';
     HW.Calibration.Microphone = 'GRAS46BE';
     HW.Calibration = IOLoadCalibration(HW.Calibration);
 

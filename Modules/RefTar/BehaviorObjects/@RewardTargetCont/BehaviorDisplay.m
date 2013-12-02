@@ -115,7 +115,7 @@ if ~isempty(ResponseData)
       Sensors = {exptparams.Performance(OutInd).LickSensor};
       USensors = unique(Sensors); USensors = setdiff(USensors,'None');
 %       Bins = [-TarWindow(1):0.1:diff(TarWindow)+0.5];
-      Bins = [-3:0.1:2.3];
+      Bins = -3:0.1:3;
       if ~isempty(USensors)
         for i=1:length(USensors)
           cInd = find(strcmp(Sensors,USensors{i}));

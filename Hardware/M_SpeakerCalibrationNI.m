@@ -14,7 +14,9 @@ if length(varargin)==1 P = varargin{1}; else P = parsePairs(varargin); end
 if ~isfield(P,'TestMode') P.TestMode = 0; end
 
 % HARD WARE PARAMETERS
-if ~isfield(P,'Speaker') P.Speaker = 'SHIE800'; end
+if ~isfield(P,'Speaker') 
+  P.Speaker = input('Type Speaker Abbreviation: ','s');
+end
 if ~isfield(P,'Microphone') P.Microphone = 'GRAS46BE';  end
 if ~isfield(P,'DeviceIn') P.DeviceIn='D20'; end
 if ~isfield(P,'DeviceOut') P.DeviceOut='D0'; end
