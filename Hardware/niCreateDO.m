@@ -35,10 +35,10 @@ HW.DIO(id).Direction='Out';
 
 
 % Create a task
-TaskPtr = libpointer(HW.params.ptrType,false); % for 32 bit
+TaskPtr = libpointer(HW.params.ptrType,0); % for 32 bit
 S = DAQmxCreateTask(HW.DIO(id).TaskName,TaskPtr);
 if S NI_MSG(S); end
-HW.DIO(id).Ptr = get(TaskPtr,'Value');
+HW.DIO(id).Ptr = TaskPtr; %get(TaskPtr,'Value');
 NI_MASTER_TASK_LIST=cat(2,NI_MASTER_TASK_LIST,HW.DIO(id).Ptr);
 
 % Allow multiple ports to be used for one task

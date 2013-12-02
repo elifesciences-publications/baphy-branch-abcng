@@ -54,7 +54,15 @@ while ContinueExp == 1
       exptparams.InRepTrials = iTrial;
       exptparams.TotalTrials = TrialIndex;
       
-      %% PREPARE TRIAL
+      %% PREPARE TRIAL     
+      % Back to grey screen on the second monitor if we are in a psychophysics soundbooth
+      if globalparams.HWSetup == 11 && TrialIndex == 1
+        [VisualDispColor] = VisualDisplay(1,'GREY');
+        exptparams.FeedbackFigure = VisualDispColor;
+      elseif globalparams.HWSetup == 11 && TrialIndex > 1
+        VisualDispColor = exptparams.FeedbackFigure;
+        [VisualDispColor] = VisualDisplay(0,'GREY',VisualDispColor);
+      end
       
       %Create pump control
       TrialObject = get(exptparams.TrialObject);
@@ -65,7 +73,8 @@ while ContinueExp == 1
           exptparams.TrialObject = set(exptparams.TrialObject,'PumpProfile',PumpProfile);
       end
       
-      [TrialSound, StimEvents, exptparams.TrialObject] = waveform(exptparams.TrialObject, iTrial);
+      % Yves; 2013/11: I added an input to 'waveform' methods
+      [TrialSound, StimEvents, exptparams.TrialObject] = waveform(exptparams.TrialObject, iTrial, TrialIndex);
       [HW,globalparams,exptparams] = LF_setSamplingRate(HW,globalparams,exptparams);
       HW = IOSetLoudness(HW, 80-get(exptparams.TrialObject, 'OveralldB'));
       

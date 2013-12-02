@@ -31,10 +31,10 @@ HW.AO(id).Channels=Channels;
 HW.AO(id).Names=Names;
 
 % Create a task
-TaskPtr = libpointer('uint32Ptr',false); % for 32 bit
+TaskPtr = libpointer(HW.params.ptrType,false); % for 32 bit
 S = DAQmxCreateTask(HW.AO(id).TaskName,TaskPtr);
 if S NI_MSG(S); end
-HW.AO(id).Ptr = get(TaskPtr,'Value');
+HW.AO(id).Ptr = TaskPtr;
 NI_MASTER_TASK_LIST=cat(2,NI_MASTER_TASK_LIST,HW.AO(id).Ptr);
 
 % ADD ANALOG OUTPUT CHANNELS
