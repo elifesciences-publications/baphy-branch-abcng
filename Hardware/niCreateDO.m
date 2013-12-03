@@ -38,7 +38,11 @@ HW.DIO(id).Direction='Out';
 TaskPtr = libpointer(HW.params.ptrType,0); % for 32 bit
 S = DAQmxCreateTask(HW.DIO(id).TaskName,TaskPtr);
 if S NI_MSG(S); end
-HW.DIO(id).Ptr = TaskPtr; %get(TaskPtr,'Value');
+switch computer
+  case 'PCWIN'; HW.DIO(id).Ptr = get(TaskPtr,'value');
+  case 'PCWIN64'; HW.DIO(id).Ptr = TaskPtr;
+  otherwise error('Computertype not supported for NIDAQ');
+end
 NI_MASTER_TASK_LIST=cat(2,NI_MASTER_TASK_LIST,HW.DIO(id).Ptr);
 
 % Allow multiple ports to be used for one task
