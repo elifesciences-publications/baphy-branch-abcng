@@ -25,7 +25,7 @@ else
 end
 
 object_spec = what(class(o));
-envpath = [object_spec.path filesep 'envelope' filesep];
+envpath = [object_spec(1).path filesep 'envelope' filesep];
 
 % eg "Speech.subset1.mat"   and "Speech1"
 EnvFileName=[envpath BaseSound '.subset',num2str(Subsets),'.mat'];
