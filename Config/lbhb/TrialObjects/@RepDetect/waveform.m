@@ -1,5 +1,6 @@
 function [TrialSound, events , o] = waveform (o,TrialIndex)
 % SVD 2012-10-19
+global REPDETECT_NOISE_SAMPLES
 
 par = get(o); % get the parameters of the trial object
 RefObject=par.ReferenceHandle;
@@ -30,7 +31,16 @@ Names=get(RefObject,'Names');
 SampleCount=size(RefTrialIndex,1);
 for cnt1 = 1:SampleCount  % go through all the sound samples in the trial
     for jj=1:max(find(RefTrialIndex(cnt1,:)>0)),
-        [tw,ev]=waveform(RefObject, RefTrialIndex(cnt1,jj));
+        sidx=RefTrialIndex(cnt1,jj);
+        [tw,ev]=waveform(RefObject, sidx);
+        if cnt1<=RefCount && par.RefStaticNoiseFrac>0,
+          tw=tw.*(1-par.RefStaticNoiseFrac) + ...
+              REPDETECT_NOISE_SAMPLES(:,sidx).* 5*par.RefStaticNoiseFrac;
+        elseif cnt1>RefCount && par.TarStaticNoiseFrac>0
+          tw=tw.*(1-par.TarStaticNoiseFrac) + ...
+              REPDETECT_NOISE_SAMPLES(:,sidx).* 5*par.TarStaticNoiseFrac;
+        end
+        
         if jj==1,
             w=tw;
             Note=ev(2).Note;
@@ -76,39 +86,39 @@ for cnt1 = 1:SampleCount  % go through all the sound samples in the trial
     TrialSound = [TrialSound ;w];
     events = [events ev];
     
-    if ((cnt1==RefCount && par.RefStaticNoiseFrac>0) || ...
-          (cnt1==size(RefTrialIndex,1) && par.TarStaticNoiseFrac>0)) &&...
-          strcmp(par.ReferenceClass,'NoiseSample'),
-       if cnt1==RefCount,
-          NoiseSize=size(TrialSound);
-       else
-          lastrefbin=RefCount.*length(w);
-          TarRange=(lastrefbin+1):size(TrialSound,1);
-          NoiseSize=[length(TarRange) size(TrialSound,2)];
-       end 
-       Noise=randn(NoiseSize); % Noise signal
-       Noise=Noise./max(abs(Noise(:))).*max(abs(TrialSound));
-       fup = get(par.ReferenceHandle,'HighFreq');
-       flo = get(par.ReferenceHandle,'LowFreq');
-       fc=2.^((log2(fup)+log2(flo))./2);
-       fs = par.SamplingRate;
-       Wp = [flo fup]/(fs/2); % normalized passband interval
-       Ws = [(fc/2) (fc+(fc/2))]/(fs/2); % normalized stopband interval
-       Rp = 3; % 3-dB attenuation at passband
-       Rs = 30; % 30-dB attenuation at stopband
-       [n,Wn] = buttord(Wp,Ws,Rp,Rs); % Butterworth filter
-       [b,a] = butter(n,Wn);
-       bandNoise = filter(b,a,Noise); % Band-limiting the noise
-       if cnt1==RefCount,
-          TrialSound=TrialSound.*(1-par.RefStaticNoiseFrac) + ...
-             bandNoise .* 5 * par.RefStaticNoiseFrac;
-       else
-          TrialSound(TarRange,:)=...
-             TrialSound(TarRange,:).*(1-par.TarStaticNoiseFrac) + ...
-             bandNoise .* 5 * par.TarStaticNoiseFrac;
-       end
-       
-    end
+%     if ((cnt1==RefCount && par.RefStaticNoiseFrac>0) || ...
+%           (cnt1==size(RefTrialIndex,1) && par.TarStaticNoiseFrac>0)) &&...
+%           strcmp(par.ReferenceClass,'NoiseSample'),
+%        if cnt1==RefCount,
+%           NoiseSize=size(TrialSound);
+%        else
+%           lastrefbin=RefCount.*length(w);
+%           TarRange=(lastrefbin+1):size(TrialSound,1);
+%           NoiseSize=[length(TarRange) size(TrialSound,2)];
+%        end 
+%        Noise=randn(NoiseSize); % Noise signal
+%        Noise=Noise./max(abs(Noise(:))).*max(abs(TrialSound));
+%        fup = get(par.ReferenceHandle,'HighFreq');
+%        flo = get(par.ReferenceHandle,'LowFreq');
+%        fc=2.^((log2(fup)+log2(flo))./2);
+%        fs = par.SamplingRate;
+%        Wp = [flo fup]/(fs/2); % normalized passband interval
+%        Ws = [(fc/2) (fc+(fc/2))]/(fs/2); % normalized stopband interval
+%        Rp = 3; % 3-dB attenuation at passband
+%        Rs = 30; % 30-dB attenuation at stopband
+%        [n,Wn] = buttord(Wp,Ws,Rp,Rs); % Butterworth filter
+%        [b,a] = butter(n,Wn);
+%        bandNoise = filter(b,a,Noise); % Band-limiting the noise
+%        if cnt1==RefCount,
+%           TrialSound=TrialSound.*(1-par.RefStaticNoiseFrac) + ...
+%              bandNoise .* 5 * par.RefStaticNoiseFrac;
+%        else
+%           TrialSound(TarRange,:)=...
+%              TrialSound(TarRange,:).*(1-par.TarStaticNoiseFrac) + ...
+%              bandNoise .* 5 * par.TarStaticNoiseFrac;
+%        end
+%        
+%     end
 end
 
 if par.OnsetRampSec>0,

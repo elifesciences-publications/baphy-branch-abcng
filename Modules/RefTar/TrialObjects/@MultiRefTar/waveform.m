@@ -22,13 +22,14 @@ end
 RefSamplingRate = ifstr2num(get(RefObject,'SamplingRate'));
 TarSamplingRate = ifstr2num(get(TarObject,'SamplingRate'));
 
+TarTrialIndex=[];
 if (par.NumberOfTarPerTrial~=0) && ~strcmpi(par.TargetClass,'none')
     TarTrialIndex = par.TargetIndices{TrialIndex};
     if isempty(TarTrialIndex)  % if its a Sham
         % this means there is a target but this trial is sham. ALthough
         % there is no target, we need to adjust the amplitude based on
         % RefTardB.
-        TarObject = -1;
+        %TarObject = -1;
     end
 end
 TrialSamplingRate = max(RefSamplingRate, TarSamplingRate);
@@ -44,7 +45,7 @@ rpos=get(RefObject,'PostStimSilence');
 % get the index of reference sounds for current trial
 RefTrialIndex = par.ReferenceIndices{TrialIndex};
 if ~isempty(par.SingleRefSegmentLen) && par.SingleRefSegmentLen>0,
-    if OverlapRefTar,
+    if OverlapRefTar && ~isempty(TarTrialIndex),
         TarStartTime=(par.SingleRefDuration(TrialIndex)+...
           get(RefObject,'PreStimSilence'));
         TarStartBin=round(TarStartTime.*TrialSamplingRate);
@@ -136,7 +137,7 @@ for cnt1 = 1:length(RefTrialIndex)
 end
 
 chancount=size(TrialSound,2);
-if isobject(TarObject)
+if ~isempty(TarTrialIndex)
     TarTrialIndex = par.TargetIndices{TrialIndex}; % get the index of reference sounds for current trial
     
     TargetChannel=par.TargetChannel;
@@ -280,17 +281,19 @@ if isobject(TarObject)
     
     % normalize the sound, because the level control is always from attenuator.
     TrialSound = 5 * TrialSound / max(abs(TrialSound0(:)));
-    
-elseif TarObject == -1
-    % sham trial:
-    if isfield(get(par.TargetHandle),'ShamNorm'),
-        TrialSound = 5 * TrialSound / get(par.TargetHandle,'ShamNorm');
-    else
-        TrialSound = 5 * TrialSound / max(abs(TrialSound(:)));
-        if get(o,'RelativeTarRefdB')>0
-            TrialSound = TrialSound / (10^(get(o,'RelativeTarRefdB')/20));
-        end
-    end
+else
+    TrialSound = 5 * TrialSound / max(abs(TrialSound(:)));
+  
+% elseif TarObject == -1
+%     % sham trial:
+%     if isfield(get(par.TargetHandle),'ShamNorm'),
+%         TrialSound = 5 * TrialSound / get(par.TargetHandle,'ShamNorm');
+%     else
+%         TrialSound = 5 * TrialSound / max(abs(TrialSound(:)));
+%         if get(o,'RelativeTarRefdB')>0
+%             TrialSound = TrialSound / (10^(get(o,'RelativeTarRefdB')/20));
+%         end
+%     end
 end
 
 if PostTrialBins>0,

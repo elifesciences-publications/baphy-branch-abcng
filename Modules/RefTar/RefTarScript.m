@@ -194,12 +194,12 @@ while ContinueExp == 1
       end
       
       if strcmpi(BAPHY_LAB,'lbhb') && ~mod(TrialIndex,20) && ...
-              iTrial<get(exptparams.TrialObject,'NumberOfTrials') &&...
+              (globalparams.HWSetup==0 || iTrial<get(exptparams.TrialObject,'NumberOfTrials')) &&...
               ~isempty(globalparams.mfilename),
           fprintf('Saving parmfile for safety.\n');
           WriteMFile(globalparams,exptparams,exptevents,1);
       end
-          
+      
       %% RANDOMIZE WITH FLAG 0 (TRIAL CALL)
       % Used in adaptive schemes, where trialset is modified based on animals performance
       % Needs to change NumberOfTrials and Modify the IndexSets

@@ -3,6 +3,8 @@ function [exptparams] = RandomizeSequence (o, exptparams, globalparams, RepIndex
 % sequences of repeated/varying targets/distracters
 %
 
+global REPDETECT_NOISE_SAMPLES
+
 if nargin<3, RepIndex = 1;end
 if nargin<4, RepOrTrial = 0;end   % default is its a trial call
 
@@ -10,8 +12,9 @@ if nargin<4, RepOrTrial = 0;end   % default is its a trial call
 par = get(o);
 
 if RepIndex==1 && RepOrTrial,
-    disp('RepDetect: First trial, generating sequences');
+    
     % if first run, generate o.Sequences:
+    disp('RepDetect: First trial, generating sequences');
     TargetIdx=par.TargetIdx;
     TrialCount=par.SequenceCount;
     ReferenceCountFreq=par.ReferenceCountFreq;
@@ -153,6 +156,27 @@ if RepIndex==1 && RepOrTrial,
         ReferenceCount(TrialIdx)=refcount;
         SequenceCategories(TrialIdx)=SequenceCategory;
     end
+
+    disp('RepDetect: generating background noise samples');
+    ReferenceDuration=get(par.ReferenceHandle,'Duration');
+    fs=get(par.ReferenceHandle,'SamplingRate');
+    LowFreq=get(par.ReferenceHandle,'LowFreq');
+    HighFreq=get(par.ReferenceHandle','HighFreq');
+    REPDETECT_NOISE_SAMPLES=zeros(round(ReferenceDuration.*fs),...
+        par.ReferenceMaxIndex);
+    saverandstate=rand('state');
+    rand('state',2);
+    saverandnstate=randn('state');
+    randn('state',3);
+    for sampleidx=1:par.ReferenceMaxIndex,
+        % gnoise(duration_ms,l_co[Hz],h_co[Hz],[Level(dB)],[circular(0/1)],[SAMPLERATE])
+        tw=gnoise(ReferenceDuration*1000,LowFreq,HighFreq,-25,0,fs);
+        REPDETECT_NOISE_SAMPLES(:,sampleidx)=tw./max(abs(tw));
+    end
+    
+   % restore random number generator to previous state
+   rand('state',saverandstate);
+   randn('state',saverandnstate);
     
     o=set(o,'Sequences',Sequences);
     o=set(o,'ReferenceCount',ReferenceCount);
