@@ -59,14 +59,22 @@ datachannelcount=length(datachannels);
 data=cell(datachannelcount,1);
 dataFs=zeros(datachannelcount,1);
 
+hpdur=30;
+keyboard
 for ddidx=1:length(datachannels),
-   fprintf('loading data channel %d\n',ddidx);
+   fprintf('Loading data channel %d\n',ddidx);
    [data{ddidx},datahdr]=SONGetChannel(fid,datachannels(ddidx));
    firstdatabin=round(firsttriggertime./datahdr.sampleinterval);
    fprintf('trimming %d/%d bins prior to first baphy trigger\n',...
       firstdatabin,length(data{ddidx}));
    data{ddidx}=data{ddidx}(firstdatabin:end);
    dataFs(ddidx)=1./datahdr.sampleinterval;
+   
+   % subtract signal smoothed by 30-second box filter.
+   smfilt=ones(1,round(dataFs(ddidx).*hpdur))./round(dataFs(ddidx).*hpdur);
+   
+   ts=double(data{ddidx}(1:3876354));
+   ts=conv2(ts,smfilt,'same');
 end
 
 % load auxchannels, resample to auxFsOut
@@ -114,7 +122,7 @@ for baphyidx=1:baphyfilecount,
          tr=resample(tr,dataFsOut,round(dataFs(ddidx)));
          tr=tr(round(0.1*dataFsOut+1):(end-round(0.1.*dataFsOut)));
          tlfp=resample(medfilt1(tr,300),lfpFsOut,dataFsOut);
-
+         
          % trim stray mistmatched bins due to resampling from different
          % dataFs values.
          if size(r,1)>length(tr),

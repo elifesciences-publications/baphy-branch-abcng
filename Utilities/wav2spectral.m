@@ -278,7 +278,7 @@ switch lower(filtfmt),
     smfilt=ones(1,round(fsin/fsout))./round(fsin/fsout);
     gamma_envs=conv2(gamma_envs,smfilt,'same');
     stim=gamma_envs(:,round((fsin/fsout./2):(fsin/fsout):size(gamma_envs,2)))';
-
+    
  case 'logfsgram',
   %function [Y,MX] = logfsgram(X, N, SR, WIN, NOV, FMIN, BPO)
   error(sprintf('filtfmt %s not implemented yet\n',filtfmt));

@@ -200,11 +200,11 @@ if spikeshape
   SpikeShape = spikeinfop.sortinfo{channel}{sortidx}(unit).Template(:,unit);
   sortextras.SpikeShape = SpikeShape;
 end
-  
+
 cellid=basename(spkfile);
 if strcmp(cellid(1:3),'c02') || strcmp(cellid(1:3),'c03') || ...
       strcmpi(cellid(1),'J') ||...
-      (strcmpi(cellid(1),'o') && ~strcmp(cellid(1:3),'oni')),
+      (strcmpi(cellid(1),'o') && ~strcmp(cellid(1:3),'oni') && ~strcmp(cellid(1:3),'oys')),
    disp('old file: shifting responses forward 15 ms');
    rawSpikes(2,:)=rawSpikes(2,:)+mfOld.*0.015;
    rawSpikes=rawSpikes(:,find(rawSpikes(2,:)>0));

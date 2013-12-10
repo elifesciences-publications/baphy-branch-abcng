@@ -13,12 +13,14 @@ function [r,params]=load_RDT_by_trial(parmfile,spikefile,options)
     
     if ~exist('options','var'),
         options=struct();
-        options.lfp=getparm(options,'lfp',0);
-        options.rasterfs=getparm(options,'rasterfs',100);
-        options.tag_masks={'SPECIAL-TRIAL'};
-        options.psth=-1;
-        options.meansub=0;
     end
+    
+    options.lfp=getparm(options,'lfp',0);
+    options.rasterfs=getparm(options,'rasterfs',100);
+    options.tag_masks=getparm(options,'tag_masks',{'SPECIAL-TRIAL'});
+    options.psth=getparm(options,'psth',-1);
+    options.meansub=getparm(options,'meansub',0);
+
     r=[];
     
     % load and process a bunch of parameters
@@ -31,7 +33,7 @@ function [r,params]=load_RDT_by_trial(parmfile,spikefile,options)
             exptparams.TrialObject.SamplesPerTrial;
     else
         params.SamplesPerTrial=exptparams.TrialObject.TargetRepCount+...
-            max(find(exptparams.TrialObject.ReferenceCountFreq));
+            max(find(exptparams.TrialObject.ReferenceCountFreq)-1);
     end
     params.PreStimSilence=(exptparams.TrialObject.PreTrialSilence);
     params.PostStimSilence=(exptparams.TrialObject.PostTrialSilence);
@@ -77,7 +79,6 @@ function [r,params]=load_RDT_by_trial(parmfile,spikefile,options)
                                params.SampleDur+params.PreStimSilence).*options.rasterfs)+1;
     
     params.SampleStops=params.SampleStarts+round(params.SampleDur.*options.rasterfs)-1;
-    %params.BigCat=exptparams.TrialObject.SequenceCategories(SequenceIdx);
     
     %initialize BSM
     params.BigSequenceMatrix=-ones(params.SamplesPerTrial,2,TrialCount);
@@ -101,20 +102,21 @@ function [r,params]=load_RDT_by_trial(parmfile,spikefile,options)
     % if spike file is specified, load response for each cell in the site
     if exist('spikefile','var') && ~isempty(spikefile),
         bb=basename(spikefile);
-        sql=['SELECT channum,unit FROM sCellFile WHERE respfile="',bb,'";'];
-        fdata=mysql(sql);
-        unitset=[cat(1,fdata.channum).*10+cat(1,fdata.unit)];
-        options.channel=floor(unitset/10);
-        options.unit=mod(unitset,10);
+        if ~isfield(options,'channel') | ~isfield(options,'unit'),
+            sql=['SELECT channum,unit FROM sCellFile WHERE respfile="',bb,'";'];
+            fdata=mysql(sql);
+            unitset=[cat(1,fdata.channum).*10+cat(1,fdata.unit)];
+            options.channel=floor(unitset(1)/10);
+            options.unit=mod(unitset(1),10);
+        end
         
-        [r,tags,trialset,exptevents,sortextras]=loadsiteraster(spikefile, ...
-                                                          [],[],options);
-        
+        [r,tags,trialset,exptevents,sortextras]=...
+            loadsiteraster(spikefile,[],[],options);
         
         CellCount=size(r,3);
         
         % trim stray bins from end of each trial
-        r=r(1:params.TrialBins,:,:,:);
+        r=r(1:params.TrialBins,:,:,:).*options.rasterfs;
         
         % trim all-zero trials (for funny crash conditions/cell loss)
         zerocheck=nansum(nansum(r,1),3);
@@ -122,10 +124,38 @@ function [r,params]=load_RDT_by_trial(parmfile,spikefile,options)
         if nzmax<TrialCount,
             fprintf('Zero trials at end, truncating from %d to %d trials\n',...
                     TrialCount,nzmax);
-            TrialCount=nzmax;
+            params.TrialCount=nzmax;
+            params.BigSequenceMatrix=params.BigSequenceMatrx(:,:,1:nzmax);
             r=r(:,1:nzmax,:);
-            params.BigCat=params.BigCat(:,1:nzmax);
         end
+        
+        % compute average response to each stimulus -- ref or tar cond
+        binsperstim=options.rasterfs.*params.SampleDur;
+        r_avg=zeros(binsperstim,params.SampleCount,2);
+        r_count=zeros(params.SampleCount,2);
+        for sidx=1:params.SampleCount,
+            for trialidx=1:params.TrialCount,
+                ff=find(...
+                    params.BigSequenceMatrix(:,1,trialidx)==sidx|...
+                    params.BigSequenceMatrix(:,2,trialidx)==sidx);
+                for ii=ff(:)',
+                    rr=params.SampleStarts(ii):params.SampleStops(ii);
+                    if ii<=params.TargetStartBin(trialidx),
+                        cond=1;
+                    else
+                        cond=2;
+                    end
+                    r_count(sidx,cond)=r_count(sidx,cond)+1;
+                    r_avg(:,sidx,cond)=r_avg(:,sidx,cond)+r(rr,trialidx);
+                end
+            end
+            r_avg(:,sidx,1)=r_avg(:,sidx,1)./r_count(sidx,1);
+            r_avg(:,sidx,2)=r_avg(:,sidx,2)./r_count(sidx,2);
+        end
+        params.r_avg=r_avg;
+        params.r_count=r_count;
+                  
+               
     end
 
  

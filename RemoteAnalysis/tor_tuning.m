@@ -188,7 +188,7 @@ end
 
 
 if isempty(plotaxes),
-   figure(1);
+    sfigure(1);
    clf
    subplot(1,2,1);
 else
