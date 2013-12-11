@@ -23,7 +23,9 @@ if strcmpi(IODriver(HW),'NIDAQMX'),
     %if isrunning(HW.AO),
     stop(HW.AO);
     %end
-    stop(HW.AI);
+    if isfield(HW,'AI') && ~isempty(HW.AI),
+        stop(HW.AI);
+    end
   else
     
     % Configure Triggers

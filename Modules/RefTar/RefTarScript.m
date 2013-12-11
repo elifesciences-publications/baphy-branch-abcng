@@ -103,7 +103,7 @@ while ContinueExp == 1
           HW = IOLoadSound(HW, TrialSound(:,[1 1]));
         end
       else
-        HW = IOLoadSound(HW, TrialSound);
+          HW = IOLoadSound(HW, TrialSound);
       end
 
       % force at least 500 ms pause between trials in SPR2

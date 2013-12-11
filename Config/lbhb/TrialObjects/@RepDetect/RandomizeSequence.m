@@ -29,13 +29,18 @@ if RepIndex==1 && RepOrTrial,
     
     RefPool=[];
     RefDuringTarPool=[];
-    TarIdxSet=[];
     TargetIdxFreq=ones(size(TargetIdx))./length(TargetIdx);
+    TarIdxSet=[];
     for ii=1:length(TargetIdxFreq),
-        TarIdxSet=cat(2,TarIdxSet,ones(1,TrialCount.*TargetIdxFreq(ii)).*TargetIdx(ii));
+        TarIdxSet=cat(2,TarIdxSet,ones(1,ceil(TrialCount.*TargetIdxFreq(ii))).*TargetIdx(ii));
     end
-    TarIdxSet=shuffle(TarIdxSet);
-    
+    for ii=1:(length(TarIdxSet)-1),
+        % evenly distribute targets
+        n=hist(TarIdxSet(ii:end),TargetIdx);
+        mm=find(n==max(n), 1);
+        mmm=find(TarIdxSet(ii:end)==TargetIdx(mm), 1)+ii-1;
+        TarIdxSet([ii mmm])=TarIdxSet([mmm ii]);
+    end
     
     if strcmpi(par.Mode,'RepDetect'),
         TrialMult=2;
@@ -49,7 +54,7 @@ if RepIndex==1 && RepOrTrial,
     for TrialIdx=1:(TrialCount*TrialMult)
         refcount=find(rand>[0 cumsum(ReferenceCountFreq)], 1, 'last' )-1;
         switch par.Mode,
-            case 'RepDetect',
+            case {'RepDetect','RdtWithSingle'},
                 if TrialIdx>TrialCount,
                     refcount=refcount+round(par.TargetRepCount./2);
                     tarcount=0;
@@ -58,7 +63,12 @@ if RepIndex==1 && RepOrTrial,
                     tarcount=par.TargetRepCount;
                     SequenceCategory=0;
                 end
-                ThisSequence=zeros(refcount+tarcount,2);
+                if TrialIdx<=TrialCount./2 && strcmpi(par.Mode,'RdtWithSingle'),
+                    RefPerSample=1;
+                else
+                    RefPerSample=2;
+                end
+                ThisSequence=-ones(refcount+tarcount,2);
                 for rr=1:refcount,
                     if length(RefPool)<3,
                         RefPool=[RefPool shuffle(1:par.ReferenceMaxIndex)];
@@ -78,28 +88,33 @@ if RepIndex==1 && RepOrTrial,
                         end
                     end
                     
-                    ThisSequence(rr,:)=RefPool(1:2);
-                    RefPool=RefPool(3:end);
+                    ThisSequence(rr,1:RefPerSample)=RefPool(1:RefPerSample);
+                    RefPool=RefPool((1+RefPerSample):end);
                     if ismember(ThisSequence(rr,2),TargetIdx),
                         ThisSequence(rr,1:2)=ThisSequence(rr,[2 1]);
                     end
-                    
                 end
                 for tt=1:tarcount,
-                    if isempty(RefDuringTarPool)
-                        RefDuringTarPool=shuffle(1:par.ReferenceMaxIndex);
+                    if RefPerSample==2,
+                        if isempty(RefDuringTarPool)
+                            RefDuringTarPool=shuffle(1:par.ReferenceMaxIndex);
+                        end
+                        ThisSequence(refcount+tt,:)=...
+                            [TarIdxSet(TrialIdx) RefDuringTarPool(1)];
+                        RefDuringTarPool=RefDuringTarPool(2:end);
+                    else
+                        ThisSequence(refcount+tt,1)=TarIdxSet(TrialIdx);
                     end
-                    ThisSequence(refcount+tt,:)=...
-                        [TarIdxSet(TrialIdx) RefDuringTarPool(1)];
-                    RefDuringTarPool=RefDuringTarPool(2:end);
                 end
-            case 'RandOnly',
+                
+            case {'RandOnly','RandSingle'},
                 refcount=refcount+par.TargetRepCount;
                 ThisSequence=-ones(refcount,2);
-                if TrialIdx<=TrialCount./2,
+                if strcmpi(par.Mode,'RandOnly') && TrialIdx<=TrialCount./2,
                     SequenceCategory=1;
                     RefPerSample=2;
                 else
+                    % RandSingle always just one Reference
                     SequenceCategory=2;
                     RefPerSample=1;
                 end

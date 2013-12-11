@@ -30,15 +30,17 @@ end
 
 dbopen;
 
-[rawdata,site,celldata,rcunit,rcchan]=dbgetsite(globalparams.SiteID);
+%[rawdata,site,celldata,rcunit,rcchan]=dbgetsite(globalparams.SiteID);
+sql=['SELECT * FROM gCellMaster WHERE siteid="',globalparams.SiteID,'"'];
+site=mysql(sql);
 globalparams.penname=globalparams.SiteID(1:end-1);
 
-if length(site)==0,
+if isempty(site),
     sql=sprintf('SELECT * FROM gPenetration WHERE penname="%s"',...
                 globalparams.penname);
     pdata=mysql(sql);
     
-    if length(pdata)==0,
+    if isempty(pdata),
         %yn=questdlg(sprintf('Penetration %s doesn''t exist in cellDB. Create it?',globalparams.penname), ...
         %            'cellDB','Yes','No','Yes');
         yn='Yes';
@@ -55,7 +57,7 @@ if length(site)==0,
     %                    globalparams.SiteID), ...
     %            'cellDB','Yes','No','Yes');
     yn='Yes';
-    if isempty(yn) | strcmp(yn,'Yes'),
+    if isempty(yn) || strcmp(yn,'Yes'),
        globalparams.masterid=dbcreatesite(globalparams);
     end
 else
@@ -80,7 +82,7 @@ trawdata=mysql(sql);
 rawcount=length(trawdata);
 
 ii=find(globalparams.penname>='0' & globalparams.penname<='9');
-mm=max(find(globalparams.penname=='_'));
+mm=find(globalparams.penname=='_', 1, 'last' );
 if ~isempty(mm),
     ii=ii(ii>mm);
 end
@@ -138,7 +140,7 @@ if 1,
     end
     if ~isempty(answer),
         mfile=answer{1};
-        [t1,t2,t3]=fileparts(mfile);
+        [t1,t2]=fileparts(mfile);
         evpfilename = [t1 filesep t2 '.evp'];
         rawid=dbcreateraw(globalparams,runclass,mfile,evpfilename);
     else
