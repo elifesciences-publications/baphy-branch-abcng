@@ -1,5 +1,58 @@
 % smrbatch
 
+addpath /auto/data/code/son_Spike2_Matlab
+
+triggerchannel=23;
+pumpchannel=22;
+lickchannel=21;
+walkchannels=17:18;
+datachannels=[7 20];
+auxchannels=[lickchannel pumpchannel walkchannels];
+
+smrpath='/auto/data/daq/McGinley/smr2/';
+cd (smrpath);
+cd evp
+
+% not automated: 
+% 1. generate siteid,
+% 2. create path /auto/data/daq/McGinley/mcg<DATE>/
+% 3. copy evp and parmfiles to that path.
+
+parmfiles={'Mouse167_2013_10_23_TOR_9_cell1.m'};
+smrfile=[smrpath '10_23_13_Mouse167_whole_cell1_5TORCs_some_silence_NICE_Vm_and_sound_response.smr'];
+evpfiles=smr2evp(parmfiles,smrfile,triggerchannel,datachannels,auxchannels);
+
+parmfiles={'Mouse167_2013_10_24_TOR_5','Mous167_2013_10_24_TOR_6'};
+smrfile=[smrpath '10_24_13_Mouse167_whole_cell2_5TORCs_all_TORCs_silence_Rm_excellent.smr'];
+evpfiles=smr2evp(parmfiles,smrfile,triggerchannel,datachannels,auxchannels);
+
+
+
+return
+
+siteids={'mcg002a','mcg003a','mcg004a','mcg005a','mcg006a',...
+         'mcg007a','mcg008a','mcg009a','mcg010a','mcg011a',...
+         'mcg012a','mcg013a','mcg014a','mcg015a','mcg016a',...
+        };
+sds={'mcg2013_04_29','mcg2013_04_30','mcg2013_05_01','mcg2013_05_03',...
+     'mcg2013_05_06','mcg2013_05_07','mcg2013_06_04','mcg2013_06_05',...
+     'mcg2013_06_07','mcg2013_10_23','mcg2013_10_24'...
+    };
+
+jj=11;
+siteid=siteids{jj};
+sd=sds{jj};
+pth=['/auto/data/daq/McGinley/' sd '/']
+dd=dir([pth '*.evp']);
+for ii=1:length(dd),
+    evpfile=[pth,dd(ii).name];
+    parmfile=strrep(evpfile,'.evp','.m');
+    dbManualAddRaw(siteid,parmfile,evpfile);
+end
+
+%
+% Below here is old (out of date?)
+%
 addpath h:\code\Son_Spike2_Matlab\
 baphy_set_path
 

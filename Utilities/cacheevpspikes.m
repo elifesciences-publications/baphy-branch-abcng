@@ -141,8 +141,9 @@ for iBlock=1:NBlocks                 %
      if fixedsigma,
         fprintf('sigma fixed at %3f\n',fixedsigma);
         sigma=fixedsigma;
-     elseif ~isempty(bigartifacts)
-        disp('removing artifacts from sigma calc, but not from events.');
+     elseif ~isempty(bigartifacts) && length(bigartifacts)<length(cData)./2,
+         % don't do this if EVERYTHING is an artifact
+         disp('removing artifacts from sigma calc, but not from events.');
         tsig=nanstd(cData);
         ff=find(abs(cData)>tsig*5);
         td=zeros(size(cData));
@@ -173,11 +174,26 @@ for iBlock=1:NBlocks                 %
     % LOOP OVER TRIALS
     for trialidx=1:TrialsStop-TrialsStart+1
       cTrial = TrialsStart + trialidx - 1;
-      if trialidx>length(cIndices) || cIndices(trialidx) > length(cData) break; end
+      if trialidx>length(cIndices) || cIndices(trialidx)>length(cData),
+          break;
+      end
       cTrialData=cData(cIndices(trialidx):(cIndices(trialidx+1)-1));
       
       % DETECT SPIKES
-      if isempty(bigartifacts)
+      if sigthreshold>1000,
+          % FIND BINS WITH SPIKES basd on fixed threshold
+          tspikebin=[double(cTrialData>sigthreshold)];
+          tspikebin=[0;diff(tspikebin)>0];
+          tspikebin=find(tspikebin);
+          cNSpikes = length(tspikebin);
+          figure(1);
+          plot(cTrialData);
+          hold on
+          plot([1 length(cTrialData)],[1 1].*sigthreshold,'k--');
+          hold off
+          title(num2str(trialidx));
+          drawnow;
+     elseif isempty(bigartifacts)
          if sigthreshold>0,
             tspikebin=[0;diff(-cTrialData>(sigthreshold*sigma))>0];
          else

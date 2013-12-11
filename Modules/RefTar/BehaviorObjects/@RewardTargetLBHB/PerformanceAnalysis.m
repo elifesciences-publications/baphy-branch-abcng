@@ -320,9 +320,11 @@ perf(cnt2).DiscriminationIndex=di;
 perf(cnt2).uDiscriminationIndex=zeros(1,UniqueCount).*nan;
 
 for uu=unique(tcounter'),
-    ff=find(tcounter==uu | stimtype==0);
-    perf(cnt2).uDiscriminationIndex(uu)=...
-        compute_di(stimtime(ff),resptime(ff),stimtype(ff),stop_respwin);
+    if uu>0,
+        ff=find(tcounter==uu | stimtype==0);
+        perf(cnt2).uDiscriminationIndex(uu)=...
+            compute_di(stimtime(ff),resptime(ff),stimtype(ff),stop_respwin);
+    end
 end
 
 % change all rates to percentage. If its not rate, put the sum and

@@ -159,7 +159,7 @@ end
 
 if ~forceregen && exist(preprocfile,'file')
    
-   fprintf('loading saved stimulus spectrograms from %s\n',basename(preprocfile));
+    %fprintf('loading saved stimulus spectrograms from %s\n',basename(preprocfile));
    
    % load pregenerated stim
    load(preprocfile);

@@ -163,7 +163,6 @@ while narg <= length(varargin)
      end
      
     otherwise
-     
      require_gData=require_gData+1;
      tname=['gData',num2str(require_gData)];
      if isnumeric(varargin{narg+1}),

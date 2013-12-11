@@ -90,6 +90,9 @@ else
    if ~exist('lfp','var'),
       lfp=0;
    end
+   if ~exist('trialset','var'),
+      trialset=[];
+   end
    includeincorrect=0;
    lfp_clean=0;
    mua=0;
@@ -366,7 +369,7 @@ for trialidx=trialrange,
         end
         
         raster=resample(...
-            big_rs(strialidx(trialidx):(strialidx(trialidx+1)-1)),...
+            double(big_rs(strialidx(trialidx):(strialidx(trialidx+1)-1))),...
             rasterfs,spikefs);
         
         shockhappened=find(shocktrials==trialidx);
@@ -401,8 +404,8 @@ for trialidx=trialrange,
                    round((shockstop(shockidx)+0.3).*rasterfs))=0;
         end
         
-     elseif lfp==2,
-       channel=1;  % force lick
+     elseif lfp>=2,
+       channel=lfp-1;  % force lick
        if isempty(big_rs),
           [rs0,strialidx0,big_rs,atrialidx]=...
               evpread(evpfile,[],channel,trialidx:trialcount);
@@ -426,14 +429,17 @@ for trialidx=trialrange,
         % generate/use cachefile that already has spike events extracted from evp
         % for this channel/sigthreshold
         if isempty(big_rs),
-            if globalparams.HWSetup==3 || globalparams.HWSetup==11  %for SPR2: use 1.0 shockNaNwindow addby py@6/25/2013
+            if globalparams.HWSetup==3 || globalparams.HWSetup==11,
+                %for SPR2: use 1.0 shockNaNwindow addby py@6/25/2013
                 cachefile=cacheevpspikes(evpfile,channel,sigthreshold,0,0,1.0);
             else
                 cachefile=cacheevpspikes(evpfile,channel,sigthreshold);
             end
-          big_rs=load(cachefile);
-           
-           if verbose fprintf('%s big_rs loaded: %.1f sec\n',mfilename,toc); end
+            big_rs=load(cachefile);
+            
+            if verbose 
+                fprintf('%s big_rs loaded: %.1f sec\n',mfilename,toc);
+            end
         end
         
         thistrialidx=find(big_rs.trialid==trialidx);
