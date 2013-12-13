@@ -99,15 +99,6 @@ elseif not(Reverse) && strcmp(Mode,'NoFrozen')
     w = [Stimulus0 StimulusBis]; StimulusOrderStr = 'S0Sbis';
 end
 
-% % RAMP FOR FERRET TRAINING
-% if  strcmp('yes',get(O,'RampFirstSound'))
-%     RampDuration = ToC;
-%     ramp = hanning(round(RampDuration * sF*2));
-%     ramp = ramp(1:floor(length(ramp)/2))';
-%     ramp = [ramp ones(1,length(w)-length(ramp))];
-%     w = w.*ramp;
-% end
-
 % NORMALIZE IT TO +/-5V
 AverageNbTonesChord = round(2*log(FrequencySpace(end)/FrequencySpace(1))/log(2));    % Average of 2 tones per octave (cf. Ahrens 2008) / see AssemblyTones.m
 w = w*5/AverageNbTonesChord;
@@ -118,9 +109,9 @@ w = [zeros((PreStimSilence*sF),size(w,2)) ; w ; zeros((PostStimSilence*sF),size(
 if strcmp('yes',get(O,'RovingLoudness'))
     RovingLoudnessSeed = IniSeed*Global_TrialNb*Index;
     RgeneRovingLoudness = RandStream('mrg32k3a','Seed',RovingLoudnessSeed);
-    PickedUpLoudness = RgeneRovingLoudness.randi(21) - 11;  % Roving between -10 and +10dB
-    RatioTo80dB = 10^(PickedUpLoudness/10);   % dB to ratio in SPL
-    w = w*RatioTo80dB;
+    PickedUpLoudness = -(RgeneRovingLoudness.randi(21) - 1);  % Roving between -20 and +0dB
+    RatioToDesireddB = 10^(PickedUpLoudness/10);   % dB to ratio in SPL
+    w = w*RatioToDesireddB;
 end
 
 % ADD EVENTS

@@ -138,9 +138,9 @@ Events=AddEvent(Events,['OUTCOME,',Outcome],TrialIndex,ResponseTime,[]);
 fprintf(['\t [ ',Outcome,' ] ... ']);
 
 %% ACTUALIZE VISUAL FEEDBACK FOR THE SUBJECT
-if globalparams.HWSetup == 11
-  VisualDispColor = exptparams.FeedbackFigure;
-  [VisualDispColor] = VisualDisplay(0,Outcome,VisualDispColor);
+TrialObject = get(exptparams.TrialObject);
+if TrialObject.VisualDisplay
+    [VisualDispColor,exptparams] = VisualDisplay(TrialIndex,'GREY',exptparams);
 end
 
 %% TAKE ACTION BASED ON OUTCOME

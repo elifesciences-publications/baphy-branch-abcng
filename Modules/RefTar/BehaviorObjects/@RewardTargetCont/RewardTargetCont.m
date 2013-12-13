@@ -1,4 +1,4 @@
-function O = RewardTargetMC(varargin)
+function O = RewardTargetCont(varargin)
 % Positive Reinforcement behavior control with multiple spouts
 % NoResponseTime: the time period for no-lick before a trial start, which is necessary for a trial initiation.
 % EarlyWindow: a time period starting from the onset of target sequence.

@@ -51,7 +51,8 @@ case 0
     O.RunClass = '[]';
     O.UserDefinableFields = {...
       'OveralldB','edit',O.OveralldB,...
-      'ReinsertTrials','edit',O.ReinsertTrials};
+      'ReinsertTrials','edit',O.ReinsertTrials,...
+      'VisualDisplay','edit',1};
     O = class(O,'RefTarCont');
     O = ObjUpdate(O);
 case 1

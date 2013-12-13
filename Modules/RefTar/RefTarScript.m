@@ -55,17 +55,13 @@ while ContinueExp == 1
       exptparams.TotalTrials = TrialIndex;
       
       %% PREPARE TRIAL     
-      % Back to grey screen on the second monitor if we are in a psychophysics soundbooth
-      if globalparams.HWSetup == 11 && TrialIndex == 1
-        [VisualDispColor] = VisualDisplay(1,'GREY');
-        exptparams.FeedbackFigure = VisualDispColor;
-      elseif globalparams.HWSetup == 11 && TrialIndex > 1
-        VisualDispColor = exptparams.FeedbackFigure;
-        [VisualDispColor] = VisualDisplay(0,'GREY',VisualDispColor);
-      end
-      
-      %Create pump control
       TrialObject = get(exptparams.TrialObject);
+      % 2013/12 YB: VISUAL DISPLAY--Back to grey screen on the second monitor if we are in a psychophysics experiment
+      if TrialObject.VisualDisplay
+      	[VisualDispColor,exptparams] = VisualDisplay(TrialIndex,'GREY',exptparams);
+      end
+        
+      %Create pump control
       if isfield(TrialObject,'PumpProfile')
           PumpProfile = TrialObject.PumpProfile;
           handles = guihandles(WaterPumpControl(PumpProfile, TrialIndex));
