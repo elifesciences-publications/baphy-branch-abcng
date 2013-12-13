@@ -15,14 +15,12 @@ FrozenPatternsAdress = get(O,'FrozenPatternsAdress');
 P = get(O,'Par');
 FrozenPatternsNb = P.FrozenPatternsNb;
 if FrozenPatternsNb == 0; Mode = 'NoFrozen'; end
-Stimulus2Duration = P.Stimulus2Duration;
+StimulusBisDuration = P.StimulusBisDuration;
 FrequencySpace = P.FrequencySpace;
 XDistri = P.XDistri;
-D1 = get(O,'D1');
-MergedD_KeepBody = get(O,'MergedD_KeepBody');
-MergedD_KeepTails = get(O,'MergedD_KeepTails');
-Par = get(O,'Par'); D1MinimalDuration = Par.D1MinimalDuration;
-AfterChangeSoundDuration = Stimulus2Duration;
+D0 = get(O,'D0');
+Par = get(O,'Par'); FrozenPatternDuration = Par.FrozenPatternDuration;
+AfterChangeSoundDuration = StimulusBisDuration;
 
 % CHECK WHETHER Index EXCEEDED AVAILABLE INDICES
 MaxIndex = get(O,'MaxIndex');
@@ -37,9 +35,21 @@ ToC = PoissonProcessPsychophysics(lambda,P.MaxToC-P.MinToC,1,RToC);
 ToC = ToC + P.MinToC;
 
 % GET PARAMETERS OF CURRENT Index
-tmp = get(O,'MorphingTypeByInd'); MorphingType = tmp(Index); MorphingNb = max(tmp);
+tmp = get(O,'DistributionTypeByInd'); DistributionType = tmp(Index);
+tmp = get(O,'MorphingTypeByInd'); MorphingType = tmp(Index);
 tmp = get(O,'DifficultyLvlByInd'); DifficultyNum = tmp(Index);
 tmp = get(O,'ReverseByInd'); Reverse = tmp(Index); 
+
+% LOAD THE DESIRED Changed Distributions
+ChangeDistributions = get(O,['D' num2str(DistributionType)]);
+if size(ChangeDistributions,3) < 2
+    D0 = D0{1};
+    ChangeD = ChangeDistributions{DifficultyNum,MorphingType,1};
+else % case where there is a unique distribution for each trial
+    IniDistriNum = mod(Global_TrialNb-1,size(ChangeDistributions,3))+1;  % UniqueIniDistriNum could be < Global_TrialNb
+	D0 = D0{IniDistriNum};
+    ChangeD = ChangeDistributions{DifficultyNum,MorphingType,IniDistriNum};
+end
 
 % GENERATE SEQUENCES OF FROZEN PATTERNS // LOAD THE APPROPRIATE ONE
 if not( strcmp(Mode,'NoFrozen') )
@@ -60,53 +70,64 @@ if not( strcmp(Mode,'NoFrozen') )
 end
 
 if Reverse
-    Stimulus1Duration = Stimulus2Duration;
-    Stimulus2Duration = ToC + D1MinimalDuration;  % frozen patterns last D1MinimalDuration
+    Stimulus0Duration = StimulusBisDuration;
+    StimulusBisDuration = ToC + FrozenPatternDuration;
     FrozenPatternNum = 0;
 elseif not(Reverse) && not( strcmp(Mode,'NoFrozen') )
-    Stimulus1Duration = ToC;
+    Stimulus0Duration = ToC;
 elseif not(Reverse) && strcmp(Mode,'NoFrozen')
-    Stimulus1Duration = ToC + D1MinimalDuration;
+    Stimulus0Duration = ToC + FrozenPatternDuration;
     FrozenPatternNum = 0;
 end
-    
-if MorphingNb >2
-    MergedD = MergedD_KeepBody{DifficultyNum,MorphingType};
-elseif MorphingType ==1
-    MergedD = MergedD_KeepBody{DifficultyNum};
-elseif MorphingType ==2
-    MergedD = MergedD_KeepTails{DifficultyNum};
-end
 
-% BUILD D1 STIMULUS ('REFERENCE' located in the TARGET)
-%AND D2 STIMULUS ('TARGET' located in the TARGET)
+% BUILD D0 STIMULUS ('REFERENCE' located in the TARGET)
+%AND Dbis STIMULUS ('TARGET' located in the TARGET)
 % Random stream to draw tones for each distribution
 PlotDistributions = 0;
-RtonesD1 = RandStream('mrg32k3a','Seed',Global_TrialNb*Index);
-Stimulus1 = AssemblyTones(FrequencySpace,D1,XDistri,Stimulus1Duration,sF,PlotDistributions,[],RtonesD1); 
+RtonesD0 = RandStream('mrg32k3a','Seed',Global_TrialNb*Index);
+Stimulus0 = AssemblyTones(FrequencySpace,D0,XDistri,Stimulus0Duration,sF,PlotDistributions,[],RtonesD0); 
 
-RtonesD2 = RandStream('mrg32k3a','Seed',Global_TrialNb*Index*2);
-Stimulus2 = AssemblyTones(FrequencySpace,MergedD,XDistri,Stimulus2Duration,sF,PlotDistributions,[],RtonesD2);
+RtonesD = RandStream('mrg32k3a','Seed',Global_TrialNb*Index*2);
+StimulusBis = AssemblyTones(FrequencySpace,ChangeD,XDistri,StimulusBisDuration,sF,PlotDistributions,[],RtonesD);
 
 % CONCATENATE THE WHOLE STIMULUS
 if not(Reverse) && not( strcmp(Mode,'NoFrozen') )
-    w = [FrozenPattern' Stimulus1 Stimulus2]; StimulusOrderStr = 'S1S2';
+    w = [FrozenPattern' Stimulus0 StimulusBis]; StimulusOrderStr = 'S0Sbis';
 elseif Reverse
-    w = [Stimulus2 Stimulus1]; StimulusOrderStr = 'S2S1';
+    w = [StimulusBis Stimulus0]; StimulusOrderStr = 'SbisS0';
 elseif not(Reverse) && strcmp(Mode,'NoFrozen')
-    w = [Stimulus1 Stimulus2]; StimulusOrderStr = 'S1S12';
+    w = [Stimulus0 StimulusBis]; StimulusOrderStr = 'S0Sbis';
 end
+
+% % RAMP FOR FERRET TRAINING
+% if  strcmp('yes',get(O,'RampFirstSound'))
+%     RampDuration = ToC;
+%     ramp = hanning(round(RampDuration * sF*2));
+%     ramp = ramp(1:floor(length(ramp)/2))';
+%     ramp = [ramp ones(1,length(w)-length(ramp))];
+%     w = w.*ramp;
+% end
+
 % NORMALIZE IT TO +/-5V
-w = w*0.3/std(w);
+AverageNbTonesChord = round(2*log(FrequencySpace(end)/FrequencySpace(1))/log(2));    % Average of 2 tones per octave (cf. Ahrens 2008) / see AssemblyTones.m
+w = w*5/AverageNbTonesChord;
 w = w';    % column shape
 w = [zeros((PreStimSilence*sF),size(w,2)) ; w ; zeros((PostStimSilence*sF),size(w,2))];
+
+% ROVING LOUDNESS IN CASE OF PSYCHOPHYSICS
+if strcmp('yes',get(O,'RovingLoudness'))
+    RovingLoudnessSeed = IniSeed*Global_TrialNb*Index;
+    RgeneRovingLoudness = RandStream('mrg32k3a','Seed',RovingLoudnessSeed);
+    PickedUpLoudness = RgeneRovingLoudness.randi(21) - 11;  % Roving between -10 and +10dB
+    RatioTo80dB = 10^(PickedUpLoudness/10);   % dB to ratio in SPL
+    w = w*RatioTo80dB;
+end
 
 % ADD EVENTS
 ev=[]; ev = AddEvent(ev,[''],[],0,PreStimSilence); 
 if exist('Mode','var') && strcmp(Mode,'Simulation'); return; end
 
-if not(Reverse) && not( strcmp(Mode,'NoFrozen') ); FrozenPatternDuration = (length(FrozenPattern)-1)/sF; else FrozenPatternDuration = D1MinimalDuration; end
-ev = AddEvent(ev,['STIM , ' StimulusOrderStr ' ' num2str(Index),' - ',num2str(Global_TrialNb) ' - ' num2str(MorphingType) ' - ' num2str(DifficultyNum) ' - ' num2str(FrozenPatternNum) ' - ' num2str(ToC)],...
+ev = AddEvent(ev,['STIM , ' StimulusOrderStr ' ' num2str(Index),' - ',num2str(Global_TrialNb) ' - ' num2str(DistributionType) ' - ' num2str(MorphingType) ' - ' num2str(DifficultyNum) ' - ' num2str(FrozenPatternNum) ' - ' num2str(ToC)],...
   [ ],ev(end).StopTime,ev(end).StopTime+FrozenPatternDuration+ToC);
 
 [a,b,c]  = ParseStimEvent(ev(2),0);
