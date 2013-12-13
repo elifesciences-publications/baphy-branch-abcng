@@ -34,7 +34,11 @@ HW.AO(id).Names=Names;
 TaskPtr = libpointer(HW.params.ptrType,false); % for 32 bit
 S = DAQmxCreateTask(HW.AO(id).TaskName,TaskPtr);
 if S NI_MSG(S); end
-HW.AO(id).Ptr = TaskPtr;
+switch computer
+  case 'PCWIN'; HW.AO(id).Ptr = get(TaskPtr,'value');
+  case 'PCWIN64'; HW.AO(id).Ptr = TaskPtr;
+  otherwise error('Computertype not supported for NIDAQ');
+end
 NI_MASTER_TASK_LIST=cat(2,NI_MASTER_TASK_LIST,HW.AO(id).Ptr);
 
 % ADD ANALOG OUTPUT CHANNELS
