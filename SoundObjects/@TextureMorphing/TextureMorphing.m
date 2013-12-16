@@ -43,7 +43,6 @@ switch nargin
       'D2shape','popupmenu','non_contig_increm',...%|normal|offset_normal|cauchy|none',...     
       'DifficultyLvl_D2','edit','110',...    % decreasing difficulty
       'D2param','edit','2 3 5 7',...      % in case we need extra params
-      'UniqueIniDistriNb','edit','18',...      % 125 repeats is ok
       'Inverse_D0Dbis','popupmenu','no',...    %|yes',...   
       'MinToC','edit','0',...   
       'MaxToC','edit','8',... 
@@ -62,7 +61,6 @@ switch nargin
 
     
     o.FrequencySpace = []; o.XDistri = []; o.F0 = [];
-    o.D0 = []; o.D1 = []; o.D2 = [];
     o.IniSeed = []; o.MorphingDuration = [];
     o.DistributionTypeByInd = []; o.MorphingTypeByInd = []; o.DifficultyLvlByInd = []; o.ReverseByInd = [];
     o.MorphingNb = []; o.Bins2Change = []; o.ChannelDistancesByMorphing = [];

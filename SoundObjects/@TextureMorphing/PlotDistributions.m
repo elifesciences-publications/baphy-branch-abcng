@@ -1,7 +1,7 @@
-function [] = PlotDistributions(o,PlotDbis,DistributionType,UniqueIniDistriNum)
+function [] = PlotDistributions(o,PlotDbis,DistributionType,Global_TrialNb)
 % Method of class TextureMorphing to plot distributions (D1,ChangeD and Merged).
 %% PARAMETERS   
-if nargin<4; UniqueIniDistriNum = 1; end
+if nargin<4; Global_TrialNb = 1; end
 Par = get(o,'Par');
 if nargin<2; PlotDbis = 0; end
 NicePlotConfig;
@@ -13,8 +13,8 @@ sF = get(o,'SamplingRate');
 ToneDuration = Par.ToneDuration;
 FrequencySpace = get(o,'FrequencySpace'); 
 XDistri = get(o,'XDistri');
-D0 = get(o,'D0');
-D0 = D0{UniqueIniDistriNum};
+Index = 1;
+[ w , ev , o , D0 , ChangeD] = waveform(o,Index,[],[],Global_TrialNb);
 
 %% CREATION/PLOT OF THE STIMULUS
 if PlotDbis
@@ -30,15 +30,20 @@ ylim([0 1.2]); xlabel('Tone freq. (oct.)'); ylabel('Original distribution');
 %% PLOT D1 or D2
 % LOAD THE DESIRED Changed Distributions
 if PlotDbis
+    DistributionTypeByInd = get(o,'DistributionTypeByInd');
+    MorphingTypeByInd = get(o,'MorphingTypeByInd');
+    DifficultyLvlByInd = get(o,'DifficultyLvlByInd');
+    ReverseByInd = get(o,'ReverseByInd');
+    
     MorphingNb = get(o,'MorphingNb');
     MorphingNb = MorphingNb(DistributionType);
-    ChangeDistributions = get(o,['D' num2str(DistributionType)]);
     DifficultyLvl = str2num( get(o,['DifficultyLvl_D' num2str(DistributionType)]) );
     cm = colormap(lines(length(DifficultyLvl)));    
     for DifficultyNum = 1:length(DifficultyLvl)
         for BinNum = 1:MorphingNb
             subplot(CoLineNb+1,CoLineNb,BinNum+CoLineNb); hold all;
-            ChangeD = ChangeDistributions{DifficultyNum,BinNum,UniqueIniDistriNum};
+            Index = find( DifficultyLvlByInd==DifficultyNum & BinNum==MorphingTypeByInd & DistributionTypeByInd==DistributionType );
+            [ w , ev , o , D0 , ChangeD] = waveform(o,Index,[],[],Global_TrialNb);            
             AreaOfThis = trapz(log2(XDistri),ChangeD(XDistri));
             hold all; plot(log2(XDistri),ChangeD(XDistri),'color',cm(length(DifficultyLvl)-DifficultyNum+1,:),'displayname',['A=' num2str(AreaOfThis)]);
             plot(log2(XDistri),D0(XDistri),'k'); 

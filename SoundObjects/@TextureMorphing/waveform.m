@@ -1,4 +1,4 @@
-function [ w , ev , O ] = waveform(O,Index,IsFef,Mode,Global_TrialNb)
+function [ w , ev , O , D0 , ChangeD] = waveform(O,Index,IsFef,Mode,Global_TrialNb)
 % Waveform generator for the class TextureMorphing
 % See main file for how the Index selects the stimuli
 % Adapted from BiasedShepardPair - Yves 2013
@@ -12,14 +12,14 @@ PreStimSilence = get(O,'PreStimSilence');
 PostStimSilence = get(O,'PostStimSilence');
 IniSeed = get(O,'IniSeed');
 FrozenPatternsAdress = get(O,'FrozenPatternsAdress');
-P = get(O,'Par');
-FrozenPatternsNb = P.FrozenPatternsNb;
+Par = get(O,'Par');
+FrozenPatternsNb = Par.FrozenPatternsNb;
 if FrozenPatternsNb == 0; Mode = 'NoFrozen'; end
-StimulusBisDuration = P.StimulusBisDuration;
-FrequencySpace = P.FrequencySpace;
-XDistri = P.XDistri;
-D0 = get(O,'D0');
-Par = get(O,'Par'); FrozenPatternDuration = Par.FrozenPatternDuration;
+StimulusBisDuration = Par.StimulusBisDuration;
+FrequencySpace = Par.FrequencySpace;
+XDistri = Par.XDistri;
+F0 = Par.F0;
+FrozenPatternDuration = Par.FrozenPatternDuration;
 AfterChangeSoundDuration = StimulusBisDuration;
 
 % CHECK WHETHER Index EXCEEDED AVAILABLE INDICES
@@ -31,25 +31,28 @@ CurrentRepetitionNb = ceil(Global_TrialNb/MaxIndex);
 % GENERATE Timing of Change [ToC]
 RToC = RandStream('mrg32k3a','Seed',IniSeed*Global_TrialNb);   % mcg16807 is fucked up
 lambda = 0.15; 
-ToC = PoissonProcessPsychophysics(lambda,P.MaxToC-P.MinToC,1,RToC);
-ToC = ToC + P.MinToC;
+ToC = PoissonProcessPsychophysics(lambda,Par.MaxToC-Par.MinToC,1,RToC);
+ToC = ToC + Par.MinToC;
 
 % GET PARAMETERS OF CURRENT Index
-tmp = get(O,'DistributionTypeByInd'); DistributionType = tmp(Index);
-tmp = get(O,'MorphingTypeByInd'); MorphingType = tmp(Index);
+tmp = get(O,'DistributionTypeByInd'); ChangedD_Num = tmp(Index);
+tmp = get(O,'MorphingTypeByInd'); MorphingNum = tmp(Index);
 tmp = get(O,'DifficultyLvlByInd'); DifficultyNum = tmp(Index);
 tmp = get(O,'ReverseByInd'); Reverse = tmp(Index); 
+Bins2Change = get(O,'Bins2Change');
 
-% LOAD THE DESIRED Changed Distributions
-ChangeDistributions = get(O,['D' num2str(DistributionType)]);
-if size(ChangeDistributions,3) < 2
-    D0 = D0{1};
-    ChangeD = ChangeDistributions{DifficultyNum,MorphingType,1};
-else % case where there is a unique distribution for each trial
-    IniDistriNum = mod(Global_TrialNb-1,size(ChangeDistributions,3))+1;  % UniqueIniDistriNum could be < Global_TrialNb
-	D0 = D0{IniDistriNum};
-    ChangeD = ChangeDistributions{DifficultyNum,MorphingType,IniDistriNum};
-end
+% DO
+PlotDistributions = 0;
+D0type = Par.D0shape;
+
+% D0/D1/D2 -- DRAW DISTRIBUTIONS FOR EACH CHANGED DISTRIBUTION
+Dtype = getfield(Par,['D' num2str(ChangedD_Num) 'shape']);   
+DifficultyLvl = getfield(Par,['DifficultyLvl_D' num2str(ChangedD_Num)]);
+DiffLvl = DifficultyLvl(DifficultyNum);       % given in %
+    
+D0param = [F0 Par.Bandwidth Par.IniSeed Global_TrialNb];
+Dparam = [D0param(1:end-2) Bins2Change{ChangedD_Num}(MorphingNum,:)];    % We don't need a Seed to modify the original distribution
+[D0,ChangeD] = BuildMorphing(D0type,Dtype,D0param,Dparam,XDistri,MorphingNum,DiffLvl,PlotDistributions,F0,sF,FrequencySpace);
 
 % GENERATE SEQUENCES OF FROZEN PATTERNS // LOAD THE APPROPRIATE ONE
 if not( strcmp(Mode,'NoFrozen') )
@@ -118,7 +121,7 @@ end
 ev=[]; ev = AddEvent(ev,[''],[],0,PreStimSilence); 
 if exist('Mode','var') && strcmp(Mode,'Simulation'); return; end
 
-ev = AddEvent(ev,['STIM , ' StimulusOrderStr ' ' num2str(Index),' - ',num2str(Global_TrialNb) ' - ' num2str(DistributionType) ' - ' num2str(MorphingType) ' - ' num2str(DifficultyNum) ' - ' num2str(FrozenPatternNum) ' - ' num2str(ToC)],...
+ev = AddEvent(ev,['STIM , ' StimulusOrderStr ' ' num2str(Index),' - ',num2str(Global_TrialNb) ' - ' num2str(ChangedD_Num) ' - ' num2str(MorphingNum) ' - ' num2str(DifficultyNum) ' - ' num2str(FrozenPatternNum) ' - ' num2str(ToC)],...
   [ ],ev(end).StopTime,ev(end).StopTime+FrozenPatternDuration+ToC);
 
 [a,b,c]  = ParseStimEvent(ev(2),0);

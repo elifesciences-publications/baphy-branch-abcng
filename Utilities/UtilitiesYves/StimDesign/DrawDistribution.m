@@ -79,46 +79,5 @@ for BinNum = 1:length(QuantalWeights)
 end
 DeltasBlock = DeltasBlock(RPerm.randperm(length(QuantalWeights)),:);
 DeltasBlock = DeltasBlock(:,RPerm.randperm(length(QuantalWeights)));
-% RPerm = RandStream('mrg32k3a','Seed',SeedPerm);   % mcg16807 is fucked up
-% QuantalWeights = [-1 -1 -1 0 0 1 1 1];
-% BlockReady = 0;
-% while ~BlockReady
-%     disp(DeltasBlock)
-%     DeltasBlock = QuantalWeights(RPerm.randperm(length(QuantalWeights)));   % Initial line
-%     for DistriNum = 2:DistriBinNb   % line after line, i.e. trial after trial
-%         PermutedWeights = QuantalWeights( RPerm.randperm(length(QuantalWeights)) );
-%         InitialWeightIndex = 1;
-%         while InitialWeightIndex<=DistriBinNb && ~BlockReady
-%             ProposedWeights = PermutedWeights;
-%             OngoingWeights = ProposedWeights(InitialWeightIndex);   % new start to explore more possibilities
-%             ProposedWeights(InitialWeightIndex) = [];
-%             for BinNum = 2:DistriBinNb   % col. after col., i.e. bin after bin
-%                 A = sort( [OngoingWeights -1 0 1] )';    % must be sorted and 1 element of each for sure to be counted by accumarray()
-%                 B = sort( [DeltasBlock(:,BinNum) ; -1 ; 0 ; 1] );
-%                 X = accumarray(A+2,1) - 1;  % +2 because must be positive
-%                 Y = accumarray(B+2,1) - 1;
-%                 
-%                 RemainingElements = [ones(1,3-X(1)-Y(1))*-1 ones(1,2-X(2)-Y(2))*0 ones(1,3-X(3)-Y(3))*1];
-%                 MagicIndex = find( ismember(ProposedWeights,RemainingElements) );                
-%                 if ~isempty(MagicIndex)
-%                     MagicIndex = MagicIndex(1);
-%                     OngoingWeights(BinNum) = ProposedWeights(MagicIndex);
-%                     ProposedWeights(MagicIndex) = [];
-%                 else   %Impossible to find an element matching requirements
-%                     InitialWeightIndex = InitialWeightIndex + 1;
-%                     break
-%                 end
-%                 if length(OngoingWeights)==DistriBinNb  % line is done
-%                     DeltasBlock(size(DeltasBlock,1)+1,:) = OngoingWeights;
-%                     if DistriNum==DistriBinNb   % Block is done!
-%                         BlockReady = 1;
-%                     end
-%                 end
-%             end
-%         end
-%         if InitialWeightIndex>DistriBinNb  % no combination was found for this line. We need to restart the block.
-%             break
-%         end
-%     end
-% end
+
 

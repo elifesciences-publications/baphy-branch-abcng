@@ -55,7 +55,7 @@ sF = get(o,'SamplingRate');
 % GENERATION OF A SEED FOR ToCs IF I AM NOT RELOADING A SOUND OBJECT
 if ~(exist('IniSeed','var')) || isempty(IniSeed)
     IniSeed = round( rand(1,1)*100 );   % With RandStream('mrg32k3a'), it is important to work with large numbers, 
-                                        %because thetre is a heavy correlatio between two seeds that belong to the same integer interval [n,n+1[
+                                        %because there is a heavy correlation between two seeds that belong to the same integer interval [n,n+1[
 end
 Par.IniSeed = IniSeed;
 o = set(o,'IniSeed',IniSeed);
@@ -90,33 +90,6 @@ o = set(o,'MorphingNb',MorphingNb);
 o = set(o,'Bins2Change',Bins2Change);
 o = set(o,'ChannelDistancesByMorphing',ChannelDistancesByMorphing);
 o = set(o,'MaxIndex',MaxIndex);
-
-% DO
-PlotDistributions = 0;
-D0type = Par.D0shape;
-
-% D1/D2
-for ChangedD_Num = 1:ChangedD_Nb
-    % DRAW DISTRIBUTIONS FOR EACH CHANGED DISTRIBUTION
-    Dtype = getfield(Par,['D' num2str(ChangedD_Num) 'shape']);   
-    DifficultyLvl = getfield(Par,['DifficultyLvl_D' num2str(ChangedD_Num)]);
-    ChangedDistributions = [];
-    for DifficultyNum = 1:DifficultyLvlNb(ChangedD_Num)
-        DiffLvl = DifficultyLvl(DifficultyNum);       % given in %   
-        for MorphingNum = 1:MorphingNb(ChangedD_Num)
-            for UniqueIniDistriNum = 1:Par.UniqueIniDistriNb
-                D0param = [F0 Par.Bandwidth Par.IniSeed UniqueIniDistriNum];
-                Dparam = [D0param(1:end-2) Bins2Change{ChangedD_Num}(MorphingNum,:)];    % We don't need a Seed to modify the original distribution
-                [D0,ChangeD] = BuildMorphing(D0type,Dtype,D0param,Dparam,XDistri,MorphingNum,DiffLvl,PlotDistributions,F0,sF,FrequencySpace);
-                D0s{UniqueIniDistriNum} = D0;
-                ChangedDistributions{DifficultyNum,MorphingNum,UniqueIniDistriNum} = ChangeD;
-            end
-        end
-    end
-    o = set(o,'D0',D0s);    
-    o = set(o,['D' num2str(ChangedD_Num)],ChangedDistributions);
-end
-
 o = set(o,'Par',Par);
 
 % SET NAMES
@@ -157,4 +130,3 @@ o = set(o,'MorphingTypeByInd',MorphingTypeByInd);
 o = set(o,'DifficultyLvlByInd',DifficultyLvlByInd);
 o = set(o,'ReverseByInd',ReverseByInd);
 o = set(o,'Names',Names);
-
