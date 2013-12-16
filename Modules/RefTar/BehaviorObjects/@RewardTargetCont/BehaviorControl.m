@@ -140,7 +140,7 @@ fprintf(['\t [ ',Outcome,' ] ... ']);
 %% ACTUALIZE VISUAL FEEDBACK FOR THE SUBJECT
 TrialObject = get(exptparams.TrialObject);
 if TrialObject.VisualDisplay
-    [VisualDispColor,exptparams] = VisualDisplay(TrialIndex,'GREY',exptparams);
+    [VisualDispColor,exptparams] = VisualDisplay(TrialIndex,Outcome,exptparams);
 end
 
 %% TAKE ACTION BASED ON OUTCOME

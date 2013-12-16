@@ -31,11 +31,14 @@ else
   CurrentTrialIndex = CurrentTrialIndex{1};
 end
 DiffiLevels = get(SO,'DifficultyLvlByInd'); 
+DistributionTypes = get(SO,'DistributionTypeByInd');
 
-TrialDiffiLvl = DiffiLevels(CurrentTrialIndex);
-TrialSuccessCase = find( strcmp({'HIT','SNOOZE','EARLY'} , {AllPerf(end).Outcome}) );
 TrialDiffiMat = zeros(length(unique(DiffiLevels)),3);
-TrialDiffiMat(TrialDiffiLvl,TrialSuccessCase) = 1;
+if DistributionTypes(CurrentTrialIndex) == 1  % Display only for one DistributionType
+  TrialDiffiLvl = DiffiLevels(CurrentTrialIndex);
+  TrialSuccessCase = find( strcmp({'HIT','SNOOZE','EARLY'} , {AllPerf(end).Outcome}) );
+  TrialDiffiMat(TrialDiffiLvl,TrialSuccessCase) = 1;
+end
 
 if TrialIndex == 1   
   DiffiMatPreviousTrial = zeros(length(unique(DiffiLevels)),3);

@@ -112,7 +112,7 @@ w = [zeros((PreStimSilence*sF),size(w,2)) ; w ; zeros((PostStimSilence*sF),size(
 if strcmp('yes',get(O,'RovingLoudness'))
     RovingLoudnessSeed = IniSeed*Global_TrialNb*Index;
     RgeneRovingLoudness = RandStream('mrg32k3a','Seed',RovingLoudnessSeed);
-    PickedUpLoudness = -(RgeneRovingLoudness.randi(21) - 1);  % Roving between -20 and +0dB
+    PickedUpLoudness = -(RgeneRovingLoudness.randi(11) - 1);  % Roving between -20 and +0dB
     RatioToDesireddB = 10^(PickedUpLoudness/10);   % dB to ratio in SPL
     w = w*RatioToDesireddB;
 end
