@@ -88,6 +88,9 @@ Stimulus1 = AssemblyTones(FrequencySpace,D1,XDistri,Stimulus1Duration,sF,PlotDis
 RtonesD2 = RandStream('mrg32k3a','Seed',Global_TrialNb*Index*2);
 Stimulus2 = AssemblyTones(FrequencySpace,MergedD,XDistri,Stimulus2Duration,sF,PlotDistributions,[],RtonesD2);
 
+% ATTENUATE THE FIRST PART OF THE STIMULUS !!!TEMPORARY!!!
+Stimulus1 = Stimulus1/6;
+
 % CONCATENATE THE WHOLE STIMULUS
 if not(Reverse) && not( strcmp(Mode,'NoFrozen') )
     w = [FrozenPattern' Stimulus1 Stimulus2]; StimulusOrderStr = 'S1S2';
@@ -96,10 +99,18 @@ elseif Reverse
 elseif not(Reverse) && strcmp(Mode,'NoFrozen')
     w = [Stimulus1 Stimulus2]; StimulusOrderStr = 'S1S12';
 end
-% NORMALIZE IT TO +/-5V
-w = w*0.3/std(w);
 w = w';    % column shape
 w = [zeros((PreStimSilence*sF),size(w,2)) ; w ; zeros((PostStimSilence*sF),size(w,2))];
+
+% CASE WHERE LOUDNESS SHOULD BE ADJUSTED MANUALLY (roving loudness for example)
+global LoudnessAdjusted;
+if LoudnessAdjusted
+      Duration = HW.Calibration.Loudness.Parameters.Duration;
+      Val = maxLocalStd(stim(:),Duration,HW.params.fsAO);
+      stim =  HW.Calibration.Loudness.Parameters.SignalMatlab80dB*stim/Val;
+      RovedLoudnessFactor = 10^( (RovedLoudness-80) /10);
+      stim = stim*RovedLoudnessFactor;
+end
 
 % ADD EVENTS
 ev=[]; ev = AddEvent(ev,[''],[],0,PreStimSilence); 

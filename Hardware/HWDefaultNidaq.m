@@ -21,13 +21,14 @@ NI_SHOW_ERROR_WARN=0;
 
 HW=[];
 HW.params.HWSetup   = globalparams.HWSetup;
-% default fsout depends on Tester (hacked so Sharba gets 160K)
 HW.params.fsAO      = 100000;  % no longer coded in BaphyMainGuiItems.  Just code for each HWsetup!
 HW.params.fsAI      = 1000;  % default fsAI is 1000.
 HW.params.fsSpike   = 25000;  % old -- used by anything?
 HW.params.fsAux     = 1000;
-HW.params.MaxTrialLen=620;  % 30 seconds.  Is this long enough? remember Fiser!
-HW.params.SoftwareAtten=1;
+HW.params.MaxTrialLen = 620;  
+HW.params.SoftwareAtten = 1;
+HW.Calibration.LoudnessMethod = 'MinMax';
+
 HW.params.driver = 'NIDAQMX';  % versus default 'DAQTOOLBOX';
 switch upper(computer),
   case 'PCWIN',

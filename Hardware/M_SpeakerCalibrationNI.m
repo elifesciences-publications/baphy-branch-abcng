@@ -32,6 +32,7 @@ if ~isfield(P,'InputRange') P.InputRange = [-5,5]; end
 % CALIBRATION PARAMETERS 
 if ~isfield(P,'LStim') P.LStim=5; end
 if ~isfield(P,'NoiseStd') P.NoiseStd=0.1; end
+if ~isfield(P,'LoudnessMethod') P.LoudnessMethod = 'MaxLocalStd'; end
 if ~isfield(P,'PreDur') P.PreDur=4.00; end; P.PreSteps = round(P.PreDur*P.SR);
 if ~isfield(P,'PostDur') P.PostDur=0.05; end; P.PostSteps = round(P.PostDur*P.SR);
 
@@ -44,7 +45,6 @@ if ~isfield(P,'NFFT') P.NFFT = round(P.ImpRespDur*P.SR); end
 % TEST PARAMETERS
 if ~isfield(P,'TestDur') P.TestDur = 5; end
 if ~isfield(P,'dBSPLRef') P.dBSPLRef = 80; end
-if ~isfield(P,'SignalMatlab80dB') P.SignalMatlab80dB = 5; end
 if ~isfield(P,'VoltageOutAbsMax') P.VoltageOutAbsMax = 5; end
 if ~isfield(P,'Signal') P.Signal='Noise'; end
 if ~isfield(P,'RampDur') P.RampDur = 0.005; end
@@ -57,6 +57,8 @@ fprintf(['\n === Calibrating Speaker [ ',P.Speaker,' ] on DAQ Devices ',...
   '(IN : ',P.DeviceIn,' Ch. ',n2s(P.ChIn),', OUT : ',P.DeviceOut,' Ch. ',n2s(P.ChOut),' at SR=',n2s(P.SR),') ===\n']);
 
 P.SameDevice = strcmp(P.DeviceIn,P.DeviceOut);
+
+P = LF_loudnessParameters(P);
 
 %% PREPARE NOISE STIMULUS
 [Signal,P] = LF_prepareSignal(P); R = [ ];
@@ -75,7 +77,7 @@ end
   
 % DISPLAY OUTPUT VOLUME
 [b,a] = butter(2,50/P.SR,'high'); ResponseF = filter(b,a,D.ResponseCut-D.ResponseCut(1));
-PaMeasured = std(ResponseF);
+PaMeasured = LF_signalAmplitude(ResponseF,P);
 cdBSPL = M_VolumeConversion(PaMeasured,'Pa2dB');
 fprintf([' => Volume : ',n2s(cdBSPL),'\n']);
 PaTarget = M_VolumeConversion(P.dBSPLRef,'dB2Pa');
@@ -114,6 +116,26 @@ end
 
 
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function P = LF_loudnessParameters(P)
+switch P.LoudnessMethod
+  case 'MaxLocalStd';
+    P.LoudnessParameters = struct('Duration',0.1,'SignalMatlab80dB',1); % Estimate over 100ms
+  case {'MinMax'};
+    P.LoudnessParameters = struct('SignalMatlab80dB',5);
+  case {'Std'};
+    P.LoudnessParameters = struct('SignalMatlab80dB',1);
+  otherwise error('Error : Method for measuring Signal Amplitude not known.');
+end
+
+function A = LF_signalAmplitude(S,P)
+
+switch P.LoudnessMethod
+  case 'MaxLocalStd';    A = maxLocalStd(S,P.LoudnessParameters.Duration,P.SR);
+  case 'GlobalStd';         A = std(S);
+  case 'MinMax';            A = max(abs(S));
+  otherwise error('Error : Method for measuring Signal Amplitude not known.');
+end
+
 function [AI,AO] = LF_prepareEngines(P)
 switch P.SameDevice
   case 1 % SAME DEVICE, SERVICED BY DAQ TOOLBOX
@@ -143,9 +165,17 @@ switch P.SameDevice
     S = DAQmxResetDevice(P.DeviceIn);  if S NI_MSG(S); end
 
     % INITIALIZE TASK
-    AIPtr = libpointer('uint32Ptr',false);
+    switch upper(computer),
+      case 'PCWIN';       PointerType = 'uint32Ptr';
+      case 'PCWIN64';   PointerType = 'voidPtr';
+    end
+    
+    AIPtr = libpointer(PointerType,false);
     S = DAQmxCreateTask('Microphone',AIPtr);  if S NI_MSG(S); end
-    AI = get(AIPtr,'Value');
+    switch upper(computer),
+      case 'PCWIN';         AI = get(AIPtr,'Value');
+      case 'PCWIN64';     AI = AIPtr;
+    end
 
     S = DAQmxCreateLinScale('JustVolts',1,0,NI_decode('DAQmx_Val_Volts'),'JustVolts');  if S NI_MSG(S); end
     
@@ -173,9 +203,12 @@ switch P.SameDevice
     try S = DAQmxClearTask(AO); if S NI_MSG(S); end; end
 
     % INITIALIZE TASK
-    AOPtr = libpointer('uint32Ptr',false);
+    AOPtr = libpointer(PointerType,false);
     S = DAQmxCreateTask('SoundOut',AOPtr);  if S NI_MSG(S); end
-    AO = get(AOPtr,'Value');
+    switch upper(computer),
+      case 'PCWIN';         AO = get(AOPtr,'Value');
+      case 'PCWIN64';     AO = AOPtr;
+    end
 
     % INITIALIZE OUTPUT VOLTAGE CHANNEL
     S = DAQmxCreateAOVoltageChan(AO,['/',P.DeviceOut,'/ao',num2str(P.ChOut)],'SoundOut',-10,10,NI_decode('DAQmx_Val_Volts'),[]);   if S NI_MSG(S); end
@@ -197,7 +230,7 @@ P.NSteps = round(P.LStim*P.SR);
 switch P.Signal
   case 'Noise';
     Signal = [randn(1,P.NSteps,1)]';
-    Signal = P.NoiseStd*Signal/std(Signal);
+    Signal = P.NoiseStd*Signal/LF_signalAmplitude(Signal,P);
   case 'Delta';
     Signal = zeros(P.NSteps,1);
     Signal(P.SR/2:P.SR/2:end) = P.NoiseStd;
@@ -518,15 +551,15 @@ for i=1:NPlot AH(i) = axes('Po',DC{i},P.AxisOpt{:}); hold on; end
 fprintf(['  >> Collecting Data for Loudness, Delay & Spectrum Test (',n2s(P.TestDur),'s)']);
 % Set the maximal amplitude of the noise to be the 80dB limit in Matlab (Encoded in P.SignalMatlab80dB)
 STIMORIG = randn(round(P.TestDur*P.SR),1);
-STIMORIG = P.SignalMatlab80dB/max(abs(STIMORIG))*STIMORIG;
+STIMORIG = P.LoudnessParameters.SignalMatlab80dB/LF_signalAmplitude(STIMORIG,P)*STIMORIG;
 
 T = [1:length(STIMORIG)]/P.SR;
 axes(AH(1)); title('Stimulus for Calibration'); plot(T,STIMORIG); axis tight; grid on
 
 STIM = conv(STIMORIG,R.IIR);
 
-% Now limit the Amplitude to be within the limits of the 
-VoltageOutRMS = std(STIM);
+% Now limit the Amplitude to be within the limits of the Amplifier/DAQ Card
+VoltageOutRMS = LF_signalAmplitude(STIM,P);
 R.A80dB = P.VoltageOutRMS80dB/VoltageOutRMS;
 STIM = R.A80dB * STIM; % Stimulus now set to 80dB approximately
 
@@ -544,7 +577,7 @@ D = LF_getData(AI,AO,[STIM,[STIMORIG;zeros(length(R.IIR)-1,1)]],P); % JUST START
 T = [1:length(ResponseF)]/P.SR;
 axes(AH(2)); title('Response for Calibration'); plot(T,ResponseF); axis tight; grid on
 
-PaMeasured = std(ResponseF);
+PaMeasured = LF_signalAmplitude(ResponseF,P);
 cdBSPL = M_VolumeConversion(PaMeasured,'Pa2dB');
 fprintf([' => Volume : ',n2s(cdBSPL),'\n Correcting Scaling Appropriately.']);
 PaTarget =  M_VolumeConversion(P.dBSPLRef,'dB2Pa');
@@ -589,7 +622,8 @@ ylabel('\phi [2\pi]',P.AxisLabelOpt{:});
 %% TEST TONAL CALIBRATION
 LStim = 10; fbase = P.LowFreq; Xges = log2(P.HighFreq/P.LowFreq);
 [ZAPORIG,TZAP,FZAP] = LF_createZAP(LStim,Xges,fbase,P.SR);
-ZAPORIG = P.SignalMatlab80dB/max(abs(ZAPORIG))*ZAPORIG'; % Brings ZAP Stimulus to +/-V peak to peak
+ZAPORIG = P.LoudnessParameters.SignalMatlab80dB...
+  /LF_signalAmplitude(ZAPORIG,P)*ZAPORIG'; % Brings ZAP Stimulus to +/-V peak to peak
 ZAP = conv(ZAPORIG,R.IIR80dB);
 
 VoltageOutMax = max(abs(ZAP));
@@ -611,7 +645,7 @@ else
 end
 BinBounds = round(linspace(0,length(ZAPResponseF),200));
 for i=1:length(BinBounds)-1
-  PaMeasured = std(ZAPResponseF(BinBounds(i)+1:BinBounds(i+1)));
+  PaMeasured = LF_signalAmplitude(ZAPResponseF(BinBounds(i)+1:BinBounds(i+1)),P);
   VolZAP(i) = M_VolumeConversion(PaMeasured,'Pa2dB');
   FVolZAP(i) = mean(FZAP(BinBounds(i)+1:BinBounds(i+1)));
 end
@@ -633,10 +667,12 @@ else Path = input('Enter Baphy Path: ');
 end
 Path = [Path,'Hardware',Sep,'Speakers',Sep];
 FileName = [Path,'SpeakerCalibration_',P.Speaker,'_',P.Microphone,'.mat'];
-Rall.SR = P.SR; Rall.SignalMatlab80dB = P.SignalMatlab80dB; Rall.dBSPLRef = P.dBSPLRef;
+Rall.SR = P.SR; Rall.dBSPLRef = P.dBSPLRef;
+Rall.Loudness.Method = P.LoudnessMethod;
+Rall.Loudness.Parameters = P.LoudnessParameters;
 
 % COLLECT VARIABLES NECESSARY FOR SPEAKER CORRECTION
-Vars = {'SR','IIR80dB','ConvDelay','SignalMatlab80dB','dBSPLRef'};
+Vars = {'SR','IIR80dB','ConvDelay','dBSPLRef','Loudness'};
 for i=1:length(Vars) eval(['R.(Vars{i}) = Rall.',Vars{i},';']); end
 
 fprintf(['\n ===== Saving Calibration =====\n  >> File\t:\t',escapeMasker(FileName),'\n']);

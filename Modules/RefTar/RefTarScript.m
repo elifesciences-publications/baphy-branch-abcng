@@ -15,7 +15,7 @@ function varargout = RefTarScript (globalparams, exptparams, HW)
 
 global StopExperiment; StopExperiment = 0; % Corresponds to User button
 global exptparams_Copy; exptparams_Copy = exptparams; % some code needs exptparams
-global BAPHY_LAB
+global BAPHY_LAB LoudnessAdjusted
 
 BehaveObject = exptparams.BehaveObject;
 
@@ -52,10 +52,12 @@ while ContinueExp == 1
       TrialIndex = TrialIndex + 1; % MAIN TRIAL COUNTER
       iTrial = iTrial+1;  % TRIAL COUNTER WITHIN REPETITION
       exptparams.InRepTrials = iTrial;
-      exptparams.TotalTrials = TrialIndex;
+      exptparams.TotalTrials = TrialIndex;;
       
-      %% PREPARE TRIAL     
+      %% PREPARE TRIAL
       % Back to grey screen on the second monitor if we are in a psychophysics soundbooth
+      % BE to YVES : I think this should be done in the TrialObject, not in
+      % RefTarScript. RefTarScript should be as general as possible.
       if globalparams.HWSetup == 11 && TrialIndex == 1
         [VisualDispColor] = VisualDisplay(1,'GREY');
         exptparams.FeedbackFigure = VisualDispColor;

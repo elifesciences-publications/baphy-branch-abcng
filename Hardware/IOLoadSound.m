@@ -42,20 +42,32 @@ switch HW.params.HWSetup
     if ~strcmpi(IODriver(HW),'NIDAQMX') && size(stim,2)<length(HW.AO.Channel)  stim(:,2) = zeros(size(stim)); end
     if strcmpi(IODriver(HW),'NIDAQMX') && size(stim,2)<HW.AO.NumChannels  stim(:,2) = zeros(size(stim)); end
     
+    % IN ORDER TO USE THE NEW LOUDNESS DETERMINATION METHOD
+    % LOUDNESS_ADJUSTED can be set in a sound object, if it wants to adjust
+    % the loudness itself, e.g. useful for ClickTrains
+    global LoudnessAdjusted;
+    if isempty(LoudnessAdjusted) || ~LoudnessAdjusted
+      switch HW.Calibration.Loudness.Method
+        case 'MaxLocalStd';
+          Duration = HW.Calibration.Loudness.Parameters.Duration;
+          Val = maxLocalStd(stim(:),Duration,HW.params.fsAO);
+          stim =  HW.Calibration.Loudness.Parameters.SignalMatlab80dB*stim/Val;
+      end
+    end
+    LoudnessAdjusted = 0;
+    
     %% Apply software attenuation if specified
     % Only change level of channels named "Sound*":
     AudioChannels=IOGetAudioChannels(HW);
     if isfield(HW,'SoftwareAttendB')
       attend_db=HW.SoftwareAttendB;
-      %fprintf('Applying software attenuation %d\n',atten_db);
-      level_scale=10.^(-attend_db./20);
-      stim(:,AudioChannels)=stim(:,AudioChannels).*level_scale;
-    end
-    if isfield(HW.params,'SoftwareEqz') && any(HW.params.SoftwareEqz),
+    elseif isfield(HW.params,'SoftwareEqz') && any(HW.params.SoftwareEqz),
       atten_db=HW.params.SoftwareEqz(1);
-      level_scale=10.^(-atten_db./20);
-      stim(:,AudioChannels)=stim(:,AudioChannels).*level_scale;
+    else
+      atten_db = 0;
     end
+    level_scale=10.^(-attend_db./20);
+    stim(:,AudioChannels)=stim(:,AudioChannels).*level_scale;
     
     %% ADD STIMULATION
     if isfield(HW,'AnalogStimulation') && HW.AnalogStimulation

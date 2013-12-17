@@ -131,8 +131,8 @@ if 1,
     defaultanswer={mfile};
     options.Resize='off';
     options.Interpreter='none';
-    switch globalparams.Tester
-      case {'Bernhard'}; answer = defaultanswer;
+    switch lower(globalparams.Tester)
+      case {'bernhard','yves','jennifer'}; answer = defaultanswer;
       otherwise
         answer=inputdlg(prompt,name,numlines,defaultanswer,options);
     end

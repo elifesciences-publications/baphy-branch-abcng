@@ -1,4 +1,4 @@
-function [TrialSound, events , o] = waveform (o,TrialIndex)
+function [TrialSound, events , o] = waveform (o,TrialIndex,TrialTotal)
 % This function generates the actual waveform for each trial from
 % parameters specified in the fields of object o. This is a generic script
 % that works for all passive cases, all active cases that use a standard
