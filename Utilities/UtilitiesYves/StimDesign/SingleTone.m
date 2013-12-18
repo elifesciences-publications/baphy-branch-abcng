@@ -17,6 +17,6 @@ ramp = hanning(round(RampDuration * sF*2));
 ramp = ramp(1:floor(length(ramp)/2))';
 Tone(1:length(ramp)) = Tone(1:length(ramp)) .* ramp;
 Tone(end-length(ramp)+1:end) = Tone(end-length(ramp)+1:end) .* fliplr(ramp);
-Tone = ScalingSPL*Tone/max(abs(Tone)) / 2;
-Tone = Tone / (10^(-LvlDiff/20));
+% Tone = ScalingSPL*Tone/max(abs(Tone)) / 2;
+% Tone = Tone / (10^(-LvlDiff/20));
 

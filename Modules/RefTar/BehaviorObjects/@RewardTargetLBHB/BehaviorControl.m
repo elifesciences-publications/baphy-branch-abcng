@@ -50,7 +50,11 @@ fprintf('  BehaviorControl --- starting trial %d (%d for this rep)\n',...
 disp('------------------------------------------------------------------');
 disp('');
 
-RewardHits=1;
+if NullTrial,
+    RewardHits=0;
+else
+    RewardHits=1;
+end
 RewardFAs=1;
 
 TrialObject=exptparams.TrialObject;

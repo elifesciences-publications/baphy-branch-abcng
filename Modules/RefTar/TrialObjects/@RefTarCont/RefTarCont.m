@@ -42,6 +42,7 @@ case 0
     O.SamplingRate = 100000;
     O.OveralldB = 65;
     O.ReinsertTrials = 0;
+    O.VisualDisplay =1;
     O.NumberOfTrials = 30;
     O.ReferenceMaxIndex = 0;
     O.TargetMaxIndex = 0;
@@ -51,7 +52,8 @@ case 0
     O.RunClass = '[]';
     O.UserDefinableFields = {...
       'OveralldB','edit',O.OveralldB,...
-      'ReinsertTrials','edit',O.ReinsertTrials};
+      'ReinsertTrials','edit',O.ReinsertTrials,...
+      'VisualDisplay','edit',O.VisualDisplay};
     O = class(O,'RefTarCont');
     O = ObjUpdate(O);
 case 1

@@ -48,7 +48,8 @@ if RepOrTrial == 0,
     trialidx=exptparams.InRepTrials;
     
     if strcmpi(exptparams.BehaveObjectClass,'Passive') || ...
-            strcmpi(exptparams.Performance(end).ThisTrial,'Hit'),
+            strcmpi(exptparams.Performance(end).ThisTrial,'Hit') ||...
+            strcmpi(exptparams.Performance(end).ThisTrial,'Corr.Rej.'),
         % either passive or last trial was correct. either way, we don't need
         % to adjust anything
         
@@ -60,7 +61,7 @@ if RepOrTrial == 0,
         o=set(o,'ReferenceIndices',...
             {par.ReferenceIndices{1:trialidx} par.ReferenceIndices{trialidx:end}});
         NewTargetIndices={par.TargetIndices{1:trialidx} par.TargetIndices{trialidx:end}};
-        if strcmpi(exptparams.Performance(end).ThisTrial,'Miss'),
+        if strcmpi(exptparams.Performance(end).ThisTrial,'Miss') && ~isempty(par.TargetIndices{trialidx}),
             NewTargetIndex=find(rand>[0 cumsum(TargetIdxFreq)], 1, 'last' );
             fprintf('Missed last target.  Repeating same reference with targetidx=%d\n',NewTargetIndex);
             NewTargetIndices{trialidx+1}=NewTargetIndex;
@@ -124,8 +125,8 @@ while (RefTarFlipFreq<=0.5 && ~isempty(RefIdxSet)) || ...
           dd=1; ii=0;
           while length(dd>0) && ii<10,
               ii=ii+1;
-              if par.QueueTrialCount>0 && ~TotalTrials,
-                  TarIdxSet=[TarIdx(ff(1:par.QueueTrialCount)) shuffle(TarIdx)];
+              if par.CueTrialCount>0 && ~TotalTrials,
+                  TarIdxSet=[TarIdx(ff(1:par.CueTrialCount)) shuffle(TarIdx)];
               else
                   TarIdxSet=shuffle(TarIdx);
               end  
@@ -147,13 +148,19 @@ while (RefTarFlipFreq<=0.5 && ~isempty(RefIdxSet)) || ...
     FlipFlag=[FlipFlag flipthistrial];
     
     % choose number of references for this trial
+    if trialidx<par.CueTrialCount && ~TotalTrials,
+        trcf=ReferenceCountFreq(1:(end-1));
+        trcf=trcf./sum(trcf)
+        refsegcount=find(rand>[0 cumsum(trcf)], 1, 'last' );
+    else
+        refsegcount=find(rand>[0 cumsum(ReferenceCountFreq)], 1, 'last' );
+    end
     if isempty(par.SingleRefSegmentLen) || par.SingleRefSegmentLen==0,
-      refcount=find(rand>[0 cumsum(ReferenceCountFreq)], 1, 'last' );
+      refcount=refsegcount;
       SingleRefDuration(trialidx)=0;
     else
       refcount=1;
-      SingleRefDuration(trialidx)=par.SingleRefSegmentLen.*...
-        find(rand>[0 cumsum(ReferenceCountFreq)], 1, 'last' );
+      SingleRefDuration(trialidx)=par.SingleRefSegmentLen.*refsegcount;
     end
     
     if ~flipthistrial,
@@ -163,22 +170,24 @@ while (RefTarFlipFreq<=0.5 && ~isempty(RefIdxSet)) || ...
       end
       RefTrialIndex{trialidx}=RefIdxSet(1:refcount);
       RefIdxSet=RefIdxSet((refcount+1):end);
-      
-      % add extra reference if overlap ref tar.      
-      if strcmpi(par.OverlapRefTar,'Yes') &&...
-              (isempty(par.SingleRefSegmentLen) || par.SingleRefSegmentLen==0)
-         RefTrialIndex{trialidx}=...
-            cat(2,RefTrialIndex{trialidx},ceil(rand*length(RefIdx)));
-      end
-      
-      % commented out: this code repeats the same reference
+      % commented out: this code repeats the same reference. maybe useful
+      % some day?
       %RefTrialIndex{trialidx}=repmat(RefIdxSet(1),[1,refcount]);
       %RefIdxSet=RefIdxSet(2:end);
-      if refcount<length(ReferenceCountFreq),
-        TargetIndex{trialidx}=TarIdxSet(1);
-        TarIdxSet=TarIdxSet(2:end);
+      
+      if refsegcount<length(ReferenceCountFreq),
+          TargetIndex{trialidx}=TarIdxSet(1);
+          TarIdxSet=TarIdxSet(2:end);
+          
+          % add extra "junk" reference if overlap ref tar.
+          if strcmpi(par.OverlapRefTar,'Yes') &&...
+                  (isempty(par.SingleRefSegmentLen) || par.SingleRefSegmentLen==0)
+              RefTrialIndex{trialidx}=...
+                  cat(2,RefTrialIndex{trialidx},ceil(rand*length(RefIdx)));
+          end
+          
       else
-        TargetIndex{trialidx}=[];
+          TargetIndex{trialidx}=[];
       end
       
     else
@@ -198,7 +207,7 @@ while (RefTarFlipFreq<=0.5 && ~isempty(RefIdxSet)) || ...
       % commented out: this code repeats the same reference
       %RefTrialIndex{trialidx}=repmat(RefIdxSetFlip(1),[1,refcount]);
       %RefIdxSetFlip=RefIdxSetFlip(2:end);
-      if refcount<length(ReferenceCountFreq),
+      if refsegcount<length(ReferenceCountFreq),
         TargetIndex{trialidx}=TarIdxSetFlip(1);
           TarIdxSetFlip=TarIdxSetFlip(2:end);
         else

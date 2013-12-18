@@ -50,7 +50,7 @@ switch HW.params.HWSetup
       switch HW.Calibration.Loudness.Method
         case 'MaxLocalStd';
           Duration = HW.Calibration.Loudness.Parameters.Duration;
-          Val = maxLocalStd(stim(:),Duration,HW.params.fsAO);
+          Val = maxLocalStd(stim(:),HW.params.fsAO,Duration);
           stim =  HW.Calibration.Loudness.Parameters.SignalMatlab80dB*stim/Val;
       end
     end

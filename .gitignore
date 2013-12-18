@@ -1,5 +1,6 @@
 *.m~
 *.txt~
+.DS_Store
 LastSettings.mat
 LastValues.mat
 BaphyHWSetup.mat
