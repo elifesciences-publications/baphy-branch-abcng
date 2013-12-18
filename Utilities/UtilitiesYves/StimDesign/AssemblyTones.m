@@ -28,6 +28,7 @@ UniX = X(UniIndex);
 CumDistri = CumDistri(UniIndex);
 CumDistri(1) = 0;
 ToneFrequencies = interp1(CumDistri,UniX,Rgenerator.rand(1,N));
+% Tones are replaced in binned frequency axis (<FrequencySpace> binnned by <Par.ToneInterval>)
 [mimi,MinInd] = min( abs( repmat(FrequencySpace',1,size(ToneFrequencies,2))-repmat(ToneFrequencies,size(FrequencySpace,2),1) ) ,[], 1 );
 ToneFrequencies = FrequencySpace(MinInd');
 

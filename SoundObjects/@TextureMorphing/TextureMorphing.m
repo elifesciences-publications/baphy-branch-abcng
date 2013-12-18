@@ -36,7 +36,7 @@ switch nargin
   
     Fields = {...
       'D0shape','popupmenu','quantal_random_spectra',...%|normal|cauchy',...
-      'Bandwidth','edit','2.2',...
+      'FrequencyRange','edit','400;1840'...
       'D1shape','popupmenu','contig_increm',...%|offset_normal|normal|none',...     
       'DifficultyLvl_D1','edit','50 80 110 140',...      % decreasing difficulty      
       'D1param','edit','[]',...      % in case we need extra params
@@ -59,7 +59,6 @@ switch nargin
     o.MaxIndex = 0;
     o.RunClass = 'TMG'; o.Duration = NaN;
 
-    
     o.FrequencySpace = []; o.XDistri = []; o.F0 = [];
     o.IniSeed = []; o.MorphingDuration = [];
     o.DistributionTypeByInd = []; o.MorphingTypeByInd = []; o.DifficultyLvlByInd = []; o.ReverseByInd = [];

@@ -16,13 +16,14 @@ for i=1:length(FieldNames)
 end
 
 % Add fields to Par because not enough lines in the Baphy dialog box
-Par.FrequencyRange_LB = 200;
-Par.FrequencyRange_UB = 2500;
+Par.LRextraFrequencies = 0.7;   % Oct.; empty space on left and right sides of the frequency axis
+Par.FrequencyRange_LB = Par.FrequencyRange(1);
+Par.FrequencyRange_UB = Par.FrequencyRange(2);
 Par.ToneDuration = 0.03;
 Par.TonesPerOctave = 2;
 Par.FrozenPatternDuration = 0;
-Par.ToneInterval = 12;
-Par.XDistriInterval = 24;
+Par.ToneInterval = 12;            % For tone frequency in binned frequency axis. Defines STRF resolution.
+Par.XDistriInterval = 24;         % Denser, for plotting purposes, area calculation and so forth
 Par.MorphingDuration = 0;
 o = set(o,'AllTargetPositions',{'center'});   % for Bernhard script [PerformanceAnalysis.m]
 o = set(o,'CurrentTargetPositions',{'center'});
@@ -30,14 +31,15 @@ o = set(o,'MorphingDuration',Par.MorphingDuration);
 if strcmp(Par.Inverse_D0Dbis,'yes'); ReverseNb = 1; else ReverseNb = 0; end
 
 % SET FREQUENCY RANGE AND ITS MIDDLE POINT F0
+F0 = log2( Par.FrequencyRange_LB * 2^(log2(Par.FrequencyRange_UB/Par.FrequencyRange_LB)/2) ) ;  % center of the distribution
 ToneInterval = Par.ToneInterval;
 XDistriInterval = Par.XDistriInterval;
-LB = Par.FrequencyRange_LB;
-UB = Par.FrequencyRange_UB;
-F0 = log2( LB * 2^(log2(UB/LB)/2) ) ;
-OctaveNb = log2(UB/LB);
-FrequencySpace = LB* (2.^ (0:(1/ToneInterval):OctaveNb));
-XDistri = LB* (2.^ (0:(1/XDistriInterval):OctaveNb));
+LB = Par.FrequencyRange_LB*2^(-Par.LRextraFrequencies);   % Left side of the frequency axis
+UB = Par.FrequencyRange_UB*2^(Par.LRextraFrequencies);    % Right side of the frequency axis
+OctaveNb = log2(Par.FrequencyRange_UB/Par.FrequencyRange_LB);
+WholeAxis_OctaveNb = log2(UB/LB);
+FrequencySpace = LB* (2.^ (0:(1/ToneInterval):WholeAxis_OctaveNb));
+XDistri = LB* (2.^ (0:(1/XDistriInterval):WholeAxis_OctaveNb));
 Par.FrequencySpace = FrequencySpace;
 Par.XDistri = XDistri;
 % DIFFICULTY LEVELS
@@ -47,6 +49,7 @@ for ChangedD_Num = 1:ChangedD_Nb
 end
 Par.DifficultyLvlNb = DifficultyLvlNb;
 Par.F0 = F0;
+Par.OctaveNb = OctaveNb;
 o = set(o,'FrequencySpace',FrequencySpace);
 o = set(o,'XDistri',XDistri);
 o = set(o,'F0',F0);

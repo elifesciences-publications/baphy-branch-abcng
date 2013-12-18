@@ -18,7 +18,10 @@ if FrozenPatternsNb == 0; Mode = 'NoFrozen'; end
 StimulusBisDuration = Par.StimulusBisDuration;
 FrequencySpace = Par.FrequencySpace;
 XDistri = Par.XDistri;
-F0 = Par.F0;
+FrequencyRange_LB = Par.FrequencyRange_LB;
+FrequencyRange_UB = Par.FrequencyRange_UB;
+FO = Par.F0;
+OctaveNb = Par.OctaveNb;
 FrozenPatternDuration = Par.FrozenPatternDuration;
 AfterChangeSoundDuration = StimulusBisDuration;
 
@@ -50,9 +53,9 @@ Dtype = getfield(Par,['D' num2str(ChangedD_Num) 'shape']);
 DifficultyLvl = getfield(Par,['DifficultyLvl_D' num2str(ChangedD_Num)]);
 DiffLvl = DifficultyLvl(DifficultyNum);       % given in %
     
-D0param = [F0 Par.Bandwidth Par.IniSeed Global_TrialNb];
+D0param = [FO OctaveNb Par.IniSeed Global_TrialNb];
 Dparam = [D0param(1:end-2) Bins2Change{ChangedD_Num}(MorphingNum,:)];    % We don't need a Seed to modify the original distribution
-[D0,ChangeD] = BuildMorphing(D0type,Dtype,D0param,Dparam,XDistri,MorphingNum,DiffLvl,PlotDistributions,F0,sF,FrequencySpace);
+[D0,ChangeD] = BuildMorphing(D0type,Dtype,D0param,Dparam,XDistri,MorphingNum,DiffLvl,PlotDistributions,sF,FrequencySpace);
 
 % GENERATE SEQUENCES OF FROZEN PATTERNS // LOAD THE APPROPRIATE ONE
 if not( strcmp(Mode,'NoFrozen') )

@@ -8,9 +8,8 @@ X = varargin{5};
 MorphingNum = varargin{6};
 DiffLvl = varargin{7};
 PlotMe = varargin{8};
-F0 = varargin{9};
-sF = varargin{10};
-FrequencySpace = varargin{11};
+sF = varargin{9};
+FrequencySpace = varargin{10};
 D0 = DrawDistribution(D0type,D0para,X);   % so far, only uniform or random_spectra (seed is given for random_spectra)
 LineName = [MorphingNum ' ' num2str(DiffLvl) '%'];
  
