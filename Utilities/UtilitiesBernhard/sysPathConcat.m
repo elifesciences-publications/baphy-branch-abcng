@@ -2,7 +2,7 @@ function Path =  sysPathConcat(Path,varargin)
 
 if iscell(varargin) & length(varargin)>0 & iscell(varargin{1}) varargin = varargin{1}; end
 if isunix PathSep = '/';
-elseif strcmp(computer,'PCWIN') PathSep = '\';
+elseif strcmp(architecture,'PCWIN') PathSep = '\';
 else error('Unknown OS-Type!'); end
 
 if length(varargin)>0

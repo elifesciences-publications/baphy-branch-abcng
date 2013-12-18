@@ -17,7 +17,7 @@ switch nargin
       'EnvWidths','edit','4',...
       'Amplitudes','edit','70',...
       };
-    s = SoundObject ('ShepardPair', 40000, 0,0.4, 0.4, {''}, 1, Fields);
+    s = SoundObject ('ShepardPair', 100000, 0,0.4, 0.4, {''}, 1, Fields);
     for i=1:length(Fields)/3 o.(Fields{(i-1)*3+1}) = Fields{i*3}; end
     o.Fields = Fields;
     o.LastBiasDirection = [ ];

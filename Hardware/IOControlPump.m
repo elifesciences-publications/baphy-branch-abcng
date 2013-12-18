@@ -78,7 +78,8 @@ switch HW.params.HWSetup
           putvalue(HW.DIO.Line(pumpidx), 0);
           ev = struct('Note',['BEHAVIOR,PUMPOFF,',PumpName],'StartTime',IOGetTimeStamp(HW),'StopTime',[]);
         end
-        IOShutdownTimers(PumpName);
+%         IOShutdownTimers(PumpName);
+if Duration>0 stop(t); delete(t); clear t; end   % 2013/12 YB: temporary fix
       otherwise error('PumpAction not implemented!');
     end
     

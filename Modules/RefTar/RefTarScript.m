@@ -15,7 +15,7 @@ function varargout = RefTarScript (globalparams, exptparams, HW)
 
 global StopExperiment; StopExperiment = 0; % Corresponds to User button
 global exptparams_Copy; exptparams_Copy = exptparams; % some code needs exptparams
-global BAPHY_LAB
+global BAPHY_LAB LoudnessAdjusted
 
 BehaveObject = exptparams.BehaveObject;
 
@@ -52,14 +52,13 @@ while ContinueExp == 1
       TrialIndex = TrialIndex + 1; % MAIN TRIAL COUNTER
       iTrial = iTrial+1;  % TRIAL COUNTER WITHIN REPETITION
       exptparams.InRepTrials = iTrial;
-      exptparams.TotalTrials = TrialIndex;
+      exptparams.TotalTrials = TrialIndex;;
       
-      %% PREPARE TRIAL     
+      %% PREPARE TRIAL
       TrialObject = get(exptparams.TrialObject);
       % 2013/12 YB: VISUAL DISPLAY--Back to grey screen on the second monitor if we are in a psychophysics experiment
       if TrialObject.VisualDisplay
-      	[VisualDispColor,exptparams] = VisualDisplay(TrialIndex,'GREY',exptparams);
-      end
+      	[VisualDispColor,exptparams] = VisualDisplay(TrialIndex,'GREY',exptparams);      end
         
       %Create pump control
       if isfield(TrialObject,'PumpProfile')
