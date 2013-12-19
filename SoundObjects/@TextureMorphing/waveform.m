@@ -116,11 +116,6 @@ if Par.AttenuationD0~=0
   FirstPart = FirstPart*RatioToDesireddB/NormFactor;
 end
 w = [FirstPart' ; SecondPart'];
-
-% % NORMALIZE IT TO +/-5V
-% AverageNbTonesChord = round(2*log(FrequencySpace(end)/FrequencySpace(1))/log(2));    % Average of 2 tones per octave (cf. Ahrens 2008) / see AssemblyTones.m
-% w = w*5/AverageNbTonesChord;
-% w = w';    % column shape
 w = [zeros((PreStimSilence*sF),size(w,2)) ; w ; zeros((PostStimSilence*sF),size(w,2))];
 
 % ROVING LOUDNESS IN CASE OF PSYCHOPHYSICS
@@ -130,7 +125,7 @@ if strcmp('yes',get(O,'RovingLoudness'))
   
   RovingLoudnessSeed = IniSeed*Global_TrialNb*Index;
   RgeneRovingLoudness = RandStream('mrg32k3a','Seed',RovingLoudnessSeed);
-  PickedUpLoudness = -(RgeneRovingLoudness.randi(21) - 1);  % Roving between -10 and +0dB
+  PickedUpLoudness = -(RgeneRovingLoudness.randi(21) - 1);  % Roving between -20 and +0dB
   RatioToDesireddB = 10^(PickedUpLoudness/20);   % dB to ratio in SPL
   w = w*RatioToDesireddB/NormFactor;
 end
