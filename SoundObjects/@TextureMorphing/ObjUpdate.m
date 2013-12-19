@@ -10,7 +10,15 @@ for i=1:length(FieldNames)
       tmp = get(o,FieldNames{i});
       if ~isnumeric(tmp) tmp = eval(['[',tmp,']']); end
       Par.(FieldNames{i}) = tmp;
-    case 'popupmenu';  Par.(FieldNames{i}) = get(o,FieldNames{i}); 
+    case 'popupmenu';  
+      StrWithSpaces = get(o,FieldNames{i}); 
+      LastSpaceInd = find(StrWithSpaces==' ',1,'first');
+      if ~isempty(LastSpaceInd)
+        Par.(FieldNames{i}) = StrWithSpaces(1:(LastSpaceInd-1));
+        o = set(o,FieldNames{i},StrWithSpaces(1:(LastSpaceInd-1)));
+      else
+        Par.(FieldNames{i}) = StrWithSpaces;
+      end
     otherwise error('FieldType not implemented!');
   end
 end

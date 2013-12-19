@@ -121,7 +121,7 @@ w = [zeros((PreStimSilence*sF),size(w,2)) ; w ; zeros((PostStimSilence*sF),size(
 % ROVING LOUDNESS IN CASE OF PSYCHOPHYSICS
 if strcmp('yes',get(O,'RovingLoudness'))
   global LoudnessAdjusted; LoudnessAdjusted  = 1;
-  NormFactor = maxLocalStd(w,sF,length(w)/sF);
+  NormFactor = maxLocalStd(w,sF,floor(length(w)/sF));
   
   RovingLoudnessSeed = IniSeed*Global_TrialNb*Index;
   RgeneRovingLoudness = RandStream('mrg32k3a','Seed',RovingLoudnessSeed);
