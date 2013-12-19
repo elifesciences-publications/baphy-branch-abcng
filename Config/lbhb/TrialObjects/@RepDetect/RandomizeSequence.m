@@ -11,9 +11,9 @@ if nargin<4, RepOrTrial = 0;end   % default is its a trial call
 % read the trial parameters
 par = get(o);
 
+%% if first run, generate o.Sequences:
 if RepIndex==1 && RepOrTrial,
     
-    % if first run, generate o.Sequences:
     disp('RepDetect: First trial, generating sequences');
     TargetIdx=par.TargetIdx;
     TrialCount=par.SequenceCount;
@@ -29,6 +29,7 @@ if RepIndex==1 && RepOrTrial,
     
     RefPool=[];
     RefDuringTarPool=[];
+    RefPoolTarPaired=[];
     TargetIdxFreq=ones(size(TargetIdx))./length(TargetIdx);
     TarIdxSet=[];
     for ii=1:length(TargetIdxFreq),
@@ -63,7 +64,7 @@ if RepIndex==1 && RepOrTrial,
                     tarcount=par.TargetRepCount;
                     SequenceCategory=0;
                 end
-                if TrialIdx<=TrialCount./2 && strcmpi(par.Mode,'RdtWithSingle'),
+                if TrialIdx<=TrialCount/2 && strcmpi(par.Mode,'RdtWithSingle'),
                     RefPerSample=1;
                 else
                     RefPerSample=2;
@@ -72,6 +73,10 @@ if RepIndex==1 && RepOrTrial,
                 for rr=1:refcount,
                     if length(RefPool)<3,
                         RefPool=[RefPool shuffle(1:par.ReferenceMaxIndex)];
+                    end
+                    if isempty(RefPoolTarPaired),
+                       RefPoolTarPaired=shuffle(...
+                          setdiff(1:par.ReferenceMaxIndex,TargetIdx));
                     end
                     if rr>1,
                         cc=0;
@@ -86,12 +91,26 @@ if RepIndex==1 && RepOrTrial,
                             RefPool=[RefPool(1) RefPool(3:end) RefPool(2)];
                             cc=cc+1;
                         end
+                        if any(RefPoolTarPaired(1)==ThisSequence(rr-1,:)),
+                           RefPoolTarPaired=...
+                              [RefPoolTarPaired(2:end) RefPoolTarPaired(1)];
+                        end
                     end
                     
                     ThisSequence(rr,1:RefPerSample)=RefPool(1:RefPerSample);
-                    RefPool=RefPool((1+RefPerSample):end);
                     if ismember(ThisSequence(rr,2),TargetIdx),
                         ThisSequence(rr,1:2)=ThisSequence(rr,[2 1]);
+                    end
+                    if ismember(ThisSequence(rr,1),TargetIdx) && ...
+                          ThisSequence(rr,2)>0,
+                       % make sure there's a special even distribution of
+                       % random samples paired with occurances of target
+                       % samples in the reference period
+                       ThisSequence(rr,2)=RefPoolTarPaired(1)
+                       RefPoolTarPaired=RefPoolTarPaired(2:end);
+                       RefPool=RefPool(2:end);
+                    else
+                       RefPool=RefPool((1+RefPerSample):end);
                     end
                 end
                 for tt=1:tarcount,
@@ -199,10 +218,9 @@ if RepIndex==1 && RepOrTrial,
     o=set(o,'NumberOfTrials',TrialCount);
 end
 
-
 if ~RepOrTrial,
-    % run after each trial to check if null trial should be subbed in
-    
+    %% run after each trial to check if null trial should be subbed in
+
     trialidx=exptparams.InRepTrials;
     
     if strcmpi(exptparams.BehaveObjectClass,'Passive') || ...
@@ -232,7 +250,8 @@ if ~RepOrTrial,
         fprintf('Miss/FA: Repeating error trial sequence %d\n',...
             par.ThisRepIdx(trialidx));
         RemainingTrialCount=length(par.ThisRepIdx)-trialidx;
-        RepeatAtIdx=ceil(rand*RemainingTrialCount)+trialidx;
+        %RepeatAtIdx=ceil(rand*RemainingTrialCount)+trialidx;
+        RepeatAtIdx=trialidx+1;
         par.ThisRepIdx=[par.ThisRepIdx(1:RepeatAtIdx);
             par.ThisRepIdx(trialidx); ...
             par.ThisRepIdx((RepeatAtIdx+1):end)];
@@ -252,7 +271,7 @@ if ~RepOrTrial,
     o=set(o,'NumberOfTrials',par.NumberOfTrials);
     
 else
-    % new repetition. reset ThisRepIdx, which indexes into par.SequenceIdx
+    %% new repetition. reset ThisRepIdx, which indexes into par.SequenceIdx
     disp('RepDetect: New repetition, shuffling sequence order');
     TotalTrials=par.SequenceCount;
     ThisRepIdx=shuffle(1:TotalTrials)';
@@ -261,5 +280,5 @@ else
     o = set(o,'NumberOfTrials',TotalTrials);
 end
 
-
+% save changes back to exptparams
 exptparams.TrialObject = o;
