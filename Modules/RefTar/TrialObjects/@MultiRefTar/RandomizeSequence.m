@@ -58,12 +58,16 @@ if RepOrTrial == 0,
         o=set(o,'ReferenceIndices',...
             {par.ReferenceIndices{1:trialidx} par.ReferenceIndices{trialidx:end}});
         NewTargetIndices={par.TargetIndices{1:trialidx} par.TargetIndices{trialidx:end}};
+        NewCatchIndices={par.CatchIndices{1:trialidx} par.CatchIndices{trialidx:end}};
+        NewCatchSeg=[par.CatchSeg(1:trialidx); par.CatchSeg(trialidx:end)];
         if strcmpi(exptparams.Performance(end).ThisTrial,'Miss') && ~isempty(par.TargetIndices{trialidx}),
             NewTargetIndex=find(rand>[0 cumsum(TargetIdxFreq)], 1, 'last' );
             fprintf('Missed last target.  Repeating same reference with targetidx=%d\n',NewTargetIndex);
             NewTargetIndices{trialidx+1}=NewTargetIndex;
         end
         o=set(o,'TargetIndices',NewTargetIndices);
+        o=set(o,'CatchIndices',NewCatchIndices);
+        o=set(o,'CatchSeg',NewCatchSeg);
         o=set(o,'SingleRefDuration',...
             [par.SingleRefDuration(1:trialidx) par.SingleRefDuration(trialidx:end)]);
         o=set(o,'NumberOfTrials',par.NumberOfTrials+1);
