@@ -174,6 +174,7 @@ for ii=1:NElectrodes
         boost_online(mfile,Electrode,unit,AH(ii),options);
       elseif strcmpi(options.runclass,'CCH') || strcmpi(options.ReferenceClass,'ComplexChord') || ...
           strcmpi(options.runclass,'BNB') || strcmpi(options.ReferenceClass,'NoiseBurst') || ...
+          strcmpi(options.runclass,'RDT') || strcmpi(options.ReferenceClass,'NoiseSample') || ...
           strcmpi(options.runclass,'FTC'),
         % two-tone 2nd-order tuning surface
         chord_strf_online(mfile,Electrode,unit,AH(ii),options);
@@ -212,8 +213,12 @@ for ii=1:NElectrodes
         stim_spectrum(mfile,Electrode,AH(ii));
       elseif options.lfp
         psth_lfp(mfile,Electrode,unit,AH(ii),options);
+      elseif strcmpi(options.runclass,'RDT')
+          options.PreStimSilence=0.2;
+          options.PostStimSilence=0.2;
+          raster_online(mfile,Electrode,unit,AH(ii),options);
       else
-        raster_online(mfile,Electrode,unit,AH(ii),options);
+          raster_online(mfile,Electrode,unit,AH(ii),options);
       end
   end
   set([gca;get(gca,'Title');get(gca,'Children')],'ButtonDownFcn',...

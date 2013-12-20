@@ -142,7 +142,7 @@ elseif ~isempty(tag_masks) && length(tag_masks{1})>=16 && strcmp(tag_masks{1}(1:
         end
         [btar,~,jjtar]=unique(evtrials(find(tarstim)));
         dd=eventtimeoff-xx;
-        if length(jjtar)==length(btar).*2 ||... 
+        if (~isempty(jjtar) && length(jjtar)==length(btar).*2) ||... 
                 (sum(dd(1:2:end)>0)==0 & sum(dd(2:2:end)==0)==0)
             % ie, two targets per trial or funny case of 0 gap
             % between pairs of stimuli

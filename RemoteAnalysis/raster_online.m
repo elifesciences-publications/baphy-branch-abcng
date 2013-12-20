@@ -35,7 +35,7 @@ elseif ~isempty(strfind(mfile,'MTS')),
 end
 % integrate this into gui someday:
 %options.includeincorrect=1
-try,
+try
     [r,tags]=raster_load(mfile,channel,unit,options);
 catch
     disp('error loading data, pausing and reloading');

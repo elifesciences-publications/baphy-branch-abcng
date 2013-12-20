@@ -10,15 +10,8 @@ function [TrialSound, events , o] = waveform (o,TrialIndex)
 global SPNOISE_EMTX BAPHY_LAB
 
 par = get(o); % get the parameters of the trial object
-FlipFlag = par.FlipFlag(TrialIndex);   % determine if ref and tar should be flipped
-if ~FlipFlag,
-  RefObject = par.ReferenceHandle; % get the reference handle
-  TarObject = par.TargetHandle; % getthe target handle
-else    %flip
-  TarObject = par.ReferenceHandle;    % get the reference handle
-  RefObject = par.TargetHandle;           % getthe target handle
-end
-
+RefObject = par.ReferenceHandle; % get the reference handle
+TarObject = par.TargetHandle; % getthe target handle
 RefSamplingRate = ifstr2num(get(RefObject,'SamplingRate'));
 TarSamplingRate = ifstr2num(get(TarObject,'SamplingRate'));
 
@@ -66,7 +59,6 @@ end
 PostTrialSilence = par.PostTrialSilence;
 PostTrialBins=round(PostTrialSilence.*TrialSamplingRate);
 
-FlipFlag = par.FlipFlag(TrialIndex); % get the index of reference sounds for current trial
 TrialSound = []; % initialize the waveform
 ind = 0;
 events = [];

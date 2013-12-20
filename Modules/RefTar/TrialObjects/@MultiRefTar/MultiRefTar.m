@@ -36,27 +36,29 @@ case 0
     RefTarO.ReferenceCountFreq=[0 0.4 0.3 0.2 0.1 0];
     RefTarO.TargetIdxFreq=1;
     RefTarO.TargetChannel=1;
+    RefTarO.CatchIdxFreq=0;
+    RefTarO.CatchChannel=1;
     RefTarO.CueTrialCount=5;
     RefTarO.SingleRefSegmentLen = 0;
-    RefTarO.RefIdx=[];
-    RefTarO.TarIdx=[];
     RefTarO.TarIdxSet=[];
+    RefTarO.CatchIdxSet=[];
+    RefTarO.CatchSeg=[];
     RefTarO.OverlapRefTar='No';
     RefTarO.PostTrialSilence=1;
     RefTarO.OnsetRampTime=0;
     RefTarO.SaveData='Yes';
     RefTarO.TargetMatchContour='No';
-
+    
     % following are a bunch of old parameters that are mostly here for
     % backwards compatibility....
     RefTarO.NumberOfTrials = 30;  % In memory of Torcs!
-    RefTarO.NumberOfRefPerTrial = []; 
+    RefTarO.NumberOfRefPerTrial = [];
     RefTarO.NumberOfTarPerTrial = 1; % default 
     RefTarO.ReferenceMaxIndex = 0;
     RefTarO.TargetMaxIndex = 0;
-    RefTarO.ReferenceIndices = '[]';
-    RefTarO.TargetIndices = '[]';
-    RefTarO.FlipFlag=[];
+    RefTarO.ReferenceIndices = [];
+    RefTarO.TargetIndices = [];
+    RefTarO.CatchIndices = [];
     RefTarO.SingleRefDuration=[];
     RefTarO.ShamPercentage = 0;
     
@@ -75,6 +77,8 @@ case 0
          'OverlapRefTar','popupmenu','Yes|No',...
          'TargetIdxFreq','edit','1',...
          'TargetChannel','edit','1',...
+         'CatchIdxFreq','edit','0',...
+         'CatchChannel','edit','1',...
          'OnsetRampTime','edit',0,...
          'TargetMatchContour','popupmenu','Yes|No',...
          'PostTrialSilence','edit',1,...
