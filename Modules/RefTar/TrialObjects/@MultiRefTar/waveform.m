@@ -152,16 +152,7 @@ if ~isempty(TarTrialIndex)
     else
       RelativeTarRefdB=RelativeTarRefdB(TarTrialIndex);
     end
-    %if isfield(refpar,'RelAttenuatedB'),
-    %    if length(refpar.RelAttenuatedB)>=TarTrialIndex,
-    %        LevelAdjust=RelativeTarRefdB-refpar.RelAttenuatedB(TarTrialIndex);
-    %    else
-    %        LevelAdjust=RelativeTarRefdB-refpar.RelAttenuatedB(1);
-    %    end
-    %else
-        LevelAdjust=RelativeTarRefdB;
-    %end
-    ScaleBy=10^(LevelAdjust/20);
+    ScaleBy=10^(RelativeTarRefdB/20);
     
     TarObject = set(TarObject, 'SamplingRate', TrialSamplingRate);
     % generate the target sound:
@@ -180,17 +171,13 @@ if ~isempty(TarTrialIndex)
     w=[w zeros(length(w),chancount-size(w,2))];
     
     fprintf('TarTrialIndex=%d (%d dB, channel %d)\n',TarTrialIndex,RelativeTarRefdB, TargetChannel);
-    fprintf('Ref max: %.1f %.1f  Tar max: %.1f\n',max(abs(TrialSound)),max(abs(w(:,TargetChannel))));
     if OverlapRefTar,
-%         TarBins=TarStartBin+get(TarObject,'PreStimSilence').*TrialSamplingRate+....
-%             (1:(get(TarObject,'Duration').*TrialSamplingRate));
         TarBins=TarStartBin+round(get(TarObject,'PreStimSilence').*TrialSamplingRate)+....
             (1:round((get(TarObject,'Duration').*TrialSamplingRate)));
         
         RefMaxDuringTar=max(abs(TrialSound(TarBins,TargetChannel)));
-        fprintf('Ref max during tar: %.1f  Adjusting ScaleBy to compensate!\n',RefMaxDuringTar);
         ScaleBy=ScaleBy.*RefMaxDuringTar./5;
-        fprintf('Adjusted Tar ScaleBy: %.2f\n',ScaleBy);
+        fprintf('Ref max during tar: %.1f. Adjusted Tar ScaleBy: %.2f\n',RefMaxDuringTar,ScaleBy);
         w=w.*ScaleBy;
         
         if TarMatchContour && ~isempty(refenv),
@@ -229,30 +216,6 @@ if ~isempty(TarTrialIndex)
                 TrialSound(TarStartBin-1+(1:size(w,1)),:).*RefMod+...
                 w.*TarMod;
             
-            if strcmp(BAPHY_LAB,'lbhb'),
-                % debug code
-                sfigure(1);
-                clf
-                dfs=50000;
-                
-                subplot(3,1,2);
-                tw=resample(TrialSound,dfs,TrialSamplingRate);
-                plot((1:length(tw))./dfs,tw);
-                aa=axis;
-                axis([0 length(tw)./dfs aa(3:4)]);
-                
-                subplot(3,1,1);
-                tw=resample(TrialSound0,dfs,TrialSamplingRate);
-                plot((1:length(tw))./dfs,tw);
-                axis([0 length(tw)./dfs aa(3:4)]);
-                
-                subplot(3,1,3);
-                h = spectrum.welch;        % Create a Welch spectral estimator.
-                Hpsd = psd(h,tw,'Fs',dfs); % Calculate the PSD
-                plot(Hpsd);                % Plot the PSD.
-                
-                drawnow
-            end
         end
         LastEvent=TarStartTime;
         
@@ -324,9 +287,9 @@ if ~isempty(CatchTrialIndex)
     if OverlapRefTar,
         CatchBins=CatchStartBin+round(get(TarObject,'PreStimSilence').*TrialSamplingRate)+....
             (1:round((get(TarObject,'Duration').*TrialSamplingRate)));
-        
-        ScaleBy=ScaleBy.*RefMaxDuringTar./5;
-        fprintf('Adjusted Catch ScaleBy: %.2f\n',ScaleBy);
+        RefMaxDuringCatch=max(abs(TrialSound(CatchBins,CatchChannel)));
+        ScaleBy=ScaleBy.*RefMaxDuringCatch./5;
+        fprintf('Ref max during catch: %.1f. Adjusted Catch ScaleBy: %.2f\n',RefMaxDuringCatch,ScaleBy);
         w=w.*ScaleBy;
         
         if par.OnsetRampTime>0,
@@ -358,31 +321,6 @@ if ~isempty(CatchTrialIndex)
         TrialSound(CatchStartBin-1+(1:size(w,1)),:)=...
            TrialSound(CatchStartBin-1+(1:size(w,1)),:).*RefMod+...
            w.*TarMod;
-        
-        if strcmp(BAPHY_LAB,'lbhb'),
-           % debug code
-           sfigure(1);
-           clf
-           dfs=50000;
-           
-           subplot(3,1,2);
-           tw=resample(TrialSound,dfs,TrialSamplingRate);
-           plot((1:length(tw))./dfs,tw);
-           aa=axis;
-           axis([0 length(tw)./dfs aa(3:4)]);
-           
-           subplot(3,1,1);
-           tw=resample(TrialSound0,dfs,TrialSamplingRate);
-           plot((1:length(tw))./dfs,tw);
-           axis([0 length(tw)./dfs aa(3:4)]);
-           
-           subplot(3,1,3);
-           h = spectrum.welch;        % Create a Welch spectral estimator.
-           Hpsd = psd(h,tw,'Fs',dfs); % Calculate the PSD
-           plot(Hpsd);                % Plot the PSD.
-           
-           drawnow
-        end
     else
        error('non-overlapping catch stimuli not supported');
     end
@@ -391,13 +329,38 @@ if ~isempty(CatchTrialIndex)
     % now, add Target to the event list, correct the time stamp with
     % respect to last event, and add Trial
     for cnt2 = 1:length(ev)
-        ev(cnt2).Note = [ev(cnt2).Note ' , TarCatch'];
+        ev(cnt2).Note = [ev(cnt2).Note ' , Catch'];
         ev(cnt2).StartTime = ev(cnt2).StartTime + LastEvent;
         ev(cnt2).StopTime = ev(cnt2).StopTime + LastEvent;
         ev(cnt2).Trial = TrialIndex;
     end
     events = [events(1:(end-3)) ev events((end-2):end)];
     LastEvent = max(cat(1,events.StopTime));
+end
+
+if strcmp(BAPHY_LAB,'lbhb'),
+   % debug code
+   sfigure(1);
+   clf
+   dfs=50000;
+   
+   subplot(3,1,2);
+   tw=resample(TrialSound,dfs,TrialSamplingRate);
+   plot((1:length(tw))./dfs,tw);
+   aa=axis;
+   axis([0 length(tw)./dfs aa(3:4)]);
+   
+   subplot(3,1,1);
+   tw=resample(TrialSound0,dfs,TrialSamplingRate);
+   plot((1:length(tw))./dfs,tw);
+   axis([0 length(tw)./dfs aa(3:4)]);
+   
+   subplot(3,1,3);
+   h = spectrum.welch;        % Create a Welch spectral estimator.
+   Hpsd = psd(h,tw,'Fs',dfs); % Calculate the PSD
+   plot(Hpsd);                % Plot the PSD.
+   
+   drawnow
 end
 
 

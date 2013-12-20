@@ -33,6 +33,7 @@ StopTargetFA=parms.StopTargetFA;
 ThisTargetNote=[];
 FirstRefTime=nan;
 FirstTarTime=inf;
+FirstCatchTime=nan;
 TarResponseWin=nan;
 TarEarlyWin=nan;
 TarOffTime=0;
@@ -50,6 +51,11 @@ for cnt1 = 1:length(StimEvents);
             end
             RefResponseWin = [StimEvents(cnt1).StartTime + parms.EarlyWindow ...
                 StimEvents(cnt1).StopTime + parms.EarlyWindow];
+        elseif strcmpi(StimRefOrTar,'Catch'),
+            FirstCatchTime= StimEvents(cnt1).StartTime;
+            CatchEarlyWin=[0 StimEvents(cnt1).StartTime + parms.EarlyWindow];
+            CatchResponseWin = [StimEvents(cnt1).StartTime + parms.EarlyWindow ...
+               StimEvents(cnt1).StopTime + parms.EarlyWindow];
         elseif strcmpi(StimRefOrTar,'Target'),
             FirstTarTime= StimEvents(cnt1).StartTime;
             TarResponseWin = [StimEvents(cnt1).StartTime + parms.EarlyWindow ...
@@ -144,6 +150,14 @@ else
     end
     TarFirstLick = find([zeros(size(TarEarlyLick)) ;TarResponseLick],1)/fs;
     if isempty(TarFirstLick), TarFirstLick = nan;end
+end
+if ~isnan(FirstCatchTime),
+    CatchResponseLick = LickData(max(1,round(fs*CatchResponseWin(1))):min(length(LickData),round(fs*CatchResponseWin(2))));
+    CatchEarlyLick = LickData(round(fs*max(1,CatchEarlyWin(1))):round(min(length(LickData),fs*CatchEarlyWin(2))));
+    CatchFirstLick = find([zeros(size(CatchEarlyLick)) ;CatchResponseLick],1)/fs;
+    if isempty(CatchFirstLick), CatchFirstLick = nan;end
+else
+   CatchFirstLick=nan;
 end
 
 % a special performance is calculated here for the graph that shows the hit
