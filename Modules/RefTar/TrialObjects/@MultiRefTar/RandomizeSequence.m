@@ -66,7 +66,6 @@ if RepOrTrial == 0,
         o=set(o,'TargetIndices',NewTargetIndices);
         o=set(o,'SingleRefDuration',...
             [par.SingleRefDuration(1:trialidx) par.SingleRefDuration(trialidx:end)]);
-        o=set(o,'FlipFlag',[par.FlipFlag(1:trialidx) par.FlipFlag(trialidx:end)]);
         o=set(o,'NumberOfTrials',par.NumberOfTrials+1);
         exptparams.TrialObject = o;
     end
@@ -113,7 +112,6 @@ RefTrialIndex={};
 TargetIndex={};
 CatchIndex={};
 CatchSeg=[];
-
 while ~isempty(RefIdxSet)
   
     trialidx=trialidx+1;
@@ -144,22 +142,26 @@ while ~isempty(RefIdxSet)
     
     % choose number of references for this trial
     if trialidx<par.CueTrialCount && ~TotalTrials,
+        CueTrial=1;
         trcf=ReferenceCountFreq(1:(end-1));
         trcf=trcf./sum(trcf);
         refsegcount=find(rand>[0 cumsum(trcf)], 1, 'last' );
     else
+        CueTrial=0;
         refsegcount=find(rand>[0 cumsum(ReferenceCountFreq)], 1, 'last' );
-    end
-    if rand<sum(CatchIdxFreq),
-        % this trial get a catch stimulus
-        CatchIndex{trialidx}=CatchIdxSet(1);
-        CatchIdxSet=CatchIdxSet(2:end);
-        if refsegcount<max(find(trcf>0)),
-            refsegcount=refsegcount+1;
+        
+        % catch stim only possible in non-cue trials
+        if rand<sum(CatchIdxFreq),
+            % this trial gets a catch stimulus
+            CatchIndex{trialidx}=CatchIdxSet(1);
+            CatchIdxSet=CatchIdxSet(2:end);
+            if refsegcount<max(find(trcf>0)),
+                refsegcount=refsegcount+1;
+            end
+            CatchSeg(trialidx,1)=refsegcount-ceil(rand*3);
+        else
+            CatchIndex{trialidx}=[];
         end
-        CatchSeg(trialidx,1)=refsegcount-ceil(rand*3);
-    else
-       CatchIndex{trialidx}=[];
     end
     
     if isempty(par.SingleRefSegmentLen) || par.SingleRefSegmentLen==0,

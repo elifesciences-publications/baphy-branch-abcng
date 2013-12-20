@@ -53,7 +53,7 @@ for cnt1 = 1:length(StimEvents);
                 StimEvents(cnt1).StopTime + parms.EarlyWindow];
         elseif strcmpi(StimRefOrTar,'Catch'),
             FirstCatchTime= StimEvents(cnt1).StartTime;
-            CatchEarlyWin=[0 StimEvents(cnt1).StartTime + parms.EarlyWindow];
+            CatchEarlyWin=[StimEvents(cnt1).StartTime StimEvents(cnt1).StartTime + parms.EarlyWindow];
             CatchResponseWin = [StimEvents(cnt1).StartTime + parms.EarlyWindow ...
                StimEvents(cnt1).StopTime + parms.EarlyWindow];
         elseif strcmpi(StimRefOrTar,'Target'),
@@ -157,7 +157,7 @@ if ~isnan(FirstCatchTime),
     CatchFirstLick = find([zeros(size(CatchEarlyLick)) ;CatchResponseLick],1)/fs;
     if isempty(CatchFirstLick), CatchFirstLick = nan;end
 else
-   CatchFirstLick=nan;
+    CatchFirstLick=nan;
 end
 
 % a special performance is calculated here for the graph that shows the hit
@@ -166,12 +166,14 @@ end
 if isfield(exptparams,'FirstLick') 
     exptparams.FirstLick.Tar(TrialIndex) = TarFirstLick;
     exptparams.FirstLick.Ref(TrialIndex) = RefFirstLick;
+    exptparams.FirstLick.Catch(TrialIndex) = CatchFirstLick;
 else
     % its the first time:
     exptparams.FirstLick.Tar = TarFirstLick;
     exptparams.FirstLick.Ref = RefFirstLick;
+    exptparams.FirstLick.Catch = CatchFirstLick;
 end
-%
+
 % now calculate the performance:
 if isfield(exptparams, 'Performance') 
     perf = exptparams.Performance(1:end-1);
@@ -181,7 +183,7 @@ else
 end
 perf(cnt2).ThisTrial    = '??';
 if NumRef
-    perf(cnt2).FalseAlarm   = double(RefFalseAlarm | ~isempty(find(TarEarlyLick,1))); % sum of false alarams divided by num of ref
+    perf(cnt2).FalseAlarm = double(RefFalseAlarm | ~isempty(find(TarEarlyLick,1))); % sum of false alarams divided by num of ref
 else
     perf(cnt2).FalseAlarm = NaN;
 end
@@ -192,14 +194,15 @@ perf(cnt2).EarlyTrial   = double(perf(cnt2).WarningTrial && ~isempty(find(TarEar
 perf(cnt2).Hit          = double(perf(cnt2).WarningTrial && ~perf(cnt2).EarlyTrial && ~isempty(find(TarResponseLick,1))); % if there is a lick in target response window, its a hit
 perf(cnt2).Miss         = double(perf(cnt2).WarningTrial && ~perf(cnt2).EarlyTrial && ~perf(cnt2).Hit);
 perf(cnt2).ReferenceLickTrial = double((perf(cnt2).FalseAlarm>0));
-perf(cnt2).NullTrial=NullTrial;
-NullTrials=cat(1,perf.NullTrial);
+perf(cnt2).NullTrial = NullTrial;
 perf(cnt2).LickRate = length(find(LickData)) / length(LickData);
 
 perf(cnt2).FirstLickTime = min([find(LickData,1)./fs Inf]);
 perf(cnt2).FirstRefTime = FirstRefTime;
 perf(cnt2).FirstTarTime = FirstTarTime;
+perf(cnt2).FirstCatchTime = FirstCatchTime;
 % Now calculate hit and miss rates:
+NullTrials = cat(1,perf.NullTrial);
 TotalWarn                   = sum(cat(1,perf.WarningTrial) & ~NullTrials);
 perf(cnt2).HitRate          = sum(cat(1,perf.Hit) & ~NullTrials) / TotalWarn;
 perf(cnt2).MissRate         = sum(cat(1,perf.Miss) & ~NullTrials) / TotalWarn;
@@ -208,20 +211,19 @@ perf(cnt2).WarningRate      = sum(cat(1,perf.WarningTrial) & ~NullTrials)/sum(~N
 perf(cnt2).IneffectiveRate  = sum(cat(1,perf.Ineffective) & ~NullTrials)/sum(~NullTrials);
 % this is for trials without Reference. We dont count them in FalseAlarm
 % calculation:
-tt = cat(1,perf(find(~NullTrials)).FalseAlarm);
-tt(find(isnan(tt)))=[];
+tt = cat(1,perf(~NullTrials).FalseAlarm);
+tt(isnan(tt))=[];
 perf(cnt2).FalseAlarmRate   = sum(tt)/length(tt);
 perf(cnt2).DiscriminationRate = perf(cnt2).HitRate * (1-perf(cnt2).FalseAlarmRate);
 %also, calculate the stuff for this trial block:
 RecentIndex = max(1 , TrialIndex-exptparams.TrialBlock+1):TrialIndex;
-tt = cat(1,perf(RecentIndex(find(~NullTrials(RecentIndex)))).FalseAlarm);
-tt(find(isnan(tt)))=[];
+tt = cat(1,perf(RecentIndex(~NullTrials(RecentIndex))).FalseAlarm);
+tt(isnan(tt))=[];
 perf(cnt2).RecentFalseAlarmRate   = sum(tt)/length(tt);
 perf(cnt2).RecentHitRate         = sum(cat(1,perf(RecentIndex).Hit) & ~NullTrials(RecentIndex))/sum(cat(1,perf(RecentIndex).WarningTrial));
 perf(cnt2).RecentDiscriminationRate = perf(cnt2).RecentHitRate * (1-perf(cnt2).RecentFalseAlarmRate);
-%
-perf(cnt2).TarResponseWinStart=TarResponseWin(1);
 
+perf(cnt2).TarResponseWinStart=TarResponseWin(1);
 
 % target-specific HR / RT
 perf(cnt2).ThisTargetNote=ThisTargetNote;
