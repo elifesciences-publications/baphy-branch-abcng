@@ -158,6 +158,8 @@ while ~isempty(RefIdxSet)
             refsegcount=refsegcount+1;
         end
         CatchSeg(trialidx,1)=refsegcount-ceil(rand*3);
+    else
+       CatchIndex{trialidx}=[];
     end
     
     if isempty(par.SingleRefSegmentLen) || par.SingleRefSegmentLen==0,
