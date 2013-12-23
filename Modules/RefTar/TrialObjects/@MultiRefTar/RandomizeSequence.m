@@ -145,6 +145,10 @@ while ~isempty(RefIdxSet)
     end
     
     % choose number of references for this trial
+    CatchIndex{trialidx}=[];
+    CatchSeg(trialidx,1)=0;
+    trcf=ReferenceCountFreq(1:(end-1));
+    trcf=trcf./sum(trcf);
     if trialidx<par.CueTrialCount && ~TotalTrials,
         CueTrial=1;
         trcf=ReferenceCountFreq(1:(end-1));
@@ -159,12 +163,10 @@ while ~isempty(RefIdxSet)
             % this trial gets a catch stimulus
             CatchIndex{trialidx}=CatchIdxSet(1);
             CatchIdxSet=CatchIdxSet(2:end);
-            if refsegcount<max(find(trcf>0)),
+            if refsegcount<max(find(ReferenceCountFreq>0)),
                 refsegcount=refsegcount+1;
             end
             CatchSeg(trialidx,1)=refsegcount-ceil(rand*3);
-        else
-            CatchIndex{trialidx}=[];
         end
     end
     
