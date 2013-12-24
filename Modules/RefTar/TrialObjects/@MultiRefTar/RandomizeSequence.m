@@ -82,7 +82,7 @@ end
 % closer to 10.  not really a "repetition" any more, but this
 % allows full length trials.
 ReferenceCount=length(RefIdx);
-if 10./ReferenceCount>=2,
+if 10/ReferenceCount>=2,
    repcount=floor(10./ReferenceCount);
 else
    repcount=1;
@@ -147,8 +147,6 @@ while ~isempty(RefIdxSet)
     % choose number of references for this trial
     CatchIndex{trialidx}=[];
     CatchSeg(trialidx,1)=0;
-    trcf=ReferenceCountFreq(1:(end-1));
-    trcf=trcf./sum(trcf);
     if trialidx<par.CueTrialCount && ~TotalTrials,
         CueTrial=1;
         trcf=ReferenceCountFreq(1:(end-1));

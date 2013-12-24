@@ -266,6 +266,10 @@ if perf(cnt2).Ineffective, perf(cnt2).ThisTrial = 'Ineffective';end
 
 % compute DI based on FAR, HR and RT
 trialparms=get(exptparams.TrialObject);
+cresptime=[];
+cstimtype=[];
+cstimtime=[];
+ct=cat(1,perf.FirstCatchTime);
 if strcmpi(trialparms.descriptor,'MultiRefTar'),
     % "strict" - FA is response to any possible target slot preceeding the target
     TarPreStimSilence=get(trialparms.TargetHandle,'PreStimSilence');
@@ -290,7 +294,30 @@ if strcmpi(trialparms.descriptor,'MultiRefTar'),
         resptime=cat(1,resptime,ones(RefCount+1,1).*perf(tt).FirstLickTime);
         stimtype=cat(1,stimtype,zeros(RefCount,1),1);
         tcounter=cat(1,tcounter,ones(RefCount+1,1).*trialtargetid(tt));
+        
+        cRefCount=RefCount-1; % catch stim is always in slot before last possible target
+        cstimtime=cat(1,cstimtime,PossibleRefTimes(1:cRefCount));
+        cresptime=cat(1,cresptime,ones(cRefCount,1).*perf(tt).FirstLickTime);
+        cstimtype=cat(1,cstimtype,zeros(cRefCount,1));
+        if ~isnan(ct(tt)),
+            cstimtime=cat(1,cstimtime,perf(tt).FirstCatchTime);
+            cresptime=cat(1,cresptime,perf(tt).FirstLickTime);
+            cstimtype=cat(1,cstimtype,1);
+        end
     end
+    
+    if sum(~isnan(ct)),
+        stop_respwin=get(exptparams.BehaveObject,'EarlyWindow')+...
+            get(exptparams.BehaveObject,'ResponseWindow')+0.5;
+        
+        [di,hits,fas,tsteps]=compute_di(cstimtime,cresptime,cstimtype,stop_respwin);
+
+        %[perf(cnt2).FirstLickTime di max(hits) max(fas)]
+        perf(cnt2).cDiscriminationIndex=di;
+    else
+        perf(cnt2).cDiscriminationIndex=nan;
+    end
+    
 elseif strcmpi(trialparms.descriptor,'RepDetect'),
     % "strict" - FA is response to any possible target start slot
     % preceeding the target
@@ -342,6 +369,7 @@ for uu=unique(tcounter'),
             compute_di(stimtime(ff),resptime(ff),stimtype(ff),stop_respwin);
     end
 end
+
 
 % change all rates to percentage. If its not rate, put the sum and
 % 'out of' at the end

@@ -177,7 +177,7 @@ while CurrentTime < exptparams.LogDuration  % while trial is not over
         ev.StartTime=IOGetTimeStamp(HW);
         ev.StopTime=ev.StartTime;
         LickEvents=AddEvent(LickEvents,ev,TrialIndex);
-        fprintf('Lick %.1f sec\n',CurrentTime);
+        %fprintf('Lick %.1f sec\n',CurrentTime);
     end
     LastLick = ThisLick;
     
@@ -219,7 +219,7 @@ while CurrentTime < exptparams.LogDuration  % while trial is not over
                 ev = IOControlShock (HW, .2, 'Start');
                 LickEvents = AddEvent(LickEvents, ev, TrialIndex);
             end
-            disp('Stopping sound');
+            disp('FA -- Stopping sound');
             ev = IOStopSound(HW);
             LickEvents = AddEvent(LickEvents, ev, TrialIndex);
             FAThisTrial=1;
@@ -233,7 +233,7 @@ while CurrentTime < exptparams.LogDuration  % while trial is not over
     if (Lick) && mod(StimPos,2) && ~isequal(TarFlag,StimPos) && ~Ref && RewardHits,
        HitThisTrial = 1;
        if RewardHits, 
-          disp('Hit -- Starting pump.');
+          fprintf('Hit -- ');
           if StopTargetFA<1
              WaterFraction = 1-FalseAlarm;
           else

@@ -159,6 +159,7 @@ if ~isempty(exptparams.TarResponseWin),
 end
 
 % First lick Histogram for target and reference
+% svd added catch stim too.
 subplot(4,4,9:10)
 hold off;
 BinSize = 0.04;
@@ -205,6 +206,21 @@ else
   end
   LegendLabels={'Tar','Ref'};
 end
+ct=cat(1,exptparams.Performance(1:TrialIndex).FirstCatchTime);
+fct=find(~isnan(ct));
+if ~isempty(fct),
+    h1=hist(exptparams.FirstLick.Catch(fct),0:BinSize:MaxBinTime);
+
+    if ~isempty(h1)
+        h1=h1/length(fct); % normalize to convert to probability
+        h1=stairs(0:BinSize:MaxBinTime,h1,'color',[.5 .5 .5],'linewidth',2);
+        RT=nanmean(exptparams.FirstLick.Catch(fct));
+        HR=sum(~isnan(exptparams.FirstLick.Catch(fct)))/length(fct);
+        LegendLabels{end+1}=LegendLabels{end};
+        LegendLabels{end-1}=sprintf('Catch(HR:%.2f RT:%.2f DI:%.0f n:%d)',...
+            HR,RT,exptparams.Performance(end).cDiscriminationIndex,length(fct));
+    end
+end
 h1=hist(exptparams.FirstLick.Ref(1:TrialIndex),0:BinSize:MaxBinTime);
 if ~isempty(h1)
     h1=h1/length(exptparams.FirstLick.Ref); % normalize to convert to probability
@@ -218,6 +234,7 @@ if ~isempty(h1)
     LegPos(1:2) = [0.4 0.425]; % put the legend on the far left of the screen
     set(h,'position', LegPos);
 end
+
 title('First Lick Histogram');
 xlabel('Time (seconds)');
 

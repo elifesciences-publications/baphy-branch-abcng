@@ -15,7 +15,7 @@ par = get(o);
 if RepIndex==1 && RepOrTrial,
     
     disp('RepDetect: First trial, generating sequences');
-    TargetIdx=par.TargetIdx;
+    TargetIdx=sort(par.TargetIdx);
     TrialCount=par.SequenceCount;
     ReferenceCountFreq=par.ReferenceCountFreq;
     ReferenceCountFreq=ReferenceCountFreq./sum(ReferenceCountFreq);
@@ -24,6 +24,7 @@ if RepIndex==1 && RepOrTrial,
         o=set(o,'Sequences',{});
         o=set(o,'SequenceCategories',[]);
         o=set(o,'NumberOfTrials',TrialCount);
+        exptparams.TrialObject = o;
         return
     end
     
@@ -106,7 +107,7 @@ if RepIndex==1 && RepOrTrial,
                        % make sure there's a special even distribution of
                        % random samples paired with occurances of target
                        % samples in the reference period
-                       ThisSequence(rr,2)=RefPoolTarPaired(1)
+                       ThisSequence(rr,2)=RefPoolTarPaired(1);
                        RefPoolTarPaired=RefPoolTarPaired(2:end);
                        RefPool=RefPool(2:end);
                     else
@@ -251,9 +252,9 @@ if ~RepOrTrial,
             par.ThisRepIdx(trialidx));
         RemainingTrialCount=length(par.ThisRepIdx)-trialidx;
         %RepeatAtIdx=ceil(rand*RemainingTrialCount)+trialidx;
-        RepeatAtIdx=trialidx+1;
+        RepeatAtIdx=trialidx;
         par.ThisRepIdx=[par.ThisRepIdx(1:RepeatAtIdx);
-            par.ThisRepIdx(trialidx); ...
+            par.ThisRepIdx(trialidx);
             par.ThisRepIdx((RepeatAtIdx+1):end)];
         par.NumberOfTrials=par.NumberOfTrials+1;
     end
