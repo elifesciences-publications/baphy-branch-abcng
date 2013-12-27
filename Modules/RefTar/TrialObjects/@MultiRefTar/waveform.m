@@ -243,7 +243,7 @@ else
 end
 
 if ~isempty(CatchTrialIndex)
-    CatchChannel=par.CatchChannel;
+    CatchChannel=par.TargetChannel;
     if isempty(CatchChannel),
       CatchChannel=1;
     elseif length(CatchChannel)<CatchTrialIndex,
@@ -282,7 +282,7 @@ if ~isempty(CatchTrialIndex)
     % pad higher channels with zero
     w=[w zeros(length(w),chancount-size(w,2))];
     
-    fprintf('CatchTrialIndex=%d (%d dB, channel %d)\n',CatchTrialIndex,RelativeTarRefdB, TargetChannel);
+    fprintf('CatchTrialIndex=%d (%d dB, channel %d)\n',CatchTrialIndex,RelativeTarRefdB, CatchChannel);
     
     if OverlapRefTar,
         CatchBins=CatchStartBin+round(get(TarObject,'PreStimSilence').*TrialSamplingRate)+....
