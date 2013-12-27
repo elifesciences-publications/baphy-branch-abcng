@@ -299,7 +299,7 @@ if strcmpi(trialparms.descriptor,'MultiRefTar'),
         cstimtime=cat(1,cstimtime,PossibleRefTimes(1:cRefCount));
         cresptime=cat(1,cresptime,ones(cRefCount,1).*perf(tt).FirstLickTime);
         cstimtype=cat(1,cstimtype,zeros(cRefCount,1));
-        if ~isnan(ct(tt)),
+        if ~isnan(ct(tt)) && perf(tt).FirstLickTime>perf(tt).FirstCatchTime,
             cstimtime=cat(1,cstimtime,perf(tt).FirstCatchTime);
             cresptime=cat(1,cresptime,perf(tt).FirstLickTime);
             cstimtype=cat(1,cstimtype,1);

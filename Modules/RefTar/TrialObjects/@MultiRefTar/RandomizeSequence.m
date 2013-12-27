@@ -104,12 +104,15 @@ end
 TarIdxSet=par.TarIdxSet;
 
 % same for catch targets
-CatchCount=50;
+CatchCount=max(50,ReferenceCount);
 CatchIdx=[];
 for ii=1:length(CatchIdxFreq),
     CatchIdx=cat(2,CatchIdx,ones(1,CatchCount.*CatchIdxFreq(ii)).*ii);
 end
 CatchIdxSet=par.CatchIdxSet;
+bCatchTrial=zeros(CatchCount,1);
+bCatchTrial(1:round(sum(CatchIdxFreq).*CatchCount))=1;
+bCatchTrial=shuffle(bCatchTrial);
 
 trialidx=0;
 RefTrialIndex={};
@@ -196,8 +199,9 @@ while ~isempty(RefIdxSet)
         TargetIndex{trialidx}=[];
     end
     
-    fprintf('Trial %d: Ref=%s Tar=%s\n',TotalTrials+trialidx,...
-        mat2str(RefTrialIndex{trialidx}),mat2str(TargetIndex{trialidx}));
+    fprintf('Trial %d: Ref=%s Tar=%s Catch=%s\n',TotalTrials+trialidx,...
+        mat2str(RefTrialIndex{trialidx}),mat2str(TargetIndex{trialidx}),...
+        mat2str(CatchIndex{trialidx}));
 end
 TotalTrials=trialidx;
 if TotalTrials>length(SingleRefDuration),
