@@ -126,7 +126,7 @@ for ChangedD_Num = 1:ChangedD_Nb
 end
 
 % WARNING
-if Par.Inverse_D0Dbis && Par.FrozenPatternsNb~=0
+if strcmp(Par.Inverse_D0Dbis,'yes') && Par.FrozenPatternsNb~=0
     disp('************ You should not have Frozen pattern in Reverse Mode. ************')
 end
 
