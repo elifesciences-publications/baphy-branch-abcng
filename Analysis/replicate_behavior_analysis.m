@@ -59,7 +59,7 @@ ThisTrial = 0;
 if isfield(exptparams,'ResultsFigure'),
     exptparams = rmfield(exptparams,'ResultsFigure');
 end
-if TotalTrial>globalparams.rawfilecount,
+if isfield(globalparams,'rawfilecount') && TotalTrial>globalparams.rawfilecount,
     TotalTrial=globalparams.rawfilecount;
 end
 for cnt1 = 1:TotalTrial

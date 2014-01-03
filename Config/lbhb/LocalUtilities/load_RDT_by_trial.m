@@ -1,4 +1,4 @@
-% function [r,params]=load_RDT_by_trial(parmfile,spikefile,options)
+% funcion [r,params]=load_RDT_by_trial(parmfile,spikefile,options)
 %
 % Load all the data related to a particular RDT or SNS file (ie,
 % repeated embedded noise experiments)
@@ -20,6 +20,7 @@ function [r,params]=load_RDT_by_trial(parmfile,spikefile,options)
     options.tag_masks=getparm(options,'tag_masks',{'SPECIAL-TRIAL'});
     options.psth=getparm(options,'psth',-1);
     options.meansub=getparm(options,'meansub',0);
+    options.resp_shift=getparm(options,'resp_shift',0);
     
     r=[];
     
@@ -72,13 +73,15 @@ function [r,params]=load_RDT_by_trial(parmfile,spikefile,options)
     PostBins=round(params.PostStimSilence.*options.rasterfs);
     
     params.SampleStartTimes=(0:params.SamplesPerTrial).* ...
-                                   params.SampleDur+params.PreStimSilence;
+                            params.SampleDur+params.PreStimSilence +...
+        options.resp_shift;
     params.TargetStartTime=-ones(size(params.TargetStartBin));
     tartrials=find(params.TargetStartBin>0);
     params.TargetStartTime(tartrials)=...
         params.SampleStartTimes(params.TargetStartBin(tartrials));
     params.SampleStarts=round(((0:params.SamplesPerTrial).* ...
-        params.SampleDur+params.PreStimSilence).*options.rasterfs)+1;
+        params.SampleDur+params.PreStimSilence+options.resp_shift).*...
+                              options.rasterfs)+1;
     
     params.SampleStops=params.SampleStarts+...
         round(params.SampleDur.*options.rasterfs)-1;
@@ -124,7 +127,8 @@ function [r,params]=load_RDT_by_trial(parmfile,spikefile,options)
         CellCount=size(r,3);
         
         % trim stray bins from end of each trial
-        r=r(1:params.TrialBins,:,:,:).*options.rasterfs;
+        %r=r(1:params.TrialBins,:,:,:).*options.rasterfs;
+        r=r.*options.rasterfs;
         
         % for behavior, only loaded correct trials, need to extract
         % that subset from params.
@@ -151,44 +155,69 @@ function [r,params]=load_RDT_by_trial(parmfile,spikefile,options)
             end
         end
         
-        r_avg=zeros(binsperstim,params.SampleCount,2);
-        r_count=zeros(params.SampleCount,2);
-        r_raster=cell(params.SampleCount,2);
+        r_avg=zeros(binsperstim+10,params.SampleCount,5);
+        r_count=zeros(params.SampleCount,5);
+        r_raster=cell(params.SampleCount,5);
+        r_second=cell(params.SampleCount,5);
         for sidx=1:params.SampleCount,
             for tidx=1:length(trialset),
                 trialidx=trialset(tidx);
                 ff=find(params.BigSequenceMatrix(:,1,trialidx)==sidx |...
                     params.BigSequenceMatrix(:,2,trialidx)==sidx);
                 for ii=ff(:)',
-                    rr=params.SampleStarts(ii):params.SampleStops(ii);
+                    rr=(params.SampleStarts(ii)-5):...
+                       (params.SampleStops(ii)+5);
                     if ii==1 || ...
-                          (params.TargetStartBin(trialidx)>0 &&...
+                          (params.TargetStartBin(trialidx)>0 && ...
                            ii>params.TargetStartBin(trialidx)+5),
                         % skip first sample of each trial and
                         % repeated targets after #5
                         cond=0;
-                    elseif ii<params.TargetStartBin(trialidx) ||...
-                            (params.TargetStartBin(trialidx)<0 &&...
-                            sum(params.BigSequenceMatrix(:,2,trialidx)>0)>0),
+                    elseif params.TargetStartBin(trialidx)>0 && ...
+                            ii>params.TargetStartBin(trialidx) && ...
+                            params.BigSequenceMatrix(ii,2,trialidx)==sidx,
+                        % background stream during target
+                        cond=5;
+                    elseif (ii<=params.TargetStartBin(trialidx) ||...
+                            params.TargetStartBin(trialidx)<0 ||...
+                            params.BigSequenceMatrix(ii,2,trialidx)==sidx) &&...
+                           sum(params.BigSequenceMatrix(:,2,trialidx)>0)>0,
                         % reference (active) , dual stream (passive)
                         cond=1;
-                    else
+                    elseif params.TargetStartBin(trialidx)<0 ||...
+                           sum(params.BigSequenceMatrix(:,2,trialidx)>0)>0
                         % target (active), single stream (passive)
                         cond=2;
+                    elseif ii<=params.TargetStartBin(trialidx),
+                        % reference, single stream (active)
+                        cond=3;
+                    else
+                        % target, single stream (active)
+                        cond=4;
                     end
+                    %if ismember(sidx,params.TargetIdx),
+                    %    params.BigSequenceMatrix(:,:,trialidx)
+                    %    [sidx cond]
+                    %    keyboard
+                    %end
                     if cond,
                         r_count(sidx,cond)=r_count(sidx,cond)+1;
-                        r_avg(:,sidx,cond)=r_avg(:,sidx,cond)+r(rr,tidx);
+                        r_avg(:,sidx,cond)=r_avg(:,sidx,cond)+...
+                            gsmooth(r(rr,tidx),options.rasterfs./200);
                         r_raster{sidx,cond}=cat(2,r_raster{sidx,cond},r(rr,tidx));
+                        r_second{sidx,cond}(r_count(sidx,cond),1)=...
+                            params.BigSequenceMatrix(ii,2,trialidx);
                     end
                 end
             end
-            r_avg(:,sidx,1)=r_avg(:,sidx,1)./r_count(sidx,1);
-            r_avg(:,sidx,2)=r_avg(:,sidx,2)./r_count(sidx,2);
+            for cond=1:size(r_avg,3),
+                r_avg(:,sidx,cond)=r_avg(:,sidx,cond)./r_count(sidx,cond);
+            end
         end
         params.r_avg=r_avg;
         params.r_count=r_count;
         params.r_raster=r_raster;
+        params.r_second=r_second;
         params.r_ref=r_ref;
         params.r_tar=r_tar;
     end

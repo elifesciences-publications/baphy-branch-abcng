@@ -308,7 +308,11 @@ if strcmpi(trialparms.descriptor,'MultiRefTar'),
     
     if sum(~isnan(ct)),
         stop_respwin=get(exptparams.BehaveObject,'EarlyWindow')+...
-            get(exptparams.BehaveObject,'ResponseWindow')+0.5;
+            get(exptparams.BehaveObject,'ResponseWindow')+1;
+        keepidx=find(cstimtime<cresptime);
+        cstimtime=cstimtime(keepidx);
+        cstimtype=cstimtype(keepidx);
+        cresptime=cresptime(keepidx);
         
         [di,hits,fas,tsteps]=compute_di(cstimtime,cresptime,cstimtype,stop_respwin);
 
@@ -355,7 +359,7 @@ stimtype=stimtype(keepidx);
 resptime=resptime(keepidx);
 tcounter=tcounter(keepidx);
 stop_respwin=get(exptparams.BehaveObject,'EarlyWindow')+...
-    get(exptparams.BehaveObject,'ResponseWindow')+0.5;
+    get(exptparams.BehaveObject,'ResponseWindow')+1;
 
 [di,hits,fas,tsteps]=compute_di(stimtime,resptime,stimtype,stop_respwin);
 %[perf(cnt2).FirstLickTime di max(hits) max(fas)]
