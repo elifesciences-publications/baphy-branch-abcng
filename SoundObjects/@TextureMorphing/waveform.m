@@ -7,6 +7,7 @@ function [ w , ev , O , D0 , ChangeD] = waveform(O,Index,IsFef,Mode,Global_Trial
 %at the scale of the whole session
 
 % GET PARAMETERS
+ChordDuration = 0.03; % s    %Rabinowitsch or also Maria Cheit
 sF = get(O,'SamplingRate');
 PreStimSilence = get(O,'PreStimSilence');
 PostStimSilence = get(O,'PostStimSilence');
@@ -35,6 +36,7 @@ CurrentRepetitionNb = ceil(Global_TrialNb/MaxIndex);
 RToC = RandStream('mrg32k3a','Seed',IniSeed*Global_TrialNb);   % mcg16807 is fucked up
 lambda = 0.15; 
 ToC = PoissonProcessPsychophysics(lambda,Par.MaxToC-Par.MinToC,1,RToC);
+ToC = round(ToC/ChordDuration)*ChordDuration;
 ToC = ToC + Par.MinToC;
 
 % GET PARAMETERS OF CURRENT Index
@@ -73,17 +75,15 @@ if not( strcmp(Mode,'NoFrozen') )
     end
     load([ FrozenPatternsAdress filesep 'FrozenPatterns.mat' ]);
     FrozenPattern = FrozenPatterns{FrozenPatternNum};
+else
+    FrozenPatternNum = 0;
 end
 
-if Reverse
+if Reverse            % Rem.: 'NoFrozen' is compulsory when 'Inverse_D0Dbis'==1
     Stimulus0Duration = StimulusBisDuration;
-    StimulusBisDuration = ToC + FrozenPatternDuration;
-    FrozenPatternNum = 0;
-elseif not(Reverse) && not( strcmp(Mode,'NoFrozen') )
-    Stimulus0Duration = ToC;
-elseif not(Reverse) && strcmp(Mode,'NoFrozen')
-    Stimulus0Duration = ToC + FrozenPatternDuration;
-    FrozenPatternNum = 0;
+    StimulusBisDuration = ToC;
+elseif not(Reverse)
+    Stimulus0Duration = ToC; 
 end
 
 % BUILD D0 STIMULUS ('REFERENCE' located in the TARGET)
@@ -97,14 +97,14 @@ RtonesD = RandStream('mrg32k3a','Seed',Global_TrialNb*Index*2);
 StimulusBis = AssemblyTones(FrequencySpace,ChangeD,XDistri,StimulusBisDuration,sF,PlotDistributions,[],RtonesD);
 
 % PREPARE THE 2 Parts OF THE WHOLE STIMULUS
-if not(Reverse) && not( strcmp(Mode,'NoFrozen') )
-    FirstPart = [ FrozenPattern' Stimulus0 ];     SecondPart = StimulusBis;
-    StimulusOrderStr = 'S0Sbis';
-elseif Reverse
-    FirstPart = StimulusBis;      SecondPart = Stimulus0;
+if Reverse
+    FirstPart = StimulusBis; SecondPart = Stimulus0;
     StimulusOrderStr = 'SbisS0';
+elseif not(Reverse) && not( strcmp(Mode,'NoFrozen') )
+    FirstPart = [ FrozenPattern' Stimulus0 ]; SecondPart = StimulusBis;
+    StimulusOrderStr = 'S0Sbis';
 elseif not(Reverse) && strcmp(Mode,'NoFrozen')
-    FirstPart = Stimulus0;     SecondPart = StimulusBis;
+    FirstPart = Stimulus0; SecondPart = StimulusBis;
     StimulusOrderStr = 'S0Sbis';
 end
 
@@ -135,7 +135,7 @@ ev=[]; ev = AddEvent(ev,[''],[],0,PreStimSilence);
 if exist('Mode','var') && strcmp(Mode,'Simulation'); return; end
 
 ev = AddEvent(ev,['STIM , ' StimulusOrderStr ' ' num2str(Index),' - ',num2str(Global_TrialNb) ' - ' num2str(ChangedD_Num) ' - ' num2str(MorphingNum) ' - ' num2str(DifficultyNum) ' - ' num2str(FrozenPatternNum) ' - ' num2str(ToC)],...
-  [ ],ev(end).StopTime,ev(end).StopTime+FrozenPatternDuration+ToC);
+  [ ],ev(end).StopTime,ev(end).StopTime+length(FirstPart)/sF);
 
 [a,b,c]  = ParseStimEvent(ev(2),0);
 ev(1).Note = ['PreStimSilence ,' b ',' c];

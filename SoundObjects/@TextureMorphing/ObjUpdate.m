@@ -61,7 +61,6 @@ Par.OctaveNb = OctaveNb;
 o = set(o,'FrequencySpace',FrequencySpace);
 o = set(o,'XDistri',XDistri);
 o = set(o,'F0',F0);
-sF = get(o,'SamplingRate');
 
 % GENERATION OF A SEED FOR ToCs IF I AM NOT RELOADING A SOUND OBJECT
 if ~(exist('IniSeed','var')) || isempty(IniSeed)
@@ -124,6 +123,11 @@ for ChangedD_Num = 1:ChangedD_Nb
     ReverseByInd_temp = repmat(0:ReverseNb,[1 ConditionNbForEachD(ChangedD_Num)/(MorphingNbForThisCond*DifficultyLvlNbForThisCond*(ReverseNb+1))]);
     ReverseByInd_temp = sort(ReverseByInd_temp);
     ReverseByInd = [ ReverseByInd repmat(ReverseByInd_temp,[1 (MorphingNbForThisCond*DifficultyLvlNbForThisCond)]) ];
+end
+
+% WARNING
+if Par.Inverse_D0Dbis && Par.FrozenPatternsNb~=0
+    disp('************ You should not have Frozen pattern in Reverse Mode. ************')
 end
 
 for Index = 1:MaxIndex

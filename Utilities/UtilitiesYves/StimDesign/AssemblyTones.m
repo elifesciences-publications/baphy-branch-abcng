@@ -14,7 +14,6 @@ CumDistriPoisson = poisscdf(XPoisson,AverageNbTonesChord);
 if nargout>1; ToneMatrix=zeros(length(FrequencySpace),ChordNb);  end;
 
 N = round(3*AverageNbTonesChord*ChordNb);   % More than needed
-% SamplesToneFrequencies = slicesample(IniSeed,N,'pdf',Distribution,'thin',5,'burnin',1000);
 CumDistri = cumsum(Distribution(X));
 CumDistri = CumDistri/max(CumDistri);
 % Remove doublons in the CumDistri to allow interpolation
@@ -64,25 +63,3 @@ for ChordNum = 1:ChordNb
     end
 end
 
-
-% NbTonesChord = 34;
-% ToneFrequencies = F1;
-% OctaveStep = 1/6;
-% for FreqNum = 1:(NbTonesChord-1)
-%     ToneFrequencies = [ToneFrequencies ToneFrequencies(end)*2^(OctaveStep)];
-% end
-% % fprintf('Bornes bandwith: %d - %d kHz\n',ToneFrequencies(1)/1000,ToneFrequencies(end)/1000)
-% 
-% N = NbTonesChord*ChordNb;
-% AllLvlDiff = slicesample(IniSeed,N,'pdf',Distribution,'thin',5,'burnin',1000);
-% AllLvlDiff = AllLvlDiff-IniSeed;
-% % AllLvlDiff = randsample(length(Distribution),NbTonesChord*ChordNb,true,Distribution);
-% for ChordNum = 1:ChordNb
-%     LvlDiff = AllLvlDiff((ChordNum-1)*NbTonesChord+1:ChordNum*NbTonesChord);
-%     Chord = zeros(size(ChordTimeSamples));
-%     for Fnum = 1:NbTonesChord
-%         Tone = SingleTone(ToneFrequencies(Fnum),LvlDiff(Fnum),sF,ChordDuration);
-%         Chord = Chord + Tone;
-%     end
-%     Stimulus((ChordNum-1)*length(ChordTimeSamples)+1 : ChordNum*length(ChordTimeSamples)) = Chord;
-% end
