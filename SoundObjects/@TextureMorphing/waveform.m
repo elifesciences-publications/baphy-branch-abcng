@@ -109,13 +109,14 @@ elseif not(Reverse) && strcmp(Mode,'NoFrozen')
 end
 
 % ATTENUATE THE FIRST PART OF THE STIMULUS
-if Par.AttenuationD0~=0
-  % No need of  <LoudnessAdjusted>=1 because it is the maxstd that is used for fixing the loudness in IOLoadSound.m
-  NormFactor = maxLocalStd(SecondPart,sF,length(SecondPart)/sF);
-  RatioToDesireddB = 10^(Par.AttenuationD0/20);   % dB to ratio in SPL
-  FirstPart = FirstPart*RatioToDesireddB/NormFactor;
-end
 w = [FirstPart' ; SecondPart'];
+if Par.AttenuationD0~=0
+  global LoudnessAdjusted; LoudnessAdjusted  = 1;  
+  NormFactor = maxLocalStd(w,sF,floor(length(w)/sF));
+  RatioToDesireddB = 10^(Par.AttenuationD0/20);   % dB to ratio in SPL
+  FirstPart = FirstPart*RatioToDesireddB;
+  w = [FirstPart' ; SecondPart']/NormFactor;
+end
 w = [zeros((PreStimSilence*sF),size(w,2)) ; w ; zeros((PostStimSilence*sF),size(w,2))];
 
 % ROVING LOUDNESS IN CASE OF PSYCHOPHYSICS

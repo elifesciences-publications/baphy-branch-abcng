@@ -57,8 +57,7 @@ while ContinueExp == 1
       %% PREPARE TRIAL
       TrialObject = get(exptparams.TrialObject);
       % 2013/12 YB: VISUAL DISPLAY--Back to grey screen on the second monitor if we are in a psychophysics experiment
-      if TrialObject.VisualDisplay
-      	[VisualDispColor,exptparams] = VisualDisplay(TrialIndex,'GREY',exptparams);      end
+      if isfield(TrialObject,'VisualDisplay') && TrialObject.VisualDisplay; 	[VisualDispColor,exptparams] = VisualDisplay(TrialIndex,'GREY',exptparams); end
         
       %Create pump control
       if isfield(TrialObject,'PumpProfile')
