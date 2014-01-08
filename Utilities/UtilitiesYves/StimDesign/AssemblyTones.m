@@ -7,7 +7,7 @@ Stimulus = zeros(1,ceil(Duration*sF));
 ChordDuration = 0.03; % s    %Rabinowitsch or also Maria Cheit
 % Parameters
 ChordTimeSamples = linspace(0,ChordDuration,round(ChordDuration*sF));
-ChordNb = floor(Duration/ChordDuration);
+ChordNb = Duration/ChordDuration;    % should be integer because ToC is rounded in <waveform.m>
 AverageNbTonesChord = round(2*log(FrequencySpace(end)/FrequencySpace(1))/log(2));    % Average of 2 tones per octave (cf. Ahrens 2008)
 XPoisson = 0:(AverageNbTonesChord*2);                                                % Decrease to *2 because of saturation suspicion (cracks in the headphones)
 CumDistriPoisson = poisscdf(XPoisson,AverageNbTonesChord);

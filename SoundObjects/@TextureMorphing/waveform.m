@@ -36,8 +36,8 @@ CurrentRepetitionNb = ceil(Global_TrialNb/MaxIndex);
 RToC = RandStream('mrg32k3a','Seed',IniSeed*Global_TrialNb);   % mcg16807 is fucked up
 lambda = 0.15; 
 ToC = PoissonProcessPsychophysics(lambda,Par.MaxToC-Par.MinToC,1,RToC);
-ToC = round(ToC/ChordDuration)*ChordDuration;
 ToC = ToC + Par.MinToC;
+ToC = round(ToC/ChordDuration)*ChordDuration;
 
 % GET PARAMETERS OF CURRENT Index
 tmp = get(O,'DistributionTypeByInd'); ChangedD_Num = tmp(Index);
