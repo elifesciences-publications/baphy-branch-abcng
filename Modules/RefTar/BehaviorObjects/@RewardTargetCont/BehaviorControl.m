@@ -173,8 +173,11 @@ switch Outcome
     if ~globalparams.PumpMlPerSec.(PumpName)
       globalparams.PumpMlPerSec.(PumpName) = inf;
     end
-    LastOutcomes = exptparams.Performance(TrialIndex :-1: max([1 (TrialIndex-MaxIncrementRewardNb)]) ).Outcome;
+    if TrialIndex>1
+      LastOutcomes = {exptparams.Performance((TrialIndex-1) :-1: max([1 (TrialIndex-MaxIncrementRewardNb)]) ).Outcome};
+    else LastOutcomes = {'EARLY'}; end
     NbContiguousLastHits = min([ find(strcmp(LastOutcomes,'EARLY'),1,'first') , find(strcmp(LastOutcomes,'SNOOZE'),1,'first') ])-1;
+    if isempty(NbContiguousLastHits), NbContiguousLastHits = length( strcmp(LastOutcomes,'HIT') ); end
     RewardAmount = RewardAmount + IncrementRewardAmount*NbContiguousLastHits;
     PumpDuration = RewardAmount/globalparams.PumpMlPerSec.(PumpName);
     pause(0.05); % PAUSE TO ALLOW FOR HEAD TURNING
