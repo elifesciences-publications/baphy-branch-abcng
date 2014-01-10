@@ -27,6 +27,8 @@ Events = [ ];
 exptparams.WaterUnits = 'milliliter';
 RewardAmount = get(O,'RewardAmount');
 PrewardAmount = get(O,'PrewardAmount');
+IncrementRewardAmount = get(O,'IncrementRewardAmount');
+MaxIncrementRewardNb = get(O,'MaxIncrementRewardNb');
 
 %% GET TARGET & REFERENCE INDICES
 tmp = get(exptparams.TrialObject,'ReferenceIndices'); ReferenceIndices = tmp{exptparams.InRepTrials};
@@ -171,6 +173,9 @@ switch Outcome
     if ~globalparams.PumpMlPerSec.(PumpName)
       globalparams.PumpMlPerSec.(PumpName) = inf;
     end
+    LastOutcomes = exptparams.Performance(TrialIndex :-1: max([1 (TrialIndex-MaxIncrementRewardNb)]) ).Outcome;
+    NbContiguousLastHits = min([ find(strcmp(LastOutcomes,'EARLY'),1,'first') , find(strcmp(LastOutcomes,'SNOOZE'),1,'first') ])-1;
+    RewardAmount = RewardAmount + IncrementRewardAmount*NbContiguousLastHits;
     PumpDuration = RewardAmount/globalparams.PumpMlPerSec.(PumpName);
     pause(0.05); % PAUSE TO ALLOW FOR HEAD TURNING
     PumpEvent = IOControlPump(HW,'Start',PumpDuration,PumpName);

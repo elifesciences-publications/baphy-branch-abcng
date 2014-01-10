@@ -27,6 +27,7 @@ UniX = X(UniIndex);
 CumDistri = CumDistri(UniIndex);
 CumDistri(1) = 0;
 ToneFrequencies = interp1(CumDistri,UniX,Rgenerator.rand(1,N));
+TonePhases = Rgenerator.randi(360,[1 N])-1;   % Phase belongs to [0 359]
 % Tones are replaced in binned frequency axis (<FrequencySpace> binnned by <Par.ToneInterval>)
 [mimi,MinInd] = min( abs( repmat(FrequencySpace',1,size(ToneFrequencies,2))-repmat(ToneFrequencies,size(FrequencySpace,2),1) ) ,[], 1 );
 ToneFrequencies = FrequencySpace(MinInd');
@@ -47,9 +48,10 @@ for ChordNum = 1:ChordNb
     
     Chord = zeros(size(ChordTimeSamples));
     TrialTonesF = ToneFrequencies((PreviousRandomChordNum+1):(PreviousRandomChordNum+NbTonesChord));
+    TrialTonesPhase = TonePhases((PreviousRandomChordNum+1):(PreviousRandomChordNum+NbTonesChord));    
     PreviousRandomChordNum = PreviousRandomChordNum+NbTonesChord;
     for Fnum = 1:NbTonesChord
-        Tone = SingleTone(TrialTonesF(Fnum),Lvl,sF,ChordDuration);
+        Tone = SingleTone(TrialTonesF(Fnum),Lvl,sF,ChordDuration,TrialTonesPhase(Fnum));
         Chord = Chord + Tone;
     end
     Stimulus((ChordNum-1)*length(ChordTimeSamples)+1 : ChordNum*length(ChordTimeSamples)) = Chord;
