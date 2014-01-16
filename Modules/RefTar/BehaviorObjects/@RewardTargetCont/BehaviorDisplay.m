@@ -39,25 +39,25 @@ set(FIG,'NumberTitle','off','Name',FigName);
 Tmax = max([get(AH.Sound,'XLim'),get(AH.Sound,'XLim')]);
 set(PH.InfoText,'String',FigName);
 
-if ~isempty(ResponseData)
   %% PLOT SOUND WAVEFORM
   axes(AH.Sound); XLim = get(AH.Sound,'XLim');
   TimeS = [0:1/SRout:(length(TrialSound)-1)/SRout];
   set(PH.Sound.Wave,'XData',TimeS,'YData',TrialSound);
   set(PH.Sound.CurrentStimulus,'String',Conditions{cTargetIndex});
-  
-  %% PLOT LICKS AT ALL SPOUTS
+
+%% PLOT LICKS AT ALL SPOUTS
+TarWindow =  exptparams.Performance(TrialIndex).TarWindow;
+TarRegion = [TarWindow(1),0.5;TarWindow(2),0.5;...
+  TarWindow(2),length(RespInds)+.5;TarWindow(1),length(RespInds)+.5; TarWindow(1),0.5]';
+set(PH.Licks.RespWindow,'XData',TarRegion(1,:),'YData',TarRegion(2,:),...
+  'ZData',ones(size(TarRegion,2),1));
+if ~isempty(ResponseData)  
   axes(AH.Licks);
-  TimeR = [0:1/SRin:(size(ResponseData,1)-1)/SRin];
+  TimeR = 0 : (1/SRin) : ((size(ResponseData,1)-1)/SRin);
   set(PH.Licks.Image,'XData',TimeR,'YData',1:length(RespInds),'CData',ResponseData(:,RespInds)');
-  TarWindow =  exptparams.Performance(TrialIndex).TarWindow;
-  TarRegion = [TarWindow(1),0.5;TarWindow(2),0.5;...
-    TarWindow(2),length(RespInds)+.5;TarWindow(1),length(RespInds)+.5; TarWindow(1),0.5]';
-  set(PH.Licks.RespWindow,'XData',TarRegion(1,:),'YData',TarRegion(2,:),...
-    'ZData',ones(size(TarRegion,2),1));
-  
-  set([AH.Licks,AH.Sound],'XLim',[0,max([Tmax,TimeS(end),TimeR(end)])]);
+else TimeR = 0;  
 end
+set([AH.Licks,AH.Sound],'XLim',[0,max([Tmax,TimeS(end),TimeR(end)])]);
 
 %% PLOT RECENT AND OVERALL HITRATE / FALSEALARMRATE / MISSRATE / DISCRIMINATION
 axes(AH.Performance); Performance = exptparams.Performance;
@@ -255,7 +255,7 @@ else % CREATE A NEW SET OF HANDLES
       PH.TarTiming.RespHist(iO,i) = plot(0,0,'Color',cColor,'LineStyle',cStyle);
     end
   end
-  ylabel('Frequency',AxisLabelOpt{:});
+  ylabel('Trial nb.',AxisLabelOpt{:});
   xlabel('Time rel. Responsewindow [seconds]',AxisLabelOpt{:}); 
   
   UD.TarTiming.PlotOutcomes = PlotOutcomes;

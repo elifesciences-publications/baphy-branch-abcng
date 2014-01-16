@@ -265,7 +265,7 @@ if ~isfield(exptparams,'WaterUnits') | strcmp(exptparams.WaterUnits,'seconds')
 end
 
 % UPDATE DISPLAY WITH WATER AND SOUND
-exptparams = BehaviorDisplay(BehaveObject, HW, StimEvents, globalparams, exptparams, TrialIndex, [], []);
+exptparams = BehaviorDisplay(BehaveObject, HW, StimEvents, globalparams, exptparams, TrialIndex, [], TrialSound);
 
 % MAKE SURE PUMP, SHOCK AND LIGHT ARE OFF
 try IOControlPump(HW,'stop'); IOControlShock(HW,0,'stop'); IOLightSwitch(HW,0); end

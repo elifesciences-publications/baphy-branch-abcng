@@ -116,7 +116,7 @@ DetectType = 'ON'; LickOccured = 0;
     fprintf('\b ... '); Prewarded = 1;
   end
 end
-% IF NO RESPONSE OCCUREE
+% IF NO RESPONSE OCCURED
 if ~LickOccured ResponseTime = inf; end
 
 if LickOccured
@@ -137,7 +137,8 @@ else % HIT OR ERROR
   end
 end
 Events=AddEvent(Events,['OUTCOME,',Outcome],TrialIndex,ResponseTime,[]);
-fprintf(['\t [ ',Outcome,' ] ... ']);
+if strcmp(Outcome,'HIT'); Outcome2Display = [Outcome ', RT = ' num2str(ResponseTime-TarWindow(1))]; else Outcome2Display = Outcome; end
+fprintf(['\t [ ',Outcome2Display,' ] ... ']);
 
 %% ACTUALIZE VISUAL FEEDBACK FOR THE SUBJECT
 TrialObject = get(exptparams.TrialObject);
@@ -176,7 +177,9 @@ switch Outcome
     if TrialIndex>1
       LastOutcomes = {exptparams.Performance((TrialIndex-1) :-1: max([1 (TrialIndex-MaxIncrementRewardNb)]) ).Outcome};
     else LastOutcomes = {'EARLY'}; end
-    NbContiguousLastHits = min([ find(strcmp(LastOutcomes,'EARLY'),1,'first') , find(strcmp(LastOutcomes,'SNOOZE'),1,'first') ])-1;
+%     NbContiguousLastHits = min([
+%     find(strcmp(LastOutcomes,'EARLY'),1,'first') , find(strcmp(LastOutcomes,'SNOOZE'),1,'first') ])-1; 
+    NbContiguousLastHits = find(strcmp(LastOutcomes,'EARLY'),1,'first')-1;   % Only Early are taken into account
     if isempty(NbContiguousLastHits), NbContiguousLastHits = length( strcmp(LastOutcomes,'HIT') ); end
     RewardAmount = RewardAmount + IncrementRewardAmount*NbContiguousLastHits;
     PumpDuration = RewardAmount/globalparams.PumpMlPerSec.(PumpName);
