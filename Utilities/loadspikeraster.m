@@ -808,6 +808,23 @@ if (length(tag_masks)==0 || length(tag_masks{1})<8 || ...
    end
 end
 
+% sort FTC data by frequency
+if ~isempty(strfind(spikeinfop.fname,'_FTC')),
+    unsortedtags=zeros(length(tags),1);
+    for cnt1=1:length(tags),
+        temptags = strrep(strsep(tags{cnt1},',',1),' ','');
+        unsortedtags(cnt1) = str2num(temptags{2});
+    end
+    
+    [sortedtags, index] = sort(unsortedtags); % sort the numeric tags
+    
+    tags=tags(index);
+    r=r(:,:,index);
+    trialset=trialset(:,index);
+end
+
+    
+    
 if ~isempty(stimidx),
    r(:,:,setdiff(1:size(r,3),stimidx))=nan;
 end

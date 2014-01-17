@@ -207,7 +207,7 @@ else
   LegendLabels={'Tar','Ref'};
 end
 ct=cat(1,exptparams.Performance(1:TrialIndex).FirstCatchTime);
-fct=find(~isnan(ct));
+fct=find(~isnan(ct) & ct<cat(1,exptparams.Performance(1:TrialIndex).FirstLickTime));
 if ~isempty(fct),
     h1=hist(exptparams.FirstLick.Catch(fct),0:BinSize:MaxBinTime);
 

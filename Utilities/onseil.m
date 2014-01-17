@@ -1,11 +1,11 @@
 function r=onseil()
 
 [s,host]=unix('hostname');
+[s,IP]=unix('hostname -I');
 host=strtrim(host);
 if ~isempty(findstr(lower(host),'seil.umd.edu')),
    r=1;
-elseif strcmpi(host,'badger') || strcmpi(host,'capybara') ||...
-        strcmpi(host,'microbat') || strcmpi(host,'hyrax'),
+elseif ~isempty(findstr(IP,'137.53.')),
    r=2;
 else
    r=0;
