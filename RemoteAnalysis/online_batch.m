@@ -155,6 +155,11 @@ for ii=1:NElectrodes
         MD_computeShepardTuning('MFile',mfile,'Electrode',Electrode,'Unit',unit,...
           'Axis',AH(ii),'SigmaThreshold',options.sigthreshold);
         
+        % TONE CLOUD
+      elseif strcmpi(options.runclass,'TMG'),
+        TMG_ComputeSTRF('MFile',mfile,'Electrode',Electrode,'Unit',unit,...
+          'Axis',AH(ii),'SigmaThreshold',options.sigthreshold);
+      
       elseif strcmpi(options.runclass,'AMT'),
         % for audio-visual stimuli, special analysis
         psth_heatmap(mfile,Electrode,unit,AH(ii),options);

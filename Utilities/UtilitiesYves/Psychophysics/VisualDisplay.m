@@ -21,7 +21,7 @@ elseif TrialIndex==1   % Initialize
     set(SecondScreenAxis,'XTick',[],'YTick',[])  ;
 end
 
-ProgressFraction = 2*Xbar*TrialIndex/exptparams.TrialBlock;
+ProgressFraction = 2*Xbar*mod(TrialIndex,exptparams.TrialBlock)/exptparams.TrialBlock;
 if ~strcmp(TrialPerformance,'GREY')  % Display the perf. and the progress bar between trials
     set(ProgressBar,'FaceColor',[1 1 1]);
     set(ProgressBar,'XData',[0 ProgressFraction ProgressFraction 0 0 0]-Xbar);

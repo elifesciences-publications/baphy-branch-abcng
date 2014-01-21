@@ -54,6 +54,6 @@ end
 %-- <IniSeed> sent to [BuildMorphing/DrawDistribution] for genesis of random D0s or block of 8x8 block of D0s (in the latter case, multiplied by <BlockNb>)
 %-- <IniSeed*Global_TrialNb> sent to [waveform/PoissonProcessPsychophysics] for picking up ToC
 %-- <IniSeed*RepNum> sent to [waveform] for generating the <FrozenPatternsSequence> [only if not( strcmp(Mode,'NoFrozen') ) ]
-%-- <Global_TrialNb*Index> sent to [waveform/AssemblyTones] for generating the tone frequency according to D0 + nb of tones in each octave
-%-- <Global_TrialNb*Index*2> sent to [waveform/AssemblyTones] for generating the tone frequency according to ChangeD + nb of tones in each octave
+%-- <Global_TrialNb*Index> sent to [waveform/AssemblyTones] for generating the tone frequencies and phases according to D0 + nb of tones in each octave
+%-- <Global_TrialNb*Index*2> sent to [waveform/AssemblyTones] for generating the tone frequencies and phases according to ChangeD + nb of tones in each octave
 %-- <IniSeed*Global_TrialNb*Index> sent to [waveform] for roving loudness

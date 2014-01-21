@@ -59,9 +59,9 @@ for ChordNum = 1:ChordNb
     if nargout>1         % Matrix of tones for simulations  
         IndToneFreq = [];
         for ToneNum = 1:NbTonesChord
-            IndToneFreq(ToneNum) = find(TrialTonesF(ToneNum)==FrequencySpace);
+            IndToneFreq = find(TrialTonesF(ToneNum)==FrequencySpace);
+            ToneMatrix(IndToneFreq,ChordNum) = ToneMatrix(IndToneFreq,ChordNum)+1;     % Could be several tones in the same frequency bin
         end
-        ToneMatrix(IndToneFreq,ChordNum) = 1;
     end
 end
 
