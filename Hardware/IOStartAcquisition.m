@@ -35,7 +35,12 @@ switch IODriver(HW)
     switch HW.params.HWSetup
       case 0;      tic;
         if strcmpi(HW.params.AOTriggerType,'HwDigital'),
+            disp('starting sound');
             play(HW.AO);  % AO is an audio player object, which gives control on the sound.
+            if isfield(HW,'AI') && ~isempty(HW.AI),
+                disp('starting lick');
+                start(HW.AI);  % AO is an audio player object, which gives control on the sound.
+            end
         end
         
       otherwise

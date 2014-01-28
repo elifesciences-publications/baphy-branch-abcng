@@ -7,7 +7,18 @@ function [w, event]=waveform(o,index,IsRef)
 global STREAMNOISEWAV STREAMNOISESPECGRAM
 p=get(o);
 
-if isempty(STREAMNOISEWAV),
+SampleStr=strrep(mat2str(p.SampleIdentifier),' ','_');
+SampleStr=strrep(SampleStr,'[','');
+SampleStr=strrep(SampleStr,']','');
+object_spec = what(class(o));
+
+cachefile=[object_spec.path filesep 'cache' filesep ...
+    'NoiseSample_cache_' SampleStr '.mat'];
+
+if isempty(STREAMNOISEWAV) && exist(cachefile,'file'),
+    disp('StreamNoise/waveform: loading cached samples...');
+    load(cachefile);
+elseif isempty(STREAMNOISEWAV),
    disp('StreamNoise/waveform: generating noise samples...');
    
    % fix random state for deterministic noise patterns
@@ -16,24 +27,22 @@ if isempty(STREAMNOISEWAV),
    saverandnstate=randn('state');
    randn('state',3);
    
-   [temp_wav, temp_specgram] = generate_gauss_sounds_general(...
+   [STREAMNOISEWAV, STREAMNOISESPECGRAM] = generate_gauss_sounds_general(...
       p.Count,round(p.Duration.*1000),p.LowFreq,p.HighFreq,...
       40,p.FreqCorr,p.TempCorr,.5,p.SamplingRate,1);
    for t=1:p.Count,
-      temp_wav(t,:)=hann(temp_wav(t,:),10,p.SamplingRate);
+      STREAMNOISEWAV(t,:)=hann(STREAMNOISEWAV(t,:),10,p.SamplingRate);
    end
-   STREAMNOISEWAV=temp_wav;
-   STREAMNOISESPECGRAM=temp_specgram;
    
    % restore random number generator to previous state
    rand('state',saverandstate);
    randn('state',saverandnstate);
-else
-   temp_wav=STREAMNOISEWAV;
-   temp_specgram=STREAMNOISESPECGRAM;
+   
+   disp('StreamNoise/waveform: saving samples to cache...');
+   save(cachefile,'STREAMNOISEWAV','STREAMNOISESPECGRAM','p');
 end
 
-w=temp_wav(index,:);
+w=STREAMNOISEWAV(index,:);
 if max(abs(w))>0,
     w = 5*w/max(abs(w));
 end
@@ -58,6 +67,3 @@ w = [zeros(ceil(p.PreStimSilence*p.SamplingRate),1) ;
      p.PreStimSilence, 'StopTime', p.PreStimSilence+p.Duration, 'Trial',[]);
  event(3) = struct('Note',['PostStimSilence , ' p.Names{index}],...
      'StartTime',p.PreStimSilence+p.Duration, 'StopTime',p.PreStimSilence+p.Duration+p.PostStimSilence,'Trial',[]);
-
-
-

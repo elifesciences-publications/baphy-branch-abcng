@@ -20,7 +20,7 @@ if exist('stim','var')  HW=IOLoadSound(HW,stim); end
 
 if strcmpi(IODriver(HW),'NIDAQMX'),
     if HW.params.HWSetup==0,
-        play(HW.AO);
+        %play(HW.AO);
         if nargout>0,
             ev.Note='STIM,ON';
             ev.StartTime=IOGetTimeStamp(HW);

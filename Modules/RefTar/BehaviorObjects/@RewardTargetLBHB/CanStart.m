@@ -2,6 +2,7 @@ function StopExperiment = CanStart (o, HW, StimEvents, globalparams, exptparams,
 % CanStart for ReferenceAvoidance
 % We wait until the animal does not lick for at least NoResponseTime
 
+disp('RewardTargetLBHB/CanStart:  intializing trial');
 global StopExperiment  % records if user pressed "Stop" in RefTarGui
 
 % turn on the light if its needed:
@@ -109,13 +110,20 @@ if strcmpi(get(o,'ReferenceDuringPreTrial'),'Yes'),
    end
 end  
 
-% 
-ClearSound=zeros(11000,1);
-%IOStopSound(HW);
-HW = IOLoadSound(HW, ClearSound);
-IOStartSound(HW);
-pause(0.1);
-IOStopSound(HW);
+if globalparams.HWSetup==0, 
+    disp('RewardTargetLBHB/CanStart:  intializing trial');
+    %if HW.params.HWSetup==0 && isfield(HW,'AI') && ~isempty(HW.AI),
+    %    start(HW.AI);
+    %end
+else
+    % 
+    ClearSound=zeros(11000,1);
+    %IOStopSound(HW);
+    HW = IOLoadSound(HW, ClearSound);
+    IOStartSound(HW);
+    pause(0.1);
+    IOStopSound(HW);
+end
 
 NeutralDelayComplete=0;
 if NeutralDelay>0,
@@ -144,7 +152,7 @@ while ~NoLickTimeComplete && ~StopExperiment,
             fprintf('Waiting for no response time (%.2f sec)\n',NoLickTime);
         end
     else
-        if IOLickRead(HW)
+        if globalparams.HWSetup~=0 && IOLickRead(HW)
             % if animal licks, reset the timer
             NoLickStartTime = clock;
         end
@@ -155,6 +163,9 @@ while ~NoLickTimeComplete && ~StopExperiment,
     drawnow
 end
 
+%if HW.params.HWSetup==0 && isfield(HW,'AI') && ~isempty(HW.AI),
+%    stop(HW.AI);
+%end
 if RefCounter,
     % make sure pre trial sound has stopped playing
     IOStopSound(HW);

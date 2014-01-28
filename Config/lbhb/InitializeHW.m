@@ -12,6 +12,16 @@ function [HW, globalparams] = InitializeHW (globalparams)
 
 global FORCESAMPLINGRATE
 
+if ~exist('globalparams','var')
+    globalparams=struct();
+end
+if ~isfield(globalparams,'HWSetup'),
+    globalparams.HWSetup=0;
+end
+if ~isfield(globalparams,'Physiology'),
+    globalparams.Physiology='No';
+end
+
 % create a default HW structure
 HW=HWDefaultNidaq(globalparams);
 
@@ -24,7 +34,8 @@ switch globalparams.HWSetup
     % create an audioplayer object which lets us control
     % start, stop, smapling rate , etc.
     HW.AO = audioplayer(rand(4000,1), HW.params.fsAO);
-    HW.AI = HW.AO;
+    %HW=IOMicTTLSetup(HW);
+    %start(HW.AI);
     HW.DIO.Line.LineName = {'Touch','TouchL','TouchR'};
     
   case 1,  % (SB-1) SMALL BOOTH 1

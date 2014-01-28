@@ -34,7 +34,9 @@ if strcmpi(globalparams.Module,'Reference Target')
     exptparams.TrialObject = TrialObject;
     exptparams.BehaveObject = BehaveObject;
 end
-exptparams = rmfield(exptparams,'Performance');
+if isfield(exptparams,'Performance'),
+    exptparams = rmfield(exptparams,'Performance');
+end
 exptparams.OfflineAnalysis = 1;
 
 HW.params = globalparams.HWparams;
@@ -54,7 +56,12 @@ end
 [spikecount, auxcount, TotalTrial, spikefs, auxfs] = evpgetinfo(evpfile);
 include = ''; 
 ThisTrial = 0;
-exptparams = rmfield(exptparams,'ResultsFigure');
+if isfield(exptparams,'ResultsFigure'),
+    exptparams = rmfield(exptparams,'ResultsFigure');
+end
+if isfield(globalparams,'rawfilecount') && TotalTrial>globalparams.rawfilecount,
+    TotalTrial=globalparams.rawfilecount;
+end
 for cnt1 = 1:TotalTrial
     % Stim events are between TrialStart and Last PostStimSilence events:
     [t1,t2,t3,t4,StimStart] = evtimes(exptevents,'TrialStart',cnt1);
@@ -90,8 +97,17 @@ drawnow;
 if savetodb,
     disp('saving perf data to database');
     [Parameters, Performance] = PrepareDatabaseData ( globalparams, exptparams);
-    %dbWriteData(globalparams.rawid, Parameters, 0, 0);  % this is parameter and dont keep previous data
+    dbWriteData(globalparams.rawid, Parameters, 0, 0);  % this is parameter and dont keep previous data
     dbWriteData(globalparams.rawid, Performance, 1, 0); % this is performance and dont keep previous data
+    if isfield(Performance,'HitRate') && isfield(Performance,'Trials')
+        sql=['UPDATE gDataRaw SET corrtrials=',num2str(round(Performance.HitRate*Performance.Trials)),',',...
+            ' trials=',num2str(Performance.Trials),' WHERE id=',num2str(globalparams.rawid)];
+        mysql(sql);
+    elseif isfield(Performance,'Hit') && isfield(Performance,'FalseAlarm')
+        sql=['UPDATE gDataRaw SET corrtrials=',num2str(Performance.Hit(1)),',',...
+            ' trials=',num2str(Performance.FalseAlarm(2)),' WHERE id=',num2str(globalparams.rawid)];
+        mysql(sql);
+    end
     
     SaveBehaviorFigure(globalparams,exptparams);
     

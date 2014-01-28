@@ -19,7 +19,8 @@ global BAPHY_LAB
 
 BehaveObject = exptparams.BehaveObject;
 
-if strcmpi(exptparams.BehaveObjectClass,'MriPassive'),
+if strcmpi(exptparams.BehaveObjectClass,'MriPassive') && ...
+        get(BehaveObject,'DelayAfterScanTTL')==0,
    disp('MriPassive: press a key to synchronize with start of MRI scan ...');
    pause
 end
@@ -102,7 +103,7 @@ while ContinueExp == 1
           HW = IOLoadSound(HW, TrialSound(:,[1 1]));
         end
       else
-        HW = IOLoadSound(HW, TrialSound);
+          HW = IOLoadSound(HW, TrialSound);
       end
 
       % force at least 500 ms pause between trials in SPR2
@@ -193,12 +194,12 @@ while ContinueExp == 1
       end
       
       if strcmpi(BAPHY_LAB,'lbhb') && ~mod(TrialIndex,20) && ...
-              iTrial<get(exptparams.TrialObject,'NumberOfTrials') &&...
+              (globalparams.HWSetup==0 || iTrial<get(exptparams.TrialObject,'NumberOfTrials')) &&...
               ~isempty(globalparams.mfilename),
           fprintf('Saving parmfile for safety.\n');
           WriteMFile(globalparams,exptparams,exptevents,1);
       end
-          
+      
       %% RANDOMIZE WITH FLAG 0 (TRIAL CALL)
       % Used in adaptive schemes, where trialset is modified based on animals performance
       % Needs to change NumberOfTrials and Modify the IndexSets
@@ -333,8 +334,7 @@ if globalparams.rawid>0 && dbopen,
     sql=['SELECT gAnimal.id as animal_id,gHealth.id,gHealth.water'...
       ' FROM gAnimal LEFT JOIN gHealth ON gHealth.animal_id=gAnimal.id'...
       ' WHERE gAnimal.animal like "',globalparams.Ferret,'"',...
-      ' AND date="',datestr(now,29),'"'...
-      ];
+      ' AND date="',datestr(now,29),'" LIMIT 1'];
     hdata=mysql(sql);
     if ~isempty(hdata),
       % gHealth entry already exists, update

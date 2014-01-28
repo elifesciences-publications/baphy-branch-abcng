@@ -6,9 +6,18 @@ switch nargin
         % if no input arguments, create a default object
         % this is the constructor:
         o.descriptor = 'MriPassive';
-        o.UserDefinableFields = {'TR','edit',10,'PreBlockSilence','edit',34};
+        o.UserDefinableFields = {'TR','edit',10,...
+            'PreBlockSilence','edit',34,...
+            'ScanTTLValue','edit',1,...
+            'DelayAfterScanTTL','edit',4,...
+            'InitTTLCount','edit',4,...
+            };
         o.TR=10;
         o.PreBlockSilence=34;
+        o.ScanTTLValue=1;
+        o.InitTTLCount=4;
+        o.DelayAfterScanTTL=4;
+        o.TTLCount=0;
         o.TrialStartTime=[];
         o = class(o,'MriPassive');
         o = ObjUpdate(o);

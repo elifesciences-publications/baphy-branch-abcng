@@ -21,7 +21,7 @@ if append,
    tnew=dbReadTuning(cellid);
    tnew=rmfield(tnew,'cellid');
    for ii=1:length(fn),
-      tnew.(fn{ii})=t.(fn{ii})
+      tnew.(fn{ii})=t.(fn{ii});
    end
    t=tnew;
    fn=fieldnames(t);

@@ -41,7 +41,13 @@ if ~isempty(HW) && isfield(HW,'aw'),
     end;
 end
 
-if strcmpi(IODriver(HW),'NIDAQMX'),
+if isfield(HW,'params') && isfield(HW.params,'HWSetup') && (HW.params.HWSetup==0),
+    if isfield(HW,'AI')
+        stop(HW.AI);
+    end
+    stop(HW.AO);
+    
+elseif strcmpi(IODriver(HW),'NIDAQMX'),
   % is this adequate for resetting???
   HW.params.SHOW_ERR_WARN=0;
   HW=niStop(HW);
@@ -51,7 +57,7 @@ if strcmpi(IODriver(HW),'NIDAQMX'),
 elseif ~isempty(HW) && isfield(HW.params,'HWSetup') && (HW.params.HWSetup)
     devices = fieldnames(HW);
     for cnt1 = 1:length(devices)
-        if ~isempty(HW.(devices{cnt1})) & isobject(HW.(devices{cnt1}))
+        if ~isempty(HW.(devices{cnt1})) && isobject(HW.(devices{cnt1}))
             try stop(HW.(devices{cnt1} ));catch end;
             try delete(HW.(devices{cnt1}));catch end;
             try clear HW.(devices{cnt1});catch end;

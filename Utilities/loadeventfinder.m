@@ -132,9 +132,20 @@ elseif ~isempty(tag_masks) && length(tag_masks{1})>=16 && strcmp(tag_masks{1}(1:
         end
         
         % check for discrim arrangement, ie, if every other post-stim
-        % silence is zero
+        % silence is zero (special check for CLK tasks with gap by
+        % simply asking if there are two targets per trial)
+        tarstim=zeros(size(eventtime));
+        for ii=1:length(Note),
+            if ~isempty(findstr(Note{ii},'Target')),
+                tarstim(ii)=1;
+            end
+        end
+        [btar,~,jjtar]=unique(evtrials(find(tarstim)));
         dd=eventtimeoff-xx;
-        if (sum(dd(1:2:end)>0)==0 & sum(dd(2:2:end)==0)==0)
+        if (~isempty(jjtar) && length(jjtar)==length(btar).*2) ||... 
+                (sum(dd(1:2:end)>0)==0 & sum(dd(2:2:end)==0)==0)
+            % ie, two targets per trial or funny case of 0 gap
+            % between pairs of stimuli
             eventtime=eventtime(1:2:end);
             evtrials=evtrials(1:2:end);
             eventtimeoff=eventtimeoff(2:2:end);
@@ -279,4 +290,31 @@ else
     else
         [eventtime,evtrials,Note,eventtimeoff]=evtimes(exptevents,['Stim*']);
     end
+    
+    % special case --remove reference period with overlapping targets
+    if ~isempty(tag_masks) && strcmpi(tag_masks{1},'Reference'),
+        [ttime,ttrial,tnote]=evtimes(exptevents,['Stim*']);
+        validevents=ones(size(eventtime));
+        for ee=1:length(ttime),
+            if ~isempty(findstr(tnote{ee},', Target')),
+                ff=find(eventtimeoff>ttime(ee) & evtrials==ttrial(ee));
+                for gg=ff(:)',
+                    if gg==ee || eventtime(gg)>ttime(ee),
+                        validevents(gg)=0;
+                    elseif eventtimeoff(gg)>ttime(ee),
+                        eventtimeoff(gg)=ttime(ee);
+                    end
+                end
+            end
+        end
+        eventtime=eventtime(find(validevents));
+        evtrials=evtrials(find(validevents));
+        Note={Note{find(validevents)}}';
+        eventtimeoff=eventtimeoff(find(validevents));
+        if sum(1-validevents)>0
+            %fprintf('removed %d/%d invalid target overlap events\n',...
+            %        sum(1-validevents),length(validevents));
+        end
+    end
+
 end

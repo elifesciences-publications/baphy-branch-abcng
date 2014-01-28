@@ -15,27 +15,24 @@ par = get(o);
 
 ReferenceMaxIndex = par.ReferenceMaxIndex;
 TargetMaxIndex = par.TargetMaxIndex;
-RefTarFlipFreq=par.RefTarFlipFreq;
 ReferenceCountFreq=par.ReferenceCountFreq./sum(par.ReferenceCountFreq);
-RefIdx=ifstr2num(par.RefIdx);
-TarIdx=ifstr2num(par.TarIdx);
 TargetIdxFreq=ifstr2num(par.TargetIdxFreq);
+CatchIdxFreq=ifstr2num(par.CatchIdxFreq);
 
-% If specified, only use Ref/Tar Indices entered by user.  Or use all of them
-% by default.
-RefIdx=RefIdx(RefIdx<=ReferenceMaxIndex);
-if isempty(RefIdx),
-   RefIdx=1:ReferenceMaxIndex;
-end
+RefIdx=1:ReferenceMaxIndex;
 if isempty(TargetIdxFreq),
-  TargetIdxFreq=1;
+    TargetIdxFreq=1;
 elseif length(TargetIdxFreq)>TargetMaxIndex,
-  TargetIdxFreq=TargetIdxFreq(1:TargetMaxIndex);
+    TargetIdxFreq=TargetIdxFreq(1:TargetMaxIndex);
 end
 if sum(TargetIdxFreq)==0,
-  TargetIdxFreq(:)=1;
+    TargetIdxFreq(:)=1;
 end
 TargetIdxFreq=TargetIdxFreq./sum(TargetIdxFreq);
+
+if isempty(CatchIdxFreq),
+    CatchIdxFreq=0;
+end
 
 if isfield(exptparams,'TotalTrials'),
     TotalTrials=exptparams.TotalTrials;
@@ -48,7 +45,8 @@ if RepOrTrial == 0,
     trialidx=exptparams.InRepTrials;
     
     if strcmpi(exptparams.BehaveObjectClass,'Passive') || ...
-            strcmpi(exptparams.Performance(end).ThisTrial,'Hit'),
+            strcmpi(exptparams.Performance(end).ThisTrial,'Hit') ||...
+            strcmpi(exptparams.Performance(end).ThisTrial,'Corr.Rej.'),
         % either passive or last trial was correct. either way, we don't need
         % to adjust anything
         
@@ -60,15 +58,18 @@ if RepOrTrial == 0,
         o=set(o,'ReferenceIndices',...
             {par.ReferenceIndices{1:trialidx} par.ReferenceIndices{trialidx:end}});
         NewTargetIndices={par.TargetIndices{1:trialidx} par.TargetIndices{trialidx:end}};
-        if strcmpi(exptparams.Performance(end).ThisTrial,'Miss'),
+        NewCatchIndices={par.CatchIndices{1:trialidx} par.CatchIndices{trialidx:end}};
+        NewCatchSeg=[par.CatchSeg(1:trialidx); par.CatchSeg(trialidx:end)];
+        if strcmpi(exptparams.Performance(end).ThisTrial,'Miss') && ~isempty(par.TargetIndices{trialidx}),
             NewTargetIndex=find(rand>[0 cumsum(TargetIdxFreq)], 1, 'last' );
             fprintf('Missed last target.  Repeating same reference with targetidx=%d\n',NewTargetIndex);
             NewTargetIndices{trialidx+1}=NewTargetIndex;
         end
         o=set(o,'TargetIndices',NewTargetIndices);
+        o=set(o,'CatchIndices',NewCatchIndices);
+        o=set(o,'CatchSeg',NewCatchSeg);
         o=set(o,'SingleRefDuration',...
             [par.SingleRefDuration(1:trialidx) par.SingleRefDuration(trialidx:end)]);
-        o=set(o,'FlipFlag',[par.FlipFlag(1:trialidx) par.FlipFlag(trialidx:end)]);
         o=set(o,'NumberOfTrials',par.NumberOfTrials+1);
         exptparams.TrialObject = o;
     end
@@ -81,7 +82,7 @@ end
 % closer to 10.  not really a "repetition" any more, but this
 % allows full length trials.
 ReferenceCount=length(RefIdx);
-if 10./ReferenceCount>=2,
+if 10/ReferenceCount>=2,
    repcount=floor(10./ReferenceCount);
 else
    repcount=1;
@@ -102,16 +103,23 @@ for ii=1:length(TargetIdxFreq),
 end
 TarIdxSet=par.TarIdxSet;
 
-RefIdxSetFlip=shuffle(TarIdx);
-TarIdxSetFlip=[];  %intialized below
+% same for catch targets
+CatchCount=max(50,ReferenceCount);
+CatchIdx=[];
+for ii=1:length(CatchIdxFreq),
+    CatchIdx=cat(2,CatchIdx,ones(1,CatchCount.*CatchIdxFreq(ii)).*ii);
+end
+CatchIdxSet=par.CatchIdxSet;
+bCatchTrial=zeros(CatchCount,1);
+bCatchTrial(1:round(sum(CatchIdxFreq).*CatchCount))=1;
+bCatchTrial=shuffle(bCatchTrial);
 
 trialidx=0;
-FlipFlag=[];
 RefTrialIndex={};
 TargetIndex={};
-
-while (RefTarFlipFreq<=0.5 && ~isempty(RefIdxSet)) || ...
-    (RefTarFlipFreq>=0.5 && ~isempty(RefIdxSetFlip))
+CatchIndex={};
+CatchSeg=[];
+while ~isempty(RefIdxSet)
   
     trialidx=trialidx+1;
     
@@ -122,102 +130,90 @@ while (RefTarFlipFreq<=0.5 && ~isempty(RefIdxSet)) || ...
           tmaxidx=find(TargetIdxFreq==max(TargetIdxFreq),1);
           ff=find(TarIdx==tmaxidx);
           dd=1; ii=0;
-          while length(dd>0) && ii<10,
+          while ~isempty(dd) && ii<10,
               ii=ii+1;
-              if par.QueueTrialCount>0 && ~TotalTrials,
-                  TarIdxSet=[TarIdx(ff(1:par.QueueTrialCount)) shuffle(TarIdx)];
+              if par.CueTrialCount>0 && ~TotalTrials,
+                  TarIdxSet=[TarIdx(ff(1:par.CueTrialCount)) shuffle(TarIdx)];
               else
                   TarIdxSet=shuffle(TarIdx);
-              end  
+              end
               dd=find(diff([TarIdxSet 0])==0 & TarIdxSet~=TarIdxSet(1));
           end
        else
           TarIdxSet=shuffle(TarIdx);
        end
     end
-    if isempty(TarIdxSetFlip),
-        TarIdxSetFlip=shuffle(RefIdx);
+    if isempty(CatchIdxSet),
+        CatchIdxSet=shuffle(CatchIdx);
     end
-    
-    % choose whether to flip target and reference for this trial
-    flipthistrial=(rand>(1-RefTarFlipFreq));
-    if flipthistrial && isempty(RefIdxSetFlip),
-      flipthistrial=0;
-    end
-    FlipFlag=[FlipFlag flipthistrial];
     
     % choose number of references for this trial
-    if isempty(par.SingleRefSegmentLen) || par.SingleRefSegmentLen==0,
-      refcount=find(rand>[0 cumsum(ReferenceCountFreq)], 1, 'last' );
-      SingleRefDuration(trialidx)=0;
+    CatchIndex{trialidx}=[];
+    CatchSeg(trialidx,1)=0;
+    if trialidx<par.CueTrialCount && ~TotalTrials,
+        CueTrial=1;
+        trcf=ReferenceCountFreq(1:(end-1));
+        trcf=trcf./sum(trcf);
+        refsegcount=find(rand>[0 cumsum(trcf)], 1, 'last' );
     else
-      refcount=1;
-      SingleRefDuration(trialidx)=par.SingleRefSegmentLen.*...
-        find(rand>[0 cumsum(ReferenceCountFreq)], 1, 'last' );
-    end
-    
-    if ~flipthistrial,
-      
-      if refcount>length(RefIdxSet),
-          refcount=length(RefIdxSet);
-      end
-      RefTrialIndex{trialidx}=RefIdxSet(1:refcount);
-      RefIdxSet=RefIdxSet((refcount+1):end);
-      
-      % add extra reference if overlap ref tar.      
-      if strcmpi(par.OverlapRefTar,'Yes') &&...
-              (isempty(par.SingleRefSegmentLen) || par.SingleRefSegmentLen==0)
-         RefTrialIndex{trialidx}=...
-            cat(2,RefTrialIndex{trialidx},ceil(rand*length(RefIdx)));
-      end
-      
-      % commented out: this code repeats the same reference
-      %RefTrialIndex{trialidx}=repmat(RefIdxSet(1),[1,refcount]);
-      %RefIdxSet=RefIdxSet(2:end);
-      if refcount<length(ReferenceCountFreq),
-        TargetIndex{trialidx}=TarIdxSet(1);
-        TarIdxSet=TarIdxSet(2:end);
-      else
-        TargetIndex{trialidx}=[];
-      end
-      
-    else
-      
-      if refcount>length(RefIdxSetFlip),
-        refcount=length(RefIdxSetFlip);
-      end
-      RefTrialIndex{trialidx}=RefIdxSetFlip(1:refcount);
-      RefIdxSetFlip=RefIdxSetFlip((refcount+1):end);
-      
-      % add extra reference if overlap ref tar.      
-      if strcmpi(par.OverlapRefTar,'Yes')
-         RefTrialIndex{trialidx}=...
-            cat(2,RefTrialIndex{trialidx},ceil(rand*length(TarIdx)));
-      end
-      
-      % commented out: this code repeats the same reference
-      %RefTrialIndex{trialidx}=repmat(RefIdxSetFlip(1),[1,refcount]);
-      %RefIdxSetFlip=RefIdxSetFlip(2:end);
-      if refcount<length(ReferenceCountFreq),
-        TargetIndex{trialidx}=TarIdxSetFlip(1);
-          TarIdxSetFlip=TarIdxSetFlip(2:end);
-        else
-          TargetIndex{trialidx}=[];
+        CueTrial=0;
+        refsegcount=find(rand>[0 cumsum(ReferenceCountFreq)], 1, 'last' );
+        
+        % catch stim only possible in non-cue trials
+        if rand<sum(CatchIdxFreq),
+            % this trial gets a catch stimulus
+            CatchIndex{trialidx}=CatchIdxSet(1);
+            CatchIdxSet=CatchIdxSet(2:end);
+            if refsegcount<max(find(ReferenceCountFreq>0)),
+                refsegcount=refsegcount+1;
+            end
+            CatchSeg(trialidx,1)=refsegcount-ceil(rand*3);
         end
     end
     
-    fprintf('Trial %d: Ref=%s Tar=%s\n',TotalTrials+trialidx,...
-        mat2str(RefTrialIndex{trialidx}),mat2str(TargetIndex{trialidx}));
+    if isempty(par.SingleRefSegmentLen) || par.SingleRefSegmentLen==0,
+        refcount=refsegcount;
+        SingleRefDuration(trialidx)=0;
+    else
+        refcount=1;
+        SingleRefDuration(trialidx)=par.SingleRefSegmentLen.*refsegcount;
+    end
+    
+    if refcount>length(RefIdxSet),
+        refcount=length(RefIdxSet);
+    end
+    RefTrialIndex{trialidx}=RefIdxSet(1:refcount);
+    RefIdxSet=RefIdxSet((refcount+1):end);
+    
+    if refsegcount<length(ReferenceCountFreq),
+        TargetIndex{trialidx}=TarIdxSet(1);
+        TarIdxSet=TarIdxSet(2:end);
+        
+        % add extra "junk" reference if overlap ref tar.
+        if strcmpi(par.OverlapRefTar,'Yes') &&...
+                (isempty(par.SingleRefSegmentLen) || par.SingleRefSegmentLen==0)
+            RefTrialIndex{trialidx}=...
+                cat(2,RefTrialIndex{trialidx},ceil(rand*length(RefIdx)));
+        end
+    else
+        TargetIndex{trialidx}=[];
+    end
+    
+    fprintf('Trial %d: Ref=%s Tar=%s Catch=%s\n',TotalTrials+trialidx,...
+        mat2str(RefTrialIndex{trialidx}),mat2str(TargetIndex{trialidx}),...
+        mat2str(CatchIndex{trialidx}));
 end
 TotalTrials=trialidx;
 if TotalTrials>length(SingleRefDuration),
   warning('TotalTrials>length(SingleRefDuration)');
 end
 % save results back to the TrialObject
-o = set(o,'FlipFlag',FlipFlag);
 o = set(o,'ReferenceIndices',RefTrialIndex);
 o = set(o,'TargetIndices',TargetIndex);
+o = set(o,'CatchIndices',CatchIndex);
+o = set(o,'CatchSeg',CatchSeg);
 o = set(o,'TarIdxSet',TarIdxSet);
+o = set(o,'CatchIdxSet',CatchIdxSet);
 o = set(o,'NumberOfTrials',TotalTrials);
 o = set(o,'SingleRefDuration',SingleRefDuration);
 exptparams.TrialObject = o;

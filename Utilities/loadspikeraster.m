@@ -200,11 +200,11 @@ if spikeshape
   SpikeShape = spikeinfop.sortinfo{channel}{sortidx}(unit).Template(:,unit);
   sortextras.SpikeShape = SpikeShape;
 end
-  
+
 cellid=basename(spkfile);
 if strcmp(cellid(1:3),'c02') || strcmp(cellid(1:3),'c03') || ...
       strcmpi(cellid(1),'J') ||...
-      (strcmpi(cellid(1),'o') && ~strcmp(cellid(1:3),'oni')),
+      (strcmpi(cellid(1),'o') && ~strcmp(cellid(1:3),'oni') && ~strcmp(cellid(1:3),'oys')),
    disp('old file: shifting responses forward 15 ms');
    rawSpikes(2,:)=rawSpikes(2,:)+mfOld.*0.015;
    rawSpikes=rawSpikes(:,find(rawSpikes(2,:)>0));
@@ -649,7 +649,7 @@ if lfpclean
 end
 
 
-trialset=[];
+trialset=zeros(1,referencecount);
 for trialidx=trialrange,
     starttime=starttimes(find(starttrials==trialidx));
     stoptime=stoptimes(find(stoptrials==trialidx));
@@ -735,7 +735,7 @@ for trialidx=trialrange,
                r(1:rl,repidx,refidx)=raster((startbin+1):end);
             end
             trialset(repidx,refidx)=trialidx;
-            
+           
         end
     end
     drawnow;
@@ -808,6 +808,23 @@ if (length(tag_masks)==0 || length(tag_masks{1})<8 || ...
    end
 end
 
+% sort FTC data by frequency
+if ~isempty(strfind(spikeinfop.fname,'_FTC')),
+    unsortedtags=zeros(length(tags),1);
+    for cnt1=1:length(tags),
+        temptags = strrep(strsep(tags{cnt1},',',1),' ','');
+        unsortedtags(cnt1) = str2num(temptags{2});
+    end
+    
+    [sortedtags, index] = sort(unsortedtags); % sort the numeric tags
+    
+    tags=tags(index);
+    r=r(:,:,index);
+    trialset=trialset(:,index);
+end
+
+    
+    
 if ~isempty(stimidx),
    r(:,:,setdiff(1:size(r,3),stimidx))=nan;
 end

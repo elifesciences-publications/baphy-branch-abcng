@@ -10,27 +10,23 @@ function [TrialSound, events , o] = waveform (o,TrialIndex)
 global SPNOISE_EMTX BAPHY_LAB
 
 par = get(o); % get the parameters of the trial object
-FlipFlag = par.FlipFlag(TrialIndex);   % determine if ref and tar should be flipped
-if ~FlipFlag,
-  RefObject = par.ReferenceHandle; % get the reference handle
-  TarObject = par.TargetHandle; % getthe target handle
-else    %flip
-  TarObject = par.ReferenceHandle;    % get the reference handle
-  RefObject = par.TargetHandle;           % getthe target handle
-end
-
+RefObject = par.ReferenceHandle; % get the reference handle
+TarObject = par.TargetHandle; % getthe target handle
 RefSamplingRate = ifstr2num(get(RefObject,'SamplingRate'));
 TarSamplingRate = ifstr2num(get(TarObject,'SamplingRate'));
 
+TarTrialIndex=[];
 if (par.NumberOfTarPerTrial~=0) && ~strcmpi(par.TargetClass,'none')
     TarTrialIndex = par.TargetIndices{TrialIndex};
     if isempty(TarTrialIndex)  % if its a Sham
         % this means there is a target but this trial is sham. ALthough
         % there is no target, we need to adjust the amplitude based on
         % RefTardB.
-        TarObject = -1;
+        %TarObject = -1;
     end
 end
+CatchTrialIndex=par.CatchIndices{TrialIndex};
+
 TrialSamplingRate = max(RefSamplingRate, TarSamplingRate);
 RefObject = set(RefObject, 'SamplingRate', TrialSamplingRate);
 TarObject = set(TarObject, 'SamplingRate', TrialSamplingRate);
@@ -44,7 +40,7 @@ rpos=get(RefObject,'PostStimSilence');
 % get the index of reference sounds for current trial
 RefTrialIndex = par.ReferenceIndices{TrialIndex};
 if ~isempty(par.SingleRefSegmentLen) && par.SingleRefSegmentLen>0,
-    if OverlapRefTar,
+    if OverlapRefTar && ~isempty(TarTrialIndex),
         TarStartTime=(par.SingleRefDuration(TrialIndex)+...
           get(RefObject,'PreStimSilence'));
         TarStartBin=round(TarStartTime.*TrialSamplingRate);
@@ -65,7 +61,6 @@ end
 PostTrialSilence = par.PostTrialSilence;
 PostTrialBins=round(PostTrialSilence.*TrialSamplingRate);
 
-FlipFlag = par.FlipFlag(TrialIndex); % get the index of reference sounds for current trial
 TrialSound = []; % initialize the waveform
 ind = 0;
 events = [];
@@ -135,8 +130,9 @@ for cnt1 = 1:length(RefTrialIndex)
   events = [events ev];
 end
 
+TrialSound0=TrialSound;
 chancount=size(TrialSound,2);
-if isobject(TarObject)
+if ~isempty(TarTrialIndex)
     TarTrialIndex = par.TargetIndices{TrialIndex}; % get the index of reference sounds for current trial
     
     TargetChannel=par.TargetChannel;
@@ -156,16 +152,7 @@ if isobject(TarObject)
     else
       RelativeTarRefdB=RelativeTarRefdB(TarTrialIndex);
     end
-    %if isfield(refpar,'RelAttenuatedB'),
-    %    if length(refpar.RelAttenuatedB)>=TarTrialIndex,
-    %        LevelAdjust=RelativeTarRefdB-refpar.RelAttenuatedB(TarTrialIndex);
-    %    else
-    %        LevelAdjust=RelativeTarRefdB-refpar.RelAttenuatedB(1);
-    %    end
-    %else
-        LevelAdjust=RelativeTarRefdB;
-    %end
-    ScaleBy=10^(LevelAdjust/20);
+    ScaleBy=10^(RelativeTarRefdB/20);
     
     TarObject = set(TarObject, 'SamplingRate', TrialSamplingRate);
     % generate the target sound:
@@ -184,18 +171,16 @@ if isobject(TarObject)
     w=[w zeros(length(w),chancount-size(w,2))];
     
     fprintf('TarTrialIndex=%d (%d dB, channel %d)\n',TarTrialIndex,RelativeTarRefdB, TargetChannel);
-    fprintf('Ref max: %.1f %.1f  Tar max: %.1f\n',max(abs(TrialSound)),max(abs(w(:,TargetChannel))));
-    TrialSound0=TrialSound;
     if OverlapRefTar,
-%         TarBins=TarStartBin+get(TarObject,'PreStimSilence').*TrialSamplingRate+....
-%             (1:(get(TarObject,'Duration').*TrialSamplingRate));
         TarBins=TarStartBin+round(get(TarObject,'PreStimSilence').*TrialSamplingRate)+....
             (1:round((get(TarObject,'Duration').*TrialSamplingRate)));
         
-        RefMaxDuringTar=max(abs(TrialSound(TarBins,TargetChannel)));
-        fprintf('Ref max during tar: %.1f  Adjusting ScaleBy to compensate!\n',RefMaxDuringTar);
-        ScaleBy=ScaleBy.*RefMaxDuringTar./5;
-        fprintf('Adjusted Tar ScaleBy: %.2f\n',ScaleBy);
+        %RefMaxDuringTar=max(abs(TrialSound(TarBins,TargetChannel)));
+        %ScaleBy=ScaleBy.*RefMaxDuringTar./5;
+        %fprintf('Ref max during tar: %.1f. Adjusted Tar ScaleBy: %.2f\n',RefMaxDuringTar,ScaleBy);
+        RefMeanDuringTar=mean(abs(TrialSound(TarBins,TargetChannel)));
+        ScaleBy=ScaleBy.*RefMeanDuringTar./5;
+        fprintf('Ref mean during tar: %.1f. Adjusted Tar ScaleBy: %.2f\n',RefMeanDuringTar,ScaleBy);
         w=w.*ScaleBy;
         
         if TarMatchContour && ~isempty(refenv),
@@ -234,30 +219,6 @@ if isobject(TarObject)
                 TrialSound(TarStartBin-1+(1:size(w,1)),:).*RefMod+...
                 w.*TarMod;
             
-            if strcmp(BAPHY_LAB,'lbhb'),
-                % debug code
-                sfigure(1);
-                clf
-                dfs=50000;
-                
-                subplot(3,1,2);
-                tw=resample(TrialSound,dfs,TrialSamplingRate);
-                plot((1:length(tw))./dfs,tw);
-                aa=axis;
-                axis([0 length(tw)./dfs aa(3:4)]);
-                
-                subplot(3,1,1);
-                tw=resample(TrialSound0,dfs,TrialSamplingRate);
-                plot((1:length(tw))./dfs,tw);
-                axis([0 length(tw)./dfs aa(3:4)]);
-                
-                subplot(3,1,3);
-                h = spectrum.welch;        % Create a Welch spectral estimator.
-                Hpsd = psd(h,tw,'Fs',dfs); % Calculate the PSD
-                plot(Hpsd);                % Plot the PSD.
-                
-                drawnow
-            end
         end
         LastEvent=TarStartTime;
         
@@ -280,18 +241,134 @@ if isobject(TarObject)
     
     % normalize the sound, because the level control is always from attenuator.
     TrialSound = 5 * TrialSound / max(abs(TrialSound0(:)));
-    
-elseif TarObject == -1
-    % sham trial:
-    if isfield(get(par.TargetHandle),'ShamNorm'),
-        TrialSound = 5 * TrialSound / get(par.TargetHandle,'ShamNorm');
-    else
-        TrialSound = 5 * TrialSound / max(abs(TrialSound(:)));
-        if get(o,'RelativeTarRefdB')>0
-            TrialSound = TrialSound / (10^(get(o,'RelativeTarRefdB')/20));
-        end
-    end
+else
+    TrialSound = 5 * TrialSound / max(abs(TrialSound(:)));
 end
+
+if ~isempty(CatchTrialIndex)
+    CatchChannel=par.TargetChannel;
+    if isempty(CatchChannel),
+      CatchChannel=1;
+    elseif length(CatchChannel)<CatchTrialIndex,
+      CatchChannel=CatchChannel(1);
+    else
+      CatchChannel=CatchChannel(CatchTrialIndex);
+    end
+    
+    RelativeTarRefdB=par.RelativeTarRefdB;
+    if isempty(RelativeTarRefdB),
+      RelativeTarRefdB=0;
+    elseif length(RelativeTarRefdB)<CatchTrialIndex,
+      RelativeTarRefdB=RelativeTarRefdB(1);
+    else
+      RelativeTarRefdB=RelativeTarRefdB(CatchTrialIndex);
+    end
+    ScaleBy=10^(RelativeTarRefdB/20);
+    
+    TarObject = set(TarObject, 'SamplingRate', TrialSamplingRate);
+    % generate the target sound:
+    [w, ev] = waveform(TarObject, CatchTrialIndex, 0); % 0 means its target
+        
+    CatchStartTime=(par.SingleRefSegmentLen*par.CatchSeg(TrialIndex)+...
+       get(RefObject,'PreStimSilence'));
+    CatchStartBin=round(CatchStartTime.*TrialSamplingRate);
+    
+    % svd 2009-06-29 make sure that sound is in a column
+    if size(w,2)>size(w,1),
+        w=w';
+    end
+    
+    % shift single-channel target to appropriate output channel
+    if size(w,2)==1 && CatchChannel>1,
+        w=[repmat(zeros(size(w)),[1 CatchChannel-1]) w];
+    end
+    % pad higher channels with zero
+    w=[w zeros(length(w),chancount-size(w,2))];
+    
+    fprintf('CatchTrialIndex=%d (%d dB, channel %d)\n',CatchTrialIndex,RelativeTarRefdB, CatchChannel);
+    
+    if OverlapRefTar,
+        CatchBins=CatchStartBin+round(get(TarObject,'PreStimSilence').*TrialSamplingRate)+....
+            (1:round((get(TarObject,'Duration').*TrialSamplingRate)));
+        %RefMaxDuringCatch=max(abs(TrialSound(CatchBins,CatchChannel)));
+        %ScaleBy=ScaleBy.*RefMaxDuringCatch./5;
+        %fprintf('Ref max during catch: %.1f. Adjusted Catch ScaleBy: %.2f\n',RefMaxDuringCatch,ScaleBy);
+        RefMeanDuringCatch=mean(abs(TrialSound(CatchBins,CatchChannel)));
+        ScaleBy=ScaleBy.*RefMeanDuringCatch./5;
+        fprintf('Ref mean during catch: %.1f. Adjusted Catch ScaleBy: %.2f\n',RefMeanDuringCatch,ScaleBy);
+        w=w.*ScaleBy;
+        
+        if par.OnsetRampTime>0,
+           % add a ramp
+           PreZeros=round(get(TarObject,'PreStimSilence').*TrialSamplingRate);
+           PostZeros=round(get(TarObject,'PostStimSilence').*TrialSamplingRate);
+           
+           TarRampBins=round(par.OnsetRampTime.*TrialSamplingRate);
+           NonRampBins=length(w)-TarRampBins.*2-PreZeros-PostZeros;
+           RefMod=repmat([ones(1,PreZeros) ...
+              linspace(1,1-ScaleBy,TarRampBins) ...
+              ones(1,NonRampBins).*(1-ScaleBy)...
+              linspace(1-ScaleBy,1,TarRampBins)...
+              ones(1,PostZeros)]',[1 size(w,2)]);
+           TarMod=repmat([ones(1,PreZeros) ...
+              linspace(0,1,TarRampBins) ...
+              ones(1,NonRampBins)...
+              linspace(1,0,TarRampBins)...
+              ones(1,PostZeros)]',[1 size(w,2)]);
+           zz= (std(w)==0);
+           RefMod(:,zz)=1;
+        else
+           RefMod=1;
+           TarMod=1;
+        end
+        
+        w = 5 * w / max(abs(TrialSound0(:)));
+        
+        TrialSound(CatchStartBin-1+(1:size(w,1)),:)=...
+           TrialSound(CatchStartBin-1+(1:size(w,1)),:).*RefMod+...
+           w.*TarMod;
+    else
+       error('non-overlapping catch stimuli not supported');
+    end
+    LastEvent=CatchStartTime;
+    
+    % now, add Target to the event list, correct the time stamp with
+    % respect to last event, and add Trial
+    for cnt2 = 1:length(ev)
+        ev(cnt2).Note = [ev(cnt2).Note ' , Catch'];
+        ev(cnt2).StartTime = ev(cnt2).StartTime + LastEvent;
+        ev(cnt2).StopTime = ev(cnt2).StopTime + LastEvent;
+        ev(cnt2).Trial = TrialIndex;
+    end
+    events = [events(1:(end-3)) ev events((end-2):end)];
+    LastEvent = max(cat(1,events.StopTime));
+end
+
+if strcmp(BAPHY_LAB,'lbhb'),
+   % debug code
+   sfigure(1);
+   clf
+   dfs=50000;
+   
+   subplot(3,1,2);
+   tw=resample(TrialSound,dfs,TrialSamplingRate);
+   plot((1:length(tw))./dfs,tw);
+   aa=axis;
+   axis([0 length(tw)./dfs aa(3:4)]);
+   
+   subplot(3,1,1);
+   tw=resample(TrialSound0,dfs,TrialSamplingRate);
+   plot((1:length(tw))./dfs,tw);
+   axis([0 length(tw)./dfs aa(3:4)]);
+   
+   subplot(3,1,3);
+   h = spectrum.welch;        % Create a Welch spectral estimator.
+   Hpsd = psd(h,tw,'Fs',dfs); % Calculate the PSD
+   plot(Hpsd);                % Plot the PSD.
+   
+   drawnow
+end
+
 
 if PostTrialBins>0,
    TrialSound=cat(1,TrialSound,zeros(PostTrialBins,chancount));

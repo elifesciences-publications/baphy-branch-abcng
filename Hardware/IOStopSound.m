@@ -1,4 +1,4 @@
-function ev = IOStopSound (HW);
+function ev = IOStopSound (HW)
 % function timestamp = IOStopSound (HW)
 %
 % Stop playing the sound (HW.AO)
@@ -13,7 +13,7 @@ function ev = IOStopSound (HW);
 
 if strcmpi(IODriver(HW),'NIDAQMX'),
   if HW.params.HWSetup==0,
-      %disp('stopping Test mode sound');
+      disp('stopping Test mode sound');
       stop(HW.AO);                % stop interfaces
   else
     
@@ -26,7 +26,7 @@ if strcmpi(IODriver(HW),'NIDAQMX'),
     
     % make sure not triggering
     niPutValue(HW.DIO(TriggerDIO),vstop);
-    disp('stopping AO');
+    %disp('stopping AO');
     niStop(HW.AO);
   end
   if nargout>0,

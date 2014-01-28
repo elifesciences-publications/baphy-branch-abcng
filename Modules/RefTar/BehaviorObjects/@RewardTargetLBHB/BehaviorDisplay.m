@@ -103,6 +103,13 @@ plot(100*cat(1,exptparams.Performance(1:end-1).DiscriminationIndex),'-',...
 AllIneffective = cat(1,exptparams.Performance(1:TrialIndex).Ineffective);
 AllIneffective(find(AllIneffective==0))=nan;
 plot(110*AllIneffective,'r*','markersize',10);
+if isfield(exptparams.Performance,'NullTrial'),
+    AllNull = cat(1,exptparams.Performance(1:TrialIndex).NullTrial);
+    AllNull=find(AllNull==1);
+    if ~isempty(AllNull),
+        plot(AllNull,110,'rs','markersize',10);
+    end
+end
 axis ([0 (TrialIndex+1) 0 115]);
 title(titleMes,'FontWeight','bold','interpreter','none');
 h=legend({'HR','FAR','DI','Inef'},'Location','SouthWest');
@@ -140,21 +147,24 @@ for cnt1 = 1:2:length(exptparams.RefResponseWin)
     line([fs*exptparams.RefResponseWin(cnt1) fs*exptparams.RefResponseWin(cnt1+1)],[1.1 1.1],'color','k','LineStyle','-','LineWidth',2);
     text(fs*(mean(exptparams.RefResponseWin(cnt1:cnt1+1))), 1.15, 'Res','Color',[.1 .5 .1],'HorizontalAlignment','center');
 end
-line([fs*exptparams.TarResponseWin(1) fs*exptparams.TarResponseWin(2)],[1.1 1.1],...
-    'color','k','LineStyle','-','LineWidth',2);
-text(fs*(mean(exptparams.TarResponseWin)), 1.15, 'Res','Color',c,...
-    'HorizontalAlignment','center');
-line([fs*exptparams.TarEarlyWin(1) fs*exptparams.TarEarlyWin(2)],[1.3 1.3],...
-    'color','k','LineStyle','-','LineWidth',2);
-text(fs*(mean(exptparams.TarEarlyWin)), 1.35, 'Erl','Color',c,...
-    'HorizontalAlignment','center');
+if ~isempty(exptparams.TarResponseWin),
+    line([fs*exptparams.TarResponseWin(1) fs*exptparams.TarResponseWin(2)],[1.1 1.1],...
+        'color','k','LineStyle','-','LineWidth',2);
+    text(fs*(mean(exptparams.TarResponseWin)), 1.15, 'Res','Color',c,...
+        'HorizontalAlignment','center');
+    line([fs*exptparams.TarEarlyWin(1) fs*exptparams.TarEarlyWin(2)],[1.3 1.3],...
+        'color','k','LineStyle','-','LineWidth',2);
+    text(fs*(mean(exptparams.TarEarlyWin)), 1.35, 'Erl','Color',c,...
+        'HorizontalAlignment','center');
+end
+
 % First lick Histogram for target and reference
+% svd added catch stim too.
 subplot(4,4,9:10)
 hold off;
 BinSize = 0.04;
 MaxBinTime=nanmax([exptparams.FirstLick.Tar exptparams.FirstLick.Tar])+BinSize;
-if isfield(exptparams,'UniqueTargets') && length(exptparams.UniqueTargets)>1 &&...
-        ~strcmpi(get(exptparams.TrialObject,'descriptor'),'RepDetect');
+if isfield(exptparams,'UniqueTargets') && length(exptparams.UniqueTargets)>1
   targetid={exptparams.Performance(1:TrialIndex).ThisTargetNote};
   
   % if multiple different targets (eg, catch trials) plot first lick
@@ -196,6 +206,21 @@ else
   end
   LegendLabels={'Tar','Ref'};
 end
+ct=cat(1,exptparams.Performance(1:TrialIndex).FirstCatchTime);
+fct=find(~isnan(ct) & ct<cat(1,exptparams.Performance(1:TrialIndex).FirstLickTime));
+if ~isempty(fct),
+    h1=hist(exptparams.FirstLick.Catch(fct),0:BinSize:MaxBinTime);
+
+    if ~isempty(h1)
+        h1=h1/length(fct); % normalize to convert to probability
+        h1=stairs(0:BinSize:MaxBinTime,h1,'color',[.5 .5 .5],'linewidth',2);
+        RT=nanmean(exptparams.FirstLick.Catch(fct));
+        HR=sum(~isnan(exptparams.FirstLick.Catch(fct)))/length(fct);
+        LegendLabels{end+1}=LegendLabels{end};
+        LegendLabels{end-1}=sprintf('Catch(HR:%.2f RT:%.2f DI:%.0f n:%d)',...
+            HR,RT,exptparams.Performance(end).cDiscriminationIndex,length(fct));
+    end
+end
 h1=hist(exptparams.FirstLick.Ref(1:TrialIndex),0:BinSize:MaxBinTime);
 if ~isempty(h1)
     h1=h1/length(exptparams.FirstLick.Ref); % normalize to convert to probability
@@ -209,6 +234,7 @@ if ~isempty(h1)
     LegPos(1:2) = [0.4 0.425]; % put the legend on the far left of the screen
     set(h,'position', LegPos);
 end
+
 title('First Lick Histogram');
 xlabel('Time (seconds)');
 
