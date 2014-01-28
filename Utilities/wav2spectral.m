@@ -43,7 +43,7 @@ tbincount=ceil(stdur*fsout);
 adjwavlen=round(tbincount./fsout.*fsin);
 wav(length(wav)+1:adjwavlen)=0;
 
-tbinsize=1000/fsout;   % binsize in ms
+tbinsize=1000./fsout;   % binsize in ms
 saf=fsout;
 f=fsin;
 stimparam=[];
@@ -269,6 +269,18 @@ switch lower(filtfmt),
   case 'gamma',
     [gamma_bms, gamma_envs, ~] = ...
         gammatonebank(wav,125,16000,chancount,f,false);
+    smfilt=ones(1,round(fsin/fsout))./round(fsin/fsout);
+    gamma_envs=conv2(gamma_envs,smfilt,'same');
+    stim=gamma_envs(:,round((fsin/fsout./2):(fsin/fsout):size(gamma_envs,2)))';
+  case 'gamma220',
+    [gamma_bms, gamma_envs, ~] = ...
+        gammatonebank(wav,200,20000,chancount,f,false);
+    smfilt=ones(1,round(fsin/fsout))./round(fsin/fsout);
+    gamma_envs=conv2(gamma_envs,smfilt,'same');
+    stim=gamma_envs(:,round((fsin/fsout./2):(fsin/fsout):size(gamma_envs,2)))';  
+    case 'gamma2020',
+    [gamma_bms, gamma_envs, ~] = ...
+        gammatonebank(wav,20,20000,chancount,f,false);
     smfilt=ones(1,round(fsin/fsout))./round(fsin/fsout);
     gamma_envs=conv2(gamma_envs,smfilt,'same');
     stim=gamma_envs(:,round((fsin/fsout./2):(fsin/fsout):size(gamma_envs,2)))';
