@@ -234,13 +234,16 @@ else % CREATE A NEW SET OF HANDLES
   ylabel('Trial nb.',AxisLabelOpt{:});
   xlabel('Diffi. lvl',AxisLabelOpt{:});
   PlotOutcomes = {'Hit','Snooze','Early'};
-  DiffiNb = length(unique(get(get(exptparams.TrialObject,'TargetHandle'),'DifficultyLvlByInd')));
+%   DiffiNb = length(unique(get(get(exptparams.TrialObject,'TargetHandle'),'DifficultyLvlByInd')));
+  DiffiLvl_D1 = get(get(exptparams.TrialObject,'TargetHandle'),'DifficultyLvl_D1'); DiffiNb = length(DiffiLvl_D1);
   for PlotNum = 1:length(PlotOutcomes)
-    for DiffiNum = 1:DiffiNb
-      PH.DiffiDistri.Bar(DiffiNum,PlotNum) = plot( repmat(DiffiNum+0.22*(PlotNum-2),2,1) , zeros(2,1),...
-        '-','Linewidth',6,'Color',Colors.(PlotOutcomes{PlotNum}));
-    end
+      for DiffiNum = 1:DiffiNb
+          PH.DiffiDistri.Bar(DiffiNum,PlotNum) = plot( repmat(DiffiNum+0.22*(PlotNum-2),2,1) , zeros(2,1),...
+              '-','Linewidth',6,'Color',Colors.(PlotOutcomes{PlotNum}));
+          NewXaxisStr{DiffiNum} = ['+' num2str(DiffiLvl_D1(DiffiNum)) '%'];
+      end
   end
+  xt = get(gca, 'XTick'); set (gca, 'XTickLabel', NewXaxisStr);
   PH.DiffiDistrib.Title = title('');
   axis([0,DiffiNb+1,0,1]);
   
