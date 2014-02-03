@@ -197,7 +197,6 @@ for trialidx=1:TrialCount,
         n=get(o,'Names');
         ff=find(strcmp(strtrim(NoteParts{2}),n),1);
         
-        
         if strcmpi(exptparams.TrialObjectClass,'StreamNoise') ||...
                 strcmpi(exptparams.TrialObjectClass,'RepDetect'),
             
@@ -220,11 +219,9 @@ for trialidx=1:TrialCount,
             if isfield(exptparams.TrialObject,'PreTargetAttenuatedB'),
                 if strcmpi(strtrim(NoteParts{3}),'Reference'),
                     PreTargetScaleBy=10^(-exptparams.TrialObject.PreTargetAttenuatedB/20);
-
                     tw=tw.*PreTargetScaleBy;
                 end
             end
-            
             
             w(startbin+(1:size(tw,1)),1:size(tw,2))=tw;
             

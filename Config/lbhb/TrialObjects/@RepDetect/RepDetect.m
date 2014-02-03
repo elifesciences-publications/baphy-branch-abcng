@@ -3,6 +3,19 @@ function RefTarO = RepDetect(varargin)
 % Josh McDermott. Designed specifically to be used with NoiseSample
 % SoundObject, but maybe could generalize?
 %
+% Mode - specifies pattern of repeated/isolated sample conditions
+% 'RandSingle' - only random,single stream - for basic measures
+%                of tuning and preference for specific samples
+% 'RandOnly'   - only random, two streams
+% 'RepDetect'  - always two streams, one randomly starts repeating
+%                during the trial
+% 'RdtWithSingle' - same as rep detect except half the trials only
+%                   have a single stream
+% 'RandAndRep' - each trial is all random or all repeated, one
+%                or two streams
+%
+% created SVD summer 2013
+%
 switch nargin
 case 0
    % if no input arguments, create a default object

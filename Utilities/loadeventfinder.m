@@ -312,8 +312,8 @@ else
         Note={Note{find(validevents)}}';
         eventtimeoff=eventtimeoff(find(validevents));
         if sum(1-validevents)>0
-            %fprintf('removed %d/%d invalid target overlap events\n',...
-            %        sum(1-validevents),length(validevents));
+            fprintf('removed %d/%d invalid target overlap events\n',...
+                    sum(1-validevents),length(validevents));
         end
     end
 
