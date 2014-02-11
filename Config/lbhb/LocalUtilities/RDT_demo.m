@@ -1,15 +1,29 @@
-cellid='oys031b-a1';
+%cellid='oys027b-c1';
+%cellid='oys027c-c1';
+%cellid='oys028a-c1';
+%cellid='oys028a-c2';
+%cellid='oys027c-c2';
+%cellid='oys027b-c2';
+%cellid='oys024c-a1';
+%cellid='oys033a-a1';
+%cellid='oys033a-b1';
+%cellid='oys033b-a1';
+%cellid='oys033b-b1';
+%cellid='oys033c-a1';
+cellid='oys033c-b1';
+
 close all
 
 % go to cell db to find active and passive data for this cell
 cellfiledata=dbgetscellfile('cellid',cellid,'runclass','RDT',...
                             'behavior','active');
 cellfiledata2=dbgetscellfile('cellid',cellid,'runclass','RDT',...
-                             'Trial_Mode','RdtWithSingle');
+                             'Trial_Mode','RandAndRep');
 active=1;
 if active,
-    parmfile=[cellfiledata(1).stimpath cellfiledata(1).stimfile];
-    spikefile=[cellfiledata(1).path cellfiledata(1).respfile];
+    fidx=1;
+    parmfile=[cellfiledata(fidx).stimpath cellfiledata(fidx).stimfile];
+    spikefile=[cellfiledata(fidx).path cellfiledata(fidx).respfile];
 else
     if strcmpi(cellfiledata2(end).behavior,'passive'),
         uidx=length(cellfiledata2);
@@ -59,7 +73,7 @@ rtar2=[];
 TargetStartBin=params.TargetStartBin(params.CorrectTrials);
 ThisTarget=params.ThisTarget(params.CorrectTrials);
 BigSequenceMatrix=params.BigSequenceMatrix(:,:,params.CorrectTrials);
-TarRepCount=params.SamplesPerTrial-max(TargetStartBin)+1
+TarRepCount=params.SamplesPerTrial-max(TargetStartBin)+1;
 TarDur=params.PreStimSilence+TarRepCount.*params.SampleDur+...
        params.PostStimSilence;
 TarBins=round(params.rasterfs.*TarDur);
@@ -107,7 +121,7 @@ plot(tt,[nanmean(rtar2solo(1:TarBins,:),2) nanmean(rtar2(1:TarBins,:),2)]);
 title(sprintf('target #%d',params.TargetIdx(2)));
 legend('solo-stream','2-stream');
 
-
+ccmatrix={};
 for ii=1:length(params.TargetIdx),
     targetidx=params.TargetIdx(ii);
     r_avg=squeeze(params.r_avg(:,targetidx,:));
@@ -182,6 +196,63 @@ for ii=1:length(params.TargetIdx),
             mean(mdt2r2),mean(mdt2r1),mean(mdt2t1),...
             mean(mdr2r1),mean(mdr2t1));
     
+    targetidx=params.TargetIdx(ii);
+    
+    % exact pair analysis
+    ref2pairs=params.r_second{targetidx,1};
+    tar2pairs=params.r_second{targetidx,2};
+    
+    olappairs=intersect(unique(ref2pairs),unique(tar2pairs));
+    rmatch=zeros(size(params.r_raster{1,1},1),4,length(olappairs));
+    for jj=1:length(olappairs),
+        ff=find(params.r_second{targetidx,1}==olappairs(jj));
+        rmatch(:,1,jj)=nanmean(params.r_raster{targetidx,1}(:,ff),2);
+        ff=find(params.r_second{targetidx,2}==olappairs(jj));
+        rmatch(:,2,jj)=nanmean(params.r_raster{targetidx,2}(:,ff),2);
+    end
+    rmatch(:,3,1)=nanmean(params.r_raster{targetidx,3},2);
+    rmatch(:,4,1)=nanmean(params.r_raster{targetidx,4},2);
+    
+    ccmatrix{ii}=zeros(4,4);
+    N=200;
+    for jj=1:4,
+        for kk=jj:4,
+            if jj<3 && kk<3,
+                cc=zeros(N,1);
+                for nn=1:N
+                    t1=ceil(rand*length(olappairs));
+                    t2=ceil(rand*(length(olappairs)-1));
+                    if t2<=t1;t2=t2+1; end
+                    cc(nn)=xcov(rmatch(sb,jj,t1),rmatch(sb,kk,t2),0,'coeff');
+                end
+            elseif jj<3,
+                cc=zeros(N,1);
+                for nn=1:N
+                    t1=ceil(rand*length(olappairs));
+                    t2=ceil(rand.*size(params.r_raster{targetidx,kk},2));
+                    cc(nn)=xcov(rmatch(sb,jj,t1),params.r_raster{targetidx,kk}(sb,t2),0,'coeff');
+                end
+            else
+                cc=zeros(N,1);
+                for nn=1:N
+                    t1=ceil(rand*size(params.r_raster{targetidx,jj},2));
+                    t2=ceil(rand*(size(params.r_raster{targetidx,kk},2)-1));
+                    if t2>=t1, t2=t2+1; end
+                    cc(nn)=xcov(params.r_raster{targetidx,jj}(sb,t1),...
+                                params.r_raster{targetidx,kk}(sb,t2),0,'coeff');
+                end
+            end
+            ccmatrix{ii}(jj,kk)=nanmean(cc);
+        end
+    end
+    
+    % sub in alternative calculations for mr2 and tr2
+    mr2=mean(rmatch(:,1,:),3);
+    tr2=mean(rmatch(:,2,:),3);
+    
+    
+    
+    
     figure;
     subplot(3,2,1);
     tt=((1:size(params.r_avg,1))-6+0.5)./options.rasterfs;
@@ -195,12 +266,13 @@ for ii=1:length(params.TargetIdx),
     plot([0 0]+params.SampleDur,aa(3:4),'g--');
     mm=nanmean(params.r_avg(:));
     plot(tt([1 end]),[mm mm],'g--');
-    
     hold off
     axis tight
     legend('ref2','tar2','ref1','tar1');
     title(sprintf('cell %s %s targetid: %d',...
                   cellid,basename(parmfile),targetidx),'Interpreter','none');
+    
+    
     subplot(3,2,3);
     plot(tt,fr2,'b-');
     hold on
@@ -224,6 +296,13 @@ for ii=1:length(params.TargetIdx),
                   nanmean(fr1(sb)),nanmean(fr2(sb)),...
                   nanmean(ft1(sb)),nanmean(ft2(sb))));
     
+    subplot(3,2,2);
+    imagesc(ccmatrix{ii},[0 1].*max(abs(ccmatrix{ii}(:))));
+    axis square
+    xlabel('r2-t2-r1-t1');
+    title('cross-corr');
+    colorbar
+    
     subplot(3,2,5);
     raster=cat(2,params.r_raster{targetidx,1:4});
     imagesc(raster');
@@ -242,4 +321,5 @@ for ii=1:length(params.TargetIdx),
     mft1(ii,2-active)=nanmean(ft1(sb));
     mft2(ii,2-active)=nanmean(ft2(sb));
 end
+
 

@@ -22,8 +22,12 @@ for ii=1:length(data),
    switch data(ii).datatype,
     case 0,
      val=data(ii).value;
-    case 1,
-     val=eval(data(ii).svalue);
+     case 1,
+       try,
+           val=eval(data(ii).svalue);
+       catch
+           val=eval([data(ii).svalue ' ]']);
+       end
     case 2,
      val=data(ii).svalue;
    end
