@@ -1,4 +1,4 @@
-%cellid='oys027b-c1';
+cellid='oys027b-c1'; 
 %cellid='oys027c-c1';
 %cellid='oys028a-c1';
 %cellid='oys028a-c2';
@@ -10,7 +10,8 @@
 %cellid='oys033b-a1';
 %cellid='oys033b-b1';
 %cellid='oys033c-a1';
-cellid='oys033c-b1';
+%cellid='oys033c-b1';
+%cellid='oys034c-b1';
 
 close all
 
