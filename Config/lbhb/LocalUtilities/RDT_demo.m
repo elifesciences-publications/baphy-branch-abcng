@@ -1,13 +1,13 @@
 %cellid='oys027b-c1';
 %cellid='oys027c-c1';
-%cellid='oys028a-c1';
+cellid='oys028a-c1';
 %cellid='oys028a-c2';
 %cellid='oys027c-c2';
 %cellid='oys027b-c2';
 %cellid='oys024c-a1';
 %cellid='oys033a-a1';
 %cellid='oys033a-b1';
-cellid='oys033b-a1';
+%cellid='oys033b-a1';
 %cellid='oys033b-b1';
 %cellid='oys033c-a1';
 %cellid='oys033c-b1';
@@ -55,14 +55,14 @@ if 1,
     % and only save mixed stream stimululs spectrogram s(:,:,:,3)
     s=s(:,:,params.CorrectTrials,3);
     
-    trialidx=4;
-    goodbins=find(~isnan(s(1,:,trialidx)));
-    clf
-    subplot(2,1,1);
-    imagesc(s(:,goodbins,trialidx));
-    axis xy;
-    subplot(2,1,2);
-    plot(r(goodbins,trialidx));
+    %trialidx=4;
+    %goodbins=find(~isnan(s(1,:,trialidx)));
+    %clf
+    %subplot(2,1,1);
+    %imagesc(s(:,goodbins,trialidx));
+    %axis xy;
+    %subplot(2,1,2);
+    %plot(r(goodbins,trialidx));
 else
     s=[];
 end
@@ -323,10 +323,10 @@ for ii=1:length(params.TargetIdx),
     if ~isempty(s),
         subplot(3,2,4);
         
-        ff=min(find(params.ThisTarget==targetidx))
+        ff=min(find(params.ThisTarget==targetidx));
         startbin=params.SampleStarts(params.TargetStartBin(ff));
         stopbin=params.SampleStops(params.TargetStartBin(ff));
-        imagesc(s(:,startbin:stopbin,ff,1));
+        imagesc((1:(stopbin-startbin+1)).*10,1:size(s,1),s(:,startbin:stopbin,ff,1));
         axis xy
         title(sprintf('target sample %d',targetidx));
         
