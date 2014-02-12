@@ -177,7 +177,7 @@ function [r,params]=load_RDT_by_trial(parmfile,spikefile,options)
                     repSlot=0;
                     if ii==1 || ...
                           (params.TargetStartBin(trialidx)>0 && ...
-                           ii>params.TargetStartBin(trialidx)+4),
+                           ii>params.TargetStartBin(trialidx)+5),
                         % skip first sample of each trial and
                         % repeated targets after #3
                         cond=0;

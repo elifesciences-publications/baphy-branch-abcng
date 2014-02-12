@@ -1,6 +1,6 @@
 cellid='oys027b-c1'; 
 %cellid='oys027c-c1';
-%cellid='oys028a-c1';
+cellid='oys028a-c1';
 %cellid='oys028a-c2';
 %cellid='oys027c-c2';
 %cellid='oys027b-c2';
@@ -10,7 +10,6 @@ cellid='oys027b-c1';
 %cellid='oys033b-a1';
 %cellid='oys033b-b1';
 %cellid='oys033c-a1';
-%cellid='oys033c-b1';
 %cellid='oys034c-b1';
 
 close all
@@ -45,25 +44,38 @@ options.resp_shift=0.0;
 % r=response (time X trialcount), only for correct trials
 [r,params]=load_RDT_by_trial(parmfile,spikefile,options); 
 
-% load the stimulus spectrogram
-options.filtfmt='gamma';
 
-if 0,
+if 1,
+    % load the stimulus spectrogram
+    options.filtfmt='gamma';
+    options.chancount=12;
     s=loadstimbytrial(parmfile,options);
     
     % extract only correct trials, which should match size(r,2)
     % and only save mixed stream stimululs spectrogram s(:,:,:,3)
     s=s(:,:,params.CorrectTrials,3);
     
-    trialidx=4;
-    goodbins=find(~isnan(s(1,:,trialidx)));
-    clf
-    subplot(2,1,1);
-    imagesc(s(:,goodbins,trialidx));
-    axis xy;
-    subplot(2,1,2);
-    plot(r(goodbins,trialidx));
+    %trialidx=4;
+    %goodbins=find(~isnan(s(1,:,trialidx)));
+    %clf
+    %subplot(2,1,1);
+    %imagesc(s(:,goodbins,trialidx));
+    %axis xy;
+    %subplot(2,1,2);
+    %plot(r(goodbins,trialidx));
+else
+    s=[];
 end
+
+% load narf STRF if exists
+narf_modelname='gtSNS_log2_wc03_dep1perchan_siglog100_fit05';
+strfs=get_strf_from_model(262,{cellid},{narf_modelname});
+if ~isempty(strfs{1}),
+    strf=strfs{1};
+else
+    strf=[];
+end
+
 
 
 rrefall=[];
@@ -213,46 +225,51 @@ for ii=1:length(params.TargetIdx),
     end
     rmatch(:,3,1)=nanmean(params.r_raster{targetidx,3},2);
     rmatch(:,4,1)=nanmean(params.r_raster{targetidx,4},2);
+    r_raster_match={};
+    ff=find(ismember(params.r_second{targetidx,1},olappairs));
+    r_raster_match{1}=params.r_raster{targetidx,1}(:,ff);
+    ff=find(ismember(params.r_second{targetidx,2},olappairs));
+    r_raster_match{2}=params.r_raster{targetidx,2}(:,ff);
     
-    ccmatrix{ii}=zeros(4,4);
+    ccmatrix{ii}=zeros(5,5);
+    msematrix{ii}=zeros(5,5);
     N=200;
-    for jj=1:4,
-        for kk=jj:4,
-            if jj<3 && kk<3,
-                cc=zeros(N,1);
-                for nn=1:N
-                    t1=ceil(rand*length(olappairs));
-                    t2=ceil(rand*(length(olappairs)-1));
+    for jj=1:5,
+        for kk=jj:5,
+            cc=zeros(N,1);
+            mm=zeros(N,1);
+            if jj==3,jjalt=5;else jjalt=jj-1; end
+            if kk==3,kkalt=5;else kkalt=kk-1; end
+            for nn=1:N
+                if jj<3 && kk<3,
+                    t1=ceil(rand*size(r_raster_match{jj},2));
+                    t2=ceil(rand*(size(r_raster_match{kk},2)-1));
                     if t2<=t1;t2=t2+1; end
-                    cc(nn)=xcov(rmatch(sb,jj,t1),rmatch(sb,kk,t2),0,'coeff');
-                end
-            elseif jj<3,
-                cc=zeros(N,1);
-                for nn=1:N
-                    t1=ceil(rand*length(olappairs));
-                    t2=ceil(rand.*size(params.r_raster{targetidx,kk},2));
-                    cc(nn)=xcov(rmatch(sb,jj,t1),params.r_raster{targetidx,kk}(sb,t2),0,'coeff');
-                end
-            else
-                cc=zeros(N,1);
-                for nn=1:N
-                    t1=ceil(rand*size(params.r_raster{targetidx,jj},2));
-                    t2=ceil(rand*(size(params.r_raster{targetidx,kk},2)-1));
+                    v1=r_raster_match{jj}(sb,t1);
+                    v2=r_raster_match{kk}(sb,t2);
+                elseif jj<3,
+                    t1=ceil(rand*size(r_raster_match{jj},2));
+                    t2=ceil(rand.*size(params.r_raster{targetidx,kkalt},2));
+                    v1=r_raster_match{jj}(sb,t1);
+                    v2=params.r_raster{targetidx,kkalt}(sb,t2);
+                else
+                    t1=ceil(rand*size(params.r_raster{targetidx,jjalt},2));
+                    t2=ceil(rand*(size(params.r_raster{targetidx,kkalt},2)-1));
                     if t2>=t1, t2=t2+1; end
-                    cc(nn)=xcov(params.r_raster{targetidx,jj}(sb,t1),...
-                                params.r_raster{targetidx,kk}(sb,t2),0,'coeff');
+                    v1=params.r_raster{targetidx,jjalt}(sb,t1);
+                    v2=params.r_raster{targetidx,kkalt}(sb,t2);
                 end
+                cc(nn)=xcov(v1,v2,0,'coeff');
+                mm(nn)=std(v1-v2)./100;
             end
             ccmatrix{ii}(jj,kk)=nanmean(cc);
-        end
+            msematrix{ii}(jj,kk)=nanmean(mm);
+       end
     end
     
     % sub in alternative calculations for mr2 and tr2
     mr2=mean(rmatch(:,1,:),3);
     tr2=mean(rmatch(:,2,:),3);
-    
-    
-    
     
     figure;
     subplot(3,2,1);
@@ -270,41 +287,10 @@ for ii=1:length(params.TargetIdx),
     hold off
     axis tight
     legend('ref2','tar2','ref1','tar1');
-    title(sprintf('cell %s %s targetid: %d',...
-                  cellid,basename(parmfile),targetidx),'Interpreter','none');
-    
-    
-    subplot(3,2,3);
-    plot(tt,fr2,'b-');
-    hold on
-    plot(tt,ft2,'r-');
-    plot(tt,fr1,'b-','LineWidth',2);
-    plot(tt,ft1,'r-','LineWidth',2);
-    aa=axis;
-    plot([0 0],aa(3:4),'g--');
-    plot([0 0]+params.SampleDur,aa(3:4),'g--');
-    mm=nanmean(params.r_avg(:));
-    plot(tt([1 end]),[0 0],'g--');
-    hold off
-    axis tight
-    %title(sprintf('MSE: t2-r1=%.2f t2-r2=%.2f t2-t1=%.2f r2-r1=%.2f r2-t1=%.2f',...
-    %              std(t2(sb)-r1(sb)),...
-    %              std(t2(sb)-r2(sb)),...
-    %              std(t2(sb)-t1(sb)),...
-    %              std(r2(sb)-r1(sb)),...
-    %              std(r2(sb)-t1(sb))));
-    title(sprintf('FF: r1=%.3f r2=%.3f t1=%.3f t2=%.3f',...
-                  nanmean(fr1(sb)),nanmean(fr2(sb)),...
-                  nanmean(ft1(sb)),nanmean(ft2(sb))));
+    title(sprintf('cell %s %s',...
+                  cellid,basename(parmfile)),'Interpreter','none');
     
     subplot(3,2,2);
-    imagesc(ccmatrix{ii},[0 1].*max(abs(ccmatrix{ii}(:))));
-    axis square
-    xlabel('r2-t2-r1-t1');
-    title('cross-corr');
-    colorbar
-    
-    subplot(3,2,5);
     raster=cat(2,params.r_raster{targetidx,1:4});
     imagesc(raster');
     hold on
@@ -315,7 +301,86 @@ for ii=1:length(params.TargetIdx),
         plot(aa(1:2),[cc+0.5 cc+0.5],'b--');
     end
     hold off
-    colormap(1-gray);
+    %colormap(1-gray);
+    title(sprintf('raster - targetid: %d',targetidx),'Interpreter','none');
+    
+    
+    if ~isempty(strf),
+        subplot(3,2,3);
+        imagesc((1:size(strf,2)-1)*10,1:size(strf,1),strf,...
+                [-1 1].*max(abs(strf(:))));
+        axis xy
+        title(strf);
+        
+        aa=axis;
+        yy=get(gca,'YTick');
+        set(gca,'YTickLabel',[]);
+        ff=round(2.^linspace(log2(200),log2(20000),size(strf,1)));
+        for kk=1:length(yy),
+            text(aa(1),yy(kk),num2str(ff(yy(kk))),'HorizontalAlignment','right');
+        end
+    end
+    if ~isempty(s),
+        subplot(3,2,4);
+        
+        ff=min(find(params.ThisTarget==targetidx));
+        startbin=params.SampleStarts(params.TargetStartBin(ff));
+        stopbin=params.SampleStops(params.TargetStartBin(ff));
+        imagesc((1:(stopbin-startbin+1)).*10,1:size(s,1),s(:,startbin:stopbin,ff,1));
+        axis xy
+        title(sprintf('target sample %d',targetidx));
+        
+        aa=axis;
+        yy=get(gca,'YTick');
+        set(gca,'YTickLabel',[]);
+        ff=round(2.^linspace(log2(200),log2(20000),size(strf,1)));
+        for kk=1:length(yy),
+            text(aa(1),yy(kk),num2str(ff(yy(kk))),'HorizontalAlignment','right');
+        end
+    end
+    
+    sl={'r2','t2','rt','r1','t1'};
+    subplot(3,2,5);
+    imagesc(msematrix{ii},[0 1].*max(abs(msematrix{ii}(:))));
+    axis square
+    axis off
+    for kk=1:5,
+        text(kk,5.5,sl{kk},'VerticalAlign','top','HorizontalAlignment','center');
+        text(0.5,kk,sl{kk},'HorizontalAlignment','right');
+    end
+    title('MSE');
+    colorbar
+    
+    subplot(3,2,6);
+    imagesc(ccmatrix{ii},[0 1].*max(abs(ccmatrix{ii}(:))));
+    axis square
+    axis off
+    for kk=1:5,
+        text(kk,5.5,sl{kk},'VerticalAlign','top','HorizontalAlignment','center');
+        text(0.5,kk,sl{kk},'HorizontalAlignment','right');
+    end
+    title('cross-corr');
+    colorbar
+    
+    
+    if 0
+        subplot(3,2,3);
+        plot(tt,fr2,'b-');
+        hold on
+        plot(tt,ft2,'r-');
+        plot(tt,fr1,'b-','LineWidth',2);
+        plot(tt,ft1,'r-','LineWidth',2);
+        aa=axis;
+        plot([0 0],aa(3:4),'g--');
+        plot([0 0]+params.SampleDur,aa(3:4),'g--');
+        mm=nanmean(params.r_avg(:));
+        plot(tt([1 end]),[0 0],'g--');
+        hold off
+        axis tight
+        title(sprintf('FF: r1=%.3f r2=%.3f t1=%.3f t2=%.3f',...
+                      nanmean(fr1(sb)),nanmean(fr2(sb)),...
+                  nanmean(ft1(sb)),nanmean(ft2(sb))));
+    end
     
     mfr1(ii,2-active)=nanmean(fr1(sb));
     mfr2(ii,2-active)=nanmean(fr2(sb));
@@ -323,4 +388,19 @@ for ii=1:length(params.TargetIdx),
     mft2(ii,2-active)=nanmean(ft2(sb));
 end
 
-
+if 0,
+    cellfiledata=dbgetscellfile('runclass','RDT');
+    for fidx=1:length(cellfiledata),
+        parmfile=[cellfiledata(fidx).stimpath cellfiledata(fidx).stimfile];
+        spikefile=[cellfiledata(fidx).path cellfiledata(fidx).respfile];
+        options.rasterfs=100;
+        options.channel=cellfiledata(1).channum;
+        options.unit=cellfiledata(1).unit;
+        options.resp_shift=0.0;
+        
+        % load the stimulus spectrogram
+        options.filtfmt='gamma';
+        options.chancount=30;
+        s=loadstimbytrial(parmfile,options);
+    end
+end
