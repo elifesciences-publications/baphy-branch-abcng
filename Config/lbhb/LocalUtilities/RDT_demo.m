@@ -1,11 +1,11 @@
 cellid='oys027b-c1'; 
 %cellid='oys027c-c1';
-cellid='oys028a-c1';
+%cellid='oys028a-a1';
 %cellid='oys028a-c2';
-%cellid='oys027c-c2';
+%cellid='oys027c-c1';
 %cellid='oys027b-c2';
 %cellid='oys024c-a1';
-%cellid='oys033a-a1';
+cellid='oys033a-a1';
 %cellid='oys033a-b1';
 %cellid='oys033b-a1';
 %cellid='oys033b-b1';
@@ -48,7 +48,7 @@ options.resp_shift=0.0;
 if 1,
     % load the stimulus spectrogram
     options.filtfmt='gamma';
-    options.chancount=12;
+    options.chancount=30;
     s=loadstimbytrial(parmfile,options);
     
     % extract only correct trials, which should match size(r,2)
@@ -68,7 +68,8 @@ else
 end
 
 % load narf STRF if exists
-narf_modelname='gtSNS_log2_wc03_dep1perchan_siglog100_fit05';
+%narf_modelname='gtSNS30_log2_wc03_dep1perchan_siglog100_fit05';
+narf_modelname='gtSNS30_log2_wc03_fir_siglog100_fit05';
 strfs=get_strf_from_model(262,{cellid},{narf_modelname});
 if ~isempty(strfs{1}),
     strf=strfs{1};
@@ -126,15 +127,26 @@ plot(tt,nanmean(rrefall(1:TarBins,:),2));
 title('reference');
 
 subplot(3,1,2);
-plot(tt,[nanmean(rtar1solo(1:TarBins,:),2) nanmean(rtar1(1:TarBins,:),2)]);
+if ~isempty(rtar1solo),
+    plot(tt,[nanmean(rtar1solo(1:TarBins,:),2) nanmean(rtar1(1:TarBins,:),2)]);
+    legend('solo-stream','2-stream');
+else
+    plot(tt,[nanmean(rtar1(1:TarBins,:),2)]);
+end
+
 title(sprintf('target #%d',params.TargetIdx(1)));
 
 subplot(3,1,3);
-plot(tt,[nanmean(rtar2solo(1:TarBins,:),2) nanmean(rtar2(1:TarBins,:),2)]);
+if ~isempty(rtar2solo),
+    plot(tt,[nanmean(rtar2solo(1:TarBins,:),2) nanmean(rtar2(1:TarBins,:),2)]);
+    legend('solo-stream','2-stream');
+else
+    plot(tt,[nanmean(rtar2(1:TarBins,:),2)]);
+end
 title(sprintf('target #%d',params.TargetIdx(2)));
-legend('solo-stream','2-stream');
 
-ccmatrix={};
+ccmatrix=cell(length(params.TargetIdx),1);
+msematrix=cell(length(params.TargetIdx),1);
 for ii=1:length(params.TargetIdx),
     targetidx=params.TargetIdx(ii);
     r_avg=squeeze(params.r_avg(:,targetidx,:));
@@ -223,8 +235,11 @@ for ii=1:length(params.TargetIdx),
         ff=find(params.r_second{targetidx,2}==olappairs(jj));
         rmatch(:,2,jj)=nanmean(params.r_raster{targetidx,2}(:,ff),2);
     end
-    rmatch(:,3,1)=nanmean(params.r_raster{targetidx,3},2);
-    rmatch(:,4,1)=nanmean(params.r_raster{targetidx,4},2);
+    if ~isempty(params.r_raster{targetidx,3}),
+        rmatch(:,3,1)=nanmean(params.r_raster{targetidx,3},2);
+        rmatch(:,4,1)=nanmean(params.r_raster{targetidx,4},2);
+    end
+    
     r_raster_match={};
     ff=find(ismember(params.r_second{targetidx,1},olappairs));
     r_raster_match{1}=params.r_raster{targetidx,1}(:,ff);
@@ -292,20 +307,22 @@ for ii=1:length(params.TargetIdx),
     
     subplot(3,2,2);
     raster=cat(2,params.r_raster{targetidx,1:4});
-    imagesc(raster');
+    imagesc(tt,1:size(raster,2),raster');
     hold on
     aa=axis;
     cc=0;
     for jj=1:3,
         cc=cc+size(params.r_raster{targetidx,jj},2);
-        plot(aa(1:2),[cc+0.5 cc+0.5],'b--');
+        plot(aa(1:2),[cc+0.5 cc+0.5],'g--');
     end
+    plot([0 0],aa(3:4),'g--');
+    plot([0 0]+params.SampleDur,aa(3:4),'g--');
     hold off
     %colormap(1-gray);
     title(sprintf('raster - targetid: %d',targetidx),'Interpreter','none');
     
     
-    if ~isempty(strf),
+    if ~isempty(strf) && length(strf)>1,
         subplot(3,2,3);
         imagesc((1:size(strf,2)-1)*10,1:size(strf,1),strf,...
                 [-1 1].*max(abs(strf(:))));
@@ -323,17 +340,19 @@ for ii=1:length(params.TargetIdx),
     if ~isempty(s),
         subplot(3,2,4);
         
-        ff=min(find(params.ThisTarget==targetidx));
+        ff=min(find(ThisTarget==targetidx &...
+                    squeeze(BigSequenceMatrix(1,2,:))==-1));
         startbin=params.SampleStarts(params.TargetStartBin(ff));
         stopbin=params.SampleStops(params.TargetStartBin(ff));
-        imagesc((1:(stopbin-startbin+1)).*10,1:size(s,1),s(:,startbin:stopbin,ff,1));
+        imagesc((1:(stopbin-startbin+1)).*10,1:size(s,1),...
+                log2(s(:,startbin:stopbin,ff,1)));
         axis xy
         title(sprintf('target sample %d',targetidx));
         
         aa=axis;
         yy=get(gca,'YTick');
         set(gca,'YTickLabel',[]);
-        ff=round(2.^linspace(log2(200),log2(20000),size(strf,1)));
+        ff=round(2.^linspace(log2(200),log2(20000),size(s,1)));
         for kk=1:length(yy),
             text(aa(1),yy(kk),num2str(ff(yy(kk))),'HorizontalAlignment','right');
         end

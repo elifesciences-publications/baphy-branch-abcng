@@ -22,7 +22,7 @@ function varargout = m_mespca(varargin)
 
 % Edit the above text to modify the response to help m_mespca
 
-% Last Modified by GUIDE v2.5 22-Aug-2011 11:28:47
+% Last Modified by GUIDE v2.5 12-Feb-2014 08:43:42
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -269,7 +269,7 @@ end
 
 SPKRAW=single(SPKRAW);
 
-if FILEDATA.sigthresh & EXTRAS.evpv>=3,
+if FILEDATA.sigthresh && EXTRAS.evpv>=3,
    
    st=XAXIS(1):XAXIS(2);
    threshold=str2num(get(handles.editSigma,'String'));
@@ -670,6 +670,7 @@ inactive(handles.buttCluster);
 inactive(handles.buttMovie);
 inactive(handles.buttSTRF);
 inactive(handles.buttRaster);
+inactive(handles.buttTrialRaster);
 inactive(handles.buttSave);
 inactive(handles.buttQuit);
 inactive(handles.butt_sitesort);
@@ -697,6 +698,7 @@ active(handles.buttCluster);
 active(handles.buttMovie);
 active(handles.buttSTRF);
 active(handles.buttRaster);
+active(handles.buttTrialRaster);
 active(handles.buttSave);
 active(handles.buttQuit);
 active(handles.butt_sitesort);
@@ -1080,6 +1082,43 @@ for ii=1:UNITCOUNT,
     raster_plot(FILEDATA.parmfile,r,tags,hs,options);
 end
 
+% --- Executes on button press in buttTrialRaster.
+function buttTrialRaster_Callback(hObject, eventdata, handles)
+% hObject    handle to buttTrialRaster (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+global UNITCOUNT CELLIDS SPKCLASS SPIKESET XAXIS EVENTTIMES FILEDATA EXTRAS
+
+disp('Computing per trial raster...');
+destin=savespiketemp;
+channel=FILEDATA.channel; %? or FILEDATA.channel;
+rasterfs=500;
+
+figure;
+for ii=1:UNITCOUNT,
+    hs=subplot(2,UNITCOUNT,ii);
+    
+    options.spikefile=destin;
+    options.rasterfs=500;
+    options.channel=FILEDATA.channel;
+    options.usesorted=1;
+    options.unit=ii;
+    options.psthfs=15;
+    options.datause='Per trial';
+    options.includeincorrect=1;
+    options.psth=0;
+    
+    [r,tags]=raster_load(FILEDATA.parmfile,channel,ii,options);
+    raster_plot(FILEDATA.parmfile,r,tags,hs,options);
+    
+    hs=subplot(2,UNITCOUNT,ii+UNITCOUNT);
+    plot(nanmean(r,1).*500);
+    aa=axis;
+    axis([-5 aa(2:4)]);
+    xlabel('trial');
+    ylabel('mean spikes/sec');
+end
 
 
 
@@ -1477,4 +1516,7 @@ uiwait(msgbox(['Site sort complete for site ',rawdata(1).cellid,...
 
 leave_running_state(handles);
 guidata(hObject, handles);
+
+
+
 
