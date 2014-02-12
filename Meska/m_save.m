@@ -70,13 +70,20 @@ destin=[SORTROOT filesep destbase];
 
 set(handles.editSpikeFilename,'String',[destin '.spk.mat']);
 
-FontWeight = 'bold';
-
 pos = [0 23*UNITCOUNT+80];
+uicontrol('Style','text','String','Map cluster...','FontWeight','bold',...
+        'HorizontalAlignment','left','position',[pos-[-50 23*(-1)+4] 100 20]);
+uicontrol('Style','text','String','... To cell #','FontWeight','bold',...
+        'HorizontalAlignment','left','position',[pos-[-150 23*(-1)+4] 100 20]);
+uicontrol('Style','text','String','Isolation %','FontWeight','bold',...
+        'HorizontalAlignment','left','position',[pos-[-250 23*(-1)+4] 100 20]);
+uicontrol('Style','text','String','Good trials','FontWeight','bold',...
+        'HorizontalAlignment','left','position',[pos-[-350 23*(-1)+4] 100 20]);
+
 isopct=zeros(size(NEWSNR));
 for jj=1:UNITCOUNT,
-
-    uicontrol('Style','text','String',sprintf('cluster %d',jj),'FontWeight',FontWeight,...
+    
+    uicontrol('Style','text','String',sprintf('cluster %d',jj),'FontWeight','bold',...
         'HorizontalAlignment','left','position',[pos-[-50 23*(jj-1)+4] 100 20]);
     
     if jj<=FILEDATA.cellcount,
@@ -92,18 +99,14 @@ for jj=1:UNITCOUNT,
     isohandle(jj)= uicontrol('Style','Edit','String',num2str(isopct(jj)),...
         'Value',isopct(jj),'HorizontalAlignment','center',...
         'BackgroundColor',[1 1 1],'position',[pos-[-250 23*(jj-1)] 50 20]);
+    trialhandle(jj)= uicontrol('Style','Edit','String','',...
+        'HorizontalAlignment','center',...
+        'BackgroundColor',[1 1 1],'position',[pos-[-350 23*(jj-1)] 50 20]);
 end
-
-uicontrol('Style','text','String','Map cluster...','FontWeight','bold',...
-        'HorizontalAlignment','left','position',[pos-[-50 23*(-1)+4] 100 20]);
-uicontrol('Style','text','String','... To cell #','FontWeight','bold',...
-        'HorizontalAlignment','left','position',[pos-[-150 23*(-1)+4] 100 20]);
-uicontrol('Style','text','String','Isolation %','FontWeight','bold',...
-        'HorizontalAlignment','left','position',[pos-[-250 23*(-1)+4] 100 20]);
-
 
 handles.maphandle=maphandle;
 handles.isohandle=isohandle;
+handles.trialhandle=trialhandle;
 
 % Update handles structure
 guidata(hObject, handles);
@@ -158,29 +161,38 @@ global LASTFILEDATA SAVEOK
 
 unitmap=zeros(UNITCOUNT,1);
 isopct=zeros(UNITCOUNT,1);
+goodtrials=cell(UNITCOUNT,1);
 q={};
 for jj=1:UNITCOUNT,
     rr=str2num(get(handles.maphandle(jj),'String'));
     if ~isempty(rr),
-        if ~isempty(find(unitmap==rr)),
-            errordlg('Cannot map two clusters to one unit. Or can you????');
-            return
-        end
+        %if ~isempty(find(unitmap==rr)),
+        %    errordlg('Cannot map two clusters to one unit. Or can you????');
+        %    return
+        %end
         unitmap(jj)=rr;
     end
-    rr=str2num(get(handles.isohandle(jj),'String'));
-    if unitmap(jj)>0 && ~isempty(rr),
-        isopct(unitmap(jj))=rr;
-    end
+    %rr=str2num(get(handles.isohandle(jj),'String'));
+    %if unitmap(jj)>0 && ~isempty(rr),
+    %    isopct(unitmap(jj))=rr;
+    %end
     
-    spmatch=find(SPKCLASS==unitmap(jj));
+    spmatch=find(SPKCLASS==jj);
     
     if unitmap(jj)>0,
-       rr=str2num(get(handles.isohandle(jj),'String'));
-       if ~isempty(rr),
-          isopct(unitmap(jj))=rr;
-       end
-       q{jj}=sprintf('cluster %d maps to %s (%d spikes)\n',jj,CELLIDS{unitmap(jj)},length(spmatch));
+        rr=str2num(get(handles.isohandle(jj),'String'));
+        if ~isempty(rr),
+            isopct(unitmap(jj))=rr;
+        end
+        rr=strtrim(get(handles.trialhandle(jj),'String'));
+        if ~isempty(rr) && ~isempty(str2num(rr)),
+            goodtrials{unitmap(jj)}=rr;
+            q{jj}=sprintf('cluster %d maps to %s (%d spikes, trials %s)\n',...
+                jj,CELLIDS{unitmap(jj)},length(spmatch),goodtrials{unitmap(jj)});
+        else
+            q{jj}=sprintf('cluster %d maps to %s (%d spikes)\n',...
+                jj,CELLIDS{unitmap(jj)},length(spmatch));
+        end
     end
 end
 
@@ -224,9 +236,12 @@ end
 unitmean=zeros(size(SPIKESET,1),max(unitmap));
 unitstd=zeros(size(SPIKESET,1),max(unitmap));
 spksav1=cell(12,1);
-for ab=1:UNITCOUNT,
-    if unitmap(ab)>0,
-        spmatch=find(SPKCLASS==ab);
+for ba=unique(unitmap(:)')
+    if ba>0,
+        ab=find(unitmap==ba);
+        spmatch=find(ismember(SPKCLASS,ab));
+        ab=min(ab);
+        SPKCLASS(spmatch)=ab;
         spksav1{unitmap(ab),1}=EVENTTIMES(spmatch);
         unitmean(:,unitmap(ab))=mean(SPIKESET(:,spmatch),2);
         unitstd(:,unitmap(ab))=std(SPIKESET(:,spmatch),0,2);

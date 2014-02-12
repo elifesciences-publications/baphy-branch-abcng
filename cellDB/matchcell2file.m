@@ -13,7 +13,7 @@ dbopen;
 sql=['SELECT * FROM gDataRaw WHERE parmfile like "%',basename(fname),'.m"'];
 rawdata1=mysql(sql);
 
-if length(rawdata1)==0,
+if isempty(rawdata1),
     sql=['SELECT * FROM gDataRaw WHERE parmfile like "%',basename(fname),'%"'];
     rawdata1=mysql(sql);
 end
@@ -26,7 +26,6 @@ else
     sql=['SELECT * FROM gDataRaw WHERE parmfile like "%',basename(f2name),'%"'];
     rawdata2=mysql(sql);
 end
-
 
 if length(rawdata1)==1,
     % cool, found a matching raw file.
@@ -79,7 +78,7 @@ if length(rawdata1)==1,
     [rawdata,site,celldata,rcunit,rcchan]=dbgetsite(siteid);
     rawids=cat(1,rawdata.id);
     singleids=cat(1,celldata.id);
-    if length(rawdata2)>0,
+    if ~isempty(rawdata2),
         r1=[find(rawdata1.id==rawids);
             find(rawdata2.id==rawids)];
     else
@@ -153,7 +152,7 @@ if length(rawdata1)==1,
         sql=['SELECT * FROM gData WHERE rawid=',num2str(rawids(rr)),...
             ' AND name="Ref_Duration"'];
         datadata=mysql(sql);
-        if length(datadata)>0 && ~isempty(datadata(1).value),
+        if ~isempty(datadata) && ~isempty(datadata(1).value),
             stimspeedid=datadata(1).value;
         else
             stimspeedid=0;
@@ -163,7 +162,7 @@ if length(rawdata1)==1,
         sql=['SELECT * FROM gData WHERE rawid=',num2str(rawids(rr)),...
             ' AND name="Ref_SNR"'];
         snrdata=mysql(sql);
-        if length(snrdata)>0 && ~isempty(snrdata.value),
+        if ~isempty(snrdata) && ~isempty(snrdata.value),
             stimsnr=snrdata.value;
         else
             stimsnr=1000;
@@ -182,13 +181,13 @@ if length(rawdata1)==1,
             sql=['SELECT * FROM gSingleRaw WHERE rawid=',num2str(rawids(rr)),...
                 ' AND singleid=',num2str(newsingleid)];
             singlerawdata=mysql(sql);
-            if length(singlerawdata)>0,
+            if ~isempty(singlerawdata),
                 singlerawid=singlerawdata.id;
             else
                 singlerawid=-1;
             end
             
-            if spikecount(find(cc==ii),rr) ==0,
+            if spikecount(cc==ii,rr) ==0,
                 sql=['DELETE FROM sCellFile',...
                     ' WHERE singleid=',num2str(newsingleid),...
                     ' AND rawid=',num2str(rawids(rr)),...
@@ -207,7 +206,7 @@ if length(rawdata1)==1,
                     ' AND respfmtcode=0'];
                 cellfiledata=mysql(sql);
                 
-                if length(cellfiledata)==0,
+                if isempty(cellfiledata),
                     sqlinsert('sCellFile',...
                         'cellid',cellids{rcunit(rr,ii)},...
                         'masterid',rawdata(rr).masterid,...
@@ -235,7 +234,8 @@ if length(rawdata1)==1,
                         'area',singleareas{ii},...
                         'channum',rcchan(rr,ii),...
                         'unit',rcunit(rr,ii),...
-                        'singlerawid',singlerawid);
+                        'singlerawid',singlerawid,...
+                        'goodtrials',char(goodtrials{rcunit(rr,ii)}));
                 else
                     sql=['UPDATE sCellFile SET',...
                         ' masterid=',num2str(rawdata(rr).masterid),',',...
@@ -262,7 +262,8 @@ if length(rawdata1)==1,
                         ' area="',singleareas{ii},'",',...
                         ' singlerawid=',num2str(singlerawid),',',...
                         ' channum=',num2str(rcchan(rr,ii)),',',...
-                        ' unit=',num2str(rcunit(rr,ii)),...
+                        ' unit=',num2str(rcunit(rr,ii)),',',...
+                        ' goodtrials="',goodtrials{rcunit(rr,ii)},'"',...
                         ' WHERE id=',num2str(cellfiledata.id)];
                     mysql(sql);
                 end
