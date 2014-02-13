@@ -90,6 +90,9 @@ BigSequenceMatrix=params.BigSequenceMatrix(:,:,params.CorrectTrials);
 TarRepCount=params.SamplesPerTrial-max(TargetStartBin)+1;
 TarDur=params.PreStimSilence+TarRepCount.*params.SampleDur;
 TarBins=round(params.rasterfs.*TarDur);
+
+TarStartTime=params.SampleStarts(TargetStartBin);
+
 for tt=1:length(TargetStartBin),
     if TargetStartBin(tt)>0,
         tarstart=round((TargetStartBin(tt)-1).*params.SampleDur.*params.rasterfs+1);
