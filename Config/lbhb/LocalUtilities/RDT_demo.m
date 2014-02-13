@@ -340,11 +340,12 @@ for ii=1:length(params.TargetIdx),
     figure;
     subplot(3,2,1);
     tt=((1:size(params.r_avg,1))-6+0.5)./options.rasterfs;
+    
     plot(tt,mr2,'b-');
     hold on
-    plot(tt,mt2,'r-');
-    plot(tt,mr1,'b-','LineWidth',2);
-    plot(tt,mt1,'r-','LineWidth',2);
+    plot(tt,mt2,'Color',[0.5 0 0]);
+    plot(tt,mr1,'LineWidth',2,'Color',[0.6 0.6 1]);
+    plot(tt,mt1,'LineWidth',2,'Color',[0.5 0 0]);
     aa=axis;
     plot([0 0],aa(3:4),'g--');
     plot([0 0]+params.SampleDur,aa(3:4),'g--');
