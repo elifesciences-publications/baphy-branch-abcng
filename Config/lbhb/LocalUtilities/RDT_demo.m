@@ -1,16 +1,21 @@
-cellid='oys027b-c1'; 
-%cellid='oys027c-c1';
-%cellid='oys028a-a1';
+cellid='oys027b-c1'; % has two behavior sessions. single unit, low spont,facilitation
+%cellid='oys027b-c2'; % has two behavior sessions. multiunit.
+%cellid='oys027c-c1'; % single unit, low spont. 
+%cellid='oys027c-c2'; % multiunit.
 %cellid='oys028a-c2';
-%cellid='oys027c-c1';
-cellid='oys027b-c2';
-%cellid='oys024c-a1';
-%cellid='oys033a-a1';
-%cellid='oys033a-b1';
-%cellid='oys033b-a1';
-%cellid='oys033b-b1';
+%cellid='oys028a-c1'; % single unit. Interesting dynamics here too. Reliable responses.
+%cellid='oys033a-a1'; % single unit. Interesting dynamics, but not very responsive.
+%cellid='oys033a-b1'; % multiunit. Interesting response.
+%cellid='oys033b-a1'; % multiunit. Resp to both target. (compare 12). high spont.
+%cellid='oys033b-b1'; % single unit. Not super responsive cell (compare 12). low spont.
 %cellid='oys033c-a1';
-%cellid='oys034c-b1';
+%cellid='oys033c-b1'; % single unit, very cool resp. (compare 12). resp to tar2 inhibitory.
+%cellid='oys034b-a1'; % singel unit. High spont. Inhbitory resp?
+%cellid='oys034c-b1'; % multiunit. nothing. Weird STRF and basically no resp.
+%cellid='oys034c-a2';
+%cellid='oys034d-a1';
+%cellid='oys034d-a2';
+%cellid='oys024c-a1';
 
 close all
 
@@ -158,11 +163,11 @@ title('reference');
 
 subplot(3,1,2);
 if ~isempty(rtar1solo),
-    plot(tt,rref1solo(1:TarBins),'LineWidth',2,'Color',[0.6 0.6 1]);
+    plot(tt,rref1solo(1:TarBins),'b-');
     hold on
-    plot(tt,rref1(1:TarBins),'b-');
-    plot(tt,nanmean(rtar1solo(1:TarBins,:),2),'LineWidth',2,'Color',[0.5 0 0]);
-    plot(tt,nanmean(rtar1(1:TarBins,:),2),'Color',[0.5 0 0]);
+    plot(tt,rref1(1:TarBins),'LineWidth',2,'Color',[0.6 0.6 1]);
+    plot(tt,nanmean(rtar1solo(1:TarBins,:),2),'Color',[0.5 0 0]);
+    plot(tt,nanmean(rtar1(1:TarBins,:),2),'LineWidth',2,'Color',[0.5 0 0]);
     hold off
     aa=axis;
     legend('ref1','ref2','tar1','tar2');
@@ -174,11 +179,11 @@ title(sprintf('target #%d',params.TargetIdx(1)));
 
 subplot(3,1,3);
 if ~isempty(rtar2solo),
-    plot(tt,rref2solo(1:TarBins),'LineWidth',2,'Color',[0.6 0.6 1]);
+    plot(tt,rref2solo(1:TarBins),'b-');
     hold on
-    plot(tt,rref2(1:TarBins),'b-');
-    plot(tt,nanmean(rtar2solo(1:TarBins,:),2),'LineWidth',2,'Color',[0.5 0 0]);
-    plot(tt,nanmean(rtar2(1:TarBins,:),2),'Color',[0.5 0 0]);
+    plot(tt,rref2(1:TarBins),'LineWidth',2,'Color',[0.6 0.6 1]);
+    plot(tt,nanmean(rtar2solo(1:TarBins,:),2),'Color',[0.5 0 0]);
+    plot(tt,nanmean(rtar2(1:TarBins,:),2),'LineWidth',2,'Color',[0.5 0 0]);
     hold off
     %plot(tt,[nanmean(rtar2solo(1:TarBins,:),2) nanmean(rtar2(1:TarBins,:),2)...
     %         rref2solo(1:TarBins) rref2(1:TarBins)]);
@@ -341,11 +346,11 @@ for ii=1:length(params.TargetIdx),
     subplot(3,2,1);
     tt=((1:size(params.r_avg,1))-6+0.5)./options.rasterfs;
     
-    plot(tt,mr2,'b-');
+    plot(tt,mr2,'LineWidth',2,'Color',[0.6 0.6 1]);
     hold on
-    plot(tt,mt2,'Color',[0.5 0 0]);
-    plot(tt,mr1,'LineWidth',2,'Color',[0.6 0.6 1]);
-    plot(tt,mt1,'LineWidth',2,'Color',[0.5 0 0]);
+    plot(tt,mt2,'LineWidth',2,'Color',[0.5 0 0]);
+    plot(tt,mr1,'b-');
+    plot(tt,mt1,'Color',[0.5 0 0]);
     aa=axis;
     plot([0 0],aa(3:4),'g--');
     plot([0 0]+params.SampleDur,aa(3:4),'g--');
