@@ -3,9 +3,9 @@ cellid='oys027b-c1';
 %cellid='oys028a-a1';
 %cellid='oys028a-c2';
 %cellid='oys027c-c1';
-%cellid='oys027b-c2';
+cellid='oys027b-c2';
 %cellid='oys024c-a1';
-cellid='oys033a-a1';
+%cellid='oys033a-a1';
 %cellid='oys033a-b1';
 %cellid='oys033b-a1';
 %cellid='oys033b-b1';
@@ -25,10 +25,10 @@ if active,
     parmfile=[cellfiledata(fidx).stimpath cellfiledata(fidx).stimfile];
     spikefile=[cellfiledata(fidx).path cellfiledata(fidx).respfile];
 else
-    if strcmpi(cellfiledata2(end).behavior,'passive'),
-        uidx=length(cellfiledata2);
-    elseif strcmpi(cellfiledata2(1).behavior,'passive'),
+    if strcmpi(cellfiledata2(1).behavior,'passive'),
         uidx=1;
+    elseif strcmpi(cellfiledata2(end).behavior,'passive'),
+        uidx=length(cellfiledata2);
     else
         uidx=1;
     end
@@ -88,48 +88,84 @@ TargetStartBin=params.TargetStartBin(params.CorrectTrials);
 ThisTarget=params.ThisTarget(params.CorrectTrials);
 BigSequenceMatrix=params.BigSequenceMatrix(:,:,params.CorrectTrials);
 TarRepCount=params.SamplesPerTrial-max(TargetStartBin)+1;
-TarDur=params.PreStimSilence+TarRepCount.*params.SampleDur+...
-       params.PostStimSilence;
+TarDur=params.PreStimSilence+TarRepCount.*params.SampleDur;
 TarBins=round(params.rasterfs.*TarDur);
 for tt=1:length(TargetStartBin),
-    tarstart=round((TargetStartBin(tt)-1).*params.SampleDur.*params.rasterfs);
-    refend=tarstart-1+round(params.rasterfs.*params.PreStimSilence);
+    if TargetStartBin(tt)>0,
+        tarstart=round((TargetStartBin(tt)-1).*params.SampleDur.*params.rasterfs+1);
+        tar=nan(size(r,1),1);
+        tar(1:TarBins)=r(tarstart-1+(1:TarBins),tt);
+        if ThisTarget(tt)==params.TargetIdx(1) && ...
+                BigSequenceMatrix(1,2,tt)==-1,
+            rtar1solo=cat(2,rtar1solo,tar);
+        elseif ThisTarget(tt)==params.TargetIdx(1),
+            rtar1=cat(2,rtar1,tar);
+        elseif ThisTarget(tt)==params.TargetIdx(2) && ...
+                BigSequenceMatrix(1,2,tt)==-1,
+            rtar2solo=cat(2,rtar2solo,tar);
+        elseif ThisTarget(tt)==params.TargetIdx(2),
+            rtar2=cat(2,rtar2,tar);
+        else
+            %disp('no target match??');
+        end
+        refend=tarstart-1+round(params.rasterfs.*params.PreStimSilence);
+    else
+        refend=size(r,1);
+    end
     ref=nan(size(r,1),1);
     ref(1:refend)=r(1:refend,tt);
     rrefall=cat(2,rrefall,ref);
-    
-    tarstart=tarstart;
-    tar=nan(size(r,1),1);
-    tar(1:TarBins)=r(tarstart-1+(1:TarBins),tt);
-    if ThisTarget(tt)==params.TargetIdx(1) && ...
-            BigSequenceMatrix(1,2,tt)==-1,
-        rtar1solo=cat(2,rtar1solo,tar);
-    elseif ThisTarget(tt)==params.TargetIdx(1),
-        rtar1=cat(2,rtar1,tar);
-    elseif ThisTarget(tt)==params.TargetIdx(2) && ...
-            BigSequenceMatrix(1,2,tt)==-1,
-        rtar2solo=cat(2,rtar2solo,tar);
-    elseif ThisTarget(tt)==params.TargetIdx(2),
-        rtar2=cat(2,rtar2,tar);
-    else
-        disp('no target match??');
-    end
-    
 end
+
+rref1solo=[];
+rref1=[];
+rref2solo=[];
+rref2=[];
+singleTrial=squeeze(BigSequenceMatrix(1,2,:)==-1);
+for bb=2:params.SamplesPerTrial,
+    br=params.SampleStarts(bb):params.SampleStops(bb);
+    ff=find((TargetStartBin<0 | bb<TargetStartBin) &...
+            singleTrial & ...
+            squeeze(BigSequenceMatrix(bb,1,:)==params.TargetIdx(1)));
+    rref1solo=cat(2,rref1solo,r(br,ff));
+    ff=find((TargetStartBin<0 | bb<TargetStartBin) &...
+            ~singleTrial & ...
+            squeeze(BigSequenceMatrix(bb,1,:)==params.TargetIdx(1)));
+    rref1=cat(2,rref1,r(br,ff));
+    ff=find((TargetStartBin<0 | bb<TargetStartBin) &...
+            singleTrial & ...
+            squeeze(BigSequenceMatrix(bb,1,:)==params.TargetIdx(2)));
+    rref2solo=cat(2,rref2solo,r(br,ff));
+    ff=find((TargetStartBin<0 | bb<TargetStartBin) &...
+            ~singleTrial & ...
+            squeeze(BigSequenceMatrix(bb,1,:)==params.TargetIdx(2)));
+    rref2=cat(2,rref2,r(br,ff));
+end
+zb=zeros(round(params.rasterfs.*params.PreStimSilence),1);
+rref1solo=cat(1,zb,repmat(nanmean(rref1solo,2),[TarRepCount 1]));
+rref1=cat(1,zb,repmat(nanmean(rref1,2),[TarRepCount 1]));
+rref2solo=cat(1,zb,repmat(nanmean(rref2solo,2),[TarRepCount 1]));
+rref2=cat(1,zb,repmat(nanmean(rref2,2),[TarRepCount 1]));
 
 
 figure(1);
 clf
 subplot(3,1,1);
 tt=(1:TarBins)./params.rasterfs-params.PreStimSilence;
-plot(tt,nanmean(rrefall(1:TarBins,:),2));
+plot(tt,nanmean(rrefall(1:TarBins,:),2),'LineWidth',2,'Color',[0.6 0.6 1]);
 
 title('reference');
 
 subplot(3,1,2);
 if ~isempty(rtar1solo),
-    plot(tt,[nanmean(rtar1solo(1:TarBins,:),2) nanmean(rtar1(1:TarBins,:),2)]);
-    legend('solo-stream','2-stream');
+    plot(tt,rref1solo(1:TarBins),'LineWidth',2,'Color',[0.6 0.6 1]);
+    hold on
+    plot(tt,rref1(1:TarBins),'b-');
+    plot(tt,nanmean(rtar1solo(1:TarBins,:),2),'LineWidth',2,'Color',[0.5 0 0]);
+    plot(tt,nanmean(rtar1(1:TarBins,:),2),'Color',[0.5 0 0]);
+    hold off
+    aa=axis;
+    legend('ref1','ref2','tar1','tar2');
 else
     plot(tt,[nanmean(rtar1(1:TarBins,:),2)]);
 end
@@ -138,8 +174,15 @@ title(sprintf('target #%d',params.TargetIdx(1)));
 
 subplot(3,1,3);
 if ~isempty(rtar2solo),
-    plot(tt,[nanmean(rtar2solo(1:TarBins,:),2) nanmean(rtar2(1:TarBins,:),2)]);
-    legend('solo-stream','2-stream');
+    plot(tt,rref2solo(1:TarBins),'LineWidth',2,'Color',[0.6 0.6 1]);
+    hold on
+    plot(tt,rref2(1:TarBins),'b-');
+    plot(tt,nanmean(rtar2solo(1:TarBins,:),2),'LineWidth',2,'Color',[0.5 0 0]);
+    plot(tt,nanmean(rtar2(1:TarBins,:),2),'Color',[0.5 0 0]);
+    hold off
+    %plot(tt,[nanmean(rtar2solo(1:TarBins,:),2) nanmean(rtar2(1:TarBins,:),2)...
+    %         rref2solo(1:TarBins) rref2(1:TarBins)]);
+    legend('ref1','ref2','tar1','tar2');
 else
     plot(tt,[nanmean(rtar2(1:TarBins,:),2)]);
 end
@@ -255,6 +298,8 @@ for ii=1:length(params.TargetIdx),
             mm=zeros(N,1);
             if jj==3,jjalt=5;else jjalt=jj-1; end
             if kk==3,kkalt=5;else kkalt=kk-1; end
+            v1=zeros(size(sb(:)));
+            v2=zeros(size(sb(:)));
             for nn=1:N
                 if jj<3 && kk<3,
                     t1=ceil(rand*size(r_raster_match{jj},2));
@@ -266,13 +311,19 @@ for ii=1:length(params.TargetIdx),
                     t1=ceil(rand*size(r_raster_match{jj},2));
                     t2=ceil(rand.*size(params.r_raster{targetidx,kkalt},2));
                     v1=r_raster_match{jj}(sb,t1);
-                    v2=params.r_raster{targetidx,kkalt}(sb,t2);
+                    if ~isempty(params.r_raster{targetidx,kkalt})
+                        v2=params.r_raster{targetidx,kkalt}(sb,t2);
+                    end
                 else
                     t1=ceil(rand*size(params.r_raster{targetidx,jjalt},2));
                     t2=ceil(rand*(size(params.r_raster{targetidx,kkalt},2)-1));
                     if t2>=t1, t2=t2+1; end
-                    v1=params.r_raster{targetidx,jjalt}(sb,t1);
-                    v2=params.r_raster{targetidx,kkalt}(sb,t2);
+                    if ~isempty(params.r_raster{targetidx,jjalt})
+                        v1=params.r_raster{targetidx,jjalt}(sb,t1);
+                    end
+                    if ~isempty(params.r_raster{targetidx,kkalt})
+                        v2=params.r_raster{targetidx,kkalt}(sb,t2);
+                    end
                 end
                 cc(nn)=xcov(v1,v2,0,'coeff');
                 mm(nn)=std(v1-v2)./100;
@@ -289,11 +340,12 @@ for ii=1:length(params.TargetIdx),
     figure;
     subplot(3,2,1);
     tt=((1:size(params.r_avg,1))-6+0.5)./options.rasterfs;
+    
     plot(tt,mr2,'b-');
     hold on
-    plot(tt,mt2,'r-');
-    plot(tt,mr1,'b-','LineWidth',2);
-    plot(tt,mt1,'r-','LineWidth',2);
+    plot(tt,mt2,'Color',[0.5 0 0]);
+    plot(tt,mr1,'LineWidth',2,'Color',[0.6 0.6 1]);
+    plot(tt,mt1,'LineWidth',2,'Color',[0.5 0 0]);
     aa=axis;
     plot([0 0],aa(3:4),'g--');
     plot([0 0]+params.SampleDur,aa(3:4),'g--');
@@ -342,8 +394,8 @@ for ii=1:length(params.TargetIdx),
         
         ff=min(find(ThisTarget==targetidx &...
                     squeeze(BigSequenceMatrix(1,2,:))==-1));
-        startbin=params.SampleStarts(params.TargetStartBin(ff));
-        stopbin=params.SampleStops(params.TargetStartBin(ff));
+        startbin=params.SampleStarts(TargetStartBin(ff));
+        stopbin=params.SampleStops(TargetStartBin(ff));
         imagesc((1:(stopbin-startbin+1)).*10,1:size(s,1),...
                 log2(s(:,startbin:stopbin,ff,1)));
         axis xy
