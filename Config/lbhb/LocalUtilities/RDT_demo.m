@@ -162,8 +162,8 @@ clf
 subplot(3,1,1);
 tt=(1:TarBins)./params.rasterfs-params.PreStimSilence;
 plot(tt,nanmean(rrefall(1:TarBins,:),2),'LineWidth',2,'Color',[0.6 0.6 1]);
-
-title('reference');
+title([cellid ' -- reference']);
+aa1=axis;
 
 subplot(3,1,2);
 if ~isempty(rtar1solo),
@@ -178,8 +178,9 @@ if ~isempty(rtar1solo),
 else
     plot(tt,[nanmean(rtar1(1:TarBins,:),2)]);
 end
-
 title(sprintf('target #%d',params.TargetIdx(1)));
+aa2=axis;
+
 
 subplot(3,1,3);
 if ~isempty(rtar2solo),
@@ -196,6 +197,13 @@ else
     plot(tt,[nanmean(rtar2(1:TarBins,:),2)]);
 end
 title(sprintf('target #%d',params.TargetIdx(2)));
+aa3=axis;
+aamax=[aa1(1:2) 0 max([aa1(4) aa2(4) aa3(4)])];
+
+for ii=1:3,
+    subplot(3,1,ii);
+    axis(aamax);
+end
 
 ccmatrix=cell(length(params.TargetIdx),1);
 msematrix=cell(length(params.TargetIdx),1);

@@ -6,20 +6,17 @@ if active,
     cellfiledata=dbgetscellfile('cellid',cellid,'runclass','RDT',...
                                 'behavior','active');
     fidx=1;
-    parmfile=[cellfiledata(fidx).stimpath cellfiledata(fidx).stimfile];
-    spikefile=[cellfiledata(fidx).path cellfiledata(fidx).respfile];
 else
-    cellfiledata2=dbgetscellfile('cellid',cellid,'runclass','RDT',...
+    cellfiledata=dbgetscellfile('cellid',cellid,'runclass','RDT',...
                                  'Trial_Mode','RandAndRep');
-    if strcmpi(cellfiledata2(1).behavior,'passive'),
+    if strcmpi(cellfiledata(1).behavior,'passive'),
         uidx=1;
-    elseif strcmpi(cellfiledata2(end).behavior,'passive'),
-        uidx=length(cellfiledata2);
+    elseif strcmpi(cellfiledata(end).behavior,'passive'),
+        uidx=length(cellfiledata);
     else
         uidx=1;
     end
-    parmfile=[cellfiledata2(uidx).stimpath cellfiledata2(uidx).stimfile];
-    spikefile=[cellfiledata2(uidx).path cellfiledata2(uidx).respfile];
+    cellfiledata=cellfiledata(uidx);
 end
 
 options.rasterfs=100;
@@ -33,6 +30,7 @@ if singleunit,
     options.unit=cellfiledata(1).unit;
 else
     % all units at this site
+    spikefile=[cellfiledata(1).path cellfiledata(1).respfile];
     bb=basename(spikefile);
     sql=['SELECT channum,unit FROM sCellFile WHERE respfile="',bb,'";'];
     fdata=mysql(sql);
@@ -41,18 +39,41 @@ else
     options.unit=mod(unitset,10);
 end
 
-% r=response (time X trialcount X cell), only for correct trials
-[r,params]=load_RDT_by_trial(parmfile,spikefile,options); 
-
-RepDur=diff(params.SampleStarts(1:2));
-TargetStartBin=params.TargetStartBin(params.CorrectTrials);
+r=[];
+RepDur=[];
+TargetStartBin=[];
+TarStartTime=[];
+TrialCount=0;
+BigSequenceMatrix=[];
+ThisTarget=[];
+for fidx=1:length(cellfiledata),
+    parmfile=[cellfiledata(fidx).stimpath cellfiledata(fidx).stimfile];
+    spikefile=[cellfiledata(fidx).path cellfiledata(fidx).respfile];
+    
+    % r=response (time X trialcount X cell), only for correct trials
+    [tr,params]=load_RDT_by_trial(parmfile,spikefile,options); 
+    
+    if isempty(r),
+        
+    elseif size(tr,1)>size(r,1),
+        tr=tr(1:size(r,1),:,:);
+    elseif size(r,1)>size(tr,1),
+        r=r(1:size(tr,1),:,:);
+    end
+    r=cat(2,r,tr);
+    
+    TargetStartBin=cat(1,TargetStartBin,...
+                       params.TargetStartBin(params.CorrectTrials));
+    TrialCount=TrialCount+length(params.CorrectTrials);
+    ThisTarget=cat(1,ThisTarget,params.ThisTarget(params.CorrectTrials));
+    BigSequenceMatrix=cat(3,BigSequenceMatrix,...
+                          params.BigSequenceMatrix(:,:,params.CorrectTrials));
+end
+keyboard
 TarStartTime=params.SampleStarts(TargetStartBin);
-
+RepDur=diff(params.SampleStarts(1:2));
 [p,thresh]=RepDecoder(r,RepDur,TarStartTime);
 
-TrialCount=length(params.CorrectTrials);
-ThisTarget=params.ThisTarget(params.CorrectTrials);
-BigSequenceMatrix=params.BigSequenceMatrix(:,:,params.CorrectTrials);
 singleTrial=squeeze(BigSequenceMatrix(1,2,:)==-1);
 trialcat=zeros(size(ThisTarget));
 trialcat(ThisTarget==params.TargetIdx(1) & singleTrial)=1;
