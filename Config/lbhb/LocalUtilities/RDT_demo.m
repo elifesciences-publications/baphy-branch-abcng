@@ -92,6 +92,7 @@ rtar2=[];
 TargetStartBin=params.TargetStartBin(params.CorrectTrials);
 ThisTarget=params.ThisTarget(params.CorrectTrials);
 BigSequenceMatrix=params.BigSequenceMatrix(:,:,params.CorrectTrials);
+singleTrial=squeeze(BigSequenceMatrix(1,2,:)==-1);
 TarRepCount=params.SamplesPerTrial-max(TargetStartBin)+1;
 TarDur=params.PreStimSilence+TarRepCount.*params.SampleDur;
 TarBins=round(params.rasterfs.*TarDur);
