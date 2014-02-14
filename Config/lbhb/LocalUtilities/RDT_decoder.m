@@ -1,14 +1,22 @@
-function mmtar=RDT_decoder(cellid,singleunit);
+function dp=RDT_decoder(cellid,active,singleunit);
 
 % go to cell db to find active and passive data for this cell
-active=1;
+if ~exist('active','var'),
+    active=1;
+end
+
 if active,
     cellfiledata=dbgetscellfile('cellid',cellid,'runclass','RDT',...
                                 'behavior','active');
-    fidx=1;
+    activestr='active';
 else
     cellfiledata=dbgetscellfile('cellid',cellid,'runclass','RDT',...
                                  'Trial_Mode','RandAndRep');
+    if isempty(cellfiledata),
+        disp('no passive files for this site');
+        dp=nan(4,1);
+        return
+    end
     if strcmpi(cellfiledata(1).behavior,'passive'),
         uidx=1;
     elseif strcmpi(cellfiledata(end).behavior,'passive'),
@@ -17,6 +25,7 @@ else
         uidx=1;
     end
     cellfiledata=cellfiledata(uidx);
+    activestr='passive';
 end
 
 options.rasterfs=100;
@@ -69,7 +78,8 @@ for fidx=1:length(cellfiledata),
     BigSequenceMatrix=cat(3,BigSequenceMatrix,...
                           params.BigSequenceMatrix(:,:,params.CorrectTrials));
 end
-keyboard
+params.SampleStarts=cat(2,params.SampleStarts,size(r,1));
+TargetStartBin(TargetStartBin<0)=length(params.SampleStarts);
 TarStartTime=params.SampleStarts(TargetStartBin);
 RepDur=diff(params.SampleStarts(1:2));
 [p,thresh]=RepDecoder(r,RepDur,TarStartTime);
@@ -81,16 +91,34 @@ trialcat(ThisTarget==params.TargetIdx(1) & ~singleTrial)=2;
 trialcat(ThisTarget==params.TargetIdx(2) & singleTrial)=3;
 trialcat(ThisTarget==params.TargetIdx(2) & ~singleTrial)=4;
 
+
+tt=(-RepDur.*2+(1:RepDur*6))./params.rasterfs;
+if active,
+    mtar=zeros(RepDur*6,TrialCount);
+    resp=zeros(RepDur*6,TrialCount);
+    ttbins=(-RepDur.*2+(1:RepDur*6));
+    for trialidx=1:TrialCount,
+        mtar(:,trialidx)=p(TarStartTime(trialidx)+ttbins,trialidx);
+        resp(:,trialidx)=double(mtar(:,trialidx)>thresh);
+    end
+else
+    ffr=find(trialcat==0);
+    fft=find(trialcat>0);
+    NewTrialCount=length(fft);
+    mtar=zeros(RepDur*6,NewTrialCount);
+    resp=zeros(RepDur*6,NewTrialCount);
+    midr=RepDur*3;
+    TarStartTime=RepDur.*4;
+    ttbins=1:midr;
+    for trialidx=1:NewTrialCount,
+        mtar(1:midr,trialidx)=p(TarStartTime+ttbins,ffr(trialidx));
+        mtar(midr+(1:midr),trialidx)=p(TarStartTime+ttbins,fft(trialidx));
+    end
+    TrialCount=NewTrialCount;
+    trialcat=trialcat(fft);
+end
 [~,catidx]=sort(trialcat);
 
-mtar=zeros(RepDur*6,TrialCount);
-resp=zeros(RepDur*6,TrialCount);
-ttbins=(-RepDur.*2+(1:RepDur*6));
-tt=(-RepDur.*2+(1:RepDur*6))./params.rasterfs;
-for trialidx=1:TrialCount,
-    mtar(:,trialidx)=p(TarStartTime(trialidx)+ttbins,trialidx);
-    resp(:,trialidx)=double(mtar(:,trialidx)>thresh);
-end
 ravg=cat(1,max(mtar(1:RepDur*3,:)),max(mtar(RepDur.*3+1:end,:)));
 
 mmtar=zeros(size(mtar,1),4);
@@ -125,10 +153,10 @@ hold off
 colormap(1-gray);
 colorbar
 if singleunit
-    title(sprintf('cell: %s',cellid));
+    title(sprintf('cell: %s - %s',cellid, activestr));
 else
     siteid=strsep(cellid,'-');
-    title(sprintf('site: %s',siteid{1}));
+    title(sprintf('site: %s - %s',siteid{1}, activestr));
 end
 
 subplot(2,2,2);
@@ -185,7 +213,28 @@ if 0,
     }
     close all
     
+    dpsum=zeros(4,length(cellids),2);
     for ii=1:length(cellids),
-        RDT_decoder(cellids{ii});
+        for active=0:1,
+            dpsum(:,ii,active+1)=RDT_decoder(cellids{ii},active);
+        end
     end
+    
+    ff=find(~isnan(dpsum(1,:,1)));
+    dpsolo=cat(1,squeeze(dpsum(1,ff,:)),squeeze(dpsum(3,ff,:)));
+    dpolap=cat(1,squeeze(dpsum(2,ff,:)),squeeze(dpsum(4,ff,:)));
+    figure;
+    subplot(2,1,1);
+    plot(dpsolo(:,1),dpsolo(:,2),'.');
+    hold on
+    plot([0 1],[0 1],'k--');
+    axis square equal
+    
+    subplot(2,1,2);
+    plot(dpolap(:,1),dpolap(:,2),'.');
+    hold on
+    plot([0 1],[0 1],'k--');
+    axis square equal
+    
+     
 end

@@ -24,7 +24,7 @@ cellfiledata=dbgetscellfile('cellid',cellid,'runclass','RDT',...
                             'behavior','active');
 cellfiledata2=dbgetscellfile('cellid',cellid,'runclass','RDT',...
                              'Trial_Mode','RandAndRep');
-active=0;
+active=1;
 if active,
     fidx=1;
     parmfile=[cellfiledata(fidx).stimpath cellfiledata(fidx).stimfile];
@@ -229,9 +229,6 @@ for ii=1:3,
     subplot(3,1,ii);
     axis(aamax);
 end
-
-keyboard
-
 
 ccmatrix=cell(length(params.TargetIdx),1);
 msematrix=cell(length(params.TargetIdx),1);
