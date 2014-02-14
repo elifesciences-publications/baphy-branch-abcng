@@ -269,7 +269,7 @@ for ii=1:length(params.TargetIdx),
     ft2=vt2./mt2./options.rasterfs;
     ft2(mt2==0)=1;
     
-    sb=round(options.rasterfs*0.04+5):...
+    sb=round(options.rasterfs*0.02+5):...
        round(options.rasterfs.*(0.02+params.SampleDur)+5);
     mdt2r2=zeros(size(t2,2)*size(r2,2),1);
     mdt2r1=zeros(size(t2,2)*size(r1,2),1);
@@ -363,7 +363,7 @@ for ii=1:length(params.TargetIdx),
                     if ~isempty(params.r_raster{targetidx,jjalt})
                         v1=params.r_raster{targetidx,jjalt}(sb,t1);
                     end
-                    if ~isempty(params.r_raster{targetidx,kkalt})
+                    if t2>0 && ~isempty(params.r_raster{targetidx,kkalt})
                         v2=params.r_raster{targetidx,kkalt}(sb,t2);
                     end
                 end
@@ -418,7 +418,8 @@ for ii=1:length(params.TargetIdx),
     
     if ~isempty(strf) && length(strf)>1,
         subplot(3,2,3);
-        imagesc((1:size(strf,2)-1)*10,1:size(strf,1),strf,...
+        strf=imresize(strf,2,'bilinear');
+        imagesc((1:size(strf,2)-1)*5,1:size(strf,1),strf,...
                 [-1 1].*max(abs(strf(:))));
         axis xy
         title(strf);
