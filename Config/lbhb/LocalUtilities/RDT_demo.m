@@ -1,4 +1,4 @@
-cellid='oys027b-c1'; % has two behavior sessions. single unit, low spont,facilitation
+%cellid='oys027b-c1'; % has two behavior sessions. single unit, low spont,facilitation
 %cellid='oys027b-c2'; % has two behavior sessions. multiunit.
 %cellid='oys027c-c1'; % single unit, low spont. 
 %cellid='oys027c-c2'; % multiunit.
@@ -24,7 +24,7 @@ cellfiledata=dbgetscellfile('cellid',cellid,'runclass','RDT',...
                             'behavior','active');
 cellfiledata2=dbgetscellfile('cellid',cellid,'runclass','RDT',...
                              'Trial_Mode','RandAndRep');
-active=1;
+active=0;
 if active,
     fidx=1;
     parmfile=[cellfiledata(fidx).stimpath cellfiledata(fidx).stimfile];
@@ -97,8 +97,6 @@ TarRepCount=params.SamplesPerTrial-max(TargetStartBin)+1;
 TarDur=params.PreStimSilence+TarRepCount.*params.SampleDur;
 TarBins=round(params.rasterfs.*TarDur);
 
-TarStartTime=params.SampleStarts(TargetStartBin);
-
 for tt=1:length(TargetStartBin),
     if TargetStartBin(tt)>0,
         tarstart=round((TargetStartBin(tt)-1).*params.SampleDur.*params.rasterfs+1);
@@ -150,17 +148,40 @@ for bb=2:params.SamplesPerTrial,
             squeeze(BigSequenceMatrix(bb,1,:)==params.TargetIdx(2)));
     rref2=cat(2,rref2,r(br,ff));
 end
+r1=nanmean(rref1solo,2);
+r2=nanmean(rref2solo,2);
+ScaleFactor=zeros(TarRepCount,2,2);
+for t=1:TarRepCount,
+    bb=round(params.rasterfs.*params.PreStimSilence) + (t-1).*length(br) ...
+       + (1:length(br));
+    if t==1,
+        %r1=nanmean([rtar1solo(bb,:) rref1solo],2);
+        %r2=nanmean([rtar2solo(bb,:) rref2solo],2);
+        r1=nanmean([rtar1solo(bb,:)],2);
+        r2=nanmean([rtar2solo(bb,:)],2);
+    end
+    
+    tr=nanmean(rtar1solo(bb,:),2);
+    ScaleFactor(t,1,1)=r1'*tr./(r1'*r1).*max(r1);
+    tr=nanmean(rtar1(bb,:),2);
+    ScaleFactor(t,1,2)=r1'*tr./(r1'*r1).*max(r1);
+    tr=nanmean(rtar2solo(bb,:),2);
+    ScaleFactor(t,2,1)=r2'*tr./(r2'*r2).*max(r2);
+    tr=nanmean(rtar2(bb,:),2);
+    ScaleFactor(t,2,2)=r2'*tr./(r2'*r2).*max(r2);
+end
+
 zb=zeros(round(params.rasterfs.*params.PreStimSilence),1);
 rref1solo=cat(1,zb,repmat(nanmean(rref1solo,2),[TarRepCount 1]));
 rref1=cat(1,zb,repmat(nanmean(rref1,2),[TarRepCount 1]));
 rref2solo=cat(1,zb,repmat(nanmean(rref2solo,2),[TarRepCount 1]));
 rref2=cat(1,zb,repmat(nanmean(rref2,2),[TarRepCount 1]));
 
-
 figure(1);
 clf
 subplot(3,1,1);
 tt=(1:TarBins)./params.rasterfs-params.PreStimSilence;
+ttsf=params.SampleStarts(1:TarRepCount)./params.rasterfs-params.PreStimSilence;
 plot(tt,nanmean(rrefall(1:TarBins,:),2),'LineWidth',2,'Color',[0.6 0.6 1]);
 title([cellid ' -- reference']);
 aa1=axis;
@@ -172,6 +193,9 @@ if ~isempty(rtar1solo),
     plot(tt,rref1(1:TarBins),'LineWidth',2,'Color',[0.6 0.6 1]);
     plot(tt,nanmean(rtar1solo(1:TarBins,:),2),'Color',[0.5 0 0]);
     plot(tt,nanmean(rtar1(1:TarBins,:),2),'LineWidth',2,'Color',[0.5 0 0]);
+    plot(ttsf,ScaleFactor(:,1,1),'s','Color',[0.5 0 0]);
+    plot(ttsf,ScaleFactor(:,1,2),'o','Color',[0.5 0 0],'LineWidth',2);
+    
     hold off
     aa=axis;
     legend('ref1','ref2','tar1','tar2');
@@ -181,7 +205,6 @@ end
 title(sprintf('target #%d',params.TargetIdx(1)));
 aa2=axis;
 
-
 subplot(3,1,3);
 if ~isempty(rtar2solo),
     plot(tt,rref2solo(1:TarBins),'b-');
@@ -189,6 +212,8 @@ if ~isempty(rtar2solo),
     plot(tt,rref2(1:TarBins),'LineWidth',2,'Color',[0.6 0.6 1]);
     plot(tt,nanmean(rtar2solo(1:TarBins,:),2),'Color',[0.5 0 0]);
     plot(tt,nanmean(rtar2(1:TarBins,:),2),'LineWidth',2,'Color',[0.5 0 0]);
+    plot(ttsf,ScaleFactor(:,2,1),'s','Color',[0.5 0 0]);
+    plot(ttsf,ScaleFactor(:,2,2),'o','Color',[0.5 0 0],'LineWidth',2);
     hold off
     %plot(tt,[nanmean(rtar2solo(1:TarBins,:),2) nanmean(rtar2(1:TarBins,:),2)...
     %         rref2solo(1:TarBins) rref2(1:TarBins)]);
@@ -204,6 +229,9 @@ for ii=1:3,
     subplot(3,1,ii);
     axis(aamax);
 end
+
+keyboard
+
 
 ccmatrix=cell(length(params.TargetIdx),1);
 msematrix=cell(length(params.TargetIdx),1);
@@ -243,7 +271,7 @@ for ii=1:length(params.TargetIdx),
     vt2=var(t2,0,2);
     ft2=vt2./mt2./options.rasterfs;
     ft2(mt2==0)=1;
-        
+    
     sb=round(options.rasterfs*0.04+5):...
        round(options.rasterfs.*(0.02+params.SampleDur)+5);
     mdt2r2=zeros(size(t2,2)*size(r2,2),1);
