@@ -418,16 +418,17 @@ for ii=1:length(params.TargetIdx),
     
     if ~isempty(strf) && length(strf)>1,
         subplot(3,2,3);
-        strf=imresize(strf,2,'bilinear');
-        imagesc((1:size(strf,2)-1)*5,1:size(strf,1),strf,...
-                [-1 1].*max(abs(strf(:))));
+        smstrf=imresize(strf,2,'bilinear');
+        smstrf=imresize(smstrf,2,'bilinear');
+        imagesc((1:size(smstrf,2)-1).*2.5,1:size(smstrf,1),smstrf,...
+                [-1 1].*max(abs(smstrf(:))));
         axis xy
         title(strf);
         
         aa=axis;
         yy=get(gca,'YTick');
         set(gca,'YTickLabel',[]);
-        ff=round(2.^linspace(log2(200),log2(20000),size(strf,1)));
+        ff=round(2.^linspace(log2(200),log2(20000),size(smstrf,1)));
         for kk=1:length(yy),
             text(aa(1),yy(kk),num2str(ff(yy(kk))),'HorizontalAlignment','right');
         end
