@@ -190,24 +190,24 @@ function [r,params]=load_RDT_by_trial(parmfile,spikefile,options)
                             params.TargetStartBin(trialidx)<0 ||...
                             params.BigSequenceMatrix(ii,2,trialidx)==sidx) &&...
                            sum(params.BigSequenceMatrix(:,2,trialidx)>0)>0,
-                        % reference (active) , dual stream (passive)
+                        % reference/dual stream
                         cond=1;
-                    elseif params.TargetStartBin(trialidx)<0 ||...
-                           sum(params.BigSequenceMatrix(:,2,trialidx)>0)>0
-                        % target (active), single stream (passive)
+                    elseif sum(params.BigSequenceMatrix(:,2,trialidx)>0)>0
+                        % target/dual stream
                         cond=2;
                         if params.TargetStartBin(trialidx)<0,
                             repSlot=ii;
                         else
                             repSlot=ii-params.TargetStartBin(trialidx)+1;
                         end
-                    elseif ii<=params.TargetStartBin(trialidx),
-                        % reference, single stream (active)
+                    elseif params.TargetStartBin(trialidx)<0 ||...
+                           ii<=params.TargetStartBin(trialidx),
+                        % reference, single stream
                         cond=3;
                     else
-                        % target, single stream (active)
+                        % target, single stream
                         cond=4;
-                        repSlot=ii-params.TargetStartBin(trialidx);
+                        repSlot=ii-params.TargetStartBin(trialidx)+1;
                     end
                     %if ismember(sidx,params.TargetIdx),
                     %    params.BigSequenceMatrix(:,:,trialidx)
@@ -219,8 +219,13 @@ function [r,params]=load_RDT_by_trial(parmfile,spikefile,options)
                         r_avg(:,sidx,cond)=r_avg(:,sidx,cond)+...
                             gsmooth(r(rr,tidx),options.rasterfs./200);
                         r_raster{sidx,cond}=cat(2,r_raster{sidx,cond},r(rr,tidx));
-                        r_second{sidx,cond}(r_count(sidx,cond),1)=...
-                            params.BigSequenceMatrix(ii,2,trialidx);
+                        if sidx==params.BigSequenceMatrix(ii,2,trialidx),
+                            r_second{sidx,cond}(r_count(sidx,cond),1)=...
+                                params.BigSequenceMatrix(ii,1,trialidx);
+                        else
+                            r_second{sidx,cond}(r_count(sidx,cond),1)=...
+                                params.BigSequenceMatrix(ii,2,trialidx);
+                        end
                         r_repSlot{sidx,cond}(r_count(sidx,cond),1)=repSlot;
                     end
                 end

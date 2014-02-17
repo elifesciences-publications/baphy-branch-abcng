@@ -20,27 +20,27 @@
 close all
 
 % go to cell db to find active and passive data for this cell
-cellfiledata=dbgetscellfile('cellid',cellid,'runclass','RDT',...
-                            'behavior','active');
-cellfiledata2=dbgetscellfile('cellid',cellid,'runclass','RDT',...
-                             'Trial_Mode','RandAndRep');
-active=1;
+if ~exist('active','var'),
+   active=1;
+end
 if active,
+    cellfiledata=dbgetscellfile('cellid',cellid,'runclass','RDT',...
+                            'behavior','active');
     fidx=1;
-    parmfile=[cellfiledata(fidx).stimpath cellfiledata(fidx).stimfile];
-    spikefile=[cellfiledata(fidx).path cellfiledata(fidx).respfile];
 else
-    if strcmpi(cellfiledata2(1).behavior,'passive'),
-        uidx=1;
-    elseif strcmpi(cellfiledata2(end).behavior,'passive'),
-        uidx=length(cellfiledata2);
+    cellfiledata=dbgetscellfile('cellid',cellid,'runclass','RDT',...
+                             'Trial_Mode','RandAndRep');
+    if strcmpi(cellfiledata(1).behavior,'passive'),
+        fidx=1;
+    elseif strcmpi(cellfiledata(end).behavior,'passive'),
+        fidx=length(cellfiledata);
     else
-        uidx=1;
+        fidx=1;
     end
-    parmfile=[cellfiledata2(uidx).stimpath cellfiledata2(uidx).stimfile];
-    spikefile=[cellfiledata2(uidx).path cellfiledata2(uidx).respfile];
 end
 
+parmfile=[cellfiledata(fidx).stimpath cellfiledata(fidx).stimfile];
+spikefile=[cellfiledata(fidx).path cellfiledata(fidx).respfile];
 options.rasterfs=100;
 options.channel=cellfiledata(1).channum;
 options.unit=cellfiledata(1).unit;
@@ -151,6 +151,7 @@ end
 r1=nanmean(rref1solo,2);
 r2=nanmean(rref2solo,2);
 ScaleFactor=zeros(TarRepCount,2,2);
+NScaleFactor=zeros(TarRepCount,2,2);
 for t=1:TarRepCount,
     bb=round(params.rasterfs.*params.PreStimSilence) + (t-1).*length(br) ...
        + (1:length(br));
@@ -161,6 +162,14 @@ for t=1:TarRepCount,
         r2=nanmean([rtar2solo(bb,:)],2);
     end
     
+    tr=nanmean(rtar1solo(bb,:),2);
+    NScaleFactor(t,1,1)=r1'*tr./(r1'*r1);
+    tr=nanmean(rtar1(bb,:),2);
+    NScaleFactor(t,1,2)=r1'*tr./(r1'*r1);
+    tr=nanmean(rtar2solo(bb,:),2);
+    NScaleFactor(t,2,1)=r2'*tr./(r2'*r2);
+    tr=nanmean(rtar2(bb,:),2);
+    NScaleFactor(t,2,2)=r2'*tr./(r2'*r2);
     tr=nanmean(rtar1solo(bb,:),2);
     ScaleFactor(t,1,1)=r1'*tr./(r1'*r1).*max(r1);
     tr=nanmean(rtar1(bb,:),2);
@@ -269,7 +278,7 @@ for ii=1:length(params.TargetIdx),
     ft2=vt2./mt2./options.rasterfs;
     ft2(mt2==0)=1;
     
-    sb=round(options.rasterfs*0.02+5):...
+    sb=round(options.rasterfs*0.03+5):...
        round(options.rasterfs.*(0.02+params.SampleDur)+5);
     mdt2r2=zeros(size(t2,2)*size(r2,2),1);
     mdt2r1=zeros(size(t2,2)*size(r1,2),1);
@@ -327,13 +336,15 @@ for ii=1:length(params.TargetIdx),
     
     r_raster_match={};
     ff=find(ismember(params.r_second{targetidx,1},olappairs));
+    ff=1:length(params.r_second{targetidx,1});
     r_raster_match{1}=params.r_raster{targetidx,1}(:,ff);
     ff=find(ismember(params.r_second{targetidx,2},olappairs));
+    ff=1:length(params.r_second{targetidx,2});
     r_raster_match{2}=params.r_raster{targetidx,2}(:,ff);
     
     ccmatrix{ii}=zeros(5,5);
     msematrix{ii}=zeros(5,5);
-    N=200;
+    N=300;
     for jj=1:5,
         for kk=jj:5,
             cc=zeros(N,1);
@@ -503,19 +514,100 @@ for ii=1:length(params.TargetIdx),
     mft2(ii,2-active)=nanmean(ft2(sb));
 end
 
-if 0,
-    cellfiledata=dbgetscellfile('runclass','RDT');
-    for fidx=1:length(cellfiledata),
-        parmfile=[cellfiledata(fidx).stimpath cellfiledata(fidx).stimfile];
-        spikefile=[cellfiledata(fidx).path cellfiledata(fidx).respfile];
-        options.rasterfs=100;
-        options.channel=cellfiledata(1).channum;
-        options.unit=cellfiledata(1).unit;
-        options.resp_shift=0.0;
-        
-        % load the stimulus spectrogram
-        options.filtfmt='gamma';
-        options.chancount=30;
-        s=loadstimbytrial(parmfile,options);
-    end
+ccref=zeros(params.SampleCount,6);
+N=50;
+for sidx=1:params.SampleCount,
+   txc=zeros(N,6);
+   ff1=find(ismember(params.r_second{sidx,1},params.TargetIdx));
+   ff5=find(ismember(params.r_second{sidx,5},params.TargetIdx));
+   if ~ismember(sidx,params.TargetIdx) &&...
+           length(ff1)>=2 && length(ff5)>=2,
+       for nn=1:N,
+           t1=ceil(rand*length(ff1));
+           t2=ceil(rand*(length(ff1)-1));
+           t3=ceil(rand*length(ff5));
+           t4=ceil(rand*(length(ff5)-1));
+           t5=ceil(rand*(size(params.r_raster{sidx,3},2)));
+           t6=ceil(rand*(size(params.r_raster{sidx,3},2)-1));
+           if t2>=t1, t2=t2+1; end
+           if t4>=t3, t4=t4+1; end
+           if t6>=t5, t6=t6+1; end
+           v1=params.r_raster{sidx,1}(sb,ff1(t1));
+           v2=params.r_raster{sidx,1}(sb,ff1(t2));
+           v3=params.r_raster{sidx,5}(sb,ff5(t3));
+           v4=params.r_raster{sidx,5}(sb,ff5(t4));
+           v5=params.r_raster{sidx,3}(sb,t5);
+           v6=params.r_raster{sidx,3}(sb,t6);
+           if std(v1) && std(v2), 
+               txc(nn,1)=xcov(v1,v2,0,'coeff');
+           end
+           if std(v1) && std(v4), 
+               txc(nn,2)=xcov(v1,v4,0,'coeff');
+           end
+           if std(v3) && std(v4), 
+               txc(nn,3)=xcov(v3,v4,0,'coeff');
+           end
+           if std(v1) && std(v5),
+               txc(nn,4)=xcov(v1,v5,0,'coeff'); %ref2 vs ref1
+           end
+           if std(v3) && std(v5), 
+               txc(nn,5)=xcov(v3,v5,0,'coeff'); %ref2tar vs ref1
+           end
+           if std(v5) && std(v6),
+               txc(nn,6)=xcov(v5,v6,0,'coeff'); %ref1 vs ref1
+           end
+       end
+       ccref(sidx,:)=mean(txc);
+   end
 end
+
+return
+
+
+for sidx=1:params.SampleCount,
+    txc=zeros(N,6);
+    for nn=1:N,
+        
+        t1=ceil(rand*size(params.r_raster{sidx,1},2));
+        t2=ceil(rand*(size(params.r_raster{sidx,1},2)-1));
+        t3=ceil(rand*size(params.r_raster{sidx,5},2));
+        t4=ceil(rand*(size(params.r_raster{sidx,5},2)-1));
+        t5=ceil(rand*(size(params.r_raster{sidx,3},2)));
+        t6=ceil(rand*(size(params.r_raster{sidx,3},2)-1));
+        if t1 && t2
+           v1=params.r_raster{sidx,1}(sb,t1);
+           v2=params.r_raster{sidx,1}(sb,t2);
+       end
+       if t3 && t4,
+           v3=params.r_raster{sidx,5}(sb,t3);
+           v4=params.r_raster{sidx,5}(sb,t4);
+       end
+       if t5 && t6,
+           v5=params.r_raster{sidx,3}(sb,t5);
+           v6=params.r_raster{sidx,3}(sb,t6);
+       end
+       
+       if  t1 && t2 && std(v1) && std(v2), 
+          txc(nn,1)=xcov(v1,v2,0,'coeff');
+       end
+       if t1 && t4 && std(v1) && std(v4), 
+          txc(nn,2)=xcov(v1,v4,0,'coeff');
+       end
+       if t3 && t4 && std(v3) && std(v4), 
+          txc(nn,3)=xcov(v3,v4,0,'coeff');
+       end
+       if t1 && t3 && t5 && t6,
+           if std(v1) && std(v5),
+               txc(nn,4)=xcov(v1,v5,0,'coeff'); %ref2 vs ref1
+           end
+           if std(v3) && std(v5), 
+               txc(nn,5)=xcov(v3,v5,0,'coeff'); %ref2tar vs ref1
+           end
+           if std(v5) && std(v6),
+               txc(nn,6)=xcov(v5,v6,0,'coeff'); %ref1 vs ref1
+           end
+       end
+   end
+   ccref(sidx,:)=nanmean(txc);
+end
+
