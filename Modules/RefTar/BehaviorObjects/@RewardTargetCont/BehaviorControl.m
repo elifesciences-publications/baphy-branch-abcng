@@ -43,6 +43,7 @@ TarWindow(2) = TarWindow(1) + get(O,'ResponseWindow');
 RefWindow = [0,TarWindow(1)];
 Objects.Tar = get(exptparams.TrialObject,'TargetHandle');
 Simulick = get(O,'Simulick'); if Simulick LickTime = rand*(TarWindow(2)+1); end
+MinimalDelayResponse = get(O,'MinimalDelayResponse');
 
 %% PREPARE FOR PREWARD
 cPositions = {'center'};
@@ -56,6 +57,7 @@ PrewardDuration = PrewardAmount/globalparams.PumpMlPerSec.(PumpName);
 Prewarded = 0; 
 
 %% PREPARE FOR LIGHT CUE
+LEDfeedback = get(O,'LEDfeedback');
 LightCueDuration = get(O,'LightCueDuration'); LightCued = 0;
 LightNames = IOMatchPosition2Light(HW,cPositions);
 LightName = LightNames{cRandInd}; % CUE SHOULD ALWAYS BE RANDOM
@@ -126,7 +128,7 @@ else
 end
 
 %%  PROCESS LICK
-if ResponseTime < TarWindow(1)         
+if ResponseTime < (TarWindow(1) +MinimalDelayResponse)
   Outcome = 'EARLY';
 elseif ResponseTime > TarWindow(2)  % CASES NO LICK AND LATE LICK
   Outcome = 'SNOOZE';
@@ -151,8 +153,12 @@ switch Outcome
   case 'EARLY'; % STOP SOUND, TIME OUT + LIGHT ON
     StopEvent = IOStopSound(HW);
     Events = AddEvent(Events, StopEvent, TrialIndex);
-    LightEvents = LF_TimeOut(HW,get(O,'TimeOutEarly'),0,TrialIndex);
+    LightEvents = LF_TimeOut(HW,get(O,'TimeOutEarly'),LEDfeedback,TrialIndex,Outcome);
     Events = AddEvent(Events, LightEvents, TrialIndex);
+    
+    if strcmp(get(O,'PunishSound'),'Noise') 
+      IOStartSound(HW,randn(5000,1)*15); pause(0.25); IOStopSound(HW); 
+    end    
 
   case 'ERROR'; % STOP SOUND, HIGH VOLUME NOISE, LIGHT ON, TIME OUT
     StopEvent = IOStopSound(HW); Events = AddEvent(Events, StopEvent, TrialIndex);
@@ -165,6 +171,8 @@ switch Outcome
   
   case 'HIT'; % STOP SOUND, PROVIDE REWARD AT CORRECT SPOUT
     StopEvent = IOStopSound(HW);
+    HitLedDuration = 0.5;
+    LightEvents = LF_TimeOut(HW,HitLedDuration,LEDfeedback,TrialIndex,Outcome);
     Events = AddEvent(Events, StopEvent, TrialIndex);
     
     PumpName = cell2mat(IOMatchSensor2Pump(cLickSensor));
@@ -226,37 +234,39 @@ if ~strcmp(Outcome,'SNOOZE')
   end
 end
 
-function Events = LF_TimeOut(HW,TimeOut,Light,cTrial)
+function Events = LF_TimeOut(HW,TimeOut,Light,cTrial,Outcome)
+% 14/02/06-YB: adapted to give a visual feedback for HIT and EARLY
 
-fprintf(['\t Timeout [ ',n2s(TimeOut),'s ]']);
+if strcmpi(Outcome,'Early'); 
+  Positions = {'right'}; fprintf(['\t Timeout [ ',n2s(TimeOut),'s ]']); 
+elseif strcmpi(Outcome,'Hit')
+  Positions = {'left'};
+end
 
 if Light % TURN LIGHT ON DURING TIMEOUT
-  Positions = {'left','right'};
-  for i=1:length(Positions)
-    LightNames = IOMatchPosition2Light(HW,Positions{i});
+    LightNames = IOMatchPosition2Light(HW,Positions);
     [State,LightEvent] = IOLightSwitch(HW,1,TimeOut,[],[],[],LightNames{1});
-    if i==1  Events = AddEvent([],LightEvent,cTrial);  else Events = AddEvent(Events,LightEvent,cTrial); end
-  end
+    Events = AddEvent([],LightEvent,cTrial);  else Events = AddEvent(Events,LightEvent,cTrial);
 end
 
 % TIME OUT
 ThisTime = clock; StartTime = IOGetTimeStamp(HW);
-while etime(clock,ThisTime) < TimeOut   drawnow;  end
+while etime(clock,ThisTime) < TimeOut; drawnow;  end
 StopTime = IOGetTimeStamp(HW);
-TimeOutEvent = struct('Note',['TIMEOUT,',n2s(TimeOut,4),' seconds'],'StartTime',StartTime,'StopTime',StartTime + TimeOut);
+if strcmpi(Outcome,'Early'); TimeOutEvent = struct('Note',['TIMEOUT,',n2s(TimeOut,4),' seconds'],'StartTime',StartTime,'StopTime',StartTime + TimeOut); end
 
   % TURN LIGHT OFF AFTER TIMEOUT
 if Light
-  for i=1:length(Positions)
-    LightNames = IOMatchPosition2Light(HW,Positions{i});
+    LightNames = IOMatchPosition2Light(HW,Positions);
     [State,LightEvent] = IOLightSwitch(HW,0,[],[],[],[],LightNames{1});
-    Events(i).StopTime = LightEvent.StartTime;
-  end
+    Events.StopTime = LightEvent.StartTime;
 end
 
 % ADD TIME OUT EVENT
-if ~exist('Events','var')
-  Events = TimeOutEvent;
-else
-  Events = AddEvent(Events,TimeOutEvent,cTrial);
+if strcmpi(Outcome,'Early'); 
+  if ~exist('Events','var')
+    Events = TimeOutEvent;
+  else
+    Events = AddEvent(Events,TimeOutEvent,cTrial);
+  end
 end
