@@ -1,4 +1,4 @@
-function o = ObjUpdate(o,IniSeed)
+function o = ObjUpdate(o)
 % Update the changes of a MultiStream object - benglitz 2010
 % Adapted to TextureMorphing - Yves 2013
 
@@ -63,10 +63,9 @@ o = set(o,'XDistri',XDistri);
 o = set(o,'F0',F0);
 
 % GENERATION OF A SEED FOR ToCs IF I AM NOT RELOADING A SOUND OBJECT
-if ( ~(exist('IniSeed','var')) || isempty(IniSeed) ) && isempty(get(o,'IniSeed'))
-    IniSeed = round( rand(1,1)*100 );   % With RandStream('mrg32k3a'), it is important to work with large numbers, 
-                                        %because there is a heavy correlation between two seeds that belong to the same integer interval [n,n+1[
-elseif not(isempty(get(o,'IniSeed')))
+if isempty(get(o,'IniSeed'))
+    IniSeed = round( rand(1,1)*100 );   % With RandStream('mrg32k3a'), it is important to work with large numbers,                                         %because there is a heavy correlation between two seeds that belong to the same integer interval [n,n+1[
+else
     IniSeed = get(o,'IniSeed');
 end
 Par.IniSeed = IniSeed;

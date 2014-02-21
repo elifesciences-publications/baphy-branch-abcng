@@ -72,7 +72,6 @@ while ContinueExp == 1
       % Yves; 2013/11: I added an input to 'waveform' methods
       % Yves; 2014/02: when reinsertion of trials, I need to fake the <TrialIndex>: this is ONLY FOR TRAINING
       [TrialSound, StimEvents, exptparams.TrialObject] = waveform(exptparams.TrialObject, iTrial, TrialIndexLst(TrialIndex));
-      disp(['!!!!!' num2str(TrialIndexLst(TrialIndex)) '!!!']);
       [HW,globalparams,exptparams] = LF_setSamplingRate(HW,globalparams,exptparams);
       HW = IOSetLoudness(HW, 80-get(exptparams.TrialObject, 'OveralldB'));
       

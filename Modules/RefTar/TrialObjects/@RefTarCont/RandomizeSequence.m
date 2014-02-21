@@ -55,7 +55,8 @@ switch RepOrTrial
           P.TrialTags = P.TrialTags(Inds);
           P.NumberOfTrials = P.NumberOfTrials + 1;          
           % 2014/02-YB: resinsertion (in the next 8) of TrialIndex sent to <waveform> (in order to re-generate the same ToC)
-          P.TrialIndexLst(TrialIndex+randi(8,1)) =P.TrialIndexLst(TrialIndex);
+%           P.TrialIndexLst(TrialIndex+randi(8,1)) =P.TrialIndexLst(TrialIndex);
+          P.TrialIndexLst(TrialIndex+3) =P.TrialIndexLst(TrialIndex);
         end
     end
     
