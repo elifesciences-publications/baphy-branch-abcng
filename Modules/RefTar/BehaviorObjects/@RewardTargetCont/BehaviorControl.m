@@ -27,6 +27,8 @@ Events = [ ];
 exptparams.WaterUnits = 'milliliter';
 RewardAmount = get(O,'RewardAmount');
 PrewardAmount = get(O,'PrewardAmount');
+IncrementRewardAmount = get(O,'IncrementRewardAmount');
+MaxIncrementRewardNb = get(O,'MaxIncrementRewardNb');
 
 %% GET TARGET & REFERENCE INDICES
 tmp = get(exptparams.TrialObject,'ReferenceIndices'); ReferenceIndices = tmp{exptparams.InRepTrials};
@@ -41,6 +43,7 @@ TarWindow(2) = TarWindow(1) + get(O,'ResponseWindow');
 RefWindow = [0,TarWindow(1)];
 Objects.Tar = get(exptparams.TrialObject,'TargetHandle');
 Simulick = get(O,'Simulick'); if Simulick LickTime = rand*(TarWindow(2)+1); end
+MinimalDelayResponse = get(O,'MinimalDelayResponse');
 
 %% PREPARE FOR PREWARD
 cPositions = {'center'};
@@ -54,6 +57,7 @@ PrewardDuration = PrewardAmount/globalparams.PumpMlPerSec.(PumpName);
 Prewarded = 0; 
 
 %% PREPARE FOR LIGHT CUE
+LEDfeedback = get(O,'LEDfeedback');
 LightCueDuration = get(O,'LightCueDuration'); LightCued = 0;
 LightNames = IOMatchPosition2Light(HW,cPositions);
 LightName = LightNames{cRandInd}; % CUE SHOULD ALWAYS BE RANDOM
@@ -114,7 +118,7 @@ DetectType = 'ON'; LickOccured = 0;
     fprintf('\b ... '); Prewarded = 1;
   end
 end
-% IF NO RESPONSE OCCUREE
+% IF NO RESPONSE OCCURED
 if ~LickOccured ResponseTime = inf; end
 
 if LickOccured
@@ -124,7 +128,7 @@ else
 end
 
 %%  PROCESS LICK
-if ResponseTime < TarWindow(1)         
+if ResponseTime < (TarWindow(1) +MinimalDelayResponse)
   Outcome = 'EARLY';
 elseif ResponseTime > TarWindow(2)  % CASES NO LICK AND LATE LICK
   Outcome = 'SNOOZE';
@@ -135,7 +139,8 @@ else % HIT OR ERROR
   end
 end
 Events=AddEvent(Events,['OUTCOME,',Outcome],TrialIndex,ResponseTime,[]);
-fprintf(['\t [ ',Outcome,' ] ... ']);
+if strcmp(Outcome,'HIT'); Outcome2Display = [Outcome ', RT = ' num2str(ResponseTime-TarWindow(1))]; else Outcome2Display = Outcome; end
+fprintf(['\t [ ',Outcome2Display,' ] ... ']);
 
 %% ACTUALIZE VISUAL FEEDBACK FOR THE SUBJECT
 TrialObject = get(exptparams.TrialObject);
@@ -148,8 +153,12 @@ switch Outcome
   case 'EARLY'; % STOP SOUND, TIME OUT + LIGHT ON
     StopEvent = IOStopSound(HW);
     Events = AddEvent(Events, StopEvent, TrialIndex);
-    LightEvents = LF_TimeOut(HW,get(O,'TimeOutEarly'),0,TrialIndex);
+    LightEvents = LF_TimeOut(HW,get(O,'TimeOutEarly'),LEDfeedback,TrialIndex,Outcome);
     Events = AddEvent(Events, LightEvents, TrialIndex);
+    
+    if strcmp(get(O,'PunishSound'),'Noise') 
+      IOStartSound(HW,randn(5000,1)*15); pause(0.25); IOStopSound(HW); 
+    end    
 
   case 'ERROR'; % STOP SOUND, HIGH VOLUME NOISE, LIGHT ON, TIME OUT
     StopEvent = IOStopSound(HW); Events = AddEvent(Events, StopEvent, TrialIndex);
@@ -161,6 +170,10 @@ switch Outcome
     Events = AddEvent(Events, LightEvents, TrialIndex);
   
   case 'HIT'; % STOP SOUND, PROVIDE REWARD AT CORRECT SPOUT
+    % 14/02/20-YB: Patched to change LED/pump structure + Duration2Play (cf. lab notebook)
+    Duration2Play = 0.5; LEDposition = {'left'};
+    % Stop Dbis sound when <Duration2Play> is elapsed
+    pause(max([0 , (TarWindow(1)+Duration2Play)-IOGetTimeStamp(HW) ]))
     StopEvent = IOStopSound(HW);
     Events = AddEvent(Events, StopEvent, TrialIndex);
     
@@ -168,20 +181,39 @@ switch Outcome
     if length(RewardAmount)>1 % ASYMMETRIC REWARD SCHEDULE ACROSS SPOUTS
       RewardAmount = RewardAmount(cLickSensorInd);
     end
+    
     if ~globalparams.PumpMlPerSec.(PumpName)
       globalparams.PumpMlPerSec.(PumpName) = inf;
     end
+    if TrialIndex>1
+      LastOutcomes = {exptparams.Performance((TrialIndex-1) :-1: max([1 (TrialIndex-MaxIncrementRewardNb)]) ).Outcome};
+    else LastOutcomes = {'EARLY'}; end
+%     NbContiguousLastHits = min([
+%     find(strcmp(LastOutcomes,'EARLY'),1,'first') , find(strcmp(LastOutcomes,'SNOOZE'),1,'first') ])-1; 
+    NbContiguousLastHits = find(strcmp(LastOutcomes,'EARLY'),1,'first')-1;   % Only Early are taken into account
+    if isempty(NbContiguousLastHits), NbContiguousLastHits = length( strcmp(LastOutcomes,'HIT') ); end
+    MinToC = str2double(get(get(exptparams.TrialObject,'TargetHandle'),'MinToC')); MaxToC = str2double(get(get(exptparams.TrialObject,'TargetHandle'),'MaxToC'));
+    RewardAmount = RewardAmount * (0.5 + (TarWindow(1)-MinToC)/(MaxToC-MinToC)) + IncrementRewardAmount*NbContiguousLastHits;
     PumpDuration = RewardAmount/globalparams.PumpMlPerSec.(PumpName);
-    pause(0.05); % PAUSE TO ALLOW FOR HEAD TURNING
+    % pause(0.05); % PAUSE TO ALLOW FOR HEAD TURNING
     PumpEvent = IOControlPump(HW,'Start',PumpDuration,PumpName);
     Events = AddEvent(Events, PumpEvent, TrialIndex);
     exptparams.Water = exptparams.Water+RewardAmount;
     % MAKE SURE PUMPS ARE OFF (BECOMES A PROBLEM WHEN TWO PUMP EVENTS TOO CLOSE)
-    pause(PumpDuration);
+    pause(PumpDuration/2);
+    % Turn LED ON
+    LightNames = IOMatchPosition2Light(HW,LEDposition);
+    [State,LightEvent] = IOLightSwitch(HW,1,0,[],[],[],LightNames{1});
+    Events = AddEvent([],LightEvent,TrialIndex);
+    
+    pause(PumpDuration/2);
     PumpEvent = IOControlPump(HW,'stop',0,PumpName);
     Events = AddEvent(Events, PumpEvent, TrialIndex);
     IOControlPump(HW,'stop',0,'Pump');
     
+    % Turn LED OFF
+    [State,LightEvent] = IOLightSwitch(HW,0,0,[],[],[],LightNames{1});
+    Events = AddEvent([],LightEvent,TrialIndex);
   case 'SNOOZE';  % STOP SOUND
     StopEvent = IOStopSound(HW);
     Events = AddEvent(Events, StopEvent, TrialIndex);
@@ -215,37 +247,39 @@ if ~strcmp(Outcome,'SNOOZE')
   end
 end
 
-function Events = LF_TimeOut(HW,TimeOut,Light,cTrial)
+function Events = LF_TimeOut(HW,TimeOut,Light,cTrial,Outcome)
+% 14/02/20-YB: adapted to give a visual feedback for EARLY (we don't want TimeOut for HIT)
 
-fprintf(['\t Timeout [ ',n2s(TimeOut),'s ]']);
+if strcmpi(Outcome,'Early'); 
+  Positions = {'right'}; fprintf(['\t Timeout [ ',n2s(TimeOut),'s ]']); 
+elseif strcmpi(Outcome,'Hit')
+  Positions = {'left'};
+end
 
 if Light % TURN LIGHT ON DURING TIMEOUT
-  Positions = {'left','right'};
-  for i=1:length(Positions)
-    LightNames = IOMatchPosition2Light(HW,Positions{i});
+    LightNames = IOMatchPosition2Light(HW,Positions);
     [State,LightEvent] = IOLightSwitch(HW,1,TimeOut,[],[],[],LightNames{1});
-    if i==1  Events = AddEvent([],LightEvent,cTrial);  else Events = AddEvent(Events,LightEvent,cTrial); end
-  end
+    Events = AddEvent([],LightEvent,cTrial);
 end
 
 % TIME OUT
 ThisTime = clock; StartTime = IOGetTimeStamp(HW);
-while etime(clock,ThisTime) < TimeOut   drawnow;  end
+while etime(clock,ThisTime) < TimeOut; drawnow;  end
 StopTime = IOGetTimeStamp(HW);
-TimeOutEvent = struct('Note',['TIMEOUT,',n2s(TimeOut,4),' seconds'],'StartTime',StartTime,'StopTime',StartTime + TimeOut);
+if strcmpi(Outcome,'Early'); TimeOutEvent = struct('Note',['TIMEOUT,',n2s(TimeOut,4),' seconds'],'StartTime',StartTime,'StopTime',StartTime + TimeOut); end
 
   % TURN LIGHT OFF AFTER TIMEOUT
 if Light
-  for i=1:length(Positions)
-    LightNames = IOMatchPosition2Light(HW,Positions{i});
+    LightNames = IOMatchPosition2Light(HW,Positions);
     [State,LightEvent] = IOLightSwitch(HW,0,[],[],[],[],LightNames{1});
-    Events(i).StopTime = LightEvent.StartTime;
-  end
+    Events.StopTime = LightEvent.StartTime;
 end
 
 % ADD TIME OUT EVENT
-if ~exist('Events','var')
-  Events = TimeOutEvent;
-else
-  Events = AddEvent(Events,TimeOutEvent,cTrial);
+if strcmpi(Outcome,'Early'); 
+  if ~exist('Events','var')
+    Events = TimeOutEvent;
+  else
+    Events = AddEvent(Events,TimeOutEvent,cTrial);
+  end
 end

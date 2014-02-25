@@ -1,4 +1,4 @@
-function o = ObjUpdate(o,IniSeed)
+function o = ObjUpdate(o)
 % Update the changes of a MultiStream object - benglitz 2010
 % Adapted to TextureMorphing - Yves 2013
 
@@ -10,19 +10,28 @@ for i=1:length(FieldNames)
       tmp = get(o,FieldNames{i});
       if ~isnumeric(tmp) tmp = eval(['[',tmp,']']); end
       Par.(FieldNames{i}) = tmp;
-    case 'popupmenu';  Par.(FieldNames{i}) = get(o,FieldNames{i}); 
+    case 'popupmenu';  
+      StrWithSpaces = get(o,FieldNames{i}); 
+      LastSpaceInd = find(StrWithSpaces==' ',1,'first');
+      if ~isempty(LastSpaceInd)
+        Par.(FieldNames{i}) = StrWithSpaces(1:(LastSpaceInd-1));
+        o = set(o,FieldNames{i},StrWithSpaces(1:(LastSpaceInd-1)));
+      else
+        Par.(FieldNames{i}) = StrWithSpaces;
+      end
     otherwise error('FieldType not implemented!');
   end
 end
 
 % Add fields to Par because not enough lines in the Baphy dialog box
-Par.FrequencyRange_LB = 200;
-Par.FrequencyRange_UB = 2500;
+Par.LRextraFrequencies = 0.7;   % Oct.; empty space on left and right sides of the frequency axis
+Par.FrequencyRange_LB = Par.FrequencyRange(1);
+Par.FrequencyRange_UB = Par.FrequencyRange(2);
 Par.ToneDuration = 0.03;
 Par.TonesPerOctave = 2;
 Par.FrozenPatternDuration = 0;
-Par.ToneInterval = 12;
-Par.XDistriInterval = 24;
+Par.ToneInterval = 12;            % For tone frequency in binned frequency axis. Defines STRF resolution.
+Par.XDistriInterval = 24;         % Denser, for plotting purposes, area calculation and so forth
 Par.MorphingDuration = 0;
 o = set(o,'AllTargetPositions',{'center'});   % for Bernhard script [PerformanceAnalysis.m]
 o = set(o,'CurrentTargetPositions',{'center'});
@@ -30,14 +39,15 @@ o = set(o,'MorphingDuration',Par.MorphingDuration);
 if strcmp(Par.Inverse_D0Dbis,'yes'); ReverseNb = 1; else ReverseNb = 0; end
 
 % SET FREQUENCY RANGE AND ITS MIDDLE POINT F0
+F0 = log2( Par.FrequencyRange_LB * 2^(log2(Par.FrequencyRange_UB/Par.FrequencyRange_LB)/2) ) ;  % center of the distribution
 ToneInterval = Par.ToneInterval;
 XDistriInterval = Par.XDistriInterval;
-LB = Par.FrequencyRange_LB;
-UB = Par.FrequencyRange_UB;
-F0 = log2( LB * 2^(log2(UB/LB)/2) ) ;
-OctaveNb = log2(UB/LB);
-FrequencySpace = LB* (2.^ (0:(1/ToneInterval):OctaveNb));
-XDistri = LB* (2.^ (0:(1/XDistriInterval):OctaveNb));
+LB = Par.FrequencyRange_LB*2^(-Par.LRextraFrequencies);   % Left side of the frequency axis
+UB = Par.FrequencyRange_UB*2^(Par.LRextraFrequencies);    % Right side of the frequency axis
+OctaveNb = log2(Par.FrequencyRange_UB/Par.FrequencyRange_LB);
+WholeAxis_OctaveNb = log2(UB/LB);
+FrequencySpace = LB* (2.^ (0:(1/ToneInterval):WholeAxis_OctaveNb));
+XDistri = LB* (2.^ (0:(1/XDistriInterval):WholeAxis_OctaveNb));
 Par.FrequencySpace = FrequencySpace;
 Par.XDistri = XDistri;
 % DIFFICULTY LEVELS
@@ -47,15 +57,16 @@ for ChangedD_Num = 1:ChangedD_Nb
 end
 Par.DifficultyLvlNb = DifficultyLvlNb;
 Par.F0 = F0;
+Par.OctaveNb = OctaveNb;
 o = set(o,'FrequencySpace',FrequencySpace);
 o = set(o,'XDistri',XDistri);
 o = set(o,'F0',F0);
-sF = get(o,'SamplingRate');
 
 % GENERATION OF A SEED FOR ToCs IF I AM NOT RELOADING A SOUND OBJECT
-if ~(exist('IniSeed','var')) || isempty(IniSeed)
-    IniSeed = round( rand(1,1)*100 );   % With RandStream('mrg32k3a'), it is important to work with large numbers, 
-                                        %because there is a heavy correlation between two seeds that belong to the same integer interval [n,n+1[
+if isempty(get(o,'IniSeed'))
+    IniSeed = round( rand(1,1)*100 );   % With RandStream('mrg32k3a'), it is important to work with large numbers,                                         %because there is a heavy correlation between two seeds that belong to the same integer interval [n,n+1[
+else
+    IniSeed = get(o,'IniSeed');
 end
 Par.IniSeed = IniSeed;
 o = set(o,'IniSeed',IniSeed);
@@ -113,6 +124,11 @@ for ChangedD_Num = 1:ChangedD_Nb
     ReverseByInd_temp = repmat(0:ReverseNb,[1 ConditionNbForEachD(ChangedD_Num)/(MorphingNbForThisCond*DifficultyLvlNbForThisCond*(ReverseNb+1))]);
     ReverseByInd_temp = sort(ReverseByInd_temp);
     ReverseByInd = [ ReverseByInd repmat(ReverseByInd_temp,[1 (MorphingNbForThisCond*DifficultyLvlNbForThisCond)]) ];
+end
+
+% WARNING
+if strcmp(Par.Inverse_D0Dbis,'yes') && Par.FrozenPatternsNb~=0
+    disp('************ You should not have Frozen pattern in Reverse Mode. ************')
 end
 
 for Index = 1:MaxIndex

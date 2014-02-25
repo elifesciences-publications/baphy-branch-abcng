@@ -16,7 +16,6 @@ if strcmpi(IODriver(HW),'NIDAQMX'),
       disp('stopping Test mode sound');
       stop(HW.AO);                % stop interfaces
   else
-    
     % Configure Triggers
     aoidx=find(strcmp({HW.Didx.Name},'TrigAO'));
     TriggerDIO=HW.Didx(aoidx).Task;
@@ -28,6 +27,8 @@ if strcmpi(IODriver(HW),'NIDAQMX'),
     niPutValue(HW.DIO(TriggerDIO),vstop);
     disp('stopping AO');
     niStop(HW.AO);
+    % play brief silence to force output voltage to zero and avoid click for next sound 
+    IOStartSound(HW,zeros(6,1));
   end
   if nargout>0,
     ev.Note='STIM,OFF';

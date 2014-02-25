@@ -29,3 +29,7 @@ Calibration.IIR = R.IIR80dB;
 Calibration.SR = R.SR;
 % Calibration delay is used to shift the stimulus according to the time due to calibration
 Calibration.Delay = R.ConvDelay;
+% The LoudnessMethod is the Method used for assessing loudness of a stimulus
+Calibration.Loudness.Method = R.Loudness.Method;
+% The Parameters struct contains the parameters of the loudness method
+Calibration.Loudness.Parameters = R.Loudness.Parameters;

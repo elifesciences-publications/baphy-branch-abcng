@@ -7,14 +7,13 @@ Stimulus = zeros(1,ceil(Duration*sF));
 ChordDuration = 0.03; % s    %Rabinowitsch or also Maria Cheit
 % Parameters
 ChordTimeSamples = linspace(0,ChordDuration,round(ChordDuration*sF));
-ChordNb = floor(Duration/ChordDuration);
+ChordNb = Duration/ChordDuration;    % should be integer because ToC is rounded in <waveform.m>
 AverageNbTonesChord = round(2*log(FrequencySpace(end)/FrequencySpace(1))/log(2));    % Average of 2 tones per octave (cf. Ahrens 2008)
 XPoisson = 0:(AverageNbTonesChord*2);                                                % Decrease to *2 because of saturation suspicion (cracks in the headphones)
 CumDistriPoisson = poisscdf(XPoisson,AverageNbTonesChord);
 if nargout>1; ToneMatrix=zeros(length(FrequencySpace),ChordNb);  end;
 
 N = round(3*AverageNbTonesChord*ChordNb);   % More than needed
-% SamplesToneFrequencies = slicesample(IniSeed,N,'pdf',Distribution,'thin',5,'burnin',1000);
 CumDistri = cumsum(Distribution(X));
 CumDistri = CumDistri/max(CumDistri);
 % Remove doublons in the CumDistri to allow interpolation
@@ -28,6 +27,8 @@ UniX = X(UniIndex);
 CumDistri = CumDistri(UniIndex);
 CumDistri(1) = 0;
 ToneFrequencies = interp1(CumDistri,UniX,Rgenerator.rand(1,N));
+TonePhases = Rgenerator.randi(360,[1 N])-1;   % Phase belongs to [0 359]
+% Tones are replaced in binned frequency axis (<FrequencySpace> binnned by <Par.ToneInterval>)
 [mimi,MinInd] = min( abs( repmat(FrequencySpace',1,size(ToneFrequencies,2))-repmat(ToneFrequencies,size(FrequencySpace,2),1) ) ,[], 1 );
 ToneFrequencies = FrequencySpace(MinInd');
 
@@ -47,9 +48,10 @@ for ChordNum = 1:ChordNb
     
     Chord = zeros(size(ChordTimeSamples));
     TrialTonesF = ToneFrequencies((PreviousRandomChordNum+1):(PreviousRandomChordNum+NbTonesChord));
+    TrialTonesPhase = TonePhases((PreviousRandomChordNum+1):(PreviousRandomChordNum+NbTonesChord));    
     PreviousRandomChordNum = PreviousRandomChordNum+NbTonesChord;
     for Fnum = 1:NbTonesChord
-        Tone = SingleTone(TrialTonesF(Fnum),Lvl,sF,ChordDuration);
+        Tone = SingleTone(TrialTonesF(Fnum),Lvl,sF,ChordDuration,TrialTonesPhase(Fnum));
         Chord = Chord + Tone;
     end
     Stimulus((ChordNum-1)*length(ChordTimeSamples)+1 : ChordNum*length(ChordTimeSamples)) = Chord;
@@ -57,31 +59,9 @@ for ChordNum = 1:ChordNb
     if nargout>1         % Matrix of tones for simulations  
         IndToneFreq = [];
         for ToneNum = 1:NbTonesChord
-            IndToneFreq(ToneNum) = find(TrialTonesF(ToneNum)==FrequencySpace);
+            IndToneFreq = find(TrialTonesF(ToneNum)==FrequencySpace);
+            ToneMatrix(IndToneFreq,ChordNum) = ToneMatrix(IndToneFreq,ChordNum)+1;     % Could be several tones in the same frequency bin
         end
-        ToneMatrix(IndToneFreq,ChordNum) = 1;
     end
 end
 
-
-% NbTonesChord = 34;
-% ToneFrequencies = F1;
-% OctaveStep = 1/6;
-% for FreqNum = 1:(NbTonesChord-1)
-%     ToneFrequencies = [ToneFrequencies ToneFrequencies(end)*2^(OctaveStep)];
-% end
-% % fprintf('Bornes bandwith: %d - %d kHz\n',ToneFrequencies(1)/1000,ToneFrequencies(end)/1000)
-% 
-% N = NbTonesChord*ChordNb;
-% AllLvlDiff = slicesample(IniSeed,N,'pdf',Distribution,'thin',5,'burnin',1000);
-% AllLvlDiff = AllLvlDiff-IniSeed;
-% % AllLvlDiff = randsample(length(Distribution),NbTonesChord*ChordNb,true,Distribution);
-% for ChordNum = 1:ChordNb
-%     LvlDiff = AllLvlDiff((ChordNum-1)*NbTonesChord+1:ChordNum*NbTonesChord);
-%     Chord = zeros(size(ChordTimeSamples));
-%     for Fnum = 1:NbTonesChord
-%         Tone = SingleTone(ToneFrequencies(Fnum),LvlDiff(Fnum),sF,ChordDuration);
-%         Chord = Chord + Tone;
-%     end
-%     Stimulus((ChordNum-1)*length(ChordTimeSamples)+1 : ChordNum*length(ChordTimeSamples)) = Chord;
-% end

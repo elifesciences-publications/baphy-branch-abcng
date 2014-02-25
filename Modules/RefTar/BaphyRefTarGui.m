@@ -246,6 +246,13 @@ for cnt1 = 1:length(fields)/3   % length(fields) should be always a multiple of 
         % if its a popupmenu, find the 'value' property:
         tmp1 = strfind(field{3},'|');
         tmp2 = strfind(field{3},get(tempObject, field{1}));
+        if length(tmp2)>1  % 2014/01-YB: there are several string values that share common strings
+          if any( ismember( ( tmp2+length(get(tempObject, field{1})) ) , tmp1 ) )
+            tmp2 = tmp2( ismember( ( tmp2+length(get(tempObject, field{1})) ) , tmp1 ) );
+          else % it is the last value
+            tmp2 = tmp2(end);
+          end
+        end
         popvalue = find(tmp1>tmp2,1);
         if isempty(popvalue), popvalue = length(tmp1)+1;end
         default = field{3};

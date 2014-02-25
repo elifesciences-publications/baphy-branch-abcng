@@ -22,7 +22,7 @@ Names = get(o,'Names');
 timesamples = (1 : Duration*SamplingRate) / SamplingRate;
 w=zeros(size(timesamples));
 % Now, put it in the silence:
-w = .001+[zeros(PreStimSilence*SamplingRate,1) ; w(:) ;zeros(PostStimSilence*SamplingRate,1)];
+w = [zeros(PreStimSilence*SamplingRate,1) ; w(:) ;zeros(PostStimSilence*SamplingRate,1)];
 % and generate the event structure:
 event = struct('Note',['PreStimSilence , ' Names{:}],...
     'StartTime',0,'StopTime',PreStimSilence,'Trial',[]);

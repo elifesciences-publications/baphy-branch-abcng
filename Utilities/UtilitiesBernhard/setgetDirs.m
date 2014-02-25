@@ -101,7 +101,7 @@ global Dirs;
 if ~isempty(Dirs) & isfield(Dirs,'Root') Root = Dirs.Root; 
 else 
   if isunix cd('~/'); Root = pwd;
-  elseif strmatch(computer,'PCWIN') 
+  elseif strmatch(architecture,'PCWIN') 
     Name = getenv('computername');
     switch Name
       case 'PLETHORA'; Root = 'D:\';

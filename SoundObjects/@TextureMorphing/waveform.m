@@ -7,6 +7,7 @@ function [ w , ev , O , D0 , ChangeD] = waveform(O,Index,IsFef,Mode,Global_Trial
 %at the scale of the whole session
 
 % GET PARAMETERS
+ChordDuration = 0.03; % s    %Rabinowitsch or also Maria Cheit
 sF = get(O,'SamplingRate');
 PreStimSilence = get(O,'PreStimSilence');
 PostStimSilence = get(O,'PostStimSilence');
@@ -18,7 +19,10 @@ if FrozenPatternsNb == 0; Mode = 'NoFrozen'; end
 StimulusBisDuration = Par.StimulusBisDuration;
 FrequencySpace = Par.FrequencySpace;
 XDistri = Par.XDistri;
-F0 = Par.F0;
+FrequencyRange_LB = Par.FrequencyRange_LB;
+FrequencyRange_UB = Par.FrequencyRange_UB;
+FO = Par.F0;
+OctaveNb = Par.OctaveNb;
 FrozenPatternDuration = Par.FrozenPatternDuration;
 AfterChangeSoundDuration = StimulusBisDuration;
 
@@ -33,6 +37,7 @@ RToC = RandStream('mrg32k3a','Seed',IniSeed*Global_TrialNb);   % mcg16807 is fuc
 lambda = 0.15; 
 ToC = PoissonProcessPsychophysics(lambda,Par.MaxToC-Par.MinToC,1,RToC);
 ToC = ToC + Par.MinToC;
+ToC = round(ToC/ChordDuration)*ChordDuration;
 
 % GET PARAMETERS OF CURRENT Index
 tmp = get(O,'DistributionTypeByInd'); ChangedD_Num = tmp(Index);
@@ -50,9 +55,9 @@ Dtype = getfield(Par,['D' num2str(ChangedD_Num) 'shape']);
 DifficultyLvl = getfield(Par,['DifficultyLvl_D' num2str(ChangedD_Num)]);
 DiffLvl = DifficultyLvl(DifficultyNum);       % given in %
     
-D0param = [F0 Par.Bandwidth Par.IniSeed Global_TrialNb];
+D0param = [FO OctaveNb Par.IniSeed Global_TrialNb];
 Dparam = [D0param(1:end-2) Bins2Change{ChangedD_Num}(MorphingNum,:)];    % We don't need a Seed to modify the original distribution
-[D0,ChangeD] = BuildMorphing(D0type,Dtype,D0param,Dparam,XDistri,MorphingNum,DiffLvl,PlotDistributions,F0,sF,FrequencySpace);
+[D0,ChangeD] = BuildMorphing(D0type,Dtype,D0param,Dparam,XDistri,MorphingNum,DiffLvl,PlotDistributions,sF,FrequencySpace);
 
 % GENERATE SEQUENCES OF FROZEN PATTERNS // LOAD THE APPROPRIATE ONE
 if not( strcmp(Mode,'NoFrozen') )
@@ -70,17 +75,15 @@ if not( strcmp(Mode,'NoFrozen') )
     end
     load([ FrozenPatternsAdress filesep 'FrozenPatterns.mat' ]);
     FrozenPattern = FrozenPatterns{FrozenPatternNum};
+else
+    FrozenPatternNum = 0;
 end
 
-if Reverse
+if Reverse            % Rem.: 'NoFrozen' is compulsory when 'Inverse_D0Dbis'==1
     Stimulus0Duration = StimulusBisDuration;
-    StimulusBisDuration = ToC + FrozenPatternDuration;
-    FrozenPatternNum = 0;
-elseif not(Reverse) && not( strcmp(Mode,'NoFrozen') )
-    Stimulus0Duration = ToC;
-elseif not(Reverse) && strcmp(Mode,'NoFrozen')
-    Stimulus0Duration = ToC + FrozenPatternDuration;
-    FrozenPatternNum = 0;
+    StimulusBisDuration = ToC;
+elseif not(Reverse)
+    Stimulus0Duration = ToC; 
 end
 
 % BUILD D0 STIMULUS ('REFERENCE' located in the TARGET)
@@ -93,28 +96,39 @@ Stimulus0 = AssemblyTones(FrequencySpace,D0,XDistri,Stimulus0Duration,sF,PlotDis
 RtonesD = RandStream('mrg32k3a','Seed',Global_TrialNb*Index*2);
 StimulusBis = AssemblyTones(FrequencySpace,ChangeD,XDistri,StimulusBisDuration,sF,PlotDistributions,[],RtonesD);
 
-% CONCATENATE THE WHOLE STIMULUS
-if not(Reverse) && not( strcmp(Mode,'NoFrozen') )
-    w = [FrozenPattern' Stimulus0 StimulusBis]; StimulusOrderStr = 'S0Sbis';
-elseif Reverse
-    w = [StimulusBis Stimulus0]; StimulusOrderStr = 'SbisS0';
+% PREPARE THE 2 Parts OF THE WHOLE STIMULUS
+if Reverse
+    FirstPart = StimulusBis; SecondPart = Stimulus0;
+    StimulusOrderStr = 'SbisS0';
+elseif not(Reverse) && not( strcmp(Mode,'NoFrozen') )
+    FirstPart = [ FrozenPattern' Stimulus0 ]; SecondPart = StimulusBis;
+    StimulusOrderStr = 'S0Sbis';
 elseif not(Reverse) && strcmp(Mode,'NoFrozen')
-    w = [Stimulus0 StimulusBis]; StimulusOrderStr = 'S0Sbis';
+    FirstPart = Stimulus0; SecondPart = StimulusBis;
+    StimulusOrderStr = 'S0Sbis';
 end
 
-% NORMALIZE IT TO +/-5V
-AverageNbTonesChord = round(2*log(FrequencySpace(end)/FrequencySpace(1))/log(2));    % Average of 2 tones per octave (cf. Ahrens 2008) / see AssemblyTones.m
-w = w*5/AverageNbTonesChord;
-w = w';    % column shape
+% ATTENUATE THE FIRST PART OF THE STIMULUS
+w = [FirstPart' ; SecondPart'];
+if Par.AttenuationD0~=0
+  global LoudnessAdjusted; LoudnessAdjusted  = 1;  
+  NormFactor = maxLocalStd(w,sF,floor(length(w)/sF));
+  RatioToDesireddB = 10^(Par.AttenuationD0/20);   % dB to ratio in SPL
+  FirstPart = FirstPart*RatioToDesireddB;
+  w = [FirstPart' ; SecondPart']/NormFactor;
+end
 w = [zeros((PreStimSilence*sF),size(w,2)) ; w ; zeros((PostStimSilence*sF),size(w,2))];
 
 % ROVING LOUDNESS IN CASE OF PSYCHOPHYSICS
 if strcmp('yes',get(O,'RovingLoudness'))
-    RovingLoudnessSeed = IniSeed*Global_TrialNb*Index;
-    RgeneRovingLoudness = RandStream('mrg32k3a','Seed',RovingLoudnessSeed);
-    PickedUpLoudness = -(RgeneRovingLoudness.randi(11) - 1);  % Roving between -20 and +0dB
-    RatioToDesireddB = 10^(PickedUpLoudness/10);   % dB to ratio in SPL
-    w = w*RatioToDesireddB;
+  global LoudnessAdjusted; LoudnessAdjusted  = 1;
+  NormFactor = maxLocalStd(w,sF,floor(length(w)/sF));
+  
+  RovingLoudnessSeed = IniSeed*Global_TrialNb*Index;
+  RgeneRovingLoudness = RandStream('mrg32k3a','Seed',RovingLoudnessSeed);
+  PickedUpLoudness = -(RgeneRovingLoudness.randi(21) - 1);  % Roving between -20 and +0dB
+  RatioToDesireddB = 10^(PickedUpLoudness/20);   % dB to ratio in SPL
+  w = w*RatioToDesireddB/NormFactor;
 end
 
 % ADD EVENTS
@@ -122,7 +136,7 @@ ev=[]; ev = AddEvent(ev,[''],[],0,PreStimSilence);
 if exist('Mode','var') && strcmp(Mode,'Simulation'); return; end
 
 ev = AddEvent(ev,['STIM , ' StimulusOrderStr ' ' num2str(Index),' - ',num2str(Global_TrialNb) ' - ' num2str(ChangedD_Num) ' - ' num2str(MorphingNum) ' - ' num2str(DifficultyNum) ' - ' num2str(FrozenPatternNum) ' - ' num2str(ToC)],...
-  [ ],ev(end).StopTime,ev(end).StopTime+FrozenPatternDuration+ToC);
+  [ ],ev(end).StopTime,ev(end).StopTime+length(FirstPart)/sF);
 
 [a,b,c]  = ParseStimEvent(ev(2),0);
 ev(1).Note = ['PreStimSilence ,' b ',' c];
