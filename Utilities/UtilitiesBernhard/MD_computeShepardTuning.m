@@ -18,7 +18,7 @@ if isempty(GPROPS) | ~strcmp(GPROPS.Identifier,P.Identifier)
   I = getRecInfo('Identifier',P.Identifier,'Quick',2);
   StimTags = I.RefStimTags;
   RefHandle = I.exptparams.TrialObject.ReferenceHandle;
-  Props = HF_computeShepardProps(RefHandle,StimTags);
+  Props = HF_computeShepardProps('RefHandle',RefHandle,'StimTags',StimTags);
   GPROPS.Props = Props; GPROPS.Identifier = P.Identifier; GPROPS.I=I;
 else
   Props = GPROPS.Props; I=GPROPS.I;
@@ -55,13 +55,13 @@ for iT=1:NTrials % LOOP OVER TRIALS
   cPitches = Props(cIndex).Pitches;
   for iP=1:length(cPitches) % LOOP OVER POSITIONS IN THE BIAS
     cStart = Props(cIndex).ToneStarts(iP);
-    cStop = cStart + Props(cIndex).ToneDuration;
+    cStop = cStart + Props(cIndex).ToneDurations(iP);
     cInd = find(cPitches(iP)==AllPitches);
     cResponse =sum((SpiketimesByTrial{iT} >= cStart).*(SpiketimesByTrial{iT} < cStop))/(cStop-cStart);
     Responses{cInd}(end+1) = cResponse; 
     for iW=1:3
-      cStart = Props(cIndex).ToneStarts(iP) + (iW-1)*Props(cIndex).ToneDuration/2;
-      cStop = cStart + Props(cIndex).ToneDuration/2;
+      cStart = Props(cIndex).ToneStarts(iP) + (iW-1)*Props(cIndex).ToneDurations(iP)/2;
+      cStop = cStart + Props(cIndex).ToneDurations(iP)/2;
       cResponse =sum((SpiketimesByTrial{iT} >= cStart).*(SpiketimesByTrial{iT} < cStop))/(cStop-cStart);
       ResponsesWindow{cInd,iW}(end+1) = cResponse;
     end

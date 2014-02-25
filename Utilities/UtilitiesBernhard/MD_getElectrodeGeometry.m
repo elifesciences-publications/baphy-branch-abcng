@@ -45,10 +45,15 @@ LoadMFile([BasePath,MFile.name]);
 if isfield(globalparams,'ElectrodesByChannel') % RECORDED WITH MANTA
   ElectrodesByChannel = globalparams.ElectrodesByChannel;
 else % RECORDED WITH OTHER SYSTEM
-  % ASSUME CHANNELS ARRANGE IN SQUARE
   NElectrodes = globalparams.NumberOfElectrodes;
-  ArrayName = 'single_clockwise';
-  SystemName = 'AlphaOmega';
+  % ASSUME CHANNELS ARRANGE IN SQUARE
+  if globalparams.NumberOfElectrodes>8 % MANTA
+    ArrayName = 'danube_a1_left';
+    SystemName = 'plexon';
+  else
+    ArrayName = 'single_clockwise';
+    SystemName = 'AlphaOmega';
+  end
   ElectrodesByChannel = LF_buildElectrodesByChannel(ArrayName,SystemName,NElectrodes);
 end
 

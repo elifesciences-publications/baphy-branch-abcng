@@ -53,11 +53,7 @@ OLDREF = USECOMMONREFERENCE; USECOMMONREFERENCE = 0;
 
 %% LOAD STIMULUS MFILE
 P.StimStart = I.exptparams.TrialObject.ReferenceHandle.PreStimSilence;
-if isfield(I.exptparams.TrialObject.ReferenceHandle,'Duration')
-  P.StimStop = P.StimStart + I.exptparams.TrialObject.ReferenceHandle.Duration;
-else
-  P.StimStop = NaN;
-end
+P.StimStop = P.StimStart + I.exptparams.TrialObject.ReferenceHandle.Duration;
 P.TrialStop = P.StimStop + I.exptparams.TrialObject.ReferenceHandle.PostStimSilence;
 
 %% LOAD DATA
@@ -80,8 +76,6 @@ for i=1:ceil(length(P.Trials)/20)
   end
 end
 R.Info = tmp.Info;
-if isnan(P.StimStop) P.StimStop = max(diff(R.LTrialidx))/P.SR; end
-if isnan(P.TrialStop) P.TrialStop = max(diff(R.LTrialidx))/P.SR; end
 
 %% PREPARE LFP
 LFP = NaN*zeros(max(diff(R.LTrialidx)),length(P.Electrodes),length(R.LTrialidx)-1);
@@ -106,7 +100,7 @@ end
 
 %% PLOT CSD & LFP
 figure(P.FIG); clf; set(P.FIG,'Position',[500,620,400,370],'NumberTitle','off',...
-  'Name',[I.IdentifierFull,' - Tip Depth :  ',n2s(TipDepth(1)),'um']);
+  'Name',[I.IdentifierFull,' - Tip Depth :  ',n2s(TipDepth),'um']);
 DC = HF_axesDivide(1,1+P.LFP,[0.15,0.1,0.8,0.8],[],0.5);
 
 AH = axes('Pos',DC{1});
