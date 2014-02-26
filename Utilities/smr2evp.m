@@ -60,7 +60,6 @@ data=cell(datachannelcount,1);
 dataFs=zeros(datachannelcount,1);
 
 hpdur=30;
-keyboard
 for ddidx=1:length(datachannels),
    fprintf('Loading data channel %d\n',ddidx);
    [data{ddidx},datahdr]=SONGetChannel(fid,datachannels(ddidx));
@@ -98,6 +97,7 @@ for ddidx=1:length(auxchannels),
 end
 
 fclose(fid);
+keyboard
 
 %% Output to evp files
 

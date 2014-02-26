@@ -47,7 +47,7 @@ function [di,rawid,dayN,s2]=di_plot(animal,runclass,stat2,training_flag);
     rawid=cat(1,didata.masterid);
     di=cat(1,didata.DI);
     s2=cat(1,didata.stat2);
-    s2(s2<0)=0;
+    %s2(s2<0)=0;
     
     dayN=zeros(size(di));
     masterid=cat(1,didata.masterid);

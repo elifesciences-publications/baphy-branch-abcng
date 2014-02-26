@@ -41,7 +41,7 @@ end
 
 parmfile=[cellfiledata(fidx).stimpath cellfiledata(fidx).stimfile];
 spikefile=[cellfiledata(fidx).path cellfiledata(fidx).respfile];
-options.rasterfs=100;
+options.rasterfs=500;
 options.channel=cellfiledata(1).channum;
 options.unit=cellfiledata(1).unit;
 options.resp_shift=0.0;
@@ -392,7 +392,8 @@ for ii=1:length(params.TargetIdx),
     
     figure;
     subplot(3,2,1);
-    tt=((1:size(params.r_avg,1))-6+0.5)./options.rasterfs;
+    boundbins=round(options.rasterfs.*0.05);
+    tt=((1:size(params.r_avg,1))-boundbins-0.5)./options.rasterfs;
     
     plot(tt,mr2,'LineWidth',2,'Color',[0.6 0.6 1]);
     hold on
@@ -412,16 +413,22 @@ for ii=1:length(params.TargetIdx),
     
     subplot(3,2,2);
     raster=cat(2,params.r_raster{targetidx,1:4});
-    imagesc(tt,1:size(raster,2),raster');
+    raster=cat(2,params.r_raster{targetidx,1:3});
+    rraster=raster'-nanmin(raster(:));
+    maxrast=nanmin(rraster(rraster>0));
+    rraster(rraster>maxrast)=maxrast;
+    rraster=rraster./nanmax(rraster(:));
+    rraster=1-repmat(rraster,[1 1 3]);
+    imagesc(tt,1:size(raster,2),rraster);
     hold on
     aa=axis;
     cc=0;
-    for jj=1:3,
+    for jj=1:2,
         cc=cc+size(params.r_raster{targetidx,jj},2);
-        plot(aa(1:2),[cc+0.5 cc+0.5],'g--');
+        plot(aa(1:2),[cc+0.5 cc+0.5],'k--');
     end
-    plot([0 0],aa(3:4),'g--');
-    plot([0 0]+params.SampleDur,aa(3:4),'g--');
+    plot([0 0],aa(3:4),'k--');
+    plot([0 0]+params.SampleDur,aa(3:4),'k--');
     hold off
     %colormap(1-gray);
     title(sprintf('raster - targetid: %d',targetidx),'Interpreter','none');
@@ -449,8 +456,8 @@ for ii=1:length(params.TargetIdx),
         
         ff=min(find(ThisTarget==targetidx &...
                     squeeze(BigSequenceMatrix(1,2,:))==-1));
-        startbin=params.SampleStarts(TargetStartBin(ff));
-        stopbin=params.SampleStops(TargetStartBin(ff));
+        startbin=round(params.SampleStartTimes(TargetStartBin(ff)).*100);
+        stopbin=round((params.SampleStartTimes(TargetStartBin(ff))+params.SampleDur).*100);
         imagesc((1:(stopbin-startbin+1)).*10,1:size(s,1),...
                 log2(s(:,startbin:stopbin,ff,1)));
         axis xy

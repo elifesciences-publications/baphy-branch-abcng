@@ -26,6 +26,10 @@ parmfiles={'Mouse167_2013_10_24_TOR_5','Mous167_2013_10_24_TOR_6'};
 smrfile=[smrpath '10_24_13_Mouse167_whole_cell2_5TORCs_all_TORCs_silence_Rm_excellent.smr'];
 evpfiles=smr2evp(parmfiles,smrfile,triggerchannel,datachannels,auxchannels);
 
+parmfiles={'Mouse160_2013_11_25_TOR_1'};
+smrfile=[smrpath 'Mouse160_11_25/11_25_13_Mouse160_whole_cell_long_low_Rs_silence_torcset_steps.smr'];
+evpfiles=smr2evp(parmfiles,smrfile,triggerchannel,datachannels,auxchannels);
+
 
 
 return
@@ -33,13 +37,13 @@ return
 siteids={'mcg002a','mcg003a','mcg004a','mcg005a','mcg006a',...
          'mcg007a','mcg008a','mcg009a','mcg010a','mcg011a',...
          'mcg012a','mcg013a','mcg014a','mcg015a','mcg016a',...
-        };
+         'mcg017a'};
 sds={'mcg2013_04_29','mcg2013_04_30','mcg2013_05_01','mcg2013_05_03',...
      'mcg2013_05_06','mcg2013_05_07','mcg2013_06_04','mcg2013_06_05',...
-     'mcg2013_06_07','mcg2013_10_23','mcg2013_10_24'...
+     'mcg2013_06_07','mcg2013_10_23','mcg2013_10_24','mcg2013_11_25',...
     };
 
-jj=11;
+jj=12;
 siteid=siteids{jj};
 sd=sds{jj};
 pth=['/auto/data/daq/McGinley/' sd '/']

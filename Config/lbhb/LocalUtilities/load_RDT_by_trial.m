@@ -161,7 +161,8 @@ function [r,params]=load_RDT_by_trial(parmfile,spikefile,options)
             end
         end
         
-        r_avg=zeros(binsperstim+10,params.SampleCount,5);
+        boundbins=round(options.rasterfs.*0.05);
+        r_avg=zeros(binsperstim+boundbins*2,params.SampleCount,5);
         r_count=zeros(params.SampleCount,5);
         r_raster=cell(params.SampleCount,5);
         r_second=cell(params.SampleCount,5);
@@ -172,12 +173,12 @@ function [r,params]=load_RDT_by_trial(parmfile,spikefile,options)
                 ff=find(params.BigSequenceMatrix(:,1,trialidx)==sidx |...
                     params.BigSequenceMatrix(:,2,trialidx)==sidx);
                 for ii=ff(:)',
-                    rr=(params.SampleStarts(ii)-5):...
-                       (params.SampleStops(ii)+5);
+                    rr=(params.SampleStarts(ii)-boundbins):...
+                       (params.SampleStops(ii)+boundbins);
                     repSlot=0;
                     if ii==1 || ...
                           (params.TargetStartBin(trialidx)>0 && ...
-                           ii>params.TargetStartBin(trialidx)+5),
+                           ii>params.TargetStartBin(trialidx)+3),
                         % skip first sample of each trial and
                         % repeated targets after #3
                         cond=0;

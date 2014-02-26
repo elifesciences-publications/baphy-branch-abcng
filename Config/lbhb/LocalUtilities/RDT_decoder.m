@@ -1,4 +1,4 @@
-function dp=RDT_decoder(cellid,active,singleunit);
+function [dp,ravg,trialcat]=RDT_decoder(cellid,active,singleunit);
 
 % go to cell db to find active and passive data for this cell
 if ~exist('active','var'),
@@ -132,6 +132,13 @@ for tc=1:4,
     ee=std(ravg(:,ff),0,2);%./sqrt(length(ff));
     dp(tc)=diff(mm)./sqrt(mean(ee.^2));
 end
+tmtar=mtar;
+tmtar=mtar-thresh;
+noiseperiod=tmtar(1:RepDur*3,:);
+tmtar=tmtar./std(noiseperiod(:));
+ravg=cat(1,max(tmtar(1:RepDur*3,:)),max(tmtar(RepDur.*3+1:end,:)));
+
+return
 
 figure;
 subplot(2,2,1);
@@ -140,7 +147,8 @@ hthresh=thresh+std(mtar(:));
 tmtar(tmtar>hthresh)=hthresh;
 lthresh=thresh-std(mtar(:));
 tmtar(tmtar<lthresh)=lthresh;
-tmtar=(tmtar-lthresh)./(hthresh-lthresh);
+tmtar=(tmtar-lthresh)./(hthresh-lthresh)-0.5;
+
 
 imagesc(tt,1:size(mtar,2),tmtar(:,catidx)');
 hold on,
@@ -158,12 +166,14 @@ else
     siteid=strsep(cellid,'-');
     title(sprintf('site: %s - %s',siteid{1}, activestr));
 end
+ylabel('olap2 - solo2 - olap1 - solo1');
 
-subplot(2,2,2);
-imagesc(p');
-hold on
-plot(TarStartTime,1:TrialCount,'rx');
-hold off
+ravgmax=max(ravg(:));
+for tc=1:4,
+    subplot(8,2,tc*2);
+    ff=find(trialcat==tc);
+    hist(ravg(:,ff)',linspace(-0.5,0.5,10));
+end
 
 subplot(2,2,3);
 plot(tt(:),resprate);
@@ -175,66 +185,11 @@ plot(mean(aa(1:2)).*[1 1],aa(3:4),'k--');
 hold off
 ylabel('response rate');
 
-legend('tar1solo','tar1olap','tar2solo','tar2olap');
+legend('solo1','olap1','2solo2','olap2');
 
 subplot(2,2,4);
 bar(dp);
-xlabel('tar1solo - tar1olap - tar2solo -tar2olap');
+xlabel('olap2 - solo2 - olap1 - solo1');
 ylabel('D prime');
 %plot(tt(:),resprate);
 %legend('tar1solo','tar1olap','tar2solo','tar2olap');
-
-return
-
-if 0,
-    cellids={...
-        'oys022b-a1',... % 4
-        'oys022c-a1',... % 2
-        'oys023a-a1',... % 3
-        'oys024c-a1',... % 3
-        'oys025b-a1',... % 3
-        'oys027b-c1',... % 2
-        'oys027c-c1',... % 2
-        'oys029a-a1',... % 2
-        'oys029b-a1',... % 1
-        'oys029c-c1',... % 2
-        'oys030a-a1',... % 2
-        'oys030b-a1',... % 2
-        'oys031b-a1',... % 2
-        'oys031c-b1',... % 1
-        'oys032a-a1',... % 1
-        'oys032b-a1',... % 1
-        'oys033a-a1',... % 3
-        'oys033b-a1',... % 4
-        'oys033c-a1',... % 3
-        'oys034b-a1',... % 3
-        'oys034c-a1',... % 3
-        'oys034d-a1',... % 2
-    }
-    close all
-    
-    dpsum=zeros(4,length(cellids),2);
-    for ii=1:length(cellids),
-        for active=0:1,
-            dpsum(:,ii,active+1)=RDT_decoder(cellids{ii},active);
-        end
-    end
-    
-    ff=find(~isnan(dpsum(1,:,1)));
-    dpsolo=cat(1,squeeze(dpsum(1,ff,:)),squeeze(dpsum(3,ff,:)));
-    dpolap=cat(1,squeeze(dpsum(2,ff,:)),squeeze(dpsum(4,ff,:)));
-    figure;
-    subplot(2,1,1);
-    plot(dpsolo(:,1),dpsolo(:,2),'.');
-    hold on
-    plot([0 1],[0 1],'k--');
-    axis square equal
-    
-    subplot(2,1,2);
-    plot(dpolap(:,1),dpolap(:,2),'.');
-    hold on
-    plot([0 1],[0 1],'k--');
-    axis square equal
-    
-     
-end
