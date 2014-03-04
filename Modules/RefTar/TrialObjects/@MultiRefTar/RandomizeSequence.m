@@ -99,7 +99,7 @@ end
 TargetCount=50;
 TarIdx=[];
 for ii=1:length(TargetIdxFreq),
-  TarIdx=cat(2,TarIdx,ones(1,TargetCount.*TargetIdxFreq(ii)).*ii);
+  TarIdx=cat(2,TarIdx,ones(1,round(TargetCount.*TargetIdxFreq(ii))).*ii);
 end
 TarIdxSet=par.TarIdxSet;
 
@@ -107,7 +107,7 @@ TarIdxSet=par.TarIdxSet;
 CatchCount=max(50,ReferenceCount);
 CatchIdx=[];
 for ii=1:length(CatchIdxFreq),
-    CatchIdx=cat(2,CatchIdx,ones(1,CatchCount.*CatchIdxFreq(ii)).*ii);
+    CatchIdx=cat(2,CatchIdx,ones(1,round(CatchCount.*CatchIdxFreq(ii))).*ii);
 end
 CatchIdxSet=par.CatchIdxSet;
 bCatchTrial=zeros(CatchCount,1);

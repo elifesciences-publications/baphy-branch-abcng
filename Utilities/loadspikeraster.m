@@ -515,9 +515,9 @@ r=nan*zeros(1,1,referencecount);
 
 trialcount=max(starttrials);
 
-[hittime,hittrials]=evtimes(exptevents,'OUTCOME,MATCH');
+[~,hittrials]=evtimes(exptevents,'OUTCOME,MATCH');
 if isempty(hittrials),
-    [hittime,hittrials]=evtimes(exptevents,'BEHAVIOR,PUMPON*');
+    [~,hittrials]=evtimes(exptevents,'BEHAVIOR,PUMPON*');
 end
 
 if isfield(options,'trialfrac'),
@@ -531,13 +531,15 @@ if isfield(options,'trialfrac'),
    end
    fprintf('trial frac=%.2f, keeping %d/%d trials\n',...
            td,trialrange(end),trialcount);
+elseif isfield(options,'trialrange') && ~includeincorrect && ~isempty(hittrials),
+   trialrange=options.trialrange(ismember(options.trialrange,hittrials));
 elseif isfield(options,'trialrange'),
    trialrange=options.trialrange;
-elseif ~includeincorrect && length(hittrials)>0,
+elseif ~includeincorrect && ~isempty(hittrials),
    %disp('including only correct trials.');
    trialrange=hittrials(:)';
-
-elseif length(hittrials)>0,
+   
+elseif ~isempty(hittrials),
    lasttrial=trialcount; % hittrials(round(length(hittrials).*0.85));
    if lasttrial<60,
       lasttrial=min(60,trialcount);
@@ -651,8 +653,8 @@ end
 
 trialset=zeros(1,referencecount);
 for trialidx=trialrange,
-    starttime=starttimes(find(starttrials==trialidx));
-    stoptime=stoptimes(find(stoptrials==trialidx));
+    starttime=starttimes(starttrials==trialidx);
+    stoptime=stoptimes(stoptrials==trialidx);
     expectedspikebins=(stoptime-starttime)*spikefs;
     
     if (size(rawSpikes,1)>0),
@@ -742,12 +744,12 @@ for trialidx=trialrange,
 end
 
 extraidx=length(spikeinfop.sortextras{channel}.StimTagNames);
-if (length(tag_masks)==0 || length(tag_masks{1})<8 || ...
+if (isempty(tag_masks) || length(tag_masks{1})<8 || ...
     ~strcmp(tag_masks{1}(1:8),'SPECIAL-')) && ...
-       (length(tag_masks)==0 || length(tag_masks{1})<6 || ...
-        ~strcmp(upper(tag_masks{1}((end-5):end)),'TARGET')) && ...
-       (length(tag_masks)==0 || length(tag_masks{1})<4 || ...
-        ~strcmp(upper(tag_masks{1}((end-3):end)),'TARG')) && ...
+       (isempty(tag_masks) || length(tag_masks{1})<6 || ...
+        ~strcmpi(tag_masks{1}((end-5):end),'TARGET')) && ...
+       (isempty(tag_masks) || length(tag_masks{1})<4 || ...
+        ~strcmpi(tag_masks{1}((end-3):end),'TARG')) && ...
        isfield(spikeinfop,'sortextras') && ...
        isempty(strfind(spikeinfop.fname,'_FTC')) && ...
        isempty(strfind(spikeinfop.fname,'_CCH')) && ...

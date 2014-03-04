@@ -126,8 +126,10 @@ NonUserDefFields=setdiff(fieldnames(exptparams.TrialObject),...
                          {'ReferenceClass','ReferenceHandle','TargetClass','TargetHandle',...
                     'descriptor','RunClass','UserDefinableFields'});
 for ii=1:length(NonUserDefFields),
-    TrialObject=set(TrialObject,NonUserDefFields{ii},...
-                                exptparams.TrialObject.(NonUserDefFields{ii}));
+    if isfield(TrialObject,NonUserDefFields{ii}),
+        TrialObject=set(TrialObject,NonUserDefFields{ii},...
+                        exptparams.TrialObject.(NonUserDefFields{ii}));
+    end
 end
 dstr='';
 
@@ -274,17 +276,19 @@ for trialidx=1:TrialCount,
     
     if strcmpi(filtfmt,'none') || strcmpi(filtfmt,'wav') ||...
             strcmpi(filtfmt,'envelope'),
-        tstim=[];
-        for ww=1:size(w,2),
-            tstim=cat(2,tstim,resample(w(:,ww),fsout,...
-                exptparams.TrialObject.SamplingRate));
+        if ~strcmpi(filtfmt,'envelope'),
+            % envelope has already been downsampled
+            tstim=[];
+            for ww=1:size(w,2),
+                tstim=cat(2,tstim,resample(w(:,ww),fsout,...
+                    exptparams.TrialObject.SamplingRate));
+            end
+            w=tstim;
         end
-        w=tstim;
         if trialidx==1,
             stim=zeros(size(w,2),MaxTrialLen,TrialCount).*nan;
         end
         stim(:,1:size(w,1),trialidx)=w';
-        
     else
         if isempty(fh),
             fh=figure;
