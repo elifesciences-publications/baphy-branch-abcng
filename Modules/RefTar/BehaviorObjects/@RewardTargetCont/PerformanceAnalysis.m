@@ -25,23 +25,28 @@ TO = exptparams.TrialObject;
 SO = get(TO,'TargetHandle');
 TargetIndices = get(TO,'TargetIndices');
 if mod(TrialIndex,get(SO,'MaxIndex')) ==0
-  CurrentTrialIndex = get(SO,'MaxIndex');
+  CurrentTrialIndex = TargetIndices(get(SO,'MaxIndex'));
 else
   CurrentTrialIndex = TargetIndices( mod(TrialIndex,get(SO,'MaxIndex')) );  % Condition number
-  CurrentTrialIndex = CurrentTrialIndex{1};
 end
+CurrentTrialIndex = CurrentTrialIndex{1};
 DiffiLevels = get(SO,'DifficultyLvlByInd'); 
 DistributionTypes = get(SO,'DistributionTypeByInd');
 
-TrialDiffiMat = zeros(length(unique(DiffiLevels)),3);
-if DistributionTypes(CurrentTrialIndex) == 1  % Display only for one DistributionType
-  TrialDiffiLvl = DiffiLevels(CurrentTrialIndex);
+DistributionTypeNow = DistributionTypes(CurrentTrialIndex); 
+DifficultyLvl = str2num(get(SO,['DifficultyLvl_D' num2str(DistributionTypeNow)]));
+DifficultyNow = DifficultyLvl( DiffiLevels(CurrentTrialIndex) );
+if DifficultyNow==0; CatchTrial = 1; else CatchTrial = 0; end
+
+TrialDiffiMat = zeros(length(unique(DifficultyLvl ,'stable')),3);
+if DistributionTypes(CurrentTrialIndex) == 1  % Display for only one DistributionType
+  TrialDiffiLvl = find(DifficultyNow==unique(DifficultyLvl ,'stable'));
   TrialSuccessCase = find( strcmp({'HIT','SNOOZE','EARLY'} , {AllPerf(end).Outcome}) );
   TrialDiffiMat(TrialDiffiLvl,TrialSuccessCase) = 1;
 end
 
 if TrialIndex == 1   
-  DiffiMatPreviousTrial = zeros(length(unique(DiffiLevels)),3);
+  DiffiMatPreviousTrial = zeros(length(unique(DifficultyLvl ,'stable')),3);
 else
   cPreviousTrial = exptparams.Performance(TrialIndex-1);
   DiffiMatPreviousTrial = cPreviousTrial.DiffiMat;
@@ -80,7 +85,7 @@ switch cP.DetectType
     else cP.LickTime = []; 
     end
 end
-if isempty(cP.LickTime) cP.LickTime = NaN; cP.LickSensorInd = NaN; end
+if isempty(cP.LickTime) || CatchTrial; cP.LickTime = NaN; cP.LickSensorInd = NaN; end  % pump after catch induces fake licks
 cP.LickTime = cP.LickTime/HW.params.fsAI;
 cP.FirstLickRelTarget = cP.LickTime - cP.TarWindow(1);
 cP.FirstLickRelReference = cP.LickTime - cP.RefWindow(1);
