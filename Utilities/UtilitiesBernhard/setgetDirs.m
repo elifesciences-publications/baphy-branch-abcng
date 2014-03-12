@@ -65,6 +65,7 @@ DDirs.Colormaps = LF_sysPath('project','STRFs','Colormaps');
 DDirs.NoiseCorr = LF_sysPath('project','ART_NoiseCorr');
 DDirs.Shepard = LF_sysPath('Dropbox','Projects','Shepard');
 DDirs.ShepardPhys = [DDirs.Shepard,'ART_ShepardPhys',Sep];
+DDirs.ShepardBehave = [DDirs.Shepard,'ART_ShepardBehave',Sep];
 DDirs.StimSpace = LF_sysPath('Dropbox','Projects','ART_StimSpace');
 DDirs.ART_MANTA = LF_sysPath('Dropbox','Projects','ART_MANTA');
 DDirs.Interneuron = LF_sysPath('Dropbox','Projects','IrregularInterneuron');

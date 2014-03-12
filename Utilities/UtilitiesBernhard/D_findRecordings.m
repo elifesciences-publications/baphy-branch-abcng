@@ -1,22 +1,25 @@
 function R = D_findRecordings(varargin)
  
 P = parsePairs(varargin);
-checkField(P,'Runclasses',{'TOR','PTD','CLK','TAD'});
+checkField(P,'RunClasses',{'TOR','PTD','CLK','TAD'});
 checkField(P,'Animals','Avocado')
 checkField(P,'Penetrations',{1:27});
 checkField(P,'ActivePassive',1);
 
 if ~iscell(P.Animals) P.Animals = {P.Animals}; end
-if ~iscell(P.Runclasses) P.Runclasses = {P.Runclasses}; end
+if ~iscell(P.RunClasses) P.RunClasses = {P.RunClasses}; end
 if ~iscell(P.Penetrations) P.Penetrations = {P.Penetrations}; end
+if ischar(P.Penetrations{1}) 
+  for i=2:length(P.Animals) P.Penetrations{i} = P.Penetrations{1}; end
+end
 if length(P.Animals) ~= length(P.Penetrations) 
   error('Length of Animals and Penetrations need to be matched.'); 
 end
 T = MD_animalIDs;
 
-for iR=1:length(P.Runclasses)
-  fprintf(['========= [ ',P.Runclasses{iR},' ] =========\n']);
-  R(iR).RunClass = P.Runclasses{iR}; k=0;
+for iR=1:length(P.RunClasses)
+  fprintf(['========= [ ',P.RunClasses{iR},' ] =========\n']);
+  R(iR).RunClass = P.RunClasses{iR}; k=0;
   
   for iA = 1:length(P.Animals)
     fprintf(['---------------- [ ',P.Animals{iA},' ] --------------\n']);
@@ -31,7 +34,7 @@ for iR=1:length(P.Runclasses)
     [ParmFiles,SortInd] = sort({tmp.parmfile});
     for iF = 1:length(ParmFiles)
       cP = MD_I2S2I(struct('Identifier',ParmFiles{iF}(1:end-2)));
-      if ismember(cP.Penetration,P.Penetrations{iA})
+      if strcmpi(P.Penetrations{iA},'all') | ismember(cP.Penetration,P.Penetrations{iA})
         k=k+1;
         R(iR).Identifiers{k} = ParmFiles{iF}(1:find(ParmFiles{iF}=='_')-1);
         R(iR).ParmFiles{k} = ParmFiles{iF};

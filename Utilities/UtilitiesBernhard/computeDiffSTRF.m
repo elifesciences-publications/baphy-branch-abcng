@@ -10,7 +10,9 @@ checkField(P,'IAct');
 checkField(P,'IPost');
 checkField(P,'Target');
 
+
 DiffSTRFs.Depths = [P.IPre.Electrodes.DepthBelowSurface];
+
 
 DiffSTRFs.ActVsPre = LF_computeDiffSTRF(P.Pre,P.Act,P.IPre,P.IAct,P.Target);
 DiffSTRFs.PostVsPre = LF_computeDiffSTRF(P.Pre,P.Post,P.IPre,P.IPost,P.Target);
@@ -90,9 +92,6 @@ for iE = 1:length(Ind1) % LOOP OVER DEPTHS
   end
   DSTRF(iE).TargetFrequency = cTargetFrequency;
 
-  % ADDING NEW FIELDS
-  %DSTRF(iE).NewField = NewAnalysis(Parameters);
-  
   for iN=1:2
     cFreqBins  = cFreqBin + [-1:1];
     if cFreqBin==1 cFreqBins = [1,2]; end;

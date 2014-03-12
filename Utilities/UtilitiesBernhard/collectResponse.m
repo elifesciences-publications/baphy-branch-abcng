@@ -11,6 +11,8 @@ checkField(P,'IncludeSilence',1);
 checkField(P,'Units','all');
 checkField(P,'Rasters',0);
 checkField(P,'SigmaThreshold',4);
+checkField(P,'QualityLimitSD',3);
+checkField(P,'Verbose',0);
 
 % COLLECT PROPERTIES OF THE RECORDING
 I = getRecInfo(P);
@@ -26,99 +28,95 @@ PostSteps = round(RefPars.PostStimSilence*P.SR);
  AllElectrodes = [E.Electrode];
  for i=1:length(P.Electrodes) P.Channels(i) = find(P.Electrodes(i)==AllElectrodes); end
  T = Events2Trials('Events',I.exptevents,'Stimclass',I.Stimclass,'Runclass',I.Runclass);
- 
+ NRepetitions = ceil(T.NTrials/T.NIndices);
+          
 % COLLECT RESPONSE
+fprintf(['  Loading ',P.RespType, ' :  El. ']);
 switch P.RespType
-  case 'SUA'; % SINGLE UNIT ACTIVITY
-    fprintf('Loading SUA ');
-    TagMasks = {'SPECIAL-TRIAL'};
-    k=0; SingleIDs = [];
-    I.SpikeShapes = cell(size(E));
+  case {'SUA','MUA'} % SINGLE UNIT ACTIVITY
+    k=0;
     
-    for iE=1:length(P.Electrodes)
-      cElectrode = P.Electrodes(iE);
-      I.SpikeShapes{cElectrode} = cell(size(I.UnitsByElectrode{cElectrode}));
+    switch P.RespType
+      case 'MUA'
+        % ASSIGN PSEUDO-SINGLEIDS FOR THIS CASE, WHICH IDENTIFY THE
+        % ANIMAL,RECORDINGDAY & ELECTRODE (VERY LONG INT).
+        Base = int8(I.SiteName(1:3));
+        Base  = num2str(Base);
+        Base=Base(Base~=' ');
+        Base = [Base,I.SiteName(4:6)];
+        Base = 1000*int64(str2num(Base));
+        for iE=1:I.NumberOfChannels
+          I.SingleIDsByElectrode{iE} = Base + int64(iE);
+        end
+    end
+    
+    for iE=1:length(P.Electrodes) % LOOP OVER ELECTRODES
+      cElectrode = P.Electrodes(iE); fprintf('%i ',cElectrode);
       
-      if ischar(P.Units) & strcmp(P.Units,'all')
-        cUnits = unique(I.UnitsByElectrode{cElectrode});
-      else cUnits = unique(P.Units); 
+      switch P.RespType
+        case 'SUA'; SpikeFile = I.SpikeFile; RawFile = '';
+        case 'MUA'; SpikeFile = I.TriggerFilesByElectrode{cElectrode}; 
+          RawFile = [I.DataRoot,'.001.1.evp'];
       end
-      cSingleIDs = I.SingleIDsByElectrode{cElectrode};
       
-      for cUnit=cUnits
+      % SELECT UNITS TO COLLECT
+      switch P.RespType
+        case 'SUA';
+          if ischar(P.Units) & strcmp(P.Units,'all') cUnits = I.UnitsByElectrode{cElectrode};
+          else cUnits = unique(P.Units); end
+        case 'MUA'; cUnits = 1;
+      end
+      
+      for cUnit=cUnits % LOOP OVER AVAILABLE UNITS
         k=k+1;
-        SingleIDs = [SingleIDs,cSingleIDs(find(cUnit==cUnits))];
-        options.channel = cElectrode;
-        options.unit = cUnit;
-        options.rasterfs = P.SR;
-        options.includeprestim = P.IncludeSilence;
-        options.tag_masks = TagMasks;
-        options.includeincorrect =1;
-        options.spikeshape = 1;
-        I.CellNames{k} = ['El',n2s(cElectrode),' U',n2s(cUnit)];
-        [cRaster, tmp , tmp , tmp , SortExtras]  = loadspikeraster(I.SpikeFile,options);
-        Rasters{k} = NaN*zeros(size(cRaster,1),ceil(size(cRaster,2)/T.NIndices),T.NIndices,'uint8');
+        
+        % COLLECT SPIKETIMES
+        [CD,State]  = LoadSpikeTimesNSL('RespType',P.RespType,'File',SpikeFile,'Trials',T,...
+          'IncludeSilence',P.IncludeSilence,'Electrode',cElectrode,'Unit',cUnit,...
+          'SR',P.SR,'SRRaw',I.SR,'Verbose',P.Verbose,'QualityLimitSD',P.QualityLimitSD,'RawFile',RawFile);
+       
+        if State k=k-1; fprintf('skip '); continue; end
+        
+        % Rasters has dimensions : Time X NRepetitions X NIndices
+        Rasters{k} = NaN*zeros(size(CD.Raster,1),NRepetitions,T.NIndices,'uint8');
+        Times{k} = cell(NRepetitions,T.NIndices);
         RepCount = zeros(1,T.NIndices);
-        for iT = 1:size(cRaster,2)
-          if ~isnan(T.Indices(iT))
+        for iT = 1:T.NTrials
+          if ~isnan(T.Indices{iT})
             if isfield(T,'OutcomesNum') && T.OutcomesNum(iT) <0
               continue; % IF A BROKEN BEHAVIOR TRIAL
             end
-            RepCount(T.Indices(iT)) = RepCount(T.Indices(iT)) + 1 ;
-            Rasters{k}(:,RepCount(T.Indices(iT)),T.Indices(iT)) = cRaster(:,iT);
+            IndPos = find(T.Indices{iT}==T.UIndices); % FOR THE CASE THAT MAXINDEX IS NOT EQUAL TO NUMBER OF INDICES (e.g. in ZTORC, Index 17 is missing)
+            RepCount(IndPos) = RepCount(IndPos) + 1;
+            Rasters{k}(:,RepCount(IndPos),IndPos) = CD.Raster(:,iT);
+            Times{k}(RepCount(IndPos),IndPos) = CD.Times(iT);
           end
         end
-        try
-          I.SpikeShapes{cElectrode}{cUnit} = SortExtras.SpikeShape;
-        end
+        I.Cells(k).SpikeShape = CD.SpikeShape;
         I.Cells(k).Electrode = cElectrode;
         I.Cells(k).Unit = cUnit;
+        I.Cells(k).Name = ['El',n2s(cElectrode),' U',n2s(cUnit)];
+        cSingleIDs = I.SingleIDsByElectrode{cElectrode};
+        I.Cells(k).SingleID = cSingleIDs(find(cUnit==cUnits));
       end
     end
-    I.SingleIDs = SingleIDs;
     
-    % TRANSITION FROM CHANNEL-BASED TO STIMULUS BASED SEPARATION
-    for iS=1:T.NIndices
-      D.RESP{iS} = zeros(size(Rasters{1},1),RepCount(iS),length(Rasters),'uint8');
-      for iU=1:length(Rasters) % LOOPS OVER ALL UNITS FROM ALL ELECTRODES
-        D.RESP{iS}(:,:,iU) = Rasters{iU}(:,1:RepCount(iS),iS);
+    % AFTER COLLECTING ALL CELLS, BUILD STIMULUS BASED ORGANIZATION
+    if k>0 % IF CELLS WERE FOUND
+      for iS=1:T.NIndices % LOOPS OVER INDICES
+        D.RESP{iS} = zeros(size(Rasters{1},1),RepCount(iS),length(Rasters),'uint8');
+        D.RESPTimes{iS} = cell(RepCount(iS),length(Rasters));
+        for iU=1:length(Rasters) % LOOPS OVER ALL UNITS FROM ALL ELECTRODES
+          D.RESP{iS}(:,:,iU) = Rasters{iU}(:,1:RepCount(iS),iS);
+          D.RESPTimes{iS}(:,iU) =Times{iU}(1:RepCount(iS),iS);
+        end
       end
+      if P.Rasters D.Rasters = Rasters; end
+      fprintf('\n');
+    else 
+      D = [];
     end
-    % D.StimTags = cStimTags;
-    if P.Rasters D.Rasters = Rasters; end
-    endl;
-    
-  case 'MUA'; % MULTI UNIT ACTIVITY
-    fprintf('Loading MUA ');
-    warning('WRITE NEW RASTER LOADER BEFORE USING THIS FUNCTION AGAIN');
-%     options = struct('datause','Reference Only','tag_masks',{'Ref'},'unit',1,...
-%       'rasterfs',P.SR,'verbose',0,'includeincorrect',1);
-    options = struct('rasterfs',P.SR,'sigthreshold',P.SigmaThreshold,'lfp',0,'usefirstcycle',0,'scalesnr',0,'includeprestim',P.IncludeSilence,'tag_masks',{{'TORC'}});
-    for i=1:length(P.Electrodes)
-      % [Rasters{i},cStimTags,cStimsVsTrials,cExptEvents] ...
-      %         = raster_load(I.MFile,P.Electrodes(i),[],options);
-      options.channel = P.Electrodes(i);
-      [Rasters{i},cStimTags]=loadevpraster(I.MFile,options);
-      I.CellNames{i} = ['El',n2s(P.Electrodes(i)),' U1'];
-      I.SingleIDs(i) = NaN;
-    end
-    
-    % UNSCRAMBLE INDICES
-    Indices = Tags2Indices(cStimTags,I.Stimclass);
-    [Indices,SortInd] = sort(Indices,'ascend');
-    cStimTags = cStimTags(SortInd);
-    
-    % TRANSITION FROM CHANNEL-BASED TO STIMULUS BASED SEPARATION
-    for j=1:T.NIndices
-      D.RESP{j} = zeros(size(Rasters{i},1),size(Rasters{i},2),length(P.Electrodes));
-      for i=1:length(P.Electrodes)
-        D.RESP{j}(:,:,i) = Rasters{i}(:,:,SortInd(j));
-      end
-    end
-    D.StimTags = cStimTags;
-    if P.Rasters D.Rasters = Rasters; end
-    fprintf('\n');
-    
+        
   case 'LFP'; % LOCAL FIELD POTENTIAL
     fprintf('Loading LFP ');
     R = evpread([I.DataRoot,'.001.1.evp'],'lfpchans',P.Channels,'spikechans',[],'SRlfp',P.SR);
@@ -138,23 +136,14 @@ switch P.RespType
         = reshape(R.LFP(Trialidx(iT)+1:Trialidx(iT)+cTotalSteps,:),[cTotalSteps,1,NChannels]);
     end
     endl;
-     
-  case 'HighGamma' % HIGH FREQUENCY GAMMA BAND
-    
+    if P.IncludeSilence error('Needs to be implemented for LFP'); end
+         
 end
 
-if ~strcmp(P.RespType,'MUA')
-  if ~P.IncludeSilence
-    for iS=1:T.NIndices D.RESP{iS} = D.RESP{iS}(PreSteps+1:end-PostSteps,:,:); end
-    if isfield(D,'Rasters')
-      for iC=1:length(D.Rasters) D.Rasters{iC} = D.Rasters{iC}(PreSteps+1:end-PostSteps,:,:); end
-    end
-  end
-else
-  warning('Not removing Pre/Postsilence, due to screwy raster code in mua path.');
+% CUT OUT PRE & POST-SILENCE AFTERWARDS
+if ~isempty(D)
+  D.NRepetitions = I.NRepetitions;
+  D.NChannels = NChannels;
+  D.I = I;
+  D.T = T;
 end
-
-D.NRepetitions = I.NRepetitions;
-D.NChannels = NChannels;
-D.I = I;
-D.T = T;
