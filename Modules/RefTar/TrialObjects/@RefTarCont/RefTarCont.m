@@ -43,6 +43,7 @@ case 0
     O.OveralldB = 65;
     O.ReinsertTrials = 0;
     O.VisualDisplay =1;
+    O.LickTargetOnly =0;
     O.NumberOfTrials = 30;
     O.ReferenceMaxIndex = 0;
     O.TargetMaxIndex = 0;
@@ -54,7 +55,8 @@ case 0
     O.UserDefinableFields = {...
       'OveralldB','edit',O.OveralldB,...
       'ReinsertTrials','edit',O.ReinsertTrials,...
-      'VisualDisplay','edit',O.VisualDisplay};
+      'VisualDisplay','edit',O.VisualDisplay,...
+      'LickTargetOnly','edit',O.LickTargetOnly};
     O = class(O,'RefTarCont');
     O = ObjUpdate(O);
 case 1

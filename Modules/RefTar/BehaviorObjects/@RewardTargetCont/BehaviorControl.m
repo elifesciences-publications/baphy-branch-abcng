@@ -57,8 +57,11 @@ else
 end
 RefWindow = [0,TarWindow(1)];
 Objects.Tar = get(exptparams.TrialObject,'TargetHandle');
-Simulick = get(O,'Simulick'); if Simulick LickTime = rand*(TarWindow(2)+1); end
+Simulick = get(O,'Simulick'); if Simulick; LickTime = rand*(TarWindow(2)+1); end
 MinimalDelayResponse = get(O,'MinimalDelayResponse');
+
+TrialObject = get(exptparams.TrialObject);
+LickTargetOnly = TrialObject.LickTargetOnly;
 
 %% PREPARE FOR PREWARD
 cPositions = {'center'};
@@ -91,13 +94,21 @@ DetectType = 'ON'; LickOccured = 0;
   %CurrentTime = IOGetTimeStamp(HW); % INACCURATE WITH DISCRETE STEPS
   CurrentTime = toc+InitialTime;
   % READ LICKS FROM ALL SENSORS
-  if ~Simulick   cLick = IOLickRead(HW,SensorChannels);
+  if ~Simulick;   cLick = IOLickRead(HW,SensorChannels);
   else cLick = ones(size(SensorChannels)); 
-    if CurrentTime>= LickTime cLick(ceil(length(cLick)*rand)) = 0; end
+    if CurrentTime>= LickTime; cLick(ceil(length(cLick)*rand)) = 0; end
   end
-  switch DetectType
-    case 'ON'; if any(cLick) LickOccured = 1; end;
-    case 'OFF'; if any(~cLick) LickOccured = 1; end;
+  if ~LickTargetOnly
+    switch DetectType
+      case 'ON'; if any(cLick); LickOccured = 1; end;
+      case 'OFF'; if any(~cLick); LickOccured = 1; end;
+    end
+  else  % Only licks in Target window stop the trial
+    InTarget = CurrentTime > (TarWindow(1) +MinimalDelayResponse);
+    switch DetectType
+      case 'ON'; if any(cLick) && InTarget; LickOccured = 1; end;
+      case 'OFF'; if any(~cLick) && InTarget; LickOccured = 1; end;
+    end    
   end
   
   % PROCESS LICK GENERALLY
@@ -164,7 +175,6 @@ if strcmp(Outcome,'HIT'); Outcome2Display = [Outcome ', RT = ' num2str(ResponseT
 fprintf(['\t [ ',Outcome2Display,' ] ... ']);
 
 %% ACTUALIZE VISUAL FEEDBACK FOR THE SUBJECT
-TrialObject = get(exptparams.TrialObject);
 if TrialObject.VisualDisplay
     [VisualDispColor,exptparams] = VisualDisplay(TrialIndex,Outcome,exptparams);
 end

@@ -114,17 +114,21 @@ if ~isempty(ResponseData)
       Licks = [exptparams.Performance(OutInd).FirstLickRelTarget];
       Sensors = {exptparams.Performance(OutInd).LickSensor};
       USensors = unique(Sensors); USensors = setdiff(USensors,'None');
-%       Bins = [-TarWindow(1):0.1:diff(TarWindow)+0.5];
-      Bins = -3:0.1:3;
-      if ~isempty(USensors)
-        for i=1:length(USensors)
-          cInd = find(strcmp(Sensors,USensors{i}));
-          cLicks = Licks(cInd);
-          cHist(i,:) = hist(cLicks,Bins);
-          set(PH.TarTiming.RespHist(iO,i),'xdata',Bins,'ydata',cHist(i,:)+iO*0.05);
-        end
-        axis([Bins([1,end]),0,max(cHist(:))+1]);
-      end
+      %       Bins = [-TarWindow(1):0.1:diff(TarWindow)+0.5];
+      %       Bins = -3:0.1:3;
+      %       if ~isempty(USensors)
+      %         for i=1:length(USensors)
+      %           cInd = find(strcmp(Sensors,USensors{i}));
+      %           cLicks = Licks(cInd);
+      %           cHist(i,:) = hist(cLicks,Bins);
+      %           set(PH.TarTiming.RespHist(iO,i),'xdata',Bins,'ydata',cHist(i,:)+iO*0.05);
+      %         end
+      %         axis([Bins([1,end]),0,max(cHist(:))+1]);
+      %       end
+      Bins = -3:0.1:3; i =1;
+      cHist(i,:) = hist(Licks,Bins); ForAxisHist(iO,:,:) = cHist(i,:);
+      set(PH.TarTiming.RespHist(iO,i),'xdata',Bins,'ydata',cHist(i,:)+iO*0.05);
+      axis([Bins([1,end]),0,max(ForAxisHist(:))+1]);
     end
   end
 end

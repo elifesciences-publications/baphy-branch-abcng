@@ -72,11 +72,18 @@ cP.SnoozeRateRecent = sum(strcmp({RecentPerf.Outcome},'SNOOZE'))/AverageSteps;
 cP.EarlyRateRecent = sum(strcmp({RecentPerf.Outcome},'EARLY'))/AverageSteps;
 cP.ErrorRateRecent = sum(strcmp({RecentPerf.Outcome},'ERROR'))/AverageSteps;
 
-%% TIMING
+%% TIMING  % so far, LICKS before the ToC are not seen in LickTargetOnly MODE
 switch cP.DetectType
   case 'ON';   % Corrected by Yves / 2013/10
     if ~isnan(cP.LickSensorInd)
-      cP.LickTime = find(LickData(:,cP.LickSensorInd)>0.5,1,'first');
+      if ~get(TO,'LickTargetOnly')
+        cP.LickTime = find(LickData(:,cP.LickSensorInd)>0.5,1,'first');
+      else
+        MinimalInterval = 0.250*HW.params.fsAI;     % samples  
+        LickTimings = find( diff( LickData(:,cP.LickSensorInd) ) >0)';
+        FarLickTimingsIndex = unique( [1 find(diff(LickTimings)>MinimalInterval)+1] );
+        cP.LickTime = LickTimings(FarLickTimingsIndex);
+      end
     else cP.LickTime = []; 
     end
   case 'OFF';

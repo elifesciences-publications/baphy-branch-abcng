@@ -64,9 +64,10 @@ o = set(o,'F0',F0);
 
 % GENERATION OF A SEED FOR ToCs IF I AM NOT RELOADING A SOUND OBJECT
 if isempty(get(o,'IniSeed'))
-    IniSeed = round( rand(1,1)*100 );   % With RandStream('mrg32k3a'), it is important to work with large numbers,                                         %because there is a heavy correlation between two seeds that belong to the same integer interval [n,n+1[
+  Rtoday = RandStream('mrg32k3a','Seed',prod(clock));
+  IniSeed = round( Rtoday.rand(1,1)*100 );   % With RandStream('mrg32k3a'), it is important to work with large numbers,                                         %because there is a heavy correlation between two seeds that belong to the same integer interval [n,n+1[
 else
-    IniSeed = get(o,'IniSeed');
+  IniSeed = get(o,'IniSeed');
 end
 Par.IniSeed = IniSeed;
 o = set(o,'IniSeed',IniSeed);
