@@ -44,7 +44,12 @@ switch globalparams.HWSetup
     HW=niCreateAO(HW,DAQID,'ao0:1','SoundOutL,SoundOutR',['/',DAQID,'/PFI1']);
     
     %% SETUP SPEAKER CALIBRATION
-    HW.Calibration.Speaker = 'SHIE800';
+    switch globalparams.HWSetup
+      case 1
+        HW.Calibration.Speaker = 'SHIE800';
+      case 2
+        HW.Calibration.Speaker = 'SHIE800_SB2';
+    end
     HW.Calibration.Microphone = 'GRAS46BE';
     HW.Calibration = IOLoadCalibration(HW.Calibration);
        
