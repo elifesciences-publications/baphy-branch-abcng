@@ -42,7 +42,8 @@ case 0
     O.SamplingRate = 100000;
     O.OveralldB = 65;
     O.ReinsertTrials = 0;
-    O.VisualDisplay =1;
+    O.VisualDisplay =0;
+    O.RewardSnooze = 0;
     O.LickTargetOnly =0;
     O.NumberOfTrials = 30;
     O.ReferenceMaxIndex = 0;
@@ -56,6 +57,7 @@ case 0
       'OveralldB','edit',O.OveralldB,...
       'ReinsertTrials','edit',O.ReinsertTrials,...
       'VisualDisplay','edit',O.VisualDisplay,...
+      'RewardSnooze','edit',O.RewardSnooze,...
       'LickTargetOnly','edit',O.LickTargetOnly};
     O = class(O,'RefTarCont');
     O = ObjUpdate(O);
