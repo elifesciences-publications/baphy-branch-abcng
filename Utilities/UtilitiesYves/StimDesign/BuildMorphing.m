@@ -1,4 +1,4 @@
-function [D0,ChangeD,Stimulus1,Stimulus2] = BuildMorphing(varargin)
+function [D0,ChangeD,DOinformation,Stimulus1,Stimulus2] = BuildMorphing(varargin)
 
 D0type = varargin{1};
 Dtype = varargin{2};
@@ -10,7 +10,7 @@ DiffLvl = varargin{7};
 PlotMe = varargin{8};
 sF = varargin{9};
 FrequencySpace = varargin{10};
-D0 = DrawDistribution(D0type,D0para,X);   % so far, only uniform or random_spectra (seed is given for random_spectra)
+[D0,DOinformation] = DrawDistribution(D0type,D0para,X);   % so far, only uniform or random_spectra (seed is given for random_spectra)
 LineName = [MorphingNum ' ' num2str(DiffLvl) '%'];
  
 D2paraTemp = Dpara; clear Dpara; Dpara{1} = [D2paraTemp DiffLvl]; Dpara{2} = D0;
@@ -18,7 +18,7 @@ if ~isempty(strfind(Dtype,'increm')); Dtype = 'increment'; end
 ChangeD = DrawDistribution(Dtype,Dpara,X);
 
 % Build the stimulus from the 2 distributions
-if nargout>2 || (nargin>=7 && PlotMe)
+if nargout>3 || (nargin>=7 && PlotMe)
     Stimulus1 = AssemblyTones(FrequencySpace,D0,X,3,sF,PlotMe); Stimulus2 = AssemblyTones(FrequencySpace,ChangeD,X,3,sF,PlotMe,LineName);
 end
 if nargin>=7 && PlotMe

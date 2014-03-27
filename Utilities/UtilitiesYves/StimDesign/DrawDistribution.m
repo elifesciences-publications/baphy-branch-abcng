@@ -1,4 +1,4 @@
-function f = DrawDistribution(DistributionName,DistributionPara,X)
+function [f,D0information] = DrawDistribution(DistributionName,DistributionPara,X)
 
 x = X;	% x-abscissa used for normalizing distribution function area
 switch DistributionName
@@ -38,7 +38,7 @@ switch DistributionName
         BlockNb = ((UniqueIniDistriNum-IniDistriNum)/DistriBinNb) + 1;
         
         DeltasBlock = BuildDeltasBlock(QuantalWeights,BlockNb*SeedPerm);   % The same block is built for the [n,n+DistriBinNb-1] following D0s
-                                                                           %wth uniform probability of -1 and +1 bins.
+                                                                           %with uniform probability of -1 and +1 bins.
         Deltas = DeltasBlock(IniDistriNum,:);
         Deltas = [-2 Deltas -2];
         Deltas = Deltas*Quantal_Delta;
@@ -65,6 +65,7 @@ switch DistributionName
         g =  @(x,FBins2Change,Increment ,x3,x4,Decrement,h) ( ( (x>=FBins2Change(1,1)) .* (x<FBins2Change(1,2)) ) | ( (x>=FBins2Change(2,1)) .* (x<FBins2Change(2,2)) ) ).* (h(2.^x)+Increment) + ( ( not( (x>=FBins2Change(1,1)) .* (x<FBins2Change(1,2)) ) & not( (x>=FBins2Change(2,1)) .* (x<FBins2Change(2,2)) ) ) .* ((x>=x3) .* (x<x4)) ) .* (h(2.^x)-Decrement);
         f =  @(x) g(x,FBins2Change,Increment ,x3,x4,Decrement,h);
 end
+if exist('Deltas','var'); D0information = Deltas; else D0information = []; end
 % Normalize curve area to 1
 CurveArea = trapz(log2(x),f(log2(x)));
 NormFactor = 1/CurveArea;

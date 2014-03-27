@@ -1,4 +1,4 @@
-function [ w , ev , O , D0 , ChangeD] = waveform(O,Index,IsFef,Mode,Global_TrialNb)
+function [ w , ev , O , D0 , ChangeD , Parameters] = waveform(O,Index,IsToc,Mode,Global_TrialNb)
 % Waveform generator for the class TextureMorphing
 % See main file for how the Index selects the stimuli
 % Adapted from BiasedShepardPair - Yves 2013
@@ -33,10 +33,14 @@ if Index > MaxIndex; error('Number of available Stimuli exceeded'); end
 CurrentRepetitionNb = ceil(Global_TrialNb/MaxIndex);
 
 % GENERATE Timing of Change [ToC]
-RToC = RandStream('mrg32k3a','Seed',IniSeed*Global_TrialNb);   % mcg16807 is fucked up
-lambda = 0.15; 
-ToC = PoissonProcessPsychophysics(lambda,Par.MaxToC-Par.MinToC,1,RToC);
-ToC = ToC + Par.MinToC;
+if isempty(IsToc)
+    RToC = RandStream('mrg32k3a','Seed',IniSeed*Global_TrialNb);   % mcg16807 is fucked up
+    lambda = 0.15; 
+    ToC = PoissonProcessPsychophysics(lambda,Par.MaxToC-Par.MinToC,1,RToC);
+    ToC = ToC + Par.MinToC;
+else
+    ToC = IsToc;
+end
 ToC = round(ToC/ChordDuration)*ChordDuration;
 
 % GET PARAMETERS OF CURRENT Index
@@ -57,7 +61,7 @@ DiffLvl = DifficultyLvl(DifficultyNum);       % given in %
     
 D0param = [FO OctaveNb Par.IniSeed Global_TrialNb];
 Dparam = [D0param(1:end-2) Bins2Change{ChangedD_Num}(MorphingNum,:)];    % We don't need a Seed to modify the original distribution
-[D0,ChangeD] = BuildMorphing(D0type,Dtype,D0param,Dparam,XDistri,MorphingNum,DiffLvl,PlotDistributions,sF,FrequencySpace);
+[D0,ChangeD,D0information] = BuildMorphing(D0type,Dtype,D0param,Dparam,XDistri,MorphingNum,DiffLvl,PlotDistributions,sF,FrequencySpace);
 
 % GENERATE SEQUENCES OF FROZEN PATTERNS // LOAD THE APPROPRIATE ONE
 if not( strcmp(Mode,'NoFrozen') )
@@ -91,10 +95,10 @@ end
 % Random stream to draw tones for each distribution
 PlotDistributions = 0;
 RtonesD0 = RandStream('mrg32k3a','Seed',Global_TrialNb*Index);
-Stimulus0 = AssemblyTones(FrequencySpace,D0,XDistri,Stimulus0Duration,sF,PlotDistributions,[],RtonesD0); 
+[Stimulus0,ToneMatrix{1}] = AssemblyTones(FrequencySpace,D0,XDistri,Stimulus0Duration,sF,PlotDistributions,[],RtonesD0); 
 
 RtonesD = RandStream('mrg32k3a','Seed',Global_TrialNb*Index*2);
-StimulusBis = AssemblyTones(FrequencySpace,ChangeD,XDistri,StimulusBisDuration,sF,PlotDistributions,[],RtonesD);
+[StimulusBis,ToneMatrix{2}] = AssemblyTones(FrequencySpace,ChangeD,XDistri,StimulusBisDuration,sF,PlotDistributions,[],RtonesD);
 
 % PREPARE THE 2 Parts OF THE WHOLE STIMULUS
 if Reverse
@@ -129,6 +133,8 @@ if strcmp('yes',get(O,'RovingLoudness'))
   PickedUpLoudness = -(RgeneRovingLoudness.randi(21) - 1);  % Roving between -20 and +0dB
   RatioToDesireddB = 10^(PickedUpLoudness/20);   % dB to ratio in SPL
   w = w*RatioToDesireddB/NormFactor;
+else
+  PickedUpLoudness = 0;
 end
 
 % ADD EVENTS
@@ -143,3 +149,11 @@ ev(1).Note = ['PreStimSilence ,' b ',' c];
 [a,b,c]  = ParseStimEvent(ev(end),0); 
 ev = AddEvent(ev,['PostStimSilence ,' b ',' c],[],ev(end).StopTime,ev(end).StopTime+AfterChangeSoundDuration+PostStimSilence);
 
+% OUPUT ON THE FLY STIM. PARAMETERS RANDOMLY BUT DETERMINISTICALLY GENERATED
+if nargout>5
+    Parameters.Loudness = PickedUpLoudness;
+    Parameters.ToC = ToC;
+    Parameters.FrozenPatternNum = FrozenPatternNum;
+    Parameters.D0information = D0information;
+    Parameters.ToneMatrix = ToneMatrix;
+end
