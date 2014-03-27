@@ -33,7 +33,7 @@ if Index > MaxIndex; error('Number of available Stimuli exceeded'); end
 CurrentRepetitionNb = ceil(Global_TrialNb/MaxIndex);
 
 % GENERATE Timing of Change [ToC]
-if isempty(IsToc)
+if isempty(IsToc) || IsToc==0
     RToC = RandStream('mrg32k3a','Seed',IniSeed*Global_TrialNb);   % mcg16807 is fucked up
     lambda = 0.15; 
     ToC = PoissonProcessPsychophysics(lambda,Par.MaxToC-Par.MinToC,1,RToC);
