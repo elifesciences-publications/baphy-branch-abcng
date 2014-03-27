@@ -1,4 +1,4 @@
-function Path = MD_getDir(varargin)
+function [Path,P] = MD_getDir(varargin)
 % Gets the data path for a given recording
 % This file is part of MANTA licensed under the GPL. See MANTA.m for details.
 
@@ -62,9 +62,7 @@ end
 % DETERMINE SUBPATH FOR DIFFERENT REQUESTS
 F = MD_dataFormat('Mode','operator','EVPVersion',P.EVPVersion);
 switch lower(P.Kind)
-  case {'base','sorted'}; SubPath = [F.S2P.FH(P.Kind,P.Animal,P.Penetration)];
-  case 'raw';
-    SubPath = F.S2P.FH(P.Kind,P.Animal,P.Penetration);
+  case {'base','sorted','tmp','raw'}; SubPath = [F.S2P.FH(P.Kind,P.Animal,P.Penetration)];
   case 'recording';
     SubPath = [F.S2P.FH(P.Kind,P.Animal,P.Penetration,P.Depth,P.Recording)];
   case 'archive'; SubPath = '';

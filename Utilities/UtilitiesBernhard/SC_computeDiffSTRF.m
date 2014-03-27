@@ -6,9 +6,7 @@ checkField(P,'Recs',[]);
 checkField(P,'RunClasses',{'PTD'});
 checkField(P,'Animals',{'Lemon','Avocado'});
 checkField(P,'Penetrations',{ [1:21,23,25] , [1:27] });
-
-if P.Recompute clear global R; end
-global R;
+global R; 
 
 if isempty(P.Recs)
   Recs = D_findRecordings('RunClasses',P.RunClasses,'Animals',P.Animals,'Penetrations',P.Penetrations);

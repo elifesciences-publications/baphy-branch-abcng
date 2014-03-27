@@ -1,5 +1,5 @@
 function [Events, exptparams] = BehaviorControl(O, HW, StimEvents, globalparams, exptparams, TrialIndex)
-% Behavior Object for RewardTargetCont object
+% Behavior Object for RewardSubTarget object
 % Behavioral Conditions
 %  - EARLY   :  Lick before the response window
 %  - HIT                  : Lick during the response window at correct spout
@@ -27,8 +27,10 @@ Events = [ ];
 exptparams.WaterUnits = 'milliliter';
 RewardAmount = get(O,'RewardAmount');
 PrewardAmount = get(O,'PrewardAmount');
+MinRewardAmount = get(O,'MinRewardAmount');
 IncrementRewardAmount = get(O,'IncrementRewardAmount');
 MaxIncrementRewardNb = get(O,'MaxIncrementRewardNb');
+SamplingRate = get(get(exptparams.TrialObject,'TargetHandle'),'SamplingRate');
 
 %% GET TARGET & REFERENCE INDICES
 tmp = get(exptparams.TrialObject,'ReferenceIndices'); ReferenceIndices = tmp{exptparams.InRepTrials};
@@ -43,13 +45,14 @@ DifficultyLvl = str2num(get(get(exptparams.TrialObject,'TargetHandle'),['Difficu
 DifficultyLvlByInd = get(get(exptparams.TrialObject,'TargetHandle'),'DifficultyLvlByInd');
 DifficultyNow = DifficultyLvl( DifficultyLvlByInd(Index) );
 
-TarInd = find(~cellfun(@isempty,strfind({StimEvents.Note},'Target')));
-EarlyWindow = StimEvents(end).StartTime;        % include 0.4s PreStimSilence / 2s Frozen / ToC (without response window)
+TarInd = find(~cellfun(@isempty,strfind({StimEvents.Note},'LickWindow')));
+EarlyWindow = StimEvents(end).StartTime;
+LickWindowTime = StimEvents(end).StopTime - EarlyWindow; % include 0.4s PreStimSilence / 2s Frozen / ToC (without response window)
 TargetStartTime = 0; %StimEvents(TarInd(1)).StartTime;
 if DifficultyNow~=0 % not a catch trial
   CatchTrial = 0;
   TarWindow(1) = TargetStartTime + EarlyWindow;
-  TarWindow(2) = TarWindow(1) + get(O,'ResponseWindow');
+  TarWindow(2) = TarWindow(1) + LickWindowTime;%get(O,'ResponseWindow');
 else
   CatchTrial = 1;
   TarWindow(1) = TargetStartTime + EarlyWindow  + get(O,'ResponseWindow');
@@ -62,7 +65,6 @@ MinimalDelayResponse = get(O,'MinimalDelayResponse');
 
 TrialObject = get(exptparams.TrialObject);
 LickTargetOnly = TrialObject.LickTargetOnly;
-RewardSnooze = TrialObject.RewardSnooze;
 
 %% PREPARE FOR PREWARD
 cPositions = {'center'};
@@ -87,6 +89,7 @@ SensorChannels=find(strcmp(SensorNames,'Touch'));
 AllLickSensorNames = SensorNames(~cellfun(@isempty,strfind(SensorNames,'Touch')));
 
 % SYNCHRONIZE COMPUTER CLOCK WITH DAQ TIME
+CountingLicks = [];
 tic; CurrentTime = IOGetTimeStamp(HW); InitialTime = CurrentTime;
 fprintf(['Running Trial [ <=',n2s(exptparams.LogDuration),'s ] ... ']);
 while CurrentTime < exptparams.LogDuration
@@ -112,9 +115,12 @@ DetectType = 'ON'; LickOccured = 0;
     end    
   end
   
+  
   % PROCESS LICK GENERALLY
   if LickOccured
     ResponseTime = CurrentTime; 
+    CountingLicks = [CountingLicks ResponseTime];
+    IndRef = strfind(StimEvents(end).Note,'/')-2;
     cSensorChannels = SensorChannels(find(cLick,1,'first'));
     if ~isempty(cSensorChannels)
       cLickSensorInd = find(cLick,1,'first');
@@ -125,7 +131,7 @@ DetectType = 'ON'; LickOccured = 0;
     end
    
     Events=AddEvent(Events,['LICK,',cLickSensor],TrialIndex,ResponseTime,[]);
-    break;
+    
   end
   
   % GIVE LIGHT CUE ON REWARD SIDE
@@ -145,6 +151,24 @@ DetectType = 'ON'; LickOccured = 0;
     fprintf('\b ... '); Prewarded = 1;
   end
 end
+
+DidItLicks = zeros(1,length(StimEvents) - 2)
+if notisempty(CountingLicks)    
+    for j = 1:length(CountingLicks)
+        for jj = 2:length(StimEvents)-1
+            if CountingLicks(j)>StimEvents(jj).StartTime/SamplingRate && CountingLicks(j)<StimEvents(jj).StopTime/SamplingRate
+               DidItLicks(jj)=1;
+            end
+        end
+    end
+end
+
+BadLickSum = sum(DidItLicks);
+
+%   MinimalInterval = 0.250*HW.params.fsAI;     % samples  
+%   LickTimings = find( diff( LickData(:,cP.LickSensorInd) ) >0)';
+%   FarLickTimingsIndex = unique( [1 find(diff(LickTimings)>MinimalInterval)+1] );
+%   cP.LickTime = LickTimings(FarLickTimingsIndex);
 % IF NO RESPONSE OCCURED
 if ~LickOccured ResponseTime = inf; end
 
@@ -168,7 +192,7 @@ elseif ResponseTime > TarWindow(2)  % CASES NO LICK AND LATE LICK
 else % HIT OR ERROR
   switch cLickSensor % CHECK WHERE THE LICK OCCURED
     case TargetSensors;   Outcome = 'HIT'; % includes ambigous if both are specified 
-    otherwise;                   Outcome = 'ERROR';
+    otherwise                  Outcome = 'ERROR';
   end
 end
 Events=AddEvent(Events,['OUTCOME,',Outcome],TrialIndex,ResponseTime,[]);
@@ -183,6 +207,8 @@ end
 %% TAKE ACTION BASED ON OUTCOME
 switch Outcome
   case 'EARLY'; % STOP SOUND, TIME OUT + LIGHT ON
+    
+      
     StopEvent = IOStopSound(HW);
     Events = AddEvent(Events, StopEvent, TrialIndex);
     LightEvents = LF_TimeOut(HW,get(O,'TimeOutEarly'),LEDfeedback,TrialIndex,Outcome);
@@ -225,11 +251,8 @@ switch Outcome
     if isempty(NbContiguousLastHits), NbContiguousLastHits = length( find(strcmp(LastOutcomes,'HIT')) );
     else NbContiguousLastHits = NbContiguousLastHits - length( find(strcmp(LastOutcomes(1:(NbContiguousLastHits+1)),'SNOOZE')) ); end  % But Snoozes don't give bonus
     MinToC = str2double(get(get(exptparams.TrialObject,'TargetHandle'),'MinToC')); MaxToC = str2double(get(get(exptparams.TrialObject,'TargetHandle'),'MaxToC'));
-    if CatchTrial
-      if ~(RewardSnooze); RewardAmount = 0; else RewardAmount = RewardAmount/3; pause(0.2); end 
-    else
-      RewardAmount = RewardAmount * (0.5 + (TarWindow(1)-MinToC)/(MaxToC-MinToC)) + IncrementRewardAmount*NbContiguousLastHits;
-    end   
+    RewardAmount = MinRewardAmount + (RewardAmount-MinRewardAmount)*((length(StimEvents) - 2)-BadLickSum)/(length(StimEvents) - 2);
+    if CatchTrial; RewardAmount = RewardAmount/2; end
     PumpDuration = RewardAmount/globalparams.PumpMlPerSec.(PumpName);
     % pause(0.05); % PAUSE TO ALLOW FOR HEAD TURNING
     PumpEvent = IOControlPump(HW,'Start',PumpDuration,PumpName);
@@ -253,29 +276,6 @@ switch Outcome
   case 'SNOOZE';  % STOP SOUND
     StopEvent = IOStopSound(HW);
     Events = AddEvent(Events, StopEvent, TrialIndex);
-    
-    if RewardSnooze
-      pause(0.2);
-      LEDposition = {'left'}; cLickSensor =TargetSensors;
-      PumpName = cell2mat(IOMatchSensor2Pump(cLickSensor));
-      RewardAmount = RewardAmount/3;
-      PumpDuration = RewardAmount/globalparams.PumpMlPerSec.(PumpName);
-      % pause(0.05); % PAUSE TO ALLOW FOR HEAD TURNING
-      PumpEvent = IOControlPump(HW,'Start',PumpDuration,PumpName);
-      Events = AddEvent(Events, PumpEvent, TrialIndex);
-      exptparams.Water = exptparams.Water+RewardAmount;
-      % MAKE SURE PUMPS ARE OFF (BECOMES A PROBLEM WHEN TWO PUMP EVENTS TOO CLOSE)
-      pause(PumpDuration/2);
-      % Turn LED ON
-      LightNames = IOMatchPosition2Light(HW,LEDposition);
-      [State,LightEvent] = IOLightSwitch(HW,1,0,[],[],[],LightNames{1});
-      Events = AddEvent([],LightEvent,TrialIndex);
-      
-      pause(PumpDuration/2);
-      PumpEvent = IOControlPump(HW,'stop',0,PumpName);
-      Events = AddEvent(Events, PumpEvent, TrialIndex);
-      IOControlPump(HW,'stop',0,'Pump');
-    end 
     
     cLickSensor = 'None'; cLickSensorNot = 'None';
     pause(0.1); % TO AVOID EMPTY LICKSIGNAL

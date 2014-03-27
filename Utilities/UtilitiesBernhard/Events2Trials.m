@@ -18,9 +18,13 @@ OutcomeInd    = find(~cellfun(@isempty,strfind(Notes,'outcome')));
 StimInd = find(~cellfun(@isempty,strfind(Notes,'stim ,')));
 
 %Initialize trial vectors
-T.Indices = cell(size(TrialInd));
-T.Durations = cell(size(TrialInd));
-T.Tags = cell(size(TrialInd));
+T.NTrials = length(TrialInd);
+T.Indices = cell(T.NTrials,1);
+T.Durations = cell(T.NTrials,1);
+T.Tags = cell(T.NTrials,1);
+T.PreSilence = [P.Events(PreSilenceInd).StopTime];
+T.PostSilence = [P.Events(PostSilenceInd).StopTime] - [P.Events(PostSilenceInd).StartTime];
+T.DurationsTotal = [P.Events(PostSilenceInd).StopTime];
 
 if P.TimeIndex
     T.Indices = [1:length(TrialInd)];
@@ -28,17 +32,17 @@ if P.TimeIndex
     [tmp,T.SortInd] = sort(T.Indices,'ascend');
 else
     switch lower(P.Stimclass)
-        case {'torcs','torc'};
+        case {'torcs','torc','clickdiscrim'};
           switch P.Runclass
             case {'TOR',''};
               for i=1:length(TrialInd)
                 Inds = find(Notes{StimInd(i)}==',');
                 T.Tags{i} = Notes{StimInd(i)}(Inds(1)+2:Inds(2)-2);
                 cInd = find(T.Tags{i}=='_');
-                T.Indices(i) = str2num(T.Tags{i}(cInd(2)+1:cInd(3)-1));
-                T.Durations(i) = P.Events(StimInd(i)).StopTime - P.Events(StimInd(i)).StartTime;
+                T.Indices{i} = str2num(T.Tags{i}(cInd(2)+1:cInd(3)-1));
+                T.Durations{i} = P.Events(StimInd(i)).StopTime - P.Events(StimInd(i)).StartTime;
               end
-              [tmp,T.SortInd] = sort(T.Indices,'ascend');
+              [tmp,T.SortInd] = sort(cell2mat(T.Indices),'ascend');
             otherwise % BEHAVIOR CONDITIONS (REQUIRES MORE PARSING OF THE SUBCONDITIONS)
               % MAKE INDICES A CELL, IN ORDER TO SIGNAL UPSTREAM THAT THERE
               % HAS TO BE SUBPARSING... or mmake this the general format?
@@ -69,12 +73,12 @@ else
                 Inds = find(Notes{StimInd(i)}==',');
                 T.Tags{i} = Notes{StimInd(i)}(Inds(1)+2:Inds(2)-2);
                 T.Frequencies(i) = str2num(P.Events(StimInd(i)).Note(Inds(1)+1:Inds(2)-1));
-                T.Durations(i) = P.Events(StimInd(i)).StopTime - P.Events(StimInd(i)).StartTime;
+                T.Durations{i} = P.Events(StimInd(i)).StopTime - P.Events(StimInd(i)).StartTime;
             end
             [tmp,T.SortInd] = sort(T.Frequencies);
             [tmp,tmp,IndicesLoc] = unique(T.Frequencies);
             IndicesSet = [1:length(tmp)];
-            T.Indices = IndicesSet(IndicesLoc);
+            T.Indices = mat2cell(IndicesSet(IndicesLoc),1,ones(1,length(IndicesLoc)));
             T.FrequenciesByIndex = unique(T.Frequencies);
             
         case 'tuningfast'; % although multiple stimuli are within one trial, here only the indices are returned
@@ -111,17 +115,17 @@ else
                 if Found
                     FirstStimTag = P.Events(TrialInd(i)+k).Note;
                     cInd = find(FirstStimTag==' ');
-                    T.Indices(i) = str2num(FirstStimTag(cInd(3)+1:cInd(4)-1));
+                    T.Indices{i} = str2num(FirstStimTag(cInd(3)+1:cInd(4)-1));
                     T.Tags{i} = FirstStimTag(cInd(2)+1:cInd(4)-1);
                     % T.Durations(i) = P.Events(PostSilenceInd(i)).StartTime ...
                     %- P.Events(PreSilenceInd(i)).StopTime;
                 else
-                    T.Indices(i) = NaN;
+                    T.Indices{i} = NaN;
                     T.Tags{i} = '';
                     T.Durations(i) = NaN;
                 end
             end
-            [tmp,T.SortInd] = sort(T.Indices,'ascend');
+            [tmp,T.SortInd] = sort(cell2mat(T.Indices),'ascend');
             if ~isfield(T,'OutcomesNum') T.OutcomesNum = ones(size(T.Indices)) ; end
             
         case 'shepardtuning';
@@ -167,12 +171,18 @@ else
                 Inds = find(Notes{StimInd(i)}==',');
                 T.Tags{i} = Notes{StimInd(i)}(Inds(1)+2:Inds(2)-2);
                 cInd = find(Notes{StimInd(i)}=='-');
-                T.Frequencies(i) = str2num(P.Events(StimInd(i)).Note(Inds(1)+1:cInd-1));
-                T.Attenuations(i) = str2num(P.Events(StimInd(i)).Note(cInd:Inds(2)-1));
-                T.Durations(i) = P.Events(StimInd(i)).StopTime - P.Events(StimInd(i)).StartTime;
+                if isempty(cInd) % only one attenuation used
+                  cInd = Inds(2)-1;
+                  T.Attenuations{i}  = 0;
+                else
+                  T.Attenuations{i} = str2num(P.Events(StimInd(i)).Note(cInd:Inds(2)-1));
+                end
+                T.Frequencies{i} = str2num(P.Events(StimInd(i)).Note(Inds(1)+1:cInd-1));
+                
+                T.Durations{i} = P.Events(StimInd(i)).StopTime - P.Events(StimInd(i)).StartTime;
             end
-            T.FrequenciesUnique = unique(T.Frequencies);
-            T.AttenuationsUnique = unique(T.Attenuations);
+            T.FrequenciesUnique = unique(cell2mat(T.Frequencies));
+            T.AttenuationsUnique = unique(cell2mat(T.Attenuations));
             i=0;
             for iF=1:length(T.FrequenciesUnique)
                 for iA = 1:length(T.AttenuationsUnique)
@@ -183,17 +193,19 @@ else
             T.TrialsByParameters = cell(length(T.FrequenciesUnique),length(T.AttenuationsUnique));
             for i=1:length(TrialInd)
                 for j=1:length(TrialInd)
-                    if T.ParametersByIndex(j,1) == T.Frequencies(i)  ...
-                            && T.ParametersByIndex(j,2) == T.Attenuations(i)
+                    if T.ParametersByIndex(j,1) == T.Frequencies{i}  ...
+                            && T.ParametersByIndex(j,2) == T.Attenuations{i}
                         break;
                     end
                 end
-                T.Indices(i) = j;  % Indices By Trials
-                iF = find(T.Frequencies(i)==T.FrequenciesUnique);
-                iA = find(T.Attenuations(i)==T.AttenuationsUnique);
+                T.Indices{i} = j;  % Indices By Trials
+                iF = find(T.Frequencies{i}==T.FrequenciesUnique);
+                iA = find(T.Attenuations{i}==T.AttenuationsUnique);
                 T.TrialsByParameters{iF,iA}(end+1) = i;
             end
-            [tmp,T.SortInd] = sort(T.Indices,'ascend');
+            T.FrequenciesByIndex = T.ParametersByIndex(:,1);
+            
+            [tmp,T.SortInd] = sort(cell2mat(T.Indices),'ascend');
             
         case 'speechlong'
             for i=1:length(TrialInd)
@@ -208,7 +220,7 @@ else
             for i=1:length(Loudnesses)
                 T.Indices(T.Loudnesses == Loudnesses(i)) = i;
             end
-            [tmp,T.SortInd] = sort(T.Indices,'ascend');
+            [tmp,T.SortInd] = sort(cell2mat(T.Indices),'ascend');
             
         case 'rhythm'
             for i=1:length(TrialInd)
@@ -235,11 +247,27 @@ else
             end
             [tmp,T.SortInd] = sort(T.Indices,'ascend');
             
-        otherwise
+      case 'psycholinguisticstimuli'
+        Tags = {'a1','a2','a3',...
+          'a_speaker_blocked1','a_speaker_blocked2','a_speaker_blocked3',...
+          't1','t2','t3',...
+          't_speaker_blocked1','t_speaker_blocked2','t_speaker_blocked3'};
+        for i=1:length(TrialInd)
+          cStimInd = StimInd(find(StimInd>TrialInd(i),1,'first'));
+          StartInd = find(Notes{cStimInd}==',',1,'first')+2;
+          StopInd = find(Notes{cStimInd}=='.')-1;
+          cTag = Notes{cStimInd}(StartInd:StopInd);
+          T.Indices{i} = find(strcmp(cTag,Tags));
+        end
+        
+      otherwise
             warning('Stimclass not implemented!');
             T.SortInd = [1:length(TrialInd)];
             
     end
 end
 
-T.NIndices = length(unique(cell2mat(T.Indices)));
+T.UIndices = unique(cell2mat(T.Indices));
+T.NIndices = sum(T.UIndices>0);
+warning on all;
+if T.NIndices ~=  T.UIndices(end) fprintf('WARNING (Events2Trials) : # Indices |= maximal Index\n'); end

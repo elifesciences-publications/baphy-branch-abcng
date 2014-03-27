@@ -147,6 +147,7 @@ if NArgs>2
       if isnumeric(Recording) Recording = sprintf('%02d',Recording); end
       String = [String,'raw',Sep,MD.Animals.A2P.(Animal),sprintf('%03d',Penetration),Depth,Recording,Sep];
     case 'sorted'; String = [String,'sorted',Sep];
+    case 'tmp'; String = [String,'tmp',Sep];
     otherwise error('This kind of path is not implemented!');
   end
 end

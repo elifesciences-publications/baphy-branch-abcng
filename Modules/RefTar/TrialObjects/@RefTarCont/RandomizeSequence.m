@@ -11,6 +11,7 @@ function exptparams = RandomizeSequence (O, exptparams, globalparams, Counter, R
 % - Create an Index (String) which uniquely identifies a combination of References and Targets
 %
 % BE 2013/10
+% YB 2014/02
 
 % ARGUMENTS
 if nargin<4 RepOrTrial = 0; end % Default : Trial Call
@@ -42,16 +43,20 @@ switch RepOrTrial
       case 0; % nothing needs to be done
       case 1;
         CurrentTrial = Counter;
-        if ~strcmpi(exptparams.Performance(end).Outcome,'HIT')
+        TrialIndex = exptparams.TotalTrials;
+        if strcmpi(exptparams.Performance(end).Outcome,'EARLY')    % 2014/02-YB: SNOOZE is not considered
           % REPEAT LAST INDEX AT RANDOM POSITION IN THE REMAINING
-          R = RandStream('mt19937ar','Seed',CurrentTrial);
-          RemInd = [CurrentTrial:P.NumberOfTrials];
-          Inds = [1:CurrentTrial,RemInd(R.randperm(length(RemInd)))];
-          if length(Inds) ~= P.NumberOfTrials+1 warning('Check reinsertion of correction trials'); end
-          P.ReferenceIndices =  P.ReferenceIndices(Inds);
-          P.TargetIndices = P.TargetIndices(Inds);
-          P.TrialTags = P.TrialTags(Inds);
-          P.NumberOfTrials = P.NumberOfTrials + 1;
+%           R = RandStream('mt19937ar','Seed',CurrentTrial);
+%           RemInd = CurrentTrial:P.NumberOfTrials;
+%           Inds = [1:CurrentTrial,RemInd(R.randperm(length(RemInd)))];
+%           if length(Inds) ~= P.NumberOfTrials+1 warning('Check reinsertion of correction trials'); end
+%           P.ReferenceIndices =  P.ReferenceIndices(Inds);
+%           P.TargetIndices = P.TargetIndices(Inds);
+%           P.TrialTags = P.TrialTags(Inds);
+%           P.NumberOfTrials = P.NumberOfTrials + 1;          
+          % 2014/02-YB: reinsertion (in the next 8) of TrialIndex sent to <waveform> (in order to re-generate the same ToC)
+%           P.TrialIndexLst(TrialIndex+randi(8,1)) =P.TrialIndexLst(TrialIndex);
+          P.TrialIndexLst(TrialIndex+3) =P.TrialIndexLst(TrialIndex);
         end
     end
     
@@ -62,6 +67,7 @@ O = set(O,'ReferenceIndices',P.ReferenceIndices);
 O = set(O,'TargetIndices',P.TargetIndices);
 O = set(O,'NumberOfTrials',P.NumberOfTrials);
 O = set(O,'TrialTags',P.TrialTags);
+O = set(O,'TrialIndexLst',P.TrialIndexLst);
 exptparams.TrialObject = O;
 
 
