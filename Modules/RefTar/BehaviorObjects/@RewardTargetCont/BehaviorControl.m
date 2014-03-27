@@ -62,6 +62,7 @@ MinimalDelayResponse = get(O,'MinimalDelayResponse');
 
 TrialObject = get(exptparams.TrialObject);
 LickTargetOnly = TrialObject.LickTargetOnly;
+RewardSnooze = TrialObject.RewardSnooze;
 
 %% PREPARE FOR PREWARD
 cPositions = {'center'};
@@ -167,7 +168,7 @@ elseif ResponseTime > TarWindow(2)  % CASES NO LICK AND LATE LICK
 else % HIT OR ERROR
   switch cLickSensor % CHECK WHERE THE LICK OCCURED
     case TargetSensors;   Outcome = 'HIT'; % includes ambigous if both are specified 
-    otherwise                  Outcome = 'ERROR';
+    otherwise;                   Outcome = 'ERROR';
   end
 end
 Events=AddEvent(Events,['OUTCOME,',Outcome],TrialIndex,ResponseTime,[]);
@@ -224,8 +225,11 @@ switch Outcome
     if isempty(NbContiguousLastHits), NbContiguousLastHits = length( find(strcmp(LastOutcomes,'HIT')) );
     else NbContiguousLastHits = NbContiguousLastHits - length( find(strcmp(LastOutcomes(1:(NbContiguousLastHits+1)),'SNOOZE')) ); end  % But Snoozes don't give bonus
     MinToC = str2double(get(get(exptparams.TrialObject,'TargetHandle'),'MinToC')); MaxToC = str2double(get(get(exptparams.TrialObject,'TargetHandle'),'MaxToC'));
-    RewardAmount = RewardAmount * (0.5 + (TarWindow(1)-MinToC)/(MaxToC-MinToC)) + IncrementRewardAmount*NbContiguousLastHits;
-    if CatchTrial; RewardAmount = RewardAmount/2; end
+    if CatchTrial
+      if ~(RewardSnooze); RewardAmount = 0; else RewardAmount = RewardAmount/3; pause(0.2); end 
+    else
+      RewardAmount = RewardAmount * (0.5 + (TarWindow(1)-MinToC)/(MaxToC-MinToC)) + IncrementRewardAmount*NbContiguousLastHits;
+    end   
     PumpDuration = RewardAmount/globalparams.PumpMlPerSec.(PumpName);
     % pause(0.05); % PAUSE TO ALLOW FOR HEAD TURNING
     PumpEvent = IOControlPump(HW,'Start',PumpDuration,PumpName);
@@ -249,6 +253,29 @@ switch Outcome
   case 'SNOOZE';  % STOP SOUND
     StopEvent = IOStopSound(HW);
     Events = AddEvent(Events, StopEvent, TrialIndex);
+    
+    if RewardSnooze
+      pause(0.2);
+      LEDposition = {'left'}; cLickSensor =TargetSensors;
+      PumpName = cell2mat(IOMatchSensor2Pump(cLickSensor));
+      RewardAmount = RewardAmount/3;
+      PumpDuration = RewardAmount/globalparams.PumpMlPerSec.(PumpName);
+      % pause(0.05); % PAUSE TO ALLOW FOR HEAD TURNING
+      PumpEvent = IOControlPump(HW,'Start',PumpDuration,PumpName);
+      Events = AddEvent(Events, PumpEvent, TrialIndex);
+      exptparams.Water = exptparams.Water+RewardAmount;
+      % MAKE SURE PUMPS ARE OFF (BECOMES A PROBLEM WHEN TWO PUMP EVENTS TOO CLOSE)
+      pause(PumpDuration/2);
+      % Turn LED ON
+      LightNames = IOMatchPosition2Light(HW,LEDposition);
+      [State,LightEvent] = IOLightSwitch(HW,1,0,[],[],[],LightNames{1});
+      Events = AddEvent([],LightEvent,TrialIndex);
+      
+      pause(PumpDuration/2);
+      PumpEvent = IOControlPump(HW,'stop',0,PumpName);
+      Events = AddEvent(Events, PumpEvent, TrialIndex);
+      IOControlPump(HW,'stop',0,'Pump');
+    end 
     
     cLickSensor = 'None'; cLickSensorNot = 'None';
     pause(0.1); % TO AVOID EMPTY LICKSIGNAL
