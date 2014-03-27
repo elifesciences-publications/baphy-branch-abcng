@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 function [ w , ev , O , D0 , ChangeD , Parameters] = waveform(O,Index,IsToc,Mode,Global_TrialNb)
-=======
-function [ w , ev , O , D0 , ChangeD] = waveform(O,Index,IsRef,Mode,Global_TrialNb)
->>>>>>> 09e3b41d16a2b6d9d5fa944d2550ae524d57e6a7
 % Waveform generator for the class TextureMorphing
 % See main file for how the Index selects the stimuli
 % Adapted from BiasedShepardPair - Yves 2013
