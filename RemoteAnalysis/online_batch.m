@@ -174,11 +174,20 @@ for ii=1:NElectrodes
         boost_online(mfile,Electrode,unit,AH(ii),options);
       elseif strcmpi(options.runclass,'CCH') || strcmpi(options.ReferenceClass,'ComplexChord') || ...
           strcmpi(options.runclass,'BNB') || strcmpi(options.ReferenceClass,'NoiseBurst') || ...
-          strcmpi(options.runclass,'RDT') || strcmpi(options.ReferenceClass,'NoiseSample') || ...
           strcmpi(options.runclass,'FTC'),
         % two-tone 2nd-order tuning surface
         chord_strf_online(mfile,Electrode,unit,AH(ii),options);
-        
+      elseif strcmpi(options.runclass,'RDT') || ...
+              strcmpi(options.ReferenceClass,'NoiseSample'),
+          if strcmp(options.datause,'Per trial'),
+              options.filtfmt='qspecgram';
+              options.rasterfs=100;
+              
+              % for RDT NoiseSamples, use boosting to estimate strf
+              boost_online(mfile,Electrode,unit,AH(ii),options);
+          else
+              chord_strf_online(mfile,Electrode,unit,AH(ii),options);
+          end
       elseif strcmpi(options.runclass(1:2),'SP') || strcmpi(options.runclass,'SNS'),
         % for speech and sporcs, use boosting to estimate strf
         boost_online(mfile,Electrode,unit,AH(ii),options);

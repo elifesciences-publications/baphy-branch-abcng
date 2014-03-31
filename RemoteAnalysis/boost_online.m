@@ -76,8 +76,23 @@ realrepcount=size(r,2);
 toc
 
 tic;
-disp('Loading stimulus spectrogram...');
-[stim,stimparam]=loadstimfrombaphy(mfile,[],[],options.filtfmt,options.rasterfs,options.chancount);
+if strcmpi(options.datause,'Per trial'),
+    disp('Loading stimulus spectrogram...');
+    %  options - struct with optional fields:
+    %   filtfmt - currently can be 'wav' or 'specgram' or 'wav2aud' or
+    %              'audspectrogram' or 'envelope' (collapsed over frequency)
+    %   fsout - output sampling rate
+    %   chancount - output number of channels
+    toptions=struct('filtfmt',options.filtfmt,'fsout',options.rasterfs,...
+                    'chancount',options.chancount);
+    [stim,stimparam]=loadstimbytrial(mfile,toptions);
+    r=permute(r,[1 3 2]);
+else
+    disp('Loading stimulus spectrogram...');
+    [stim,stimparam]=loadstimfrombaphy(mfile,[],[],options.filtfmt, ...
+                                       options.rasterfs,options.chancount);
+end
+
 stim=reshape(stim,size(stim,1),size(stim,2)*size(stim,3));
 toc
 if strcmpi(options.runclass,'SPN') || strcmpi(options.ReferenceClass,'SpNoise'),
@@ -87,8 +102,13 @@ end
 %stim=stim(:,PreBins+1:(end-PostBins),:);
 r=r(PreBins+1:(end-PostBins),:,:);
 stim=stim(:,:)';
-r=nanmean(permute(r,[2 1 3]));
+r=nanmean(permute(r,[2 1 3]),1);
 r=r(:);
+
+fnn=find(~isnan(r));
+r=r(fnn);
+stim=stim(fnn,:);
+
 
 options.chancount=size(stim,2);
 %h=blasso(stim,r,0,12,stepsize,tolerance);

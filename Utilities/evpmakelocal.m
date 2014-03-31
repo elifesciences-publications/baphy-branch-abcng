@@ -126,7 +126,7 @@ elseif (strcmpi(filename(1:3),'m:\') || ...
       tmfilein=strrep(filename,'.evp','.m');
    end
    
-   mfilelocal=strrep(evplocal,'.evp','.m');
+   mfilelocal=strrep(evplocal,'.evp','.m')
    
    dd2=dir(filename);
    dd=dir(evplocal);

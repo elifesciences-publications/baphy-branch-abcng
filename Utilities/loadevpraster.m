@@ -579,7 +579,7 @@ for trialidx=trialrange,
             trialset(repidx,refidx)=trialidx;
         end
     end
-    if mod(trialidx,20)==0,
+    if mod(trialidx,100)==0 || trialidx==max(trialrange),
         %drawnow;
         if verbose
         fprintf('%s trial %d: %.1f sec\n',mfilename,trialidx,toc);
