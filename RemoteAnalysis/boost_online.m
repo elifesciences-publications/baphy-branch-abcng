@@ -71,7 +71,7 @@ PostBins=round(options.PostStimSilence.*options.rasterfs);
 
 tic;
 disp('Loading response...');
-[r,tags]=raster_load(mfile,channel,unit,options);
+[r,tags,trialset]=raster_load(mfile,channel,unit,options);
 realrepcount=size(r,2);
 toc
 
@@ -86,6 +86,7 @@ if strcmpi(options.datause,'Per trial'),
     toptions=struct('filtfmt',options.filtfmt,'fsout',options.rasterfs,...
                     'chancount',options.chancount);
     [stim,stimparam]=loadstimbytrial(mfile,toptions);
+    stim=stim(:,1:size(r,1),trialset);
     r=permute(r,[1 3 2]);
 else
     disp('Loading stimulus spectrogram...');
