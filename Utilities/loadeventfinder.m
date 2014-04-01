@@ -1,8 +1,7 @@
 function [eventtime,evtrials,Note,eventtimeoff,tags]= ...
-        loadeventfinder(exptevents,tag_masks,includeprestim,runclass,evpfile);
+        loadeventfinder(exptevents,tag_masks,includeprestim,runclass,evpfile)
     
 % figure out the tag for each different stimulus
-repcounter=1;
 if ~isempty(tag_masks) && length(tag_masks{1})>=12 && ...
         strcmp(tag_masks{1}(1:12),'SPECIAL-LICK'),
     disp('SPECIAL TAGS: Loading lick data...');
@@ -58,7 +57,6 @@ if ~isempty(tag_masks) && length(tag_masks{1})>=12 && ...
     else
         tags={'LICK,LICK'};
     end
-    repcounter=length(eventtime);
     Note=cell(length(eventtime),1);
     for ii=1:length(eventtime),
         Note{ii}=tags{1};
@@ -69,7 +67,23 @@ elseif ~isempty(tag_masks) && strcmp(tag_masks{1},'SPECIAL-TRIAL'),
     [eventtime,~,Note]=evtimes(exptevents,['TRIALSTART']);
     [eventtimeoff,evtrials]=evtimes(exptevents,['TRIALSTOP']);
     tags={Note{1}};
-    repcounter=length(eventtime);
+elseif ~isempty(tag_masks) && strcmp(tag_masks{1},'SPECIAL-TRIAL-NOTAR'),
+    disp('SPECIAL TAGS: Loading trial by trial...');
+    
+    [eventtime,~,Note]=evtimes(exptevents,['TRIALSTART']);
+    [eventtimeoff,evtrials]=evtimes(exptevents,['*, Target']);
+    [trialoff,alltrials]=evtimes(exptevents,['TRIALSTOP']);
+    for tt=1:length(alltrials),
+        ff=find(evtrials==alltrials(tt), 1);
+        if isempty(ff),
+            evtrials=cat(1,evtrials,alltrials(tt));
+            eventtimeoff=cat(1,eventtimeoff,trialoff(tt));
+        end
+    end
+    [evtrials,si]=sort(evtrials);
+    eventtimeoff=eventtimeoff(si);
+    
+    tags={Note{1}};
 elseif ~isempty(tag_masks) && length(tag_masks{1})>=16 && strcmp(tag_masks{1}(1:16),'SPECIAL-COLLAPSE'),
     disp('SPECIAL TAGS: Collapsing over references and/or targets...');
     % find all events that match masks
@@ -154,7 +168,6 @@ elseif ~isempty(tag_masks) && length(tag_masks{1})>=16 && strcmp(tag_masks{1}(1:
     else
         [eventtime,evtrials,Note,eventtimeoff]=evtimes(exptevents,['Stim*']);
     end
-    repcounter=0;
     
     keepidx=find(~strcmp(Note,'STIM,ON'));
     eventtime=eventtime(keepidx);
@@ -217,11 +230,9 @@ elseif ~isempty(tag_masks) && length(tag_masks{1})>=16 && strcmp(tag_masks{1}(1:
                     Note{ii}='Ref1,Ref1';
                 else
                     Note{ii}='RefN,RefN';
-                    repcounter=repcounter+1;
                 end
             else
                 Note{ii}='Reference,Reference';
-                repcounter=repcounter+1;
             end
         end
     end

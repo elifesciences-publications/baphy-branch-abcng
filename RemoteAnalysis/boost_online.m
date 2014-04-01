@@ -76,7 +76,7 @@ realrepcount=size(r,2);
 toc
 
 tic;
-if strcmpi(options.datause,'Per trial'),
+if ~isempty(findstr(lower(options.datause),'per trial')),
     disp('Loading stimulus spectrogram...');
     %  options - struct with optional fields:
     %   filtfmt - currently can be 'wav' or 'specgram' or 'wav2aud' or

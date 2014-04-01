@@ -179,7 +179,7 @@ for ii=1:NElectrodes
         chord_strf_online(mfile,Electrode,unit,AH(ii),options);
       elseif strcmpi(options.runclass,'RDT') || ...
               strcmpi(options.ReferenceClass,'NoiseSample'),
-          if strcmp(options.datause,'Per trial'),
+          if strcmp(options.datause,'Per trial') || strcmp(options.datause,'Per trial pre-target'),
               options.filtfmt='qspecgram';
               options.rasterfs=100;
               
