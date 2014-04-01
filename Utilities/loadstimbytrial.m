@@ -45,9 +45,10 @@ if strcmp(filtfmt,'wav') || strcmp(filtfmt,'none'),
 end
 
 % check for cached file
-if exist('~/data/tstim/','dir')
-    ppdir=['~/data/tstim/'];
-elseif exist('/auto/data/tmp/tstim/','dir')
+%if exist('~/data/tstim/','dir')
+%    ppdir=['~/data/tstim/'];
+%else
+if exist('/auto/data/tmp/tstim/','dir')
     ppdir=['/auto/data/tmp/tstim/'];
 else
     ppdir=tempdir;
@@ -58,7 +59,6 @@ preprocfile=sprintf('%sloadstimbytrial_%s_ff%s_fs%d_cc%d_trunc%d.mat',...
 
 if ~forceregen && exist(preprocfile,'file')
    fprintf('Loading saved stimulus from %s\n',basename(preprocfile));
-   
    % load pregenerated stim
    load(preprocfile);
    return
@@ -66,6 +66,7 @@ end
 
 % preprocessed file doesn't exist or forced regeneration --
 % generate stimulus env/spectrogram
+fh=[];
 fprintf('Cache file %s does not exist. Regenerating...\n',...
         basename(preprocfile));
 
@@ -122,11 +123,14 @@ TrialObject = set(TrialObject, 'TargetHandle', TarObject);
 TrialObject = set(TrialObject, 'ReferenceHandle', RefObject);
 
 NonUserDefFields=setdiff(fieldnames(exptparams.TrialObject),...
-                         {'ReferenceClass','ReferenceHandle','TargetClass','TargetHandle',...
+                         {'ReferenceClass','ReferenceHandle',...
+                    'TargetClass','TargetHandle',...
                     'descriptor','RunClass','UserDefinableFields'});
 for ii=1:length(NonUserDefFields),
-    TrialObject=set(TrialObject,NonUserDefFields{ii},...
-                                exptparams.TrialObject.(NonUserDefFields{ii}));
+    if isfield(TrialObject,NonUserDefFields{ii}),
+        TrialObject=set(TrialObject,NonUserDefFields{ii},...
+                        exptparams.TrialObject.(NonUserDefFields{ii}));
+    end
 end
 dstr='';
 
@@ -156,14 +160,30 @@ TrialCount=globalparams.rawfilecount;
 if strcmpi(exptparams.TrialObjectClass,'StreamNoise') || ...
         strcmpi(exptparams.TrialObjectClass,'RepDetect'),
     maxstreams=3;
+    if strcmpi(exptparams.TrialObject.descriptor,'StreamNoise'),
+        SamplesPerTrial=exptparams.TrialObject.SamplesPerTrial;
+    else
+        SamplesPerTrial=exptparams.TrialObject.TargetRepCount+...
+            max(find(exptparams.TrialObject.ReferenceCountFreq)-1);
+    end
+    BigStimMatrix=-ones(SamplesPerTrial,2,TrialCount);
+    if strcmpi(filtfmt,'qspecgram'),
+        [qstim,tstimparam]...
+            =loadstimfrombaphy(parmfile,[],[],'specgramv',fsout,chancount);
+    end
+    
 else
     maxstreams=1;
+    BigStimMatrix=[];
 end
 MaxTrialLen=round(max(evtimes(exptevents,'TRIALSTOP').*fsout));
 for trialidx=1:TrialCount,
     ThisTrialLength=evtimes(exptevents,'TRIALSTOP',trialidx);
     fprintf('Trial %d (len %.2f)\n',trialidx,ThisTrialLength);
-    if strcmpi(filtfmt,'envelope'),
+    if strcmpi(filtfmt,'qspecgram'),
+        ThisTrialBins=round(ThisTrialLength.*fsout);
+        w=zeros(ThisTrialBins,chancount);
+    elseif strcmpi(filtfmt,'envelope'),
         ThisTrialBins=round(ThisTrialLength.*fsout);
         w=zeros(ThisTrialBins,maxstreams);
         smfilt=ones(round(TrialFs/fsout),1)./round(TrialFs/fsout);
@@ -197,8 +217,30 @@ for trialidx=1:TrialCount,
         n=get(o,'Names');
         ff=find(strcmp(strtrim(NoteParts{2}),n),1);
         
-        
-        if strcmpi(exptparams.TrialObjectClass,'StreamNoise') ||...
+        if strcmpi(filtfmt,'qspecgram') && ...
+                (strcmpi(exptparams.TrialObjectClass,'StreamNoise') ||...
+                 strcmpi(exptparams.TrialObjectClass,'RepDetect')),
+            % special treatment for stream noise
+            stimidxs=strsep(NoteParts{2},'+',1);
+            tw=[];
+            for sidx=1:length(stimidxs),
+                ff=find(strcmp(strtrim(stimidxs{sidx}),n),1);
+                tw=cat(3,tw,qstim(:,:,ff)');
+                BigStimMatrix(evidx,sidx,trialidx)=ff;
+            end
+            tw=mean(tw,3);
+            startbin=round(t2(evidx).*fsout);
+            
+            if isfield(exptparams.TrialObject,'PreTargetAttenuatedB'),
+                if strcmpi(strtrim(NoteParts{3}),'Reference'),
+                    PreTargetScaleBy=10^(-exptparams.TrialObject.PreTargetAttenuatedB/20);
+                    tw=tw.*PreTargetScaleBy;
+                end
+            end
+            
+            w(startbin+(1:size(tw,1)),:)=tw;
+            
+        elseif strcmpi(exptparams.TrialObjectClass,'StreamNoise') ||...
                 strcmpi(exptparams.TrialObjectClass,'RepDetect'),
             
             % special treatment for stream noise
@@ -207,6 +249,7 @@ for trialidx=1:TrialCount,
             for sidx=1:length(stimidxs),
                 ff=find(strcmp(strtrim(stimidxs{sidx}),n),1);
                 tw=cat(2,tw,waveform(o,ff));
+                BigStimMatrix(evidx,sidx,trialidx)=ff;
             end
             if size(tw,2)>maxstreams,
                  w(:,maxstreams+1:size(tw,2))=0;
@@ -220,11 +263,9 @@ for trialidx=1:TrialCount,
             if isfield(exptparams.TrialObject,'PreTargetAttenuatedB'),
                 if strcmpi(strtrim(NoteParts{3}),'Reference'),
                     PreTargetScaleBy=10^(-exptparams.TrialObject.PreTargetAttenuatedB/20);
-
                     tw=tw.*PreTargetScaleBy;
                 end
             end
-            
             
             w(startbin+(1:size(tw,1)),1:size(tw,2))=tw;
             
@@ -266,19 +307,26 @@ for trialidx=1:TrialCount,
     end
     
     if strcmpi(filtfmt,'none') || strcmpi(filtfmt,'wav') ||...
-            strcmpi(filtfmt,'envelope'),
-        tstim=[];
-        for ww=1:size(w,2),
-            tstim=cat(2,tstim,resample(w(:,ww),fsout,...
-                exptparams.TrialObject.SamplingRate));
+            strcmpi(filtfmt,'envelope') || strcmpi(filtfmt,'qspecgram'),
+        if ~strcmpi(filtfmt,'envelope') && ~strcmpi(filtfmt,'qspecgram'),
+            % envelope has already been downsampled
+            tstim=[];
+            for ww=1:size(w,2),
+                tstim=cat(2,tstim,resample(w(:,ww),fsout,...
+                    exptparams.TrialObject.SamplingRate));
+            end
+            w=tstim;
         end
-        w=tstim;
         if trialidx==1,
             stim=zeros(size(w,2),MaxTrialLen,TrialCount).*nan;
         end
         stim(:,1:size(w,1),trialidx)=w';
-        
     else
+        if isempty(fh),
+            fh=figure;
+        else
+            sfigure(fh);
+        end
         for sidx=1:size(w,2),
             [tstim,tstimparam]=...
                 wav2spectral(w(:,sidx),filtfmt,TrialFs,fsout,chancount);
@@ -292,8 +340,6 @@ for trialidx=1:TrialCount,
         axis xy;
         drawnow
     end
-    
-   
 end
 
 %
@@ -325,6 +371,7 @@ else
     stimparam=tstimparam;
     stimparam.tags=ro.Names;
 end
+stimparam.BigStimMatrix=BigStimMatrix;
 
 % truncate time bins that are always nan at the end of the stim vectors
 sn=max(sum(~isnan(stim(1,:,:,1))));

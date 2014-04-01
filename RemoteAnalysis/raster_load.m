@@ -103,6 +103,8 @@ switch datause,
         options.tag_masks={'SPECIAL-LICK-LAST'};
     case {'Per trial'},
         options.tag_masks={'SPECIAL-TRIAL'};
+    case {'Per trial pre-target'},
+        options.tag_masks={'SPECIAL-TRIAL-NOTAR'};
     otherwise,
         % just pass on datause
         options.tag_masks={datause};

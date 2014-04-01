@@ -192,7 +192,7 @@ gl=0.70;
 ES_LINE={[0 0 1],[1 0 0],[0 0.6 0],[0 0 0],[1 0 1],[1 1 0],[0 0.9 0.9]};
 ES_SHADE={[gl gl 1],[1 gl gl],[gl 0.9 gl],[gl gl gl],...
           [1 0.4 1],[1 1 0.4],[0.4 1 1]};
-   
+
 global chanstr
 chanstr=cell(1,128);
 for ii=1:length(chanstr),

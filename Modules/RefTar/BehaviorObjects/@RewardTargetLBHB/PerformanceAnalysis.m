@@ -244,6 +244,7 @@ else
     trialtargetid=double(~NullTrials);
 end
 
+% save HR data
 perf(cnt2).uWarningTrial=zeros(1,UniqueCount);
 perf(cnt2).uHit=zeros(1,UniqueCount).*nan;
 if perf(cnt2).WarningTrial && trialtargetid(cnt2)>0,
@@ -251,11 +252,29 @@ if perf(cnt2).WarningTrial && trialtargetid(cnt2)>0,
     perf(cnt2).uHit(trialtargetid(cnt2))=perf(cnt2).Hit;
 end
 perf(cnt2).uHitRate = nanmean(cat(1,perf.uHit),1);
+IsCatchTrial=~isnan(cat(1,perf.FirstCatchTime));
+CatchIdx=find(IsCatchTrial);
+if isfield(perf(cnt2),'FirstCatchTime') && ~isempty(CatchIdx),
+    crt=exptparams.FirstLick.Catch(CatchIdx);
+    cHit=crt>parms.EarlyWindow & crt<parms.EarlyWindow+parms.ResponseWindow;
+    perf(cnt2).cHitRate=mean(cHit);
+else
+    % no catch stim yet (or at all)
+    perf(cnt2).cHitRate=nan;
+end
+
+% save RT data
 perf(cnt2).ReactionTime=exptparams.FirstLick.Tar(cnt2);
 perf(cnt2).uReactionTime=zeros(1,UniqueCount).*nan;
 if trialtargetid(cnt2)>0,
     perf(cnt2).uReactionTime(trialtargetid(cnt2))=perf(cnt2).ReactionTime;
 end
+if isfield(perf(cnt2),'FirstCatchTime') && ~isnan(perf(cnt2).FirstCatchTime),
+    perf(cnt2).cReactionTime=exptparams.FirstLick.Catch(cnt2);
+else
+    perf(cnt2).cReactionTime=nan;
+end
+   
 
 % now determine what this trial outcome is:
 if perf(cnt2).Hit, perf(cnt2).ThisTrial = 'Hit';end
@@ -275,35 +294,53 @@ if strcmpi(trialparms.descriptor,'MultiRefTar'),
     TarPreStimSilence=get(trialparms.TargetHandle,'PreStimSilence');
     if trialparms.SingleRefSegmentLen>0,
         PossibleRefTimes=(find(trialparms.ReferenceCountFreq(:))-1).*...
-            trialparms.SingleRefSegmentLen+perf(1).FirstRefTime+TarPreStimSilence;
+            trialparms.SingleRefSegmentLen+perf(1).FirstRefTime;
     else
         RefSegLen=get(trialparms.ReferenceHandle,'PreStimSilence')+...
             get(trialparms.ReferenceHandle,'Duration')+...
             get(trialparms.ReferenceHandle,'PostStimSilence');
         PossibleRefTimes=(find(trialparms.ReferenceCountFreq(:))-1).*...
-            RefSegLen+TarPreStimSilence;
+            RefSegLen;
     end
     resptime=[];
+    resptimeperfect=[];
     stimtype=[];
     stimtime=[];
     tcounter=[];
-    for tt=1:cnt2,
+    
+    Misses=cat(1,perf.Miss);
+    t1=min(find(~Misses));
+    t2=max(find(~Misses));
+    if isempty(t1),t1=1;t2=1;end
+    for tt=t1:t2,
         RefCount=sum(PossibleRefTimes<perf(tt).FirstTarTime);
         stimtime=cat(1,stimtime,PossibleRefTimes(1:RefCount),...
             perf(tt).FirstTarTime);
         resptime=cat(1,resptime,ones(RefCount+1,1).*perf(tt).FirstLickTime);
+        resptimeperfect=cat(1,resptimeperfect,ones(RefCount+1,1).*perf(tt).FirstTarTime+0.4+randn.*0.1);
         stimtype=cat(1,stimtype,zeros(RefCount,1),1);
         tcounter=cat(1,tcounter,ones(RefCount+1,1).*trialtargetid(tt));
         
-        cRefCount=RefCount-1; % catch stim is always in slot before last possible target
+        %if isnan(perf(tt).FirstCatchTime),
+            cRefCount=max(find(PossibleRefTimes+0.8< ...
+                               perf(tt).FirstTarTime));
+        %else
+        %    cRefCount=max(find(PossibleRefTimes< ...
+        %                       perf(tt).FirstCatchTime));
+        %end
+        % catch stim is always in slot before last possible target
         cstimtime=cat(1,cstimtime,PossibleRefTimes(1:cRefCount));
         cresptime=cat(1,cresptime,ones(cRefCount,1).*perf(tt).FirstLickTime);
-        cstimtype=cat(1,cstimtype,zeros(cRefCount,1));
-        if ~isnan(ct(tt)) && perf(tt).FirstLickTime>perf(tt).FirstCatchTime,
-            cstimtime=cat(1,cstimtime,perf(tt).FirstCatchTime);
-            cresptime=cat(1,cresptime,perf(tt).FirstLickTime);
-            cstimtype=cat(1,cstimtype,1);
+        st=zeros(cRefCount,1);
+        if ~isnan(ct(tt)) 
+            st(find(PossibleRefTimes==perf(tt).FirstCatchTime))=1;
         end
+        cstimtype=cat(1,cstimtype,st);
+        %if ~isnan(ct(tt)) && perf(tt).FirstLickTime>perf(tt).FirstCatchTime,
+        %    cstimtime=cat(1,cstimtime,perf(tt).FirstCatchTime);
+        %    cresptime=cat(1,cresptime,perf(tt).FirstLickTime);
+        %    cstimtype=cat(1,cstimtype,1);
+        %end
     end
     
     if sum(~isnan(ct)),
@@ -352,17 +389,19 @@ else
 end
 
 %keepidx=find(stimtype==0 | stimtime<resptime);
+stop_respwin=get(exptparams.BehaveObject,'EarlyWindow')+...
+    get(exptparams.BehaveObject,'ResponseWindow')+1;
+[diperfect]=compute_di(stimtime,resptimeperfect,stimtype,stop_respwin);
+
 resptime(resptime==0)=inf;
 keepidx=find(stimtime<resptime);
 stimtime=stimtime(keepidx);
 stimtype=stimtype(keepidx);
 resptime=resptime(keepidx);
 tcounter=tcounter(keepidx);
-stop_respwin=get(exptparams.BehaveObject,'EarlyWindow')+...
-    get(exptparams.BehaveObject,'ResponseWindow')+1;
-
 [di,hits,fas,tsteps]=compute_di(stimtime,resptime,stimtype,stop_respwin);
 %[perf(cnt2).FirstLickTime di max(hits) max(fas)]
+perf(cnt2).perfectDI=diperfect;
 perf(cnt2).DiscriminationIndex=di;
 perf(cnt2).uDiscriminationIndex=zeros(1,UniqueCount).*nan;
 

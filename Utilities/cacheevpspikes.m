@@ -241,6 +241,9 @@ for iBlock=1:NBlocks                 %
          %end
          
          cNSpikes = length(tspikebin);
+         if cNSpikes>0,
+             cNSpikes
+         end
       end
       
       %if VERBOSE fprintf(['Trial : ',n2s(cTrial),' [ ',num2str(length(tspikebin)),' triggers found ]\n']); end

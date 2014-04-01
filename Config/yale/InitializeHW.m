@@ -220,7 +220,7 @@ switch globalparams.HWSetup
       case 5,  % Recording Setup -- ripped off of NSL HWSetup 7
         %% DIGITAL IO
         % Outputs on Ports 0 and 2 (Lines 0-7)
-        DAQID = 'Dev1'; % NI BOARD ID WHICH CONTROLS STIMULUS & BEHAVIOR
+        DAQID = 'Dev3'; % NI BOARD ID WHICH CONTROLS STIMULUS & BEHAVIOR
         niResetDevice(DAQID);
         
         HW=niCreateDO(HW,DAQID,'port0/line0:1','TrigAI,TrigAO','InitState',[0 0]);
@@ -232,11 +232,11 @@ switch globalparams.HWSetup
         HW=niCreateDI(HW,DAQID,'port0/line6','walkD');
         
         %% ANALOG INPUT
-        HW=niCreateAI(HW,DAQID,'ai0:4','Touch,Microphone,walk1,walk2,walkDA','/Dev1/PFI1');
+        HW=niCreateAI(HW,DAQID,'ai0:4','Touch,Microphone,walk1,walk2,walkDA','/Dev3/PFI1');
         HW.AI(end).TriggerDIO=[1,1];
         
         %% ANALOG OUTPUT
-        HW=niCreateAO(HW,DAQID,'ao0:1','SoundOut,LightOut','/Dev1/PFI1');
+        HW=niCreateAO(HW,DAQID,'ao0:1','SoundOut,LightOut','/Dev3/PFI1');
         HW.AO(end).TriggerDIO=[1,2];
         
         %% SETUP SPEAKER CALIBRATION

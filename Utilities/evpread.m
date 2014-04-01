@@ -263,7 +263,7 @@ switch EVPVERSION
     fclose(fid);
     
     %% FILTER LFP
-    if ~isempty(P.lfpchans)
+    if 0 && ~isempty(P.lfpchans)
       order = 2; Nyquist = P.SRlfp/2;
       fHigh = 1; fLow = 0.3*Nyquist;
       [bLow,aLow] = butter(order,fLow/Nyquist,'low');
@@ -281,10 +281,13 @@ switch EVPVERSION
       end
       rl = filter(bLow,aLow,rl);
       rl = filter(bHigh,aHigh,rl);
-     
+      
       %bHumbug = [0.997995527211068  -5.987297083916456  14.967228743433322 -19.955854373444378  14.967228743433322  -5.987297083916456   0.997995527211068];
       %aHumbug = [1.000000000000000  -5.995310048314492  14.977237236960848 -19.955846338529373  14.957216231994666  -5.979292154433458   0.995995072333299];
      %rl = filter(bHumbug,aHumbug,rl);
+    elseif ~isempty(P.lfpchans)
+        %rl = single(resample(double(rl),P.SRlfp,lfpfs));
+
     end
 
   case 5; fprintf('EVP version 5 :   ');

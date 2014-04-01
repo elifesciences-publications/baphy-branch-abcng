@@ -579,7 +579,7 @@ for trialidx=trialrange,
             trialset(repidx,refidx)=trialidx;
         end
     end
-    if mod(trialidx,20)==0,
+    if mod(trialidx,100)==0 || trialidx==max(trialrange),
         %drawnow;
         if verbose
         fprintf('%s trial %d: %.1f sec\n',mfilename,trialidx,toc);
@@ -670,6 +670,22 @@ if (isempty(tag_masks) || length(tag_masks{1})<8 || ...
       trialset=trialset(:,mapidx);
    end
 end
+
+% sort FTC data by frequency
+if ~isempty(strfind(mfile,'_FTC')),
+    unsortedtags=zeros(length(tags),1);
+    for cnt1=1:length(tags),
+        temptags = strrep(strsep(tags{cnt1},',',1),' ','');
+        unsortedtags(cnt1) = str2num(temptags{2});
+    end
+    
+    [sortedtags, index] = sort(unsortedtags); % sort the numeric tags
+    
+    tags=tags(index);
+    r=r(:,:,index);
+    trialset=trialset(:,index);
+end
+
 
 if psthonly==-1,
    % do nothing?

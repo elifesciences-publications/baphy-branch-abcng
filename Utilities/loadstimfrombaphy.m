@@ -403,7 +403,7 @@ else
          wav=waveform(o,ii).*scalelevel;
          
          % ms per time bin
-         tbinsize=1000/fsout;
+         tbinsize=1000./fsout;
          
          stdur=length(wav)./fsin;
          tbincount=stdur*fsout;
