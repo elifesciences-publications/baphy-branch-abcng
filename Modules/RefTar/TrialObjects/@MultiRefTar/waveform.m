@@ -175,12 +175,12 @@ if ~isempty(TarTrialIndex)
         TarBins=TarStartBin+round(get(TarObject,'PreStimSilence').*TrialSamplingRate)+....
             (1:round((get(TarObject,'Duration').*TrialSamplingRate)));
         
-        %RefMaxDuringTar=max(abs(TrialSound(TarBins,TargetChannel)));
-        %ScaleBy=ScaleBy.*RefMaxDuringTar./5;
-        %fprintf('Ref max during tar: %.1f. Adjusted Tar ScaleBy: %.2f\n',RefMaxDuringTar,ScaleBy);
+        RefMaxDuringTar=max(abs(TrialSound(TarBins,TargetChannel)));
+        ScaleBy=ScaleBy.*RefMaxDuringTar./5;
+        fprintf('Ref max during tar: %.1f. Adjusted Tar ScaleBy: %.2f\n',RefMaxDuringTar,ScaleBy);
         RefMeanDuringTar=mean(abs(TrialSound(TarBins,TargetChannel)));
-        ScaleBy=ScaleBy.*RefMeanDuringTar./5;
-        fprintf('Ref mean during tar: %.1f. Adjusted Tar ScaleBy: %.2f\n',RefMeanDuringTar,ScaleBy);
+        %ScaleBy=ScaleBy.*RefMeanDuringTar./5;
+        %fprintf('Ref mean during tar: %.1f. Adjusted Tar ScaleBy: %.2f\n',RefMeanDuringTar,ScaleBy);
         w=w.*ScaleBy;
         
         if TarMatchContour && ~isempty(refenv),
@@ -290,12 +290,12 @@ if ~isempty(CatchTrialIndex)
     if OverlapRefTar,
         CatchBins=CatchStartBin+round(get(TarObject,'PreStimSilence').*TrialSamplingRate)+....
             (1:round((get(TarObject,'Duration').*TrialSamplingRate)));
-        %RefMaxDuringCatch=max(abs(TrialSound(CatchBins,CatchChannel)));
-        %ScaleBy=ScaleBy.*RefMaxDuringCatch./5;
-        %fprintf('Ref max during catch: %.1f. Adjusted Catch ScaleBy: %.2f\n',RefMaxDuringCatch,ScaleBy);
-        RefMeanDuringCatch=mean(abs(TrialSound(CatchBins,CatchChannel)));
-        ScaleBy=ScaleBy.*RefMeanDuringCatch./5;
-        fprintf('Ref mean during catch: %.1f. Adjusted Catch ScaleBy: %.2f\n',RefMeanDuringCatch,ScaleBy);
+        RefMaxDuringCatch=max(abs(TrialSound(CatchBins,CatchChannel)));
+        ScaleBy=ScaleBy.*RefMaxDuringCatch./5;
+        fprintf('Ref max during catch: %.1f. Adjusted Catch ScaleBy: %.2f\n',RefMaxDuringCatch,ScaleBy);
+        %RefMeanDuringCatch=mean(abs(TrialSound(CatchBins,CatchChannel)));
+        %ScaleBy=ScaleBy.*RefMeanDuringCatch./5;
+        %fprintf('Ref mean during catch: %.1f. Adjusted Catch ScaleBy: %.2f\n',RefMeanDuringCatch,ScaleBy);
         w=w.*ScaleBy;
         
         if par.OnsetRampTime>0,
