@@ -51,6 +51,14 @@ for lidx=1:length(lfpchans),
       fprintf('not found. generating from evp...\n');
       [spikechancount,auxchancount,trialcount,spikefs,auxfs,lfpchancount,lfpfs]=evpgetinfo(evpfile);
       [~,~,~,~,rl,ltrialidx]=evpread(evpfile,'spikeelecs',[],'lfpelecs',lfpchans(lidx),'SRlfp',options.rasterfs);
+      
+      % downsample prior to saving cache file
+      if isfield(options,'rasterfs') && options.rasterfs<lfpfs,
+         ltrialidx=ceil(ltrialidx*options.rasterfs./lfpfs);
+         rl=resample(rl,options.rasterfs,lfpfs);
+      end
+      lfpout(:,lidx)=rl;
+      
       if isempty(findstr(computer,'PCWIN')),
           w=unix(['mkdir -p ' pp filesep 'tmp']);
       elseif ~exist([pp filesep 'tmp'],'dir'),
@@ -58,12 +66,11 @@ for lidx=1:length(lfpchans),
       end
       save(cachefile,'rl','ltrialidx','spikechancount','auxchancount',...
            'trialcount','spikefs','auxfs','lfpchancount','lfpfs');
-      lfpout(:,lidx)=rl;
    end
 end
 
 % keep only requested trials
-if exist('trials','var') && ~isempty(trials),
+if exist('trials','var') && ~isempty(trials) && length(trials)<length(ltrialidx),
    keepidx=zeros(length(lfpout),1);
    ltrialidx0=zeros(length(trials),1);
    for tt=1:length(trials),

@@ -123,7 +123,8 @@ TrialObject = set(TrialObject, 'TargetHandle', TarObject);
 TrialObject = set(TrialObject, 'ReferenceHandle', RefObject);
 
 NonUserDefFields=setdiff(fieldnames(exptparams.TrialObject),...
-                         {'ReferenceClass','ReferenceHandle','TargetClass','TargetHandle',...
+                         {'ReferenceClass','ReferenceHandle',...
+                    'TargetClass','TargetHandle',...
                     'descriptor','RunClass','UserDefinableFields'});
 for ii=1:length(NonUserDefFields),
     if isfield(TrialObject,NonUserDefFields{ii}),
@@ -166,6 +167,11 @@ if strcmpi(exptparams.TrialObjectClass,'StreamNoise') || ...
             max(find(exptparams.TrialObject.ReferenceCountFreq)-1);
     end
     BigStimMatrix=-ones(SamplesPerTrial,2,TrialCount);
+    if strcmpi(filtfmt,'qspecgram'),
+        [qstim,tstimparam]...
+            =loadstimfrombaphy(parmfile,[],[],'specgramv',fsout,chancount);
+    end
+    
 else
     maxstreams=1;
     BigStimMatrix=[];
@@ -174,7 +180,10 @@ MaxTrialLen=round(max(evtimes(exptevents,'TRIALSTOP').*fsout));
 for trialidx=1:TrialCount,
     ThisTrialLength=evtimes(exptevents,'TRIALSTOP',trialidx);
     fprintf('Trial %d (len %.2f)\n',trialidx,ThisTrialLength);
-    if strcmpi(filtfmt,'envelope'),
+    if strcmpi(filtfmt,'qspecgram'),
+        ThisTrialBins=round(ThisTrialLength.*fsout);
+        w=zeros(ThisTrialBins,chancount);
+    elseif strcmpi(filtfmt,'envelope'),
         ThisTrialBins=round(ThisTrialLength.*fsout);
         w=zeros(ThisTrialBins,maxstreams);
         smfilt=ones(round(TrialFs/fsout),1)./round(TrialFs/fsout);
@@ -208,7 +217,30 @@ for trialidx=1:TrialCount,
         n=get(o,'Names');
         ff=find(strcmp(strtrim(NoteParts{2}),n),1);
         
-        if strcmpi(exptparams.TrialObjectClass,'StreamNoise') ||...
+        if strcmpi(filtfmt,'qspecgram') && ...
+                (strcmpi(exptparams.TrialObjectClass,'StreamNoise') ||...
+                 strcmpi(exptparams.TrialObjectClass,'RepDetect')),
+            % special treatment for stream noise
+            stimidxs=strsep(NoteParts{2},'+',1);
+            tw=[];
+            for sidx=1:length(stimidxs),
+                ff=find(strcmp(strtrim(stimidxs{sidx}),n),1);
+                tw=cat(3,tw,qstim(:,:,ff)');
+                BigStimMatrix(evidx,sidx,trialidx)=ff;
+            end
+            tw=mean(tw,3);
+            startbin=round(t2(evidx).*fsout);
+            
+            if isfield(exptparams.TrialObject,'PreTargetAttenuatedB'),
+                if strcmpi(strtrim(NoteParts{3}),'Reference'),
+                    PreTargetScaleBy=10^(-exptparams.TrialObject.PreTargetAttenuatedB/20);
+                    tw=tw.*PreTargetScaleBy;
+                end
+            end
+            
+            w(startbin+(1:size(tw,1)),:)=tw;
+            
+        elseif strcmpi(exptparams.TrialObjectClass,'StreamNoise') ||...
                 strcmpi(exptparams.TrialObjectClass,'RepDetect'),
             
             % special treatment for stream noise
@@ -275,8 +307,8 @@ for trialidx=1:TrialCount,
     end
     
     if strcmpi(filtfmt,'none') || strcmpi(filtfmt,'wav') ||...
-            strcmpi(filtfmt,'envelope'),
-        if ~strcmpi(filtfmt,'envelope'),
+            strcmpi(filtfmt,'envelope') || strcmpi(filtfmt,'qspecgram'),
+        if ~strcmpi(filtfmt,'envelope') && ~strcmpi(filtfmt,'qspecgram'),
             % envelope has already been downsampled
             tstim=[];
             for ww=1:size(w,2),

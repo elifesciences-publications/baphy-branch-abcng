@@ -139,6 +139,44 @@ switch globalparams.HWSetup
     %% COMMUNICATE WITH MANTA
     if doingphysiology  [HW,globalparams] = IOConnectWithManta(HW,globalparams); end
     
+    
+     case {6,7},  % (DR-1) Dark Room 1
+      % setup 6 = audio channel 1 (AO0) on Right
+      % setup 7 = audio channel 2 (AO0) on Left
+
+    DAQID = 'Dev1'; % NI BOARD ID WHICH CONTROLS STIMULUS & BEHAVIOR
+    niResetDevice(DAQID);
+
+    %% DIGITAL IO
+    % "TrigAI" and "TrigAO" are special identifiers for DIO lines used to
+    % trigger analog in and out, respectively.
+    HW=niCreateDO(HW,DAQID,'port0/line0:2','TrigAI,TrigAO,TrigAIInv','InitState',[0 0 1]);
+    % port0/line2 reserved for inverse TrigAI
+    HW=niCreateDO(HW,DAQID,'port0/line3','Pump','InitState',0);
+    HW=niCreateDI(HW,DAQID,'port0/line4','Touch');
+    HW=niCreateDO(HW,DAQID,'port0/line5','Light','InitState',0);
+    HW=niCreateDO(HW,DAQID,'port0/line6','Light2','InitState',0);
+    HW=niCreateDO(HW,DAQID,'port0/line7','Light3','InitState',0);
+    HW=niCreateDO(HW,DAQID,'port0/line4','Shock','InitState',0);
+    
+    %% ANALOG INPUT
+    HW=niCreateAI(HW,DAQID,'ai0:1','Touch,Microphone','/Dev1/PFI0');
+    
+    %% ANALOG OUTPUT
+    if globalparams.HWSetup==6
+        HW=niCreateAO(HW,DAQID,'ao0:1','SoundOut1,SoundOut2','/Dev1/PFI1');
+    else
+        HW=niCreateAO(HW,DAQID,'ao0:1','SoundOut2,SoundOut1','/Dev1/PFI1');
+    end
+    
+    % no filter, so use higher AO sampling rate in some sound objects:
+    FORCESAMPLINGRATE=[];
+    
+    HW.params.SoftwareEqz(:)=1.5;
+    
+    %% COMMUNICATE WITH MANTA
+    if doingphysiology  [HW,globalparams] = IOConnectWithManta(HW,globalparams); end
+    
 end % END SWITCH
 
 if isfield(HW,'MANTA')

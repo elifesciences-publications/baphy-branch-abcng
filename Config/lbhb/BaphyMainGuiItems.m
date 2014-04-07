@@ -9,7 +9,7 @@ function varargout = BaphyMainGuiItems (field,globalparams)
 switch field
   % Tester:
   case 'Tester'
-    varargout{1} = {'Austin Powers','Dani','Erica','Henry','Sean','Stephen'};
+    varargout{1} = {'Austin Powers','Dani','Henry','Sean','Stephen','Zack'};
     % Ferret Names:
   case 'Ferret'
     if dbopen,
@@ -55,7 +55,8 @@ switch field
     % Sound Proof rooms:
     varargout{1} = {'0: Test', '1: SB 1',...
         '2: LB 1 (Primary=R)', '3: LB 1 (Primary=L)',...
-        '4: LB 2 (Primary=R)', '5: LB 2 (Primary=L)'};
+        '4: LB 2 (Primary=R)', '5: LB 2 (Primary=L)', '6: DR 1 (Primary=R)',...
+        '7: DR 1 (Primary=L)'};
   case 'HWSetupSpecs',
     % boilerplate descriptor of recording setup for saving to gPenetration
     % in celldb.
@@ -106,6 +107,20 @@ switch field
                 varargout{1}.speakernotes='Crown amp. Software attenuation/equalizer. Manger free-field speakers. Channel 1=left speaker.';
                 varargout{1}.ear='L';
             end
+            
+             case {6,7}, %% Dark room 1
+            varargout{1}.racknotes=sprintf('Dark room, pump cal: %.2f ml/sec',globalparams.PumpMlPerSec.Pump);
+            if ~globalparams.training,
+                varargout{1}.probenotes=sprintf('%d-channel. Well position: XXX',globalparams.numchans);
+                varargout{1}.electrodenotes='FHC: size, impendence not specified';
+            end
+            if globalparams.HWSetup==6,
+                varargout{1}.speakernotes='Pyle amp. Software attenuation/equalizer. Cheapo free-field speakers. Channel 1=right speaker.';
+                varargout{1}.ear='R';
+            else
+                varargout{1}.speakernotes='Pyle amp. Software attenuation/equalizer. Cheapo free-field speakers. Channel 1=left speaker.';
+                varargout{1}.ear='L';
+            end
     end
   case 'NumberOfElectrodes'
     % number of electrodes
@@ -122,7 +137,7 @@ switch field
          else
             varargout{1}=fileparts(tempname);
          end
-      case 1,
+        case {1,6,7}
         varargout{1}='H:\daq\';  % ie, save direct to the server
       case {2,3}
           if strcmpi(globalparams.Physiology,'No'),
@@ -152,10 +167,9 @@ switch field
         varargout{1}=0.24;   % SVD calibrated 2006-05-19
       case {4,5}
         varargout{1}=0.233;   % SVD calibrated 2006-05-10
-      case 6,
+     otherwise
         varargout{1}=0;
-      case 8,
-        varargout{1}=0.24;   % SVD calibrated 2006-05-19
+       
     end
   case 'tempdatapath',
     %if ~exist('globalparams','var')

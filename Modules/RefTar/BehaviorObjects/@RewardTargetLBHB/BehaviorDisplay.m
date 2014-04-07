@@ -91,11 +91,27 @@ if isempty(AIData) && isempty(TrialSound)
 end
 
 %% display Hitrate, FalseAlarmRate, DI across trials
-subplot(4,4,1:4),plot(100*cat(1,exptparams.Performance(1:end-1).HitRate),'o-',...
-    'LineWidth',2,'MarkerFaceColor',[1 .5 .5],'MarkerSize',5,'color',[1 .5 .5]);
+subplot(4,4,1:4);
+if isfield(exptparams,'UniqueTargets') && length(exptparams.UniqueTargets)>1
+    plot(100*cat(1,exptparams.Performance(1:end-1).HitRate),'-',...
+        'LineWidth',2,'color',[1 .5 .5]);
+    hold on;
+    UniqueCount=length(exptparams.UniqueTargets);
+    targetid={exptparams.Performance(1:TrialIndex).ThisTargetNote};
+    colormtx=jet;
+    colormtx=colormtx(round(linspace(1,64,length(exptparams.UniqueTargets))),:);
+    for jj=1:UniqueCount,
+        thistargetii=find(strcmp(targetid,exptparams.UniqueTargets{jj}));
+        plot(thistargetii,100*cat(1,exptparams.Performance(thistargetii).HitRate),'o',...
+            'MarkerFaceColor',colormtx(jj,:),'MarkerSize',5,'color',colormtx(jj,:));
+    end
+else
+    plot(100*cat(1,exptparams.Performance(1:end-1).HitRate),'o-',...
+        'LineWidth',2,'MarkerFaceColor',[1 .5 .5],'MarkerSize',5,'color',[1 .5 .5]);
+end
 hold on;
 plot(100*cat(1,exptparams.Performance(1:end-1).FalseAlarmRate),'<-',...
-     'LineWidth',2,'MarkerFaceColor',[.1 .5 .1],'MarkerSize',5,'color',[.1 .5 .1]);
+    'LineWidth',2,'MarkerFaceColor',[.1 .5 .1],'MarkerSize',5,'color',[.1 .5 .1]);
 plot(100*cat(1,exptparams.Performance(1:end-1).DiscriminationIndex),'-',...
      'LineWidth',1,'color',[0 0 0]);
 

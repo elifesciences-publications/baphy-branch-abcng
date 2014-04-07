@@ -391,8 +391,11 @@ end
 %keepidx=find(stimtype==0 | stimtime<resptime);
 stop_respwin=get(exptparams.BehaveObject,'EarlyWindow')+...
     get(exptparams.BehaveObject,'ResponseWindow')+1;
-[diperfect]=compute_di(stimtime,resptimeperfect,stimtype,stop_respwin);
-
+if exist('resptimeperfect','var'),
+    [diperfect]=compute_di(stimtime,resptimeperfect,stimtype,stop_respwin);
+else
+    diperfect=1;
+end
 resptime(resptime==0)=inf;
 keepidx=find(stimtime<resptime);
 stimtime=stimtime(keepidx);
