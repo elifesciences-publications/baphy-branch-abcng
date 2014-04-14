@@ -36,15 +36,17 @@ TrialN = get(o,'TrialN');
 
 %get(o,'TrialN')
 
-if TrialN == 0
-    
+o = set(o,'AllTargetPositions',{'center'});   % for Bernhard script [PerformanceAnalysis.m]
+o = set(o,'CurrentTargetPositions',{'center'});
+
+if TrialN == 0    
   KeyNum = round(prod(clock)*5/10000)
   %Key = RandStream('mrg32k3a','Seed',KeyNum);
   o = set(o,'Key',KeyNum);
   o = set(o,'TrialN', 1);
   %Key = round( Rtoday.rand(1,1)*100 );   % With RandStream('mrg32k3a'), it is important to work with large numbers,                                         %because there is a heavy correlation between two seeds that belong to the same integer interval [n,n+1[
 else
-  Key = get(o,'Key')
+  Key = get(o,'Key')  
   %o = set(o,'Key', Key);
 end
 % Type=lower(get(o,'Type'));

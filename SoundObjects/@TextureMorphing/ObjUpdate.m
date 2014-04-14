@@ -81,6 +81,13 @@ for ChangedD_Num = 1:ChangedD_Nb
             ChannelDistance = 1;
             ChannelDistancesByMorphing{ChangedD_Num} = ones(1,4)*ChannelDistance;
             Bins2Change{ChangedD_Num} = [1:2 ; 3:4 ; 5:6 ; 7:8];
+        case 'fixed_increm'
+            MorphingNb(ChangedD_Num) = 1;
+            ChannelDistance = 1;
+            ChannelDistancesByMorphing{ChangedD_Num} = ones(1,4)*ChannelDistance;
+            PossibleBins = {1:2 ; 3:4 ; 5:6 ; 7:8};
+            Bin2ChangeIndex = getfield(Par,[ 'D' num2str(ChangedD_Num) 'param' ]);
+            Bins2Change{ChangedD_Num} = PossibleBins{Bin2ChangeIndex};
         case 'non_contig_increm'
             ChannelDistances = getfield(Par,[ 'D' num2str(ChangedD_Num) 'param' ]);
             MorphingNb(ChangedD_Num) = 0; Bins2Change{ChangedD_Num} = [];

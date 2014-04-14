@@ -37,27 +37,17 @@ tmp = get(exptparams.TrialObject,'ReferenceIndices'); ReferenceIndices = tmp{exp
 tmp = get(exptparams.TrialObject,'TargetIndices'); TargetIndices = tmp{exptparams.InRepTrials};
 
 %% COMPUTE RESPONSE WINDOWS
-str1ind = strfind(StimEvents(end).Note,' '); str2ind = strfind(StimEvents(end).Note,'-')-1;
-Index = str2num(StimEvents(end).Note(str1ind(3):str2ind(1)));
-DistributionTypeByInd = get(get(exptparams.TrialObject,'TargetHandle'),'DistributionTypeByInd');
-DistributionTypeNow = DistributionTypeByInd(Index); 
-DifficultyLvl = str2num(get(get(exptparams.TrialObject,'TargetHandle'),['DifficultyLvl_D' num2str(DistributionTypeNow)]));
-DifficultyLvlByInd = get(get(exptparams.TrialObject,'TargetHandle'),'DifficultyLvlByInd');
-DifficultyNow = DifficultyLvl( DifficultyLvlByInd(Index) );
+str1ind = strfind(StimEvents(end-3).Note,'/') -2; str1ind = str1ind(1); str2ind = strfind(StimEvents(end-3).Note,'/') +2; str2ind = str2ind(1);
+if isempty(str1ind); Index = 0; else Index = str2num(StimEvents(end-3).Note((str1ind+1):(str2ind-1))); end
 
 TarInd = find(~cellfun(@isempty,strfind({StimEvents.Note},'LickWindow')));
-EarlyWindow = StimEvents(end).StartTime;
-LickWindowTime = StimEvents(end).StopTime - EarlyWindow; % include 0.4s PreStimSilence / 2s Frozen / ToC (without response window)
+EarlyWindow = StimEvents(end-1).StartTime;
+LickWindowTime = StimEvents(end-1).StopTime - EarlyWindow; % include 0.4s PreStimSilence / 2s Frozen / ToC (without response window)
 TargetStartTime = 0; %StimEvents(TarInd(1)).StartTime;
-if DifficultyNow~=0 % not a catch trial
-  CatchTrial = 0;
-  TarWindow(1) = TargetStartTime + EarlyWindow;
-  TarWindow(2) = TarWindow(1) + LickWindowTime;%get(O,'ResponseWindow');
-else
-  CatchTrial = 1;
-  TarWindow(1) = TargetStartTime + EarlyWindow  + get(O,'ResponseWindow');
-  TarWindow(2) = TarWindow(1);
-end
+
+TarWindow(1) = TargetStartTime + EarlyWindow;
+TarWindow(2) = TarWindow(1) + LickWindowTime;%get(O,'ResponseWindow');
+
 RefWindow = [0,TarWindow(1)];
 Objects.Tar = get(exptparams.TrialObject,'TargetHandle');
 Simulick = get(O,'Simulick'); if Simulick; LickTime = rand*(TarWindow(2)+1); end
@@ -92,13 +82,14 @@ AllLickSensorNames = SensorNames(~cellfun(@isempty,strfind(SensorNames,'Touch'))
 CountingLicks = [];
 tic; CurrentTime = IOGetTimeStamp(HW); InitialTime = CurrentTime;
 fprintf(['Running Trial [ <=',n2s(exptparams.LogDuration),'s ] ... ']);
-while CurrentTime < exptparams.LogDuration
-
+%while CurrentTime < exptparams.LogDuration 
+while CurrentTime < StimEvents(end).StopTime
 DetectType = 'ON'; LickOccured = 0;
   %CurrentTime = IOGetTimeStamp(HW); % INACCURATE WITH DISCRETE STEPS
   CurrentTime = toc+InitialTime;
   % READ LICKS FROM ALL SENSORS
   if ~Simulick;   cLick = IOLickRead(HW,SensorChannels);
+    
   else cLick = ones(size(SensorChannels)); 
     if CurrentTime>= LickTime; cLick(ceil(length(cLick)*rand)) = 0; end
   end
@@ -120,7 +111,9 @@ DetectType = 'ON'; LickOccured = 0;
   if LickOccured
     ResponseTime = CurrentTime; 
     CountingLicks = [CountingLicks ResponseTime];
-    IndRef = strfind(StimEvents(end).Note,'/')-2;
+    
+    %strfind(StimEvents(end).Note, ' / ')-2
+   % IndRef = StimEvents(end).Note(strfind(StimEvents(end).Note,'/')-1);
     cSensorChannels = SensorChannels(find(cLick,1,'first'));
     if ~isempty(cSensorChannels)
       cLickSensorInd = find(cLick,1,'first');
@@ -128,10 +121,11 @@ DetectType = 'ON'; LickOccured = 0;
       cLickSensorNot = setdiff(SensorNames(SensorChannels),cLickSensor);
     else
       cLickSensor = 'None'; cLickSensorNot = 'None';
+     
     end
    
     Events=AddEvent(Events,['LICK,',cLickSensor],TrialIndex,ResponseTime,[]);
-    
+  else  ResponseTime =inf; 
   end
   
   % GIVE LIGHT CUE ON REWARD SIDE
@@ -150,13 +144,18 @@ DetectType = 'ON'; LickOccured = 0;
     exptparams.Water = exptparams.Water + PrewardAmount;
     fprintf('\b ... '); Prewarded = 1;
   end
+  
+  if ResponseTime > TarWindow(1) && ResponseTime < TarWindow(2)
+    break
+  end
 end
 
-DidItLicks = zeros(1,length(StimEvents) - 2)
-if notisempty(CountingLicks)    
+DidItLicks = zeros(1,length(StimEvents) - 3)
+if not(isempty(CountingLicks))   
+  LickOccured = 1;
     for j = 1:length(CountingLicks)
-        for jj = 2:length(StimEvents)-1
-            if CountingLicks(j)>StimEvents(jj).StartTime/SamplingRate && CountingLicks(j)<StimEvents(jj).StopTime/SamplingRate
+        for jj = 2:length(StimEvents)-2
+            if CountingLicks(j)>StimEvents(jj).StartTime && CountingLicks(j)<StimEvents(jj).StopTime
                DidItLicks(jj)=1;
             end
         end
@@ -164,13 +163,12 @@ if notisempty(CountingLicks)
 end
 
 BadLickSum = sum(DidItLicks);
-
 %   MinimalInterval = 0.250*HW.params.fsAI;     % samples  
 %   LickTimings = find( diff( LickData(:,cP.LickSensorInd) ) >0)';
 %   FarLickTimingsIndex = unique( [1 find(diff(LickTimings)>MinimalInterval)+1] );
 %   cP.LickTime = LickTimings(FarLickTimingsIndex);
 % IF NO RESPONSE OCCURED
-if ~LickOccured ResponseTime = inf; end
+if ~LickOccured; ResponseTime = inf; end
 
 if LickOccured
   fprintf(['\t Lick detected [ ',cLickSensor,', at ',n2s(ResponseTime,3),'s ] ... ']);
@@ -179,21 +177,23 @@ else
 end
 
 %%  PROCESS LICK
-if ResponseTime < (TarWindow(1) +MinimalDelayResponse)
+if any( CountingLicks>TarWindow(1)  & CountingLicks < TarWindow(2) ) % && BadLickSum == 0
+  Outcome = 'HIT';
+  IndexLicks = find( CountingLicks>TarWindow(1)  & CountingLicks < TarWindow(2) );
+  ResponseTime = CountingLicks(IndexLicks(1));
+elseif ~isempty(CountingLicks) && all( CountingLicks<TarWindow(1) )
   Outcome = 'EARLY';
-elseif ResponseTime > TarWindow(2)  % CASES NO LICK AND LATE LICK
-  if ~CatchTrial
-    Outcome = 'SNOOZE';
-  else
-    ResponseTime = TarWindow(2);
-    cLickSensor = TargetSensors{1}; cLickSensorNot = 'None';
-    Outcome = 'HIT'; % includes ambigous if both are specified
-  end
-else % HIT OR ERROR
-  switch cLickSensor % CHECK WHERE THE LICK OCCURED
-    case TargetSensors;   Outcome = 'HIT'; % includes ambigous if both are specified 
-    otherwise                  Outcome = 'ERROR';
-  end
+  IndexLicks = find( CountingLicks<TarWindow(1) );
+ 
+  ResponseTime = CountingLicks(IndexLicks(1));
+  
+else  % CASES NO LICK AND LATE LICK
+   Outcome = 'SNOOZE';
+% else % HIT OR ERROR
+%   switch cLickSensor % CHECK WHERE THE LICK OCCURED
+%     case TargetSensors;   Outcome = 'HIT'; % includes ambigous if both are specified 
+%     otherwise                  Outcome = 'ERROR';
+%   end
 end
 Events=AddEvent(Events,['OUTCOME,',Outcome],TrialIndex,ResponseTime,[]);
 if strcmp(Outcome,'HIT'); Outcome2Display = [Outcome ', RT = ' num2str(ResponseTime-TarWindow(1))]; else Outcome2Display = Outcome; end
@@ -231,7 +231,7 @@ switch Outcome
     % 14/02/20-YB: Patched to change LED/pump structure + Duration2Play (cf. lab notebook)
     Duration2Play = 0.5; LEDposition = {'left'};
     % Stop Dbis sound when <Duration2Play> is elapsed
-    if ~CatchTrial; pause(max([0 , (TarWindow(1)+Duration2Play)-IOGetTimeStamp(HW) ])); end
+    pause(max([0 , (TarWindow(1)+Duration2Play)-IOGetTimeStamp(HW) ]));
     StopEvent = IOStopSound(HW);
     Events = AddEvent(Events, StopEvent, TrialIndex);
     
@@ -250,9 +250,7 @@ switch Outcome
     NbContiguousLastHits = find(strcmp(LastOutcomes,'EARLY'),1,'first')-1;   % Only Early are taken into account
     if isempty(NbContiguousLastHits), NbContiguousLastHits = length( find(strcmp(LastOutcomes,'HIT')) );
     else NbContiguousLastHits = NbContiguousLastHits - length( find(strcmp(LastOutcomes(1:(NbContiguousLastHits+1)),'SNOOZE')) ); end  % But Snoozes don't give bonus
-    MinToC = str2double(get(get(exptparams.TrialObject,'TargetHandle'),'MinToC')); MaxToC = str2double(get(get(exptparams.TrialObject,'TargetHandle'),'MaxToC'));
-    RewardAmount = MinRewardAmount + (RewardAmount-MinRewardAmount)*((length(StimEvents) - 2)-BadLickSum)/(length(StimEvents) - 2);
-    if CatchTrial; RewardAmount = RewardAmount/2; end
+    RewardAmount = MinRewardAmount + (RewardAmount-MinRewardAmount)*((length(StimEvents) - 3)-BadLickSum)/(length(StimEvents) - 3);
     PumpDuration = RewardAmount/globalparams.PumpMlPerSec.(PumpName);
     % pause(0.05); % PAUSE TO ALLOW FOR HEAD TURNING
     PumpEvent = IOControlPump(HW,'Start',PumpDuration,PumpName);
@@ -284,7 +282,7 @@ switch Outcome
 end
 fprintf('\n');
 
-if CatchTrial; LickTime = NaN; elseif ~strcmp(Outcome,'SNOOZE'); LickTime = ResponseTime; else LickTime = NaN; end
+if ~strcmp(Outcome,'SNOOZE'); LickTime = ResponseTime; else LickTime = NaN; end
 exptparams.Performance(TrialIndex).ReferenceIndices = ReferenceIndices;
 exptparams.Performance(TrialIndex).TargetIndices = TargetIndices;
 exptparams.Performance(TrialIndex).Outcome = Outcome;

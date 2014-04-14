@@ -208,6 +208,8 @@ else
       runclass = 'ATS';
     case 'TEXTUREMORPHING';
       runclass = 'TMG';
+    case 'RANDSEQTORC';
+      runclass = 'RST';      
     case 'WHITENOISE'
       runclass = 'WHN';
     otherwise
