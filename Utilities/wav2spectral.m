@@ -267,17 +267,19 @@ switch lower(filtfmt),
   stim=ts';
  
   case 'gamma',
-    [gamma_bms, gamma_envs, ~] = ...
+    [gamma_bms, gamma_envs, ~, ~, cfs] = ...
         gammatonebank(wav,200,20000,chancount,f,false);
     smfilt=ones(1,round(fsin/fsout))./round(fsin/fsout);
     gamma_envs=conv2(gamma_envs,smfilt,'same');
     stim=gamma_envs(:,round((fsin/fsout./2):(fsin/fsout):size(gamma_envs,2)))';
+    stimparam.ff=cfs;
   case 'gamma264',
-    [gamma_bms, gamma_envs, ~] = ...
+    [gamma_bms, gamma_envs, ~, ~, cfs] = ...
         gammatonebank(wav,2000,64000,chancount,f,false);
     smfilt=ones(1,round(fsin/fsout))./round(fsin/fsout);
     gamma_envs=conv2(gamma_envs,smfilt,'same');
     stim=gamma_envs(:,round((fsin/fsout./2):(fsin/fsout):size(gamma_envs,2)))';
+    stimparam.ff=cfs;
     
  case 'logfsgram',
   %function [Y,MX] = logfsgram(X, N, SR, WIN, NOV, FMIN, BPO)
