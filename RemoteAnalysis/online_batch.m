@@ -192,7 +192,8 @@ for ii=1:NElectrodes
         % for speech and sporcs, use boosting to estimate strf
         boost_online(mfile,Electrode,unit,AH(ii),options);
       elseif strcmpi(options.runclass,'VOC'),
-        options.filtfmt='specgramv';
+        %options.filtfmt='specgramv';
+        options.filtfmt='gamma';
         % for speech and sporcs, use boosting to estimate strf
         boost_online(mfile,Electrode,unit,AH(ii),options);
       elseif strcmpi(options.runclass,'tst')  %for multi-level tuning
