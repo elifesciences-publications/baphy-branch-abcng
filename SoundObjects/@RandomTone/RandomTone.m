@@ -12,7 +12,9 @@ case 0
     s = SoundObject ('RandomTone', 40000, 0,0, 0, ...
         {''}, 1, {'BaseFrequency','edit',1000,'OctaveBelow','edit',2,...
         'OctaveAbove','edit',3,'TonesPerOctave','edit',5,...
-        'Duration','edit',1000,'SamplingRate','edit',40000,'GapDuration','edit',.1,'NumberOfTones','edit',3});
+        'Duration','edit',1000,'SamplingRate','edit',40000,...
+        'GapDuration','edit',.1,'NumberOfTones','edit',3,...
+        'RefRepCount','edit',1});
     o.BaseFrequency = 1000;
     o.OctaveBelow = 2;
     o.OctaveAbove = 3;
@@ -21,6 +23,7 @@ case 0
     o.GapDuration = 0.1;
     o.NumberOfTones = 1;
     o.NumOfEvPerTar = 3;
+    o.RefRepCount=1;
     o = class(o,'RandomTone',s);
     o = ObjUpdate (o);
 case 1

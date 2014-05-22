@@ -75,9 +75,15 @@ switch HW.params.HWSetup
       stim(:,2) = AS;
     end
     
+    
     switch IODriver(HW)
       case 'NIDAQMX';
-      
+        
+        % fill in empty AO channels with zeros
+        if size(stim,2)<HW.AO(1).NumChannels,
+            stim=cat(2,stim,zeros(size(stim,1),HW.AO(1).NumChannels-size(stim,2)));
+        end
+        
       % RESET TRIGGER LINE
       aoidx=find(strcmp({HW.Didx.Name},'TrigAO'));
       TriggerDIO=HW.Didx(aoidx).Task;

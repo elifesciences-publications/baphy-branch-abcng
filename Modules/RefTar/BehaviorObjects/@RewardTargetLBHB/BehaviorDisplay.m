@@ -92,8 +92,9 @@ end
 
 %% display Hitrate, FalseAlarmRate, DI across trials
 subplot(4,4,1:4);
+hl=zeros(4,1);
 if isfield(exptparams,'UniqueTargets') && length(exptparams.UniqueTargets)>1
-    plot(100*cat(1,exptparams.Performance(1:end-1).HitRate),'-',...
+    hl(1)=plot(100*cat(1,exptparams.Performance(1:end-1).HitRate),'-',...
         'LineWidth',2,'color',[1 .5 .5]);
     hold on;
     UniqueCount=length(exptparams.UniqueTargets);
@@ -106,19 +107,19 @@ if isfield(exptparams,'UniqueTargets') && length(exptparams.UniqueTargets)>1
             'MarkerFaceColor',colormtx(jj,:),'MarkerSize',5,'color',colormtx(jj,:));
     end
 else
-    plot(100*cat(1,exptparams.Performance(1:end-1).HitRate),'o-',...
+    hl(1)=plot(100*cat(1,exptparams.Performance(1:end-1).HitRate),'o-',...
         'LineWidth',2,'MarkerFaceColor',[1 .5 .5],'MarkerSize',5,'color',[1 .5 .5]);
 end
 hold on;
-plot(100*cat(1,exptparams.Performance(1:end-1).FalseAlarmRate),'<-',...
+hl(2)=plot(100*cat(1,exptparams.Performance(1:end-1).FalseAlarmRate),'<-',...
     'LineWidth',2,'MarkerFaceColor',[.1 .5 .1],'MarkerSize',5,'color',[.1 .5 .1]);
-plot(100*cat(1,exptparams.Performance(1:end-1).DiscriminationIndex),'-',...
+hl(3)=plot(100*cat(1,exptparams.Performance(1:end-1).DiscriminationIndex),'-',...
      'LineWidth',1,'color',[0 0 0]);
 
 % also, show which trials were Ineffective:
 AllIneffective = cat(1,exptparams.Performance(1:TrialIndex).Ineffective);
 AllIneffective(find(AllIneffective==0))=nan;
-plot(110*AllIneffective,'r*','markersize',10);
+hl(4)=plot(110*AllIneffective,'r*','markersize',10);
 if isfield(exptparams.Performance,'NullTrial'),
     AllNull = cat(1,exptparams.Performance(1:TrialIndex).NullTrial);
     AllNull=find(AllNull==1);
