@@ -137,9 +137,10 @@ if NullTrial,
     TarEarlyLick=0;
     TarFirstLick=nan;
 else
-    RefFalseAlarm=(sum(LickData(1:min(length(LickData),fs*TarResponseWin(1))))>0);
-    FalseAlarm=(sum(LickData(1:min(length(LickData),fs*TarResponseWin(1))))>0);
-    TarResponseLick = LickData(max(1,round(fs*TarResponseWin(1))):min(length(LickData),round(fs*TarResponseWin(2))));
+    TarResponseBin=round(fs*TarResponseWin);
+    RefFalseAlarm=(sum(LickData(1:min(length(LickData),TarResponseBin(1))))>0);
+    FalseAlarm=(sum(LickData(1:min(length(LickData),TarResponseBin(1))))>0);
+    TarResponseLick = LickData(max(1,TarResponseBin(1)):min(length(LickData),TarResponseBin(2)));
     TarEarlyLick = LickData(round(fs*max(1,TarEarlyWin(1))):round(min(length(LickData),fs*TarEarlyWin(2))));
     if (FalseAlarm>=StopTargetFA)  % in ineffective
         TarResponseLick = zeros(size(TarResponseLick));
