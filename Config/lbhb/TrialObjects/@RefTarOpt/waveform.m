@@ -31,6 +31,8 @@ if get(RefObject, 'SamplingRate')~=TrialSamplingRate,
 end
 %
 RefTrialIndex = par.ReferenceIndices{TrialIndex}; % get the index of reference sounds for current trial
+LightTrial = par.LightTrial(TrialIndex); % is light on or off?
+
 TrialSound = []; % initialize the waveform
 ind = 0;
 events = [];
@@ -58,7 +60,11 @@ for cnt1 = 1:length(RefTrialIndex)  % go through all the reference sounds in the
     % now, add reference to the note, correct the time stamp in respect to
     % last event, and add Trial
     for cnt2 = 1:length(ev)
-        ev(cnt2).Note = [ev(cnt2).Note ' , Reference'];
+        if LightTrial
+            ev(cnt2).Note = [ev(cnt2).Note ' , Reference+Light'];
+        else
+            ev(cnt2).Note = [ev(cnt2).Note ' , Reference+NoLight'];
+        end
         ev(cnt2).StartTime = ev(cnt2).StartTime + LastEvent;
         ev(cnt2).StopTime = ev(cnt2).StopTime + LastEvent;
         ev(cnt2).Trial = TrialIndex;
@@ -107,10 +113,16 @@ if isobject(TarObject)
     % last event, and add Trial
     for cnt2 = 1:length(ev)
         if probe==1  %added on 06/1/2012 by py
-            ev(cnt2).Note = [ev(cnt2).Note ' , Probe , ' num2str(RelativeTarRefdB) 'dB' ];
+            ev(cnt2).Note = [ev(cnt2).Note ' , Probe'];
         else
-            ev(cnt2).Note = [ev(cnt2).Note ' , Target , ' num2str(RelativeTarRefdB) 'dB' ];
+            ev(cnt2).Note = [ev(cnt2).Note ' , Target'];
         end
+        if LightTrial,
+            ev(cnt2).Note=[ev(cnt2).Note '+Light'];
+        else
+            ev(cnt2).Note=[ev(cnt2).Note '+NoLight'];
+        end
+        ev(cnt2).Note = [ev(cnt2).Note ' , ' num2str(RelativeTarRefdB) 'dB' ];
         ev(cnt2).StartTime = ev(cnt2).StartTime + LastEvent;
         ev(cnt2).StopTime = ev(cnt2).StopTime + LastEvent;
         ev(cnt2).Trial = TrialIndex;
@@ -149,8 +161,41 @@ else
 end
 %disp(['outWFM:' num2str(max(abs(TrialSound)))])
 
+
+% RefTarOpt-specific code: add light channel, change event strings to
+% reflect light on or off
+TrialBins=size(TrialSound,1);
+TrialDuration=TrialBins./TrialSamplingRate;
+%'LightPulseRate','edit',50,...
+%'LightPulseDuration','edit',0.01,...
+%'LightPulseShift','edit',0,...
+%'LightEpoch','popupmenu','Sound|Sound Onset|Whole Trial'};
+switch par.LightEpoch,
+    case 'Whole Trial',
+        LightBand=zeros(TrialBins,1);
+        LightStepSize=TrialSamplingRate./par.LightPulseRate;
+        LightOnBins=round(LightPulseDuration.*TrialSamplingRate);
+        ii=round(par.LightPulseShift.*TrialSamplingRate);
+        while ii<TrialBins,
+            if ii+LightOnBins>TrialBins,
+                LightBand((ii+1):end)=5;
+            else
+                LightBand(ii+(1:LightOnBins))=5;
+            end
+            ii=ii+LightStepSize;
+        end
+        
+    otherwise
+        error([par.LightEpoch, ' LightEpoch not supported yet']);
+end
+
+
+% save some changes to the TrialObject (?? good idea??)
 loudness = max(Refloudness,Tarloudness);
 if loudness(min(RefTrialIndex(1),length(loudness)))>0
     o = set(o,'OveralldB', loudness(min(RefTrialIndex(1),length(loudness))));    
 end
 o = set(o, 'SamplingRate', TrialSamplingRate);
+
+
+

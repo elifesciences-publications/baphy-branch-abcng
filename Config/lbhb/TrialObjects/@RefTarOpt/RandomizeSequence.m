@@ -37,7 +37,7 @@ if IsLookup
     end
 end
 temp = [];
-ReferenceMaxIndex = par.ReferenceMaxIndex;
+ReferenceMaxIndex = par.ReferenceMaxIndex ;
 % here, we try to specify the real number of references per trial, and
 % determine how many trials are needed to cover all the references. If its
 % a detect case, its easy. Add from NumRef to trials until the sum of

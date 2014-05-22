@@ -31,6 +31,7 @@ case 0
     RefTarO.ReferenceIndices = '[]'; 
     RefTarO.TargetIndices = '[]';
     RefTarO.ShamPercentage = 0;
+    RefTarO.LightTrial=[];
     
     % old (unused)
     RefTarO.NoPreStimForFirstRef = 0; % if 1, the first reference will not 
