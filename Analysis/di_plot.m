@@ -1,4 +1,6 @@
-function [di,rawid,dayN,s2]=di_plot(animal,runclass,stat2,training_flag);
+% function [di,rawid,dayN,s2]=di_plot(animal,runclass,stat2,training_flag)
+%
+function [di,rawid,dayN,s2]=di_plot(animal,runclass,stat2,training_flag)
     
     if ~exist('stat2','var'),
         stat2=[];
@@ -10,8 +12,8 @@ function [di,rawid,dayN,s2]=di_plot(animal,runclass,stat2,training_flag);
     
     dbopen;
     if isempty(stat2),
-        sql=['SELECT gDataRaw.*,gData.value as DI,0 as stat2,"" as sstat2',...
-             'gPenetration.pendate',...
+        sql=['SELECT gDataRaw.*,gData.value as DI,0 as stat2, "" as sstat2, ',...
+             ' gPenetration.pendate',...
              ' FROM gDataRaw INNER JOIN gData',...
              ' ON gDataRaw.id=gData.rawid',...
              ' AND gData.name="DiscriminationIndex"'];
@@ -61,12 +63,15 @@ function [di,rawid,dayN,s2]=di_plot(animal,runclass,stat2,training_flag);
         dayN(ff)=ii;
     end
     
+    physSessions=find(~cat(1,didata.training));
+    
     figure;
     if isempty(stat2),
         subplot(2,1,1);
         plot(di);
         hold on
         plot([0 length(di)],[50 50],'k--');
+        plot(physSessions,di(physSessions),'rx');
         hold off
         hl=legend('DI');
         xlabel('session');

@@ -385,9 +385,9 @@ if options.psth && size(r,2)>1,
     
     snr=abs(rpsth./(rpstherr+(rpstherr==0)));
     outlieridx=find(snr<2 & rpsth>nanmean(rpsth(:)).*2);
-    if length(outlieridx)>0 && ~options.lfp,
-        warning('removing outliers!');
-        [snr(outlieridx) (snr(outlieridx)./2).^2 rpsth(outlieridx).*rasterfs]
+    if ~isempty(outlieridx) && ~options.lfp,
+        disp('removing outliers in raster_plot');
+        %[snr(outlieridx) (snr(outlieridx)./2).^2 rpsth(outlieridx).*rasterfs]
         rpsth(outlieridx)=rpsth(outlieridx).*(snr(outlieridx)./2).^2;
         rpstherr(outlieridx)=rpstherr(outlieridx).*(snr(outlieridx)./2).^2;
     end

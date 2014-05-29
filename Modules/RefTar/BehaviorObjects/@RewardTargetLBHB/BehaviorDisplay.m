@@ -51,7 +51,7 @@ if ~mod(TrialIndex,exptparams.TrialBlock) || (isempty(AIData) && isempty(TrialSo
         text(0.3,1  ,'DR','FontWeight','bold','color','b','HorizontalAlignment','center');
         text(0.4,1  ,'DI','FontWeight','bold','HorizontalAlignment','center');
         text(0.5,1  ,'WaR','FontWeight','bold','color','b','HorizontalAlignment','center');
-        text(0.6,1  ,'InfR','FontWeight','bold','HorizontalAlignment','center');
+        %text(0.6,1  ,'InfR','FontWeight','bold','HorizontalAlignment','center');
         text(0.7,1  ,'bHR','FontWeight','bold','color','b','HorizontalAlignment','center');
         text(0.8,1  ,'bFR','FontWeight','bold','HorizontalAlignment','center');
         text(0.9,1  ,'bDR','FontWeight','bold','color','b','HorizontalAlignment','center');
@@ -64,10 +64,10 @@ if ~mod(TrialIndex,exptparams.TrialBlock) || (isempty(AIData) && isempty(TrialSo
         text(.3, ind, num2str(exptparams.Performance(end).DiscriminationRate,'%2.0f'),'FontWeight','bold','HorizontalAlignment','center','color','b');
         text(.4, ind, num2str(exptparams.Performance(end).DiscriminationIndex,'%2.0f'),'FontWeight','bold','HorizontalAlignment','center');
         text(.5, ind, num2str(exptparams.Performance(end).WarningRate,'%2.0f'),'FontWeight','bold','color','b','HorizontalAlignment','center');
-        text(.6, ind, num2str(exptparams.Performance(end).IneffectiveRate,'%2.0f'),'FontWeight','bold','HorizontalAlignment','center');
-        text(.7, ind, num2str(exptparams.Performance(end).RecentHitRate,'%2.0f'),'FontWeight','bold','color','b','HorizontalAlignment','center');
-        text(.8, ind, num2str(exptparams.Performance(end).RecentFalseAlarmRate,'%2.0f'),'FontWeight','bold','HorizontalAlignment','center');
-        text(.9, ind, num2str(exptparams.Performance(end).RecentDiscriminationRate,'%2.0f'),'FontWeight','bold','color','b','HorizontalAlignment','center');
+        %text(.6, ind, num2str(exptparams.Performance(end).IneffectiveRate,'%2.0f'),'FontWeight','bold','HorizontalAlignment','center');
+        text(.6, ind, num2str(exptparams.Performance(end).RecentHitRate,'%2.0f'),'FontWeight','bold','color','b','HorizontalAlignment','center');
+        text(.7, ind, num2str(exptparams.Performance(end).RecentFalseAlarmRate,'%2.0f'),'FontWeight','bold','HorizontalAlignment','center');
+        text(.8, ind, num2str(exptparams.Performance(end).RecentDiscriminationRate,'%2.0f'),'FontWeight','bold','color','b','HorizontalAlignment','center');
         %         text(.14, ind, num2str(exptparams.Performance(end).LickRate,'%2.0f'),'FontWeight','bold','color','b','HorizontalAlignment','center');
         %         text(.14, ind, num2str(exptparams.Performance(end).LickRate,'%2.0f'),'FontWeight','bold','color','b','HorizontalAlignment','center');
         %         text(.14, ind, num2str(exptparams.Performance(end).LickRate,'%2.0f'),'FontWeight','bold','color','b','HorizontalAlignment','center');
@@ -117,7 +117,7 @@ hl(3)=plot(100*cat(1,exptparams.Performance(1:end-1).DiscriminationIndex),'-',..
      'LineWidth',1,'color',[0 0 0]);
 
 % also, show which trials were Ineffective:
-AllIneffective = cat(1,exptparams.Performance(1:TrialIndex).Ineffective);
+AllIneffective = cat(1,exptparams.Performance(1:TrialIndex).FalseAlarm);
 AllIneffective(find(AllIneffective==0))=nan;
 hl(4)=plot(110*AllIneffective,'r*','markersize',10);
 if isfield(exptparams.Performance,'NullTrial'),

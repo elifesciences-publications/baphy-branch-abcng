@@ -55,7 +55,7 @@ for lidx=1:length(lfpchans),
       % downsample prior to saving cache file
       if isfield(options,'rasterfs') && options.rasterfs<lfpfs,
          ltrialidx=ceil(ltrialidx*options.rasterfs./lfpfs);
-         rl=resample(rl,options.rasterfs,lfpfs);
+         rl=resample(double(rl),options.rasterfs,lfpfs);
       end
       lfpout(:,lidx)=rl;
       
