@@ -183,17 +183,18 @@ else
 end
 perf(cnt2).ThisTrial    = '??';
 if NumRef
-    perf(cnt2).FalseAlarm = double(RefFalseAlarm | ~isempty(find(TarEarlyLick,1))); % sum of false alarams divided by num of ref
+    % sum of false alarms divided by num of ref
+    perf(cnt2).FalseAlarm = double(RefFalseAlarm | ~isempty(find(TarEarlyLick,1)));
 else
     perf(cnt2).FalseAlarm = NaN;
 end
 %perf(cnt2).Ineffective  = double(perf(cnt2).FalseAlarm >= StopTargetFA);
 Ineffective  = double(perf(cnt2).FalseAlarm >= StopTargetFA);
 perf(cnt2).WarningTrial = double(~Ineffective);
-perf(cnt2).EarlyTrial   = double(perf(cnt2).WarningTrial && ~isempty(find(TarEarlyLick,1)));
+%perf(cnt2).EarlyTrial   = double(perf(cnt2).WarningTrial && ~isempty(find(TarEarlyLick,1)));
 %
-perf(cnt2).Hit          = double(perf(cnt2).WarningTrial && ~perf(cnt2).EarlyTrial && ~isempty(find(TarResponseLick,1))); % if there is a lick in target response window, its a hit
-perf(cnt2).Miss         = double(perf(cnt2).WarningTrial && ~perf(cnt2).EarlyTrial && ~perf(cnt2).Hit);
+perf(cnt2).Hit          = double(perf(cnt2).WarningTrial && ~perf(cnt2).FalseAlarm && ~isempty(find(TarResponseLick,1))); % if there is a lick in target response window, its a hit
+perf(cnt2).Miss         = double(perf(cnt2).WarningTrial && ~perf(cnt2).FalseAlarm && ~perf(cnt2).Hit);
 perf(cnt2).ReferenceLickTrial = double((perf(cnt2).FalseAlarm>0));
 perf(cnt2).NullTrial = NullTrial;
 perf(cnt2).LickRate = length(find(LickData)) / length(LickData);
@@ -207,7 +208,7 @@ NullTrials = cat(1,perf.NullTrial);
 TotalWarn                   = sum(cat(1,perf.WarningTrial) & ~NullTrials);
 perf(cnt2).HitRate          = sum(cat(1,perf.Hit) & ~NullTrials) / TotalWarn;
 perf(cnt2).MissRate         = sum(cat(1,perf.Miss) & ~NullTrials) / TotalWarn;
-perf(cnt2).EarlyRate        = sum(cat(1,perf.EarlyTrial) & ~NullTrials)/TotalWarn;
+%perf(cnt2).EarlyRate        = sum(cat(1,perf.EarlyTrial) & ~NullTrials)/TotalWarn;
 perf(cnt2).WarningRate      = sum(cat(1,perf.WarningTrial) & ~NullTrials)/sum(~NullTrials);
 %perf(cnt2).IneffectiveRate  = sum(cat(1,perf.Ineffective) & ~NullTrials)/sum(~NullTrials);
 % this is for trials without Reference. We dont count them in FalseAlarm
@@ -281,7 +282,7 @@ end
 if perf(cnt2).Hit, perf(cnt2).ThisTrial = 'Hit';end
 if perf(cnt2).Miss && ~perf(cnt2).NullTrial, perf(cnt2).ThisTrial = 'Miss';end
 if perf(cnt2).Miss && perf(cnt2).NullTrial, perf(cnt2).ThisTrial = 'Corr.Rej.';end
-if perf(cnt2).EarlyTrial, perf(cnt2).ThisTrial = 'Early';end
+%if perf(cnt2).EarlyTrial, perf(cnt2).ThisTrial = 'Early';end
 %if perf(cnt2).Ineffective, perf(cnt2).ThisTrial = 'Ineffective';end
 
 % compute DI based on FAR, HR and RT
