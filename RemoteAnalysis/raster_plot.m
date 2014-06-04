@@ -209,6 +209,8 @@ data    = [];
 labels  = [];
 singlabels  = {};
 keepidx=zeros(size(r,3),1);
+unique_suffix={};
+suffix_category=zeros(size(r,3),1);
 for cnt1 = 1:size(r,3)
    keepidx(cnt1)=sum(sum(~isnan(r(:,:,cnt1))))>0;
    if keepidx(cnt1),
@@ -217,23 +219,46 @@ for cnt1 = 1:size(r,3)
           temptags{2}=temptags{1};
       end
       singlabels{end+1} = temptags{2};
-      labels{end+1} = temptags{2};
-      for cnt2 = 1:size(r,2)
-         if sum(~isnan(r(:,cnt2,cnt1)))>0,
-            data(end+1,:) = squeeze(r(:,cnt2,cnt1));
-            if cnt2>1
-               % label duplicate tags with 'D -' prefix
-               labels{end+1} = ['D -' temptags{2}];
-            end
-         end
-         %if isnumeric(labels{end}),
-         %    labels{end}=mat2str(labels{end});
-         %end
+      if length(temptags)>=3,
+          tsuf=strtrim(strrep(strrep(temptags{3},'Reference',''),'Target',''));
+      else
+          tsuf='';
       end
-      %drawnow
+      suffidx=find(strcmp(tsuf,unique_suffix));
+      if isempty(suffidx),
+          unique_suffix{end+1}=tsuf;
+          suffix_category(cnt1)=length(unique_suffix);
+      else
+          suffix_category(cnt1)=suffidx;
+      end
+      
+      if ~isempty(tsuf),
+          labels{end+1}= [temptags{2} ' ' tsuf];
+      else
+          labels{end+1} = temptags{2};
+      end
+      
+       for cnt2 = 1:size(r,2)
+          if sum(~isnan(r(:,cnt2,cnt1)))>0,
+             data(end+1,:) = squeeze(r(:,cnt2,cnt1));
+             if cnt2>1
+                %label duplicate tags with 'D -' prefix
+                labels{end+1} = ['D -' temptags{2}];
+             end
+          end
+%          %if isnumeric(labels{end}),
+%          %   labels{end}=mat2str(labels{end});
+%          %end
+       end
    end
 end
-r=r(:,:,find(keepidx));
+
+keepidx=find(keepidx);
+r=r(:,:,keepidx);
+
+% [~,ksort]=sort(suffix_category(keepidx));
+% r=r(:,:,keepidx(ksort));
+% labels=labels(ksort);
 
 % now set anything with D to empty:
 empt = strfind(labels,'D -');
