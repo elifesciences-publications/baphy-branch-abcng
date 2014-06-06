@@ -673,7 +673,7 @@ if (isempty(tag_masks) || length(tag_masks{1})<8 || ...
 end
 
 % sort FTC data by frequency
-if ~isempty(strfind(mfile,'_FTC')),
+if ~isempty(strfind(mfile,'_FTC')) && length(tags)>1,
     unsortedtags=zeros(length(tags),1);
     for cnt1=1:length(tags),
         temptags = strrep(strsep(tags{cnt1},',',1),' ','');
