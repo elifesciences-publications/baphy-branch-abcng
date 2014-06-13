@@ -11,12 +11,25 @@ Names = get(o,'Names');
 %
 duration        = get(o,'Duration');
 width           = get(o,'ClickWidth');
-rate            = str2num(Names{index});
+
+ClickRates = ifstr2num(get(o,'ClickRate'));
+JitterSD = ifstr2num(get(o,'JitterSD'));
+
 SamplingRate    = get(o,'SamplingRate');
 %
 w           = zeros(1, duration * SamplingRate);
-rateSamples = SamplingRate / rate;
+rateSamples = SamplingRate / ClickRates(index);
 Cindex       = 1:rateSamples:length(w);
+
+saveseed=rand('seed');
+rand('seed',index*20);
+
+if JitterSD(index)>0,
+    Cindex(2:end)=Cindex(2:end)+round(randn(size(Cindex(2:end))).*JitterSD(index).*SamplingRate);
+end
+% return random seed to previous state
+rand('seed',saveseed);
+
 OnSamples   = width * SamplingRate / 2;
 flag = 1;
 for cnt1    = 1:length(Cindex)
