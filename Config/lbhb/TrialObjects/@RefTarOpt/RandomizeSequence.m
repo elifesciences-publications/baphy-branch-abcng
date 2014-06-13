@@ -37,7 +37,7 @@ if IsLookup
     end
 end
 temp = [];
-ReferenceMaxIndex = par.ReferenceMaxIndex;
+ReferenceMaxIndex = par.ReferenceMaxIndex ;
 % here, we try to specify the real number of references per trial, and
 % determine how many trials are needed to cover all the references. If its
 % a detect case, its easy. Add from NumRef to trials until the sum of
@@ -83,10 +83,25 @@ end
 % also, if its not a sham. 
 % Now generate random sequences for each trial
 RandIndex = randperm(par.ReferenceMaxIndex);
+RefTrialIndex=cell(1,length(RefNumTemp));
 for cnt1=1:length(RefNumTemp)
     RefTrialIndex {cnt1} = RandIndex (1:RefNumTemp(cnt1));
     RandIndex (1:RefNumTemp(cnt1)) = [];
 end
+
+% Inserting new stuff for Optical channel.  Double the number of trials.
+
+LightTrial=[zeros(1,NumberOfTrials) ones(1,NumberOfTrials)];
+RefTrialIndex=cat(2,RefTrialIndex,RefTrialIndex);
+TargetIndex=cat(2,TargetIndex,TargetIndex);
+NumberOfTrials=NumberOfTrials*2;
+
+[~,si]=sort(rand(1,NumberOfTrials));
+LightTrial=LightTrial(si);
+RefTrialIndex=RefTrialIndex(si);
+TargetIndex=TargetIndex(si);
+
+o = set(o,'LightTrial',LightTrial);
 o = set(o,'ReferenceIndices',RefTrialIndex);
 o = set(o,'TargetIndices',TargetIndex);
 o = set(o,'NumberOfTrials',TotalTrials);

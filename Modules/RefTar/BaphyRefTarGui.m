@@ -34,7 +34,7 @@ function BaphyRefTarGui_OpeningFcn(hObject, eventdata, handles, varargin)
 %
 % Choose default command line output for BaphyRefTarGui
 
-set([handles.pushbutton1,handles.pushbutton2],'Enable','off');
+set([handles.pushbutton1,handles.pushbutton2,handles.buttonimportparameters],'Enable','off');
 handles.output = hObject;
 
 % 1. Update handles structure
@@ -92,8 +92,9 @@ handles = popupmenu4_Callback(handles.popupmenu4, eventdata, handles);
 handles = popupmenu7_Callback(handles.popupmenu7, eventdata, handles);
 % and the user definable fields of trial object:
 handles = popupmenu8_Callback(handles.popupmenu8, eventdata, handles);
+
 guidata(hObject,handles);
-set([handles.pushbutton1,handles.pushbutton2],'Enable','on');
+set([handles.pushbutton1,handles.pushbutton2,handles.buttonimportparameters],'Enable','on');
 
 uiwait(handles.figure1);
 
@@ -167,7 +168,7 @@ refObject = getString(handles.popupmenu3);
 SavedObject = feval(refObject);
 % LOAD SETTING OF CURRENT SOUND OBJECT
 ferret_index = BaphyMainGuiItems('FerretId',handles.globalparams);
-SavedObject = ObjLoadSaveDefaults(SavedObject,'r',1+2*(ferret_index-1)); % index one means read last values for reference
+SavedObject = ObjLoadSaveDefaults(SavedObject,'r',1+2*(ferret_index-1));% index one means read last values for reference
 DefaultFields = get(SavedObject, 'UserDefinableFields');
 RefHandles = [];
 RefHandlesText = [];
@@ -203,13 +204,26 @@ for cnt1 = 1:length(DefaultFields)/3
     'HorizontalAlignment','right','position',[refpos-[100 18*(cnt1-1)+3] 90 18]);
   RefHandles(cnt1) = uicontrol('Style',CurrentField{2},'String',DefaultString,'BackgroundColor',[1 1 1],'position',...
     [refpos-[0 18*(cnt1-1)] 130 18],'HorizontalAlignment','center');
-  if strcmpi(CurrentField{2},'popupmenu'), set(RefHandles(cnt1),'Value',DefaultValue);end
+  if strcmpi(CurrentField{2},'popupmenu'), set(RefHandles(cnt1),'Value',DefaultValue);
+  end
+  % Adds pushbutton and edit fields for frequency band calculator. Henry
+  % May 2014
+  if strcmpi(CurrentField{2},'pushbutton') && strcmpi(CurrentField{1}, 'CalcFreqBand'),
+      BandwidthIndex=find(strcmp(get(RefHandlesText, 'string'), 'FreqBandwidthOctaves'));
+      CenterFreqIndex=find(strcmp(get(RefHandlesText, 'string'), 'CenterFreq'));
+      set(RefHandles(cnt1),'Callback', {@CalculateFrequencyBand, handles})
+  end  
 end
+
 handles.RefHandles = RefHandles;
 handles.RefHandlesText = RefHandlesText;
 % this function is called at the begining too, for that case, return them
 if nargout >0 varargout{1} = handles;else
-  guidata(gcbo,handles);end
+    %%% Changed from: 
+    % guidata(gcbo, handles);
+    % This way I can call popupmenu3_Callback from another function.
+    % Henry 30 Apr. 2014
+guidata(handles.exptparams.FigureHandle, handles);end
 
 %% TARGET POPUP
 function varargout = popupmenu4_Callback(hObject, eventdata, handles)
@@ -238,7 +252,9 @@ end
 for cnt1 = 1:length(fields)/3   % length(fields) should be always a multiple of 3, because it
     % had the field name, its style and its
     % default value.
-    field = fields((cnt1-1)*3+1:cnt1*3);
+    field = fields((cnt1-1)*3+1:cnt1*3); % Chops out 3 values from fields, 
+    % e.g. 1-3, 4-6, 7-9....
+    
     % now if the field is edit, get its value from the tempObject which has
     % the last values. But if its popupmenu, then load it with defaults
     % from object constructod (UserDefinableFields)"
@@ -265,7 +281,11 @@ clear tempObject;
 handles.TarHandles = tarHandles;
 handles.TarHandlesText = tarHandlesText;
 if nargout >0 varargout{1} = handles;else
-    guidata(gcbo,handles);end
+      %%% Changed from: 
+    % guidata(gcbo, handles);
+    % This way I can call popupmenu3_Callback from another function.
+    % Henry 30 Apr. 2014
+    guidata(handles.exptparams.FigureHandle, handles);end
 
 %% BEHAVIOR CONTROL
 function handles = popupmenu7_Callback(hObject, eventdata, handles)
@@ -387,7 +407,11 @@ else
 end
 
 if nargout >0 varargout{1} = handles;else
-    guidata(gcbo,handles);end
+    %%% Changed from: 
+    % guidata(gcbo, handles);
+    % This way I can call popupmenu8_Callback from another function.
+    % Henry 30 Apr. 2014
+    guidata(handles.popupmenu8,handles);end
 
 % TRIAL OBJECT PARAMETER BUTTON (Visible if too many parameters to fit on
 % panel)
@@ -463,14 +487,14 @@ BehaveObject = handles.BehaveObject;
 HelpText = help(class(BehaveObject));
 helpdlg(HelpText,'Behavior Control Help');
 
+
 %% START BUTTON
 function pushbutton1_Callback(hObject, eventdata, handles)
 % create an instance of ReferenceTarget object and update its fields from
 % user data. Then save the object and call reference target script.
 
 % first, read the TrialObject from handles:
-set(handles.pushbutton1,'Enable','off');
-set(handles.pushbutton2,'Enable','off');
+set([handles.pushbutton1,handles.pushbutton2,handles.buttonimportparameters],'Enable','off');
 moveguiPlusRemote(handles.figure1,'east');
 drawnow;
 TrialObject = handles.TrialObject;
@@ -625,53 +649,344 @@ function pushbutton3_Callback(hObject, eventdata, handles)
 global StopExperiment;
 StopExperiment = 1;
 
+%% IMPORT BUTTON
+function buttonimportparameters_Callback(hObject, eventdata, handles)
+
+% Creates button for importing parameter files. Henry 4.22.2014
+% Creats import parameter window, sends user inputs to other fields of 
+% BAPHYREFTARGUI
+
+%% Create popup window
+importwindow=figure('OuterPosition', [660 500 600 250], 'name', 'Import Parameters...',...
+    'menubar', 'none', 'toolbar', 'none');
+import.importedit=uicontrol('style', 'edit', 'units', 'normalized',...
+    'position', [0.15, 0.6, 0.7, 0.1],...
+    'string', 'Input rawID or path to behavior file...');
+import.importbutton=uicontrol('style', 'pushbutton',...
+    'position', [100, 85, 100, 30],...
+    'string', 'IMPORT',...
+    'callback', {@ImportParameters, import, handles});
+import.browsebutton=uicontrol('style','pushbutton', 'units', 'normalized',...
+    'position', [0.87, 0.6, 0.12 0.1],...
+    'string', 'Browse',...
+    'callback', {@BrowseImport, import, handles});
+
+%%%%% Browser GUI Callback %%%%%
+function []=BrowseImport(hObject, eventdata, import, handles)
+% Check windows pathing    
+        
+% Create ui browser popup. Set default directory depending on OS
+% type.
+global BAPHYDATAROOT
+[importname, importpath]=uigetfile(strcat(BAPHYDATAROOT, handles.globalparams.Ferret, '/*.m'));
+
+% Update UI path input edit field
+set(import.importedit, 'string', fullfile(importpath, importname))
+
+
+%%%%% Import Button %%%%%
+function ImportParameters(hObject,eventdata,import, handles)
+% Executed on clicking the "import" button. Gets data from the
+% appropriate session, puts parameters into BaphyRefTarGui fields
+
+% created HAC 2014-05
+% Get user input
+importpath=get(import.importedit, 'string');
+
+% Send back to gui structure
+%guidata(gcbo, importdata);
+close(gcf);
+
+% Determine if we are using a path or RawID; if RawID, find the
+% file path
+if ~isempty(str2num(importpath(1)))
+    
+    fileinfo=mysql(strcat('select * from gDataRaw where id = ', importpath));
+    
+    importpath = fullfile(fileinfo.resppath, fileinfo.parmfile);
+    clear fileinfo;
+end
+
+% Load the file
+LoadMFile(importpath);
+
+% First, make sure the selected file uses the same module (if not return
+% to baphy)
+
+if ~strcmp(globalparams.Module, handles.globalparams.Module)
+    fprintf('Imported parameters must use the same module. Check selected module in BaphyMainGui or choose another file.')
+    return
+else
+end
+
+%%% start updating gui fields: %%%
+
+% TRIAL OBJECT PARAMETERS
+
+% First we need to change the trial object. Look through the popupmenu
+% and find the index
+% Apparently baphy records trial object ReferenceTarget as "none",
+% awesome. To fix this:
+if strcmp(exptparams.TrialObject.descriptor, 'none')
+    set(handles.popupmenu8, 'value', find(strcmp(get(handles.popupmenu8, 'string'), 'ReferenceTarget')));
+else
+    set(handles.popupmenu8, 'value', find(strcmp(exptparams.TrialObject.descriptor, get(handles.popupmenu8, 'string'))));
+end
+% Call callback to initialize fields
+popupmenu8_Callback(hObject, eventdata, handles);
+% Get updated handles
+handles=guidata(gcf);
+
+% Update fields
+
+% First, trial block and reps fields
+set(handles.edit13, 'string', num2str(exptparams.Repetition));
+set(handles.edit17, 'string', num2str(exptparams.TrialBlock));
+
+% Now update fields contained in T
+for i = 1:length(handles.TrialHandles),
+    trialfield=get(handles.TrialHandlesText(i), 'string');
+    % Popupmenus use 'value', not string, to store user input. See
+    % below
+    if strcmp(get(handles.TrialHandles(i), 'style'), 'popupmenu'),
+        
+        popupstrings=cellstr(get(handles.TrialHandles(i), 'string'));%Get all possible strings for popupmenu
+        set(handles.TrialHandles(i), 'value', find(strcmp(popupstrings,... % Find index of string that matches exptparams, set 'value' to this
+            exptparams.TrialObject.(trialfield))));
+    elseif isfield(exptparams.TrialObject, trialfield)
+        set(handles.TrialHandles(i), 'string', num2str(exptparams.TrialObject.(trialfield)));
+    else
+        % Warn user that parameter was not updated:
+        beep;
+        fprintf('\nParameter %s could not be updated.', trialfield);
+    end
+    
+end
+
+% BEHAVIOR PARAMETERS
+
+% We need to approach Behavior Parameters differently. Because Behavior
+% Paramters opens in its own self contained GUI, we don't have direct
+% access to its fields. We will need to re-create the behavior
+% parameters window using this same method as in pushbutton4_Callback,
+% but with an updated cell array of user defined parameters.
+
+% First, create a new cell array, with the same format as
+% {userdefinablefields}, but instead of default values, get values from
+% exptparams
+
+% Update popupmenu
+set(handles.popupmenu7, 'value', find(strcmp(exptparams.BehaveObjectClass, get(handles.popupmenu7, 'string'))));
+
+fields={};
+defaultfields=exptparams.BehaveObject.UserDefinableFields;
+for i=1:3:length(defaultfields),
+    fields(i)=defaultfields(i);
+    fields(i+1)=defaultfields(i+1);
+    fields{i+2}=exptparams.BehaveObject.(defaultfields{i});
+    
+end
+
+% The rest is copy/pasted from pushbutton4_Callback above
+BehaveObject=feval(exptparams.BehaveObjectClass); %get new behave object
+
+for cnt1 = 1:length(fields)/3;
+    BehaveObject = set(BehaveObject, fields{1+(cnt1-1)*3}, strtok(fields{3+(cnt1-1)*3}));
+end
+% now, save it as last values and update the object in handles:
+ferret_index = BaphyMainGuiItems('FerretId',handles.globalparams);
+ObjLoadSaveDefaults(BehaveObject,'w', ferret_index);
+handles.BehaveObject = BehaveObject;
+guidata(handles.exptparams.FigureHandle,handles);
+
+% REFERENCE PULLDOWN
+
+% Uses similar method to Trial Object parameters: Update popupmenu
+% setting, execute callback, then fill in each edit field.
+
+set(handles.popupmenu3, 'value', find(strcmp(exptparams.TrialObject.ReferenceClass, get(handles.popupmenu3, 'string'))));
+% Call callback to initialize fields
+handles=guidata(handles.exptparams.FigureHandle);
+popupmenu3_Callback(hObject, eventdata, handles);
+% Get updated handles
+handles=guidata(handles.exptparams.FigureHandle);
+
+% Now update fields contained in RefHandles
+for i = 1:length(handles.RefHandles),
+    trialfield=get(handles.RefHandlesText(i), 'string');
+    % Popupmenus use 'value', not string, to store user input. See
+    % below
+    if isfield(exptparams.TrialObject.ReferenceHandle, trialfield)
+        switch get(handles.RefHandles(i), 'style')
+            case 'popupmenu'
+                popupstrings=cellstr(get(handles.RefHandles(i), 'string'));%Get all possible strings for popupmenu
+                set(handles.RefHandles(i), 'value', find(strcmp(popupstrings,... % Find index of string that matches exptparams, set 'value' to this
+                    strtrim(exptparams.TrialObject.ReferenceHandle.(trialfield)))));
+            case 'pushbutton'
+                % Don't do anything to pushbuttons
+            otherwise
+                switch get(handles.RefHandlesText(i), 'string'),
+                    case {'CenterFreq', 'FreqBandwidthOctaves', 'CalcFreqBand'}
+                        % Don't do anything to these fields(they are used
+                        % for freq band calculation)
+                    otherwise
+                        set(handles.RefHandles(i), 'string', num2str(exptparams.TrialObject.ReferenceHandle.(trialfield)));
+                end
+        end
+    else
+        beep;
+        fprintf('\nParameter %s could not be updated.', trialfield);
+    end
+end
+
+% TARGET PULLDOWN --Same method as reference.
+
+set(handles.popupmenu4, 'value', find(strcmp(exptparams.TrialObject.TargetClass, get(handles.popupmenu4, 'string'))));
+handles=guidata(handles.exptparams.FigureHandle);
+popupmenu4_Callback(hObject, eventdata, handles)
+handles=guidata(handles.exptparams.FigureHandle);
+
+for i = 1:length(handles.TarHandles),
+    trialfield=get(handles.TarHandlesText(i), 'string');
+    % Popupmenus use 'value', not string, to store user input. See
+    % below
+    if isfield(exptparams.TrialObject.TargetHandle, trialfield),
+        switch get(handles.TarHandles(i), 'style')
+            case 'popupmenu'
+                popupstrings=cellstr(get(handles.TarHandles(i), 'string'));%Get all possible strings for popupmenu
+                set(handles.TarHandles(i), 'value', find(strcmp(popupstrings,... % Find index of string that matches exptparams, set 'value' to this
+                    strtrim(exptparams.TrialObject.TargetHandle.(trialfield)))));
+            case 'pushbutton'
+                % Don't do anything to pushbuttons
+            otherwise
+                set(handles.TarHandles(i), 'string', num2str(exptparams.TrialObject.TargetHandle.(trialfield)));
+        end
+    else
+        beep;
+        fprintf('\nParameter %s could not be updated.', trialfield);
+    end
+    
+end
+    
+
 %% CALLBACKS
-function edit8_Callback(hObject, eventdata, handles)
+function [HighLimits, LowLimits] = CalculateFrequencyBand(hObject, eventdata, handles)
+% CALCULATEFREQUENCYBAND: Calculates high and low frequency band limits for 
+% SpNoise sound object. Given a desired bandwidth B and a vector of center
+% frequencies, the function will output a length-2 vector for each center
+% frequency, containing the lower and upper limits of an
+% envelope of bandwidth B around the given center frequency.
+
+% Inputs: 
+% Bandwith: Desired bandwidth, in octaves. Will be applied to all center 
+%   frequencies.
+% CenterFrequencies: Vectore of center frequencies, can be any length
+
+% Outputs:
+% HighLimits: High frequency limits for each center frequency, vector order
+%   same as CenterFrequencies
+% LowLimits: Low frequency limits for each center frequency, vector
+%    order same as CenterFrequencies
+%
+% Henry 4.9.2014 hacoo36@gmail.com
+% Formula from Hyrax:
+% if bw=log2(Fhi-Flo), then:
+%  Flo = f0 * 2^(-bw/2)
+%  Fhi = f0 * 2^(bw/2) 
+
+% Get data from gui (unfortunately it's difficult to pass this as an input
+% directly)
+
+data=guidata(handles.popupmenu3);
+BandwidthIndex=find(strcmp(get(data.RefHandlesText, 'string'),...
+    'FreqBandwidthOctaves'));
+CenterFrequencyIndex=find(strcmp(get(data.RefHandlesText, 'string'),...
+    'CenterFreq'));
+
+Bandwidth=get(data.RefHandles(BandwidthIndex), 'string');
+CenterFrequencies=get(data.RefHandles(CenterFrequencyIndex), 'string');
+
+% Gui data is stored as strings so:
+Bandwidth=str2num(Bandwidth);
+CenterFrequencies=str2num(CenterFrequencies);
+
+HighLimits=[];
+LowLimits=[];
+
+%Calculate limits
+HighLimits=cat(1,HighLimits, (CenterFrequencies)*2^(Bandwidth/2));
+LowLimits=cat(1,LowLimits, (CenterFrequencies)*2^(-Bandwidth/2));
+
+%Round to nearest 10
+HighLimits=roundn(HighLimits, 1);
+LowLimits=roundn(LowLimits, 1);
+
+%Now update LowFreq and HighFreq fields
+%Get indicies
+LowFreqIndex=find(strcmp(get(data.RefHandlesText, 'string'), 'LowFreq'));
+HighFreqIndex=find(strcmp(get(data.RefHandlesText, 'string'), 'HighFreq'));
+
+%Update
+set(data.RefHandles(LowFreqIndex),'string',num2str(LowLimits));
+set(data.RefHandles(HighFreqIndex),'string', num2str(HighLimits));
+    
+    
 function edit8_CreateFcn(hObject, eventdata, handles)
+
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
 function edit4_Callback(hObject, eventdata, handles)
+
 function edit4_CreateFcn(hObject, eventdata, handles)
+
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
 function popupmenu1_Callback(hObject, eventdata, handles)
+
 function popupmenu1_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
 function popupmenu2_Callback(hObject, eventdata, handles)
+
 function popupmenu2_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
 function edit6_Callback(hObject, eventdata, handles)
+
 function edit6_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
 function edit7_Callback(hObject, eventdata, handles)
+
 function edit7_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
 function edit1_Callback(hObject, eventdata, handles)
+
 function edit1_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
 function edit2_Callback(hObject, eventdata, handles)
+
 function edit2_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
 function edit3_Callback(hObject, eventdata, handles)
+
 function edit3_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
 function edit5_Callback(hObject, eventdata, handles)
+
 function edit5_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
@@ -689,6 +1004,7 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
     set(hObject,'BackgroundColor','white');
 end
 function edit13_Callback(hObject, eventdata, handles)
+
 function edit13_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
@@ -699,11 +1015,13 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
     set(hObject,'BackgroundColor','white');
 end
 function edit15_Callback(hObject, eventdata, handles)
+
 function edit15_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
 function edit16_Callback(hObject, eventdata, handles)
+
 function edit16_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
@@ -713,13 +1031,14 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
     set(hObject,'BackgroundColor','white');
 end
 function edit17_Callback(hObject, eventdata, handles)
+
 function edit17_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
 function popupmenu9_Callback(hObject, eventdata, handles)
+
 function popupmenu9_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
-function checkbox1_Callback(hObject, eventdata, handles)

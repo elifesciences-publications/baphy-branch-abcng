@@ -24,7 +24,7 @@ function varargout = dbchooserawfile(varargin)
 
 % Edit the above text to modify the response to help dbchooserawfile
 
-% Last Modified by GUIDE v2.5 01-Jun-2009 15:33:11
+% Last Modified by GUIDE v2.5 05-Jun-2014 08:16:36
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -106,12 +106,7 @@ userdata=mysql(sql);
 users=cell(length(userdata),1);
 [users{:}]=deal(userdata.userid);
 
-sql=['SELECT DISTINCT min(id) as id,animal FROM gCellMaster WHERE not(training)' ...
-     ' GROUP BY animal ORDER BY animal'];
-animaldata=mysql(sql);
-animals=cell(length(animaldata),1);
-[animals{:}]=deal(animaldata.animal);
-animals={'ALL' animals{:}};
+checkAllAnimals_Callback(hObject, [], handles);
 
 % load last settings
 if isempty(CELLDB_ANIMAL),
@@ -122,16 +117,10 @@ useridx=find(strcmp(CELLDB_USER,users));
 if isempty(useridx),
    useridx=1;
 end
-animalidx=find(strcmp(CELLDB_ANIMAL,animals));
-if isempty(animalidx),
-   animalidx=1;
-end
 
 set(handles.popTester,'String',users);
 set(handles.popTester,'Value',useridx);
 
-set(handles.popAnimals,'String',animals);
-set(handles.popAnimals,'Value',animalidx);
 
 % Update handles structure
 guidata(hObject, handles);
@@ -139,6 +128,7 @@ guidata(hObject, handles);
 if CHOOSING_TEMPLATE,
     set(handles.popTester,'Enable','off');
     set(handles.popAnimals,'Enable','off');
+    set(handles.checkAllAnimals,'Enable','off');
     set(handles.listSites,'Enable','off');
     set(handles.listRunClass,'Enable','off');
     set(handles.popChannel,'Enable','off');
@@ -150,6 +140,7 @@ if CHOOSING_TEMPLATE,
 else
     set(handles.popTester,'Enable','on');
     set(handles.popAnimals,'Enable','on');
+    set(handles.checkAllAnimals,'Enable','on');
     set(handles.listSites,'Enable','on');
     set(handles.listRunClass,'Enable','on');
     set(handles.popChannel,'Enable','on');
@@ -679,3 +670,37 @@ function checkCommonReference_Callback(hObject, eventdata, handles)
 global USECOMMONREFERENCE
 
 USECOMMONREFERENCE=get(handles.checkCommonReference,'Value');
+
+
+% --- Executes on button press in checkAllAnimals.
+function checkAllAnimals_Callback(hObject, eventdata, handles)
+% hObject    handle to checkAllAnimals (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+global CELLDB_ANIMAL BAPHY_LAB
+
+% Hint: get(hObject,'Value') returns toggle state of checkAllAnimals
+allAnimals=get(handles.checkAllAnimals,'Value');
+
+if ~allAnimals && ~isempty(BAPHY_LAB),
+   sql=['SELECT DISTINCT min(gCellMaster.id) as id,gCellMaster.animal ',...
+      ' FROM gCellMaster INNER JOIN gAnimal ON gCellMaster.animal=gAnimal.animal',...
+      ' WHERE not(gCellMaster.training) AND gAnimal.lab="',BAPHY_LAB,'"',...
+      ' GROUP BY gCellMaster.animal ORDER BY gCellMaster.animal'];
+else
+   sql=['SELECT DISTINCT min(id) as id,animal FROM gCellMaster WHERE not(training)' ...
+      ' GROUP BY animal ORDER BY animal'];
+end
+
+animaldata=mysql(sql);
+animals=cell(length(animaldata),1);
+[animals{:}]=deal(animaldata.animal);
+animals={'ALL' animals{:}};
+animalidx=find(strcmp(CELLDB_ANIMAL,animals));
+if isempty(animalidx),
+   animalidx=2;
+end
+
+set(handles.popAnimals,'String',animals);
+set(handles.popAnimals,'Value',animalidx);
