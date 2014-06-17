@@ -70,7 +70,8 @@ for cnt1 = 1:length(StimEvents);
             ThisTargetNote=Note;
             
             if StimEvents(1).Trial==1,
-                if strcmpi(get(exptparams.TrialObject, 'Descriptor'),'MultiRefTar'),
+                if strcmpi(get(exptparams.TrialObject, 'Descriptor'),'MultiRefTar') || ...
+                    strcmpi(get(exptparams.TrialObject, 'Descriptor'),'RSSToneMono'),
                     tar=get(exptparams.TrialObject,'TargetHandle');
                     exptparams.UniqueTargets=get(tar,'Names');
                 elseif strcmpi(get(exptparams.TrialObject, 'Descriptor'),'RepDetect'),
