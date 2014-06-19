@@ -27,13 +27,13 @@ switch DistributionName
         f = @(x) g(x,Fbins,Deltas,DCoffset);
 	case 'quantal_random_spectra'
         DistriBinNb = 8;
-        Quantal_Delta = 30;  % in %
         mu = DistributionPara(1);        
         HalfCutOct = DistributionPara(2)/2;
         DCoffset = 1/(2*HalfCutOct);
         SeedPerm = DistributionPara(3);    
         QuantalWeights = [-1 -1 -1 0 0 1 1 1];
         UniqueIniDistriNum = DistributionPara(4);         % used to have uniform distribution of levels in all channels
+        Quantal_Delta = DistributionPara(5);  % in %
         IniDistriNum = mod(UniqueIniDistriNum-1,DistriBinNb)+1;
         BlockNb = ((UniqueIniDistriNum-IniDistriNum)/DistriBinNb) + 1;
         
