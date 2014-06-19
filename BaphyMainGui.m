@@ -1,4 +1,4 @@
-function varargout = BaphyMainGui(varargin)
+ function varargout = BaphyMainGui(varargin)
 % BAPHYMAINGUI M-file for BaphyMainGui.fig
 %      BAPHYMAINGUI, by itself, creates a new BAPHYMAINGUI or raises the existing
 %      singleton*.
