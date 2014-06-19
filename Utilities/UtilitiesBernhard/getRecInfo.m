@@ -86,11 +86,8 @@ end
 
 %% DETERMINE RECORDING SYSTEM
 if LOADMFILE
-  switch I.globalparams.HWSetup
-    case {7,8,10,12}; I.Recorder = 'MANTA'; I.EVPVersion = 5;
-    case {11}; I.Recorder = 'ASNR'; I.EVPVersion = 4;
-    otherwise I.Recorder = 'ALAB'; I.EVPVersion = 4;
-  end
+  % RECORDING SYSTEM IN PARIS ALWAYS MANTA
+  I.Recorder = 'MANTA'; I.EVPVersion = 5;
 end
 
 %% LOAD MANTA FILE

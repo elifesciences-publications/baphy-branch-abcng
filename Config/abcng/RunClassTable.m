@@ -104,6 +104,8 @@ elseif isempty(tar),
       runclass = 'ATS';
     case 'WHITENOISE'
       runclass = 'WHN';
+    case 'TEXTUREMORPHING';
+      runclass = 'TMG';      
     otherwise
       runclass = '';
   end

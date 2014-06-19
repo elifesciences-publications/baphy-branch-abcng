@@ -32,7 +32,7 @@ switch P.RespType
     
   case 'MUA'; % MULTI UNIT ACTIVITY
     if ~exist(P.File) 
-      cacheevpspikes(P.RawFile,P.Electrode,P.SigmaThreshold,0);
+      P.File = cacheevpspikes(P.RawFile,P.Electrode,P.SigmaThreshold,0);
     end
     D = load(P.File);
     SpikeTrials = D.trialid;

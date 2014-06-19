@@ -157,9 +157,12 @@ for ii=1:NElectrodes
         
         % TONE CLOUD
       elseif strcmpi(options.runclass,'TMG'),
-        TMG_ComputeSTRF('MFile',mfile,'Electrode',Electrode,'Unit',unit,...
+        % 14/04-YB: so far, plot a raster w/ trials sorted by FrozenPattern nb
+        %         TMG_ComputeSTRF('MFile',mfile,'Electrode',Electrode,'Unit',unit,...
+        %           'Axis',AH(ii),'SigmaThreshold',options.sigthreshold);
+        TMG_RasterPlot('MFile',mfile,'Electrode',Electrode,'Unit',unit,...
           'Axis',AH(ii),'SigmaThreshold',options.sigthreshold);
-      
+        
       elseif strcmpi(options.runclass,'AMT'),
         % for audio-visual stimuli, special analysis
         psth_heatmap(mfile,Electrode,unit,AH(ii),options);

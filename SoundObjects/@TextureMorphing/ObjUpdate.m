@@ -29,7 +29,14 @@ Par.FrequencyRange_LB = Par.FrequencyRange(1);
 Par.FrequencyRange_UB = Par.FrequencyRange(2);
 Par.ToneDuration = 0.03;
 Par.TonesPerOctave = 2;
-Par.FrozenPatternDuration = 0;
+if Par.FrozenPatternsNb==0
+  Par.FrozenPatternDuration = 0;
+else
+  FrozenPatternsAdress = get(o,'FrozenPatternsAdress');
+   load([ FrozenPatternsAdress filesep 'FrozenPatterns.mat' ]);
+  Par.FrozenPatternDuration = (length(FrozenPatterns{1})-1)/get(o,'SamplingRate');
+  Par.FrozenPatternChordNb = Par.FrozenPatternDuration/Par.ToneDuration;
+end
 Par.ToneInterval = 12;            % For tone frequency in binned frequency axis. Defines STRF resolution.
 Par.XDistriInterval = 24;         % Denser, for plotting purposes, area calculation and so forth
 Par.MorphingDuration = 0;

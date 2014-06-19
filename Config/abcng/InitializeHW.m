@@ -26,6 +26,9 @@ switch globalparams.HWSetup
     HW.DIO.Line.LineName = {'Touch','TouchL','TouchR'};
     
   case {1,2,3} % ALL RECORDING BOOTHS SHOULD REMAIN IDENTICAL AS LONG AS POSSIBLE
+    SetupNames = {'SB1','SB2','LB1'};
+    globalparams.HWSetupName = SetupNames{globalparams.HWSetup};
+    
     DAQID = 'D0'; % NI BOARD ID WHICH CONTROLS STIMULUS & BEHAVIOR
     niResetDevice(DAQID);
     
@@ -44,12 +47,7 @@ switch globalparams.HWSetup
     HW=niCreateAO(HW,DAQID,'ao0:1','SoundOutL,SoundOutR',['/',DAQID,'/PFI1']);
     
     %% SETUP SPEAKER CALIBRATION
-    switch globalparams.HWSetup
-      case 1
-        HW.Calibration.Speaker = 'SHIE800';
-      case 2
-        HW.Calibration.Speaker = 'SHIE800_SB2';
-    end
+    HW.Calibration.Speaker = ['SHIE800',globalparams.HWSetupName];
     HW.Calibration.Microphone = 'GRAS46BE';
     HW.Calibration = IOLoadCalibration(HW.Calibration);
        
