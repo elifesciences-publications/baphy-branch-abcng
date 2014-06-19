@@ -27,20 +27,20 @@ switch DistributionName
         f = @(x) g(x,Fbins,Deltas,DCoffset);
 	case 'quantal_random_spectra'
         DistriBinNb = 8;
-        Quantal_Delta = 50;  % in %
         mu = DistributionPara(1);        
         HalfCutOct = DistributionPara(2)/2;
         DCoffset = 1/(2*HalfCutOct);
         SeedPerm = DistributionPara(3);    
         QuantalWeights = [-1 -1 -1 0 0 1 1 1];
         UniqueIniDistriNum = DistributionPara(4);         % used to have uniform distribution of levels in all channels
+        Quantal_Delta = DistributionPara(5);  % in %
         IniDistriNum = mod(UniqueIniDistriNum-1,DistriBinNb)+1;
         BlockNb = ((UniqueIniDistriNum-IniDistriNum)/DistriBinNb) + 1;
         
         DeltasBlock = BuildDeltasBlock(QuantalWeights,BlockNb*SeedPerm);   % The same block is built for the [n,n+DistriBinNb-1] following D0s
                                                                            %with uniform probability of -1 and +1 bins.
         Deltas = DeltasBlock(IniDistriNum,:);
-        Deltas = [-2 Deltas -2];
+        Deltas = [-100/Quantal_Delta Deltas -100/Quantal_Delta];
         Deltas = Deltas*Quantal_Delta;
         Fbins = [0 mu-HalfCutOct mu-(HalfCutOct-HalfCutOct/(DistriBinNb/2)) mu-(HalfCutOct-2*HalfCutOct/(DistriBinNb/2)) mu-(HalfCutOct-3*HalfCutOct/(DistriBinNb/2)) mu-(HalfCutOct-4*HalfCutOct/(DistriBinNb/2)) ...
             mu-(HalfCutOct-5*HalfCutOct/(DistriBinNb/2)) mu-(HalfCutOct-6*HalfCutOct/(DistriBinNb/2)) mu-(HalfCutOct-7*HalfCutOct/(DistriBinNb/2)) mu-(HalfCutOct-8*HalfCutOct/(DistriBinNb/2))];

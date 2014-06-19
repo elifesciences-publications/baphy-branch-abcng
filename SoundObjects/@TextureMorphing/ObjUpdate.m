@@ -88,9 +88,16 @@ for ChangedD_Num = 1:ChangedD_Nb
             ChannelDistance = 1;
             ChannelDistancesByMorphing{ChangedD_Num} = ones(1,4)*ChannelDistance;
             Bins2Change{ChangedD_Num} = [1:2 ; 3:4 ; 5:6 ; 7:8];
+        case 'fixed_increm'
+            MorphingNb(ChangedD_Num) = 1;
+            ChannelDistance = 1;
+            ChannelDistancesByMorphing{ChangedD_Num} = ones(1,4)*ChannelDistance;
+            PossibleBins = {1:2 ; 3:4 ; 5:6 ; 7:8};
+            Bin2ChangeIndex = getfield(Par,[ 'D' num2str(ChangedD_Num) 'param' ]);
+            Bins2Change{ChangedD_Num} = PossibleBins{Bin2ChangeIndex};
         case 'non_contig_increm'
             ChannelDistances = getfield(Par,[ 'D' num2str(ChangedD_Num) 'param' ]);
-            MorphingNb(ChangedD_Num) = 0; Bins2Change{ChangedD_Num} = [];
+            MorphingNb(ChangedD_Num) = 0; Bins2Change{ChangedD_Num} = []; ChannelDistancesByMorphing{ChangedD_Num} = [];
             for ChannelDistance = ChannelDistances
                 BinNb = 8;
                 IntervalNb = BinNb-ChannelDistance;
@@ -98,7 +105,7 @@ for ChangedD_Num = 1:ChangedD_Nb
                 IntervalLst = ( 1:(BinNb-ChannelDistance) );
                 IntervalLst = [ IntervalLst' IntervalLst'+ChannelDistance ];
                 Bins2Change{ChangedD_Num}( (size(Bins2Change{ChangedD_Num},1)+1) : (size(Bins2Change{ChangedD_Num},1)+IntervalNb) ,:) = IntervalLst;
-                ChannelDistancesByMorphing{ChangedD_Num} = ones(1,IntervalNb)*ChannelDistance;
+                ChannelDistancesByMorphing{ChangedD_Num} = [ChannelDistancesByMorphing{ChangedD_Num} ones(1,IntervalNb)*ChannelDistance];
             end
     end
 end

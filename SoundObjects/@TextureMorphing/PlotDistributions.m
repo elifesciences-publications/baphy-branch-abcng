@@ -14,7 +14,7 @@ ToneDuration = Par.ToneDuration;
 FrequencySpace = get(o,'FrequencySpace'); 
 XDistri = get(o,'XDistri');
 Index = 1;
-[ w , ev , o , D0 , ChangeD] = waveform(o,Index,[],[],Global_TrialNb);
+[ w , ev , o , D0 ] = waveform(o,Index,[],[],Global_TrialNb);
 
 %% CREATION/PLOT OF THE STIMULUS
 if PlotDbis

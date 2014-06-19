@@ -41,22 +41,26 @@ switch RepOrTrial
   case 0 % TRIAL CALL (MODIFY SET BASED ON PERFORMANCE)
     switch P.ReinsertTrials
       case 0; % nothing needs to be done
-      case 1;
+      case -1; % when you do not want to change TrialIndexLst (e.g. MemoClicks)
         CurrentTrial = Counter;
         TrialIndex = exptparams.TotalTrials;
         if strcmpi(exptparams.Performance(end).Outcome,'EARLY')    % 2014/02-YB: SNOOZE is not considered
           % REPEAT LAST INDEX AT RANDOM POSITION IN THE REMAINING
-%           R = RandStream('mt19937ar','Seed',CurrentTrial);
-%           RemInd = CurrentTrial:P.NumberOfTrials;
-%           Inds = [1:CurrentTrial,RemInd(R.randperm(length(RemInd)))];
-%           if length(Inds) ~= P.NumberOfTrials+1 warning('Check reinsertion of correction trials'); end
-%           P.ReferenceIndices =  P.ReferenceIndices(Inds);
-%           P.TargetIndices = P.TargetIndices(Inds);
-%           P.TrialTags = P.TrialTags(Inds);
-%           P.NumberOfTrials = P.NumberOfTrials + 1;          
+          R = RandStream('mt19937ar','Seed',CurrentTrial);
+          RemInd = CurrentTrial:P.NumberOfTrials;
+          Inds = [1:CurrentTrial,RemInd(R.randperm(length(RemInd)))];
+          if length(Inds) ~= P.NumberOfTrials+1 warning('Check reinsertion of correction trials'); end
+          P.ReferenceIndices =  P.ReferenceIndices(Inds);
+          P.TargetIndices = P.TargetIndices(Inds);
+          P.TrialTags = P.TrialTags(Inds);
+          P.NumberOfTrials = P.NumberOfTrials + 1;
+        end        
+      otherwise;
+        TrialIndex = exptparams.TotalTrials;
+        if strcmpi(exptparams.Performance(end).Outcome,'EARLY')    % 2014/02-YB: SNOOZE is not considered
           % 2014/02-YB: reinsertion (in the next 8) of TrialIndex sent to <waveform> (in order to re-generate the same ToC)
 %           P.TrialIndexLst(TrialIndex+randi(8,1)) =P.TrialIndexLst(TrialIndex);
-          P.TrialIndexLst(TrialIndex+3) =P.TrialIndexLst(TrialIndex);
+          P.TrialIndexLst(TrialIndex+P.ReinsertTrials) =P.TrialIndexLst(TrialIndex);
         end
     end
     

@@ -30,20 +30,19 @@ else
   CurrentTrialIndex = TargetIndices( mod(TrialIndex,get(SO,'MaxIndex')) );  % Condition number
 end
 CurrentTrialIndex = CurrentTrialIndex{1};
-DiffiLevels = get(SO,'DifficultyLvlByInd'); 
-DistributionTypes = get(SO,'DistributionTypeByInd');
+DiffiLevels =get(SO,'MaxIndex');
+%DistributionTypes = get(SO,'DistributionTypeByInd');
 
-DistributionTypeNow = DistributionTypes(CurrentTrialIndex); 
-DifficultyLvl = str2num(get(SO,['DifficultyLvl_D' num2str(DistributionTypeNow)]));
-DifficultyNow = DifficultyLvl( DiffiLevels(CurrentTrialIndex) );
-if DifficultyNow==0; CatchTrial = 1; else CatchTrial = 0; end
+%DistributionTypeNow = DistributionTypes(CurrentTrialIndex); 
+DifficultyLvl = 1:DiffiLevels; %str2num(get(SO,['DifficultyLvl_D' num2str(DistributionTypeNow)]));
+DifficultyNow = get(SO,'DifficultyLvlByInd');%( DiffiLevels(CurrentTrialIndex) );
 
 TrialDiffiMat = zeros(length(unique(DifficultyLvl ,'stable')),3);
-if DistributionTypes(CurrentTrialIndex) == 1  % Display for only one DistributionType
+
   TrialDiffiLvl = find(DifficultyNow==unique(DifficultyLvl ,'stable'));
   TrialSuccessCase = find( strcmp({'HIT','SNOOZE','EARLY'} , {AllPerf(end).Outcome}) );
   TrialDiffiMat(TrialDiffiLvl,TrialSuccessCase) = 1;
-end
+
 
 if TrialIndex == 1   
   DiffiMatPreviousTrial = zeros(length(unique(DifficultyLvl ,'stable')),3);
@@ -60,7 +59,7 @@ for i=1:length(cP.AllTargetPositions)
   for j=1:TrialIndex cTargetsInd(j) = any(strcmp(AllPerf(j).CurrentTargetPositions,cP.AllTargetPositions{i})); end
   cP.HitRates(i) = sum(cTargetsInd.*cHitInd)/sum(cTargetsInd);
 end
-cP.DiscriminationRate = prod(cP.HitRates);
+cP.DiscriminationRate = prod(cP.HitRate);
 if isnan(cP.DiscriminationRate) cP.DiscriminationRate = 0; end
 cP.Trials = TrialIndex;
 
@@ -75,15 +74,19 @@ cP.ErrorRateRecent = sum(strcmp({RecentPerf.Outcome},'ERROR'))/AverageSteps;
 %% TIMING  % so far, LICKS before the ToC are not seen in LickTargetOnly MODE
 switch cP.DetectType
   case 'ON';   % Corrected by Yves / 2013/10
-    if ~isnan(cP.LickSensorInd)
-      if ~get(TO,'LickTargetOnly')
-        cP.LickTime = find(LickData(:,cP.LickSensorInd)>0.5,1,'first');
-      else
-        MinimalInterval = 0.250*HW.params.fsAI;     % samples  
-        LickTimings = find( diff( LickData(:,cP.LickSensorInd) ) >0)';
+    if ~isnan(cP.LickSensorInd)%&& ~isempty(cP.LickData)
+%       if ~get(TO,'LickTargetOnly')
+%         cP.LickTime = find(LickData(:,cP.LickSensorInd)>0.5,1,'first');
+%       else
+        MinimalInterval = 0.300*HW.params.fsAI;     % samples  
+        LickTimings = find( diff( LickData(:,cP.LickSensorInd) ) >0)';   % ascending wave
         FarLickTimingsIndex = unique( [1 find(diff(LickTimings)>MinimalInterval)+1] );
+         if ~isnan(LickTimings)
         cP.LickTime = LickTimings(FarLickTimingsIndex);
-      end
+         else 
+           cP.LickTime = []; 
+         end
+%       end
     else cP.LickTime = []; 
     end
   case 'OFF';
@@ -92,9 +95,10 @@ switch cP.DetectType
     else cP.LickTime = []; 
     end
 end
-if isempty(cP.LickTime) || CatchTrial; cP.LickTime = NaN; cP.LickSensorInd = NaN; end  % pump after catch induces fake licks
+if isempty(cP.LickTime); cP.LickTime = NaN; cP.LickSensorInd = NaN; end  % pump after catch induces fake licks
 cP.LickTime = cP.LickTime/HW.params.fsAI;
-cP.FirstLickRelTarget = cP.LickTime - cP.TarWindow(1);
+Licks = cP.LickTime(cP.LickTime < cP.TarWindow(2));
+cP.FirstLickRelTarget = Licks - cP.TarWindow(1);
 cP.FirstLickRelReference = cP.LickTime - cP.RefWindow(1);
 
 %% WRITE BACK
