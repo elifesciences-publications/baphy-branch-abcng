@@ -61,6 +61,8 @@ case 0
       'LickTargetOnly','edit',O.LickTargetOnly};
     O = class(O,'RefTarCont');
     O = ObjUpdate(O);
+    % Beware: ReinsertTrials == -1 --> Index is reinjected
+    % ReinsertTrials > 0 --> TrialNum is reinjected
 case 1
     % if single argument of class SoundObject, return it
     if isa(varargin{1},'RefTarCont') O = varargin{1};

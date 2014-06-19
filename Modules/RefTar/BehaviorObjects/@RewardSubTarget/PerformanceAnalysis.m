@@ -34,7 +34,7 @@ DiffiLevels =get(SO,'MaxIndex');
 %DistributionTypes = get(SO,'DistributionTypeByInd');
 
 %DistributionTypeNow = DistributionTypes(CurrentTrialIndex); 
-DifficultyLvl = [1:DiffiLevels]; %str2num(get(SO,['DifficultyLvl_D' num2str(DistributionTypeNow)]));
+DifficultyLvl = 1:DiffiLevels; %str2num(get(SO,['DifficultyLvl_D' num2str(DistributionTypeNow)]));
 DifficultyNow = get(SO,'DifficultyLvlByInd');%( DiffiLevels(CurrentTrialIndex) );
 
 TrialDiffiMat = zeros(length(unique(DifficultyLvl ,'stable')),3);
@@ -59,7 +59,7 @@ for i=1:length(cP.AllTargetPositions)
   for j=1:TrialIndex cTargetsInd(j) = any(strcmp(AllPerf(j).CurrentTargetPositions,cP.AllTargetPositions{i})); end
   cP.HitRates(i) = sum(cTargetsInd.*cHitInd)/sum(cTargetsInd);
 end
-cP.DiscriminationRate = prod(cP.HitRates);
+cP.DiscriminationRate = prod(cP.HitRate);
 if isnan(cP.DiscriminationRate) cP.DiscriminationRate = 0; end
 cP.Trials = TrialIndex;
 
@@ -79,9 +79,13 @@ switch cP.DetectType
 %         cP.LickTime = find(LickData(:,cP.LickSensorInd)>0.5,1,'first');
 %       else
         MinimalInterval = 0.300*HW.params.fsAI;     % samples  
-        LickTimings = find( diff( LickData(:,cP.LickSensorInd) ) >0)';
+        LickTimings = find( diff( LickData(:,cP.LickSensorInd) ) >0)';   % ascending wave
         FarLickTimingsIndex = unique( [1 find(diff(LickTimings)>MinimalInterval)+1] );
+         if ~isnan(LickTimings)
         cP.LickTime = LickTimings(FarLickTimingsIndex);
+         else 
+           cP.LickTime = []; 
+         end
 %       end
     else cP.LickTime = []; 
     end
@@ -93,7 +97,8 @@ switch cP.DetectType
 end
 if isempty(cP.LickTime); cP.LickTime = NaN; cP.LickSensorInd = NaN; end  % pump after catch induces fake licks
 cP.LickTime = cP.LickTime/HW.params.fsAI;
-cP.FirstLickRelTarget = cP.LickTime - cP.TarWindow(1);
+Licks = cP.LickTime(cP.LickTime < cP.TarWindow(2));
+cP.FirstLickRelTarget = Licks - cP.TarWindow(1);
 cP.FirstLickRelReference = cP.LickTime - cP.RefWindow(1);
 
 %% WRITE BACK

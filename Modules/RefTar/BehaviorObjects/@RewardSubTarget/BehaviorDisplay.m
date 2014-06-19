@@ -16,13 +16,14 @@ if ~TrialIndex return; end % IN CASE BREAK WITHOUT A SINGLE TRIAL
 DCtmp = HF_axesDivide(1,[1,0.5,1.5,1.2],[0.1,0.1,0.85,0.85],[],[0.1,0.7,0.7]);
 DCtmp2 = HF_axesDivide([1,1],1,DCtmp{end},0.4,[ ]);
 DC = [DCtmp(1:end-1);DCtmp2(:)];
+%cPositions = {'center'};
 % SET UP ALL HANDLES, EVEN IF THE FIGURE HAS BEEN CLOSED IN BETWEEN
 AllTargetPositions = exptparams.Performance(end).AllTargetPositions;
 AllTargetSensors = IOMatchPosition2Sensor(AllTargetPositions);
 for i=1:length(AllTargetSensors)
   RespInds(i) = find(strcmp(exptparams.RespSensors,AllTargetSensors{i})); 
 end
-[FIG,AH,PH,Conditions,PlotOutcomes,exptparams] = LF_prepareFigure(exptparams,DC,TrialIndex);
+[FIG,AH,PH,Conditions,PlotOutcomes,exptparams] = LF_prepareFigure(exptparams,DC,TrialIndex,StimEvents);
 SRout = HW.params.fsAO;
 SRin = HW.params.fsAI;
 MaxIndex = get(get(exptparams.TrialObject,'TargetHandle'),'MaxIndex');
@@ -136,9 +137,14 @@ if ~isempty(ResponseData)
   end
 end
 
+Yaxis_tmp = get(AH.TarTiming,'ylim');
+for RefNum = 1:(MaxIndex-1)
+  set(PH.TarTiming.GreyBoxes(RefNum),'ydata',[ 0 0 Yaxis_tmp(2) Yaxis_tmp(2) 0 ]);
+end
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% HELPER FUNCTION FOR SETTING UP THE DISPLAY
-function [FIG,AH,PH,Conditions,PlotOutcomes,exptparams] = LF_prepareFigure(exptparams,DC,TrialIndex)
+function [FIG,AH,PH,Conditions,PlotOutcomes,exptparams] = LF_prepareFigure(exptparams,DC,TrialIndex,StimEvents)
 
 if ~isfield(exptparams,'ResultsFigure') ...
   || isempty(exptparams.ResultsFigure) ...
@@ -247,26 +253,35 @@ else % CREATE A NEW SET OF HANDLES
   DiffiMat = exptparams.Performance(end).DiffiMat;% UniqueDiffiNb = size(DiffiMat,1);
   UniqueDiffiNb = get(get(exptparams.TrialObject,'TargetHandle'),'MaxIndex');
  
-  
-  
-  
   for PlotNum = 1:length(PlotOutcomes)
       for DiffiNum = 1:UniqueDiffiNb
           PH.DiffiDistri.Bar(DiffiNum,PlotNum) = plot( repmat(DiffiNum+0.22*(PlotNum-2),2,1) , zeros(2,1),...
               '-','Linewidth',6,'Color',Colors.(PlotOutcomes{PlotNum}));
        %   NewXaxisStr{DiffiNum} = ['+' num2str(UniqueDiffiLvl_D1(DiffiNum)) '%'];
-          NewXaxisStr{DiffiNum} = ['+' num2str(DiffiNum) 'References'];
+          NewXaxisStr{DiffiNum} = ['+' num2str(DiffiNum) 'Ref'];
       end
   end
-  set(gca, 'XTick',1:DiffiNum); xt = get(gca, 'XTick'); set (gca, 'XTickLabel', NewXaxisStr);
+  set(gca, 'XTick',1:DiffiNum); set (gca, 'XTickLabel', NewXaxisStr);
   PH.DiffiDistrib.Title = title('');
   axis([0,UniqueDiffiNb+1,0,1]);
   
   %% TARGET TIMING
   AH.TarTiming = axes('Pos',DC{5}); hold on; box on;
   O = get(exptparams.TrialObject,'TargetHandle');
- PlotOutcomes = {'Hit','Snooze','Early'}; Conditions = get(O,'Names');     
- % PlotOutcomes2 = PlotOutcomes(1) ; Conditions = get(O,'Names'); % PlotOutcomes = {'Hit','Early','All'};
+  
+  %  for j =1:length(StimEvents)-4
+  MaxRefNb = get(get(exptparams.TrialObject,'TargetHandle'),'MaxIndex');
+  Gap = get(get(exptparams.TrialObject,'TargetHandle'),'SequenceGap');
+  SeqLen = StimEvents(end-1).StopTime - StimEvents(end-2).StartTime;
+  MaxLen =  StimEvents(1).StopTime + (MaxRefNb)*SeqLen - 1.5 * Gap;
+  for RefNum = 1:MaxRefNb
+    Start = StimEvents(1).StopTime+(SeqLen)*(RefNum-1) -MaxLen;
+    Stop = Start + (SeqLen) - 1.5*Gap ;
+    PH.TarTiming.GreyBoxes(RefNum) = fill([Start Stop Stop Start],[0 0 1 1 ],[.7 .7 .7]);
+  end
+  
+  PlotOutcomes = {'Hit','Snooze','Early'}; Conditions = get(O,'Names');
+  % PlotOutcomes2 = PlotOutcomes(1) ; Conditions = get(O,'Names'); % PlotOutcomes = {'Hit','Early','All'};
   for iO = 1:length(PlotOutcomes)
     for i = 1:length(AllTargetPositions)
       cColor = Colors.(PlotOutcomes{iO}); cStyle = Styles.(AllTargetPositions{i});
@@ -274,6 +289,8 @@ else % CREATE A NEW SET OF HANDLES
       PH.TarTiming.RespHist(iO,i) = plot(0,0,'Color',cColor,'LineStyle',cStyle);
     end
   end
+  
+  set(AH.TarTiming,'XLim',[-.4 2])
   ylabel('Trial nb.',AxisLabelOpt{:});
   xlabel('Time rel. Responsewindow [seconds]',AxisLabelOpt{:}); 
   

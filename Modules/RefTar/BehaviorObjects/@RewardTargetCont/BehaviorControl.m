@@ -141,7 +141,7 @@ DetectType = 'ON'; LickOccured = 0;
     fprintf('Preward ');
     PumpEvent = IOControlPump(HW,'Start',PrewardDuration,PumpName);
     Events = AddEvent(Events, PumpEvent, TrialIndex);
-    exptparams.Water = exptparams.Water + PrewardAmount;
+    exptparams.Water = exptparams.Water +  PrewardAmount;
     fprintf('\b ... '); Prewarded = 1;
   end
 end
@@ -184,13 +184,20 @@ end
 switch Outcome
   case 'EARLY'; % STOP SOUND, TIME OUT + LIGHT ON
     StopEvent = IOStopSound(HW);
+    
+    if strcmp(get(O,'PunishSound'),'Noise')
+      IOStartSound(HW,randn(5000,1)*15); pause(0.25); IOStopSound(HW);
+    elseif  strcmp(get(O,'PunishSound'),'Buzz')
+      Tbuzz = [0:1/100000:0.7]; Xbuzz = sin(2.*pi.*110.*Tbuzz);
+      Ybuzz = 2*square(2*pi*440*Tbuzz + Xbuzz);
+      IOStartSound(HW,Ybuzz*15); pause(0.25); IOStopSound(HW);
+    end
+    
     Events = AddEvent(Events, StopEvent, TrialIndex);
     LightEvents = LF_TimeOut(HW,get(O,'TimeOutEarly'),LEDfeedback,TrialIndex,Outcome);
     Events = AddEvent(Events, LightEvents, TrialIndex);
     
-    if strcmp(get(O,'PunishSound'),'Noise') 
-      IOStartSound(HW,randn(5000,1)*15); pause(0.25); IOStopSound(HW); 
-    end    
+
 
   case 'ERROR'; % STOP SOUND, HIGH VOLUME NOISE, LIGHT ON, TIME OUT
     StopEvent = IOStopSound(HW); Events = AddEvent(Events, StopEvent, TrialIndex);
@@ -206,8 +213,6 @@ switch Outcome
     Duration2Play = 0.5; LEDposition = {'left'};
     % Stop Dbis sound when <Duration2Play> is elapsed
     if ~CatchTrial; pause(max([0 , (TarWindow(1)+Duration2Play)-IOGetTimeStamp(HW) ])); end
-    StopEvent = IOStopSound(HW);
-    Events = AddEvent(Events, StopEvent, TrialIndex);
     
     PumpName = cell2mat(IOMatchSensor2Pump(cLickSensor));
     if length(RewardAmount)>1 % ASYMMETRIC REWARD SCHEDULE ACROSS SPOUTS
@@ -246,6 +251,9 @@ switch Outcome
     PumpEvent = IOControlPump(HW,'stop',0,PumpName);
     Events = AddEvent(Events, PumpEvent, TrialIndex);
     IOControlPump(HW,'stop',0,'Pump');
+    
+    StopEvent = IOStopSound(HW);
+    Events = AddEvent(Events, StopEvent, TrialIndex);
     
     % Turn LED OFF
     [State,LightEvent] = IOLightSwitch(HW,0,0,[],[],[],LightNames{1});

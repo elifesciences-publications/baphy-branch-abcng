@@ -34,7 +34,7 @@ CurrentRepetitionNb = ceil(Global_TrialNb/MaxIndex);
 
 % GENERATE Timing of Change [ToC]
 if isempty(IsToc) || IsToc==0
-    RToC = RandStream('mrg32k3a','Seed',IniSeed*Global_TrialNb);   % mcg16807 is fucked up
+    RToC = RandStream('mt19937ar','Seed',IniSeed*Global_TrialNb);   % mcg16807 is fucked up
     lambda = 0.15; 
     ToC = PoissonProcessPsychophysics(lambda,Par.MaxToC-Par.MinToC,1,RToC);
     ToC = ToC + Par.MinToC;
@@ -95,10 +95,10 @@ end
 %AND Dbis STIMULUS ('TARGET' located in the TARGET)
 % Random stream to draw tones for each distribution
 PlotDistributions = 0;
-RtonesD0 = RandStream('mrg32k3a','Seed',Global_TrialNb*Index);
+RtonesD0 = RandStream('mt19937ar','Seed',Global_TrialNb*Index);
 [Stimulus0,ToneMatrix{1}] = AssemblyTones(FrequencySpace,D0,XDistri,Stimulus0Duration,sF,PlotDistributions,[],RtonesD0); 
 
-RtonesD = RandStream('mrg32k3a','Seed',Global_TrialNb*Index*2);
+RtonesD = RandStream('mt19937ar','Seed',Global_TrialNb*Index*2);
 [StimulusBis,ToneMatrix{2}] = AssemblyTones(FrequencySpace,ChangeD,XDistri,StimulusBisDuration,sF,PlotDistributions,[],RtonesD);
 
 % PREPARE THE 2 Parts OF THE WHOLE STIMULUS
@@ -130,7 +130,7 @@ if strcmp('yes',get(O,'RovingLoudness'))
   NormFactor = maxLocalStd(w,sF,floor(length(w)/sF));
   
   RovingLoudnessSeed = IniSeed*Global_TrialNb*Index;
-  RgeneRovingLoudness = RandStream('mrg32k3a','Seed',RovingLoudnessSeed);
+  RgeneRovingLoudness = RandStream('mt19937ar','Seed',RovingLoudnessSeed);
   PickedUpLoudness = -(RgeneRovingLoudness.randi(21) - 1);  % Roving between -20 and +0dB
   RatioToDesireddB = 10^(PickedUpLoudness/20);   % dB to ratio in SPL
   w = w*RatioToDesireddB/NormFactor;

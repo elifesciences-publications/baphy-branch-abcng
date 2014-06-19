@@ -6,7 +6,7 @@ function HW = IOLoadSound(HW, stim)
 %
 
 %% MAKE SURE THE STIMULUS IS VERTICAL
-if size(stim,1)<size(stim,2)  stim=stim'; end;
+ if size(stim,1)<size(stim,2)  stim=stim'; end;
 
 %% CALIBRATE SPECTRUM AND VOLUME FOR SOME SETUPS
 if any(HW.params.HWSetup == [ 7,9,10,12 ] ) || ...

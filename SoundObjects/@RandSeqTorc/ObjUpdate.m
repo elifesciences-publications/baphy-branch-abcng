@@ -12,10 +12,15 @@ TorcRates = get(o,'TorcRates');
 SeqGap = get(o,'SequenceGap');
 PastRef = get(o,'PastRef');% duration is second
 TrialN = get(o,'TrialN');
+IsRef= get(o,'IsRef');
 % index = get(o,'Index');
 
 % PastRef = get(o,'PastRef')
 % o = set(o, 'PastRef',PastRef);
+if strcmp(IsRef,'no')==1
+  o = set(o,'MaxIndex',1);
+
+end
 
 
 % if TrialN > length(PastRef)
@@ -46,7 +51,7 @@ if TrialN == 0
   o = set(o,'TrialN', 1);
   %Key = round( Rtoday.rand(1,1)*100 );   % With RandStream('mrg32k3a'), it is important to work with large numbers,                                         %because there is a heavy correlation between two seeds that belong to the same integer interval [n,n+1[
 else
-  Key = get(o,'Key')  
+  Key = get(o,'Key')  ;
   %o = set(o,'Key', Key);
 end
 % Type=lower(get(o,'Type'));

@@ -12,7 +12,8 @@ HW.params.fsAO=P.SR;
 HW.params.MaxTrialLen=P.MaxTrialLen;
 
 % SET SAMPLING RATE AND SAMPLING MODE
-for id=1:length(HW.AO),
+for id=1:length(HW.AO)
+  %niStop(HW.AO(id));
   S = DAQmxCfgSampClkTiming(HW.AO(id).Ptr,'',P.SR,...
     NI_decode('DAQmx_Val_Rising'),NI_decode('DAQmx_Val_FiniteSamps'),P.MaxTrialLen.*P.SR);
   if S NI_MSG(S); end

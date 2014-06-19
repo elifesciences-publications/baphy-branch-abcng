@@ -7,33 +7,39 @@ function [w, ev,o]=waveform (o,index,IsRef,Mode,TrialNum)
 fs = get(o,'SamplingRate');
 PreStimSilence = get(o,'PreStimSilence');
 PostStimSilence = get(o,'PostStimSilence');
-MaxIndex = get(o,'MaxIndex');
+
 
 o = set(o,'DifficultyLvlByInd',index);
 
 % the parameters of Stream_AB object
-IsRef = get(o,'IsRef');
+SameRef = get(o,'SameRef');
 IsBuzz = get(o,'IsBuzz');
 NoteDur = get(o,'NoteDur');
 NoteGap = get(o,'NoteGap');
 SeqGap = get(o,'SequenceGap');% duration is second
+IsRef = get(o,'IsRef'); 
 
 FirstFrequency = get(o,'FirstFrequency');
 Intervals = get(o,'Intervals');
-SimilareTones= get(o,'SimilareTones')
+SimilareTones= get(o,'SimilareTones');
 
 TORC = get(o,'TORC');
 TorcDur = get(o,'TorcDuration');
 TorcFreq = get(o,'FrequencyRange');
 TorcRates = get(o,'TorcRates');
 
-Key = get(o,'Key')
-TrialKey = RandStream('mrg32k3a','Seed',Key)
+Key = get(o,'Key');
+TrialKey = RandStream('mrg32k3a','Seed',Key);
 PastRef = get(o,'PastRef');
+% 
+% if index > MaxIndex
+%   index = MaxIndex;
+% end
 
-if index > MaxIndex
-  index = MaxIndex;
-end
+% if strcmp(Stimtype,'Target Only')
+%   o = set(o,'MaxIndex',1);
+% else MaxIndex = get(o,'MaxIndex');
+% end
 
 if isempty(PastRef) 
    RefNow = 0;
@@ -122,12 +128,14 @@ end
 ev = AddEvent(ev,['PreStimSilence 1 / 1'],[],0,PreStimSilence); 
 w = [w ; prestim(:)];
 
-INDEX = index
+%INDEX = index;
 NextTry = 1;
 %index -1 pour obtenir trial sans ref
-for j = RefNow+1:RefNow+index
+if strcmp(IsRef,'yes') == 1
+ 
+  for j = RefNow+1:RefNow+index
   
-  if j <  RefNow+index
+  %if j <  RefNow+index+1 && strcmp(Stimtype,'With Ref')
    % if strcmp(IsRef,'yes')
       
       LocalSeq = SeqFrequency(RandSequence(j),:) ;
@@ -146,8 +154,17 @@ for j = RefNow+1:RefNow+index
       wSeq = zeros(1,1);
       
       for i=1:length(Frequency)
-        w0=addenv(sin(2*pi*LocalSeq(i)*t),fs);
-        wSeq=[wSeq;w0(:);gap(:)];
+        if strcmp(SameRef,'yes')
+          temp = 1;
+         w0=addenv(sin(2*pi*Frequency(2)*t),fs);  
+         % w0=addenv(sin(2*pi*LocalSeq(temp)*t),fs);
+          wSeq=[wSeq;w0(:);gap(:)];
+        else
+          temp = i;
+          w0=addenv(sin(2*pi*LocalSeq(temp)*t),fs);
+          wSeq=[wSeq;w0(:);gap(:)];
+        end
+       
       end
       
       MSeq = maxLocalStd(wSeq,fs,length(wSeq)/fs);
@@ -166,8 +183,10 @@ for j = RefNow+1:RefNow+index
       %     end
   %  end
     
-  elseif j == RefNow+index
-    
+  %else%if j == RefNow+index +1
+  end
+end
+
     for k=1:length(Frequency)
       
       wTarg=addenv(sin(2*pi*Frequency(k)*t),fs);
@@ -187,14 +206,14 @@ for j = RefNow+1:RefNow+index
       [ ], ev(end).StopTime, ev(end).StopTime + length(TargetSequence(:))/fs );
     
     %w=[TargetSequence(:);zeros(3*fs,1);w;TargetSequence(:);gapSeq(:);wTorc(:)];
-    w=[w;TargetSequence(:)/MSeq;gapSeq(1:round(length(gapSeq)/2));wTorc(:)/MTORC;gapSeq(:);Ybuzz(:)];
+    w=[w;TargetSequence(:)/MSeq;gapSeq(1:round(length(gapSeq)/2));wTorc(:)/MTORC;gapSeq(:);zeros(round(0.3*fs),1);Ybuzz(:)];
     %ev=ev_struct(ev,['Note ' num2str(Frequency(i))],0,NoteDur,PostStimSilence);
     
-  end
   
-end
+  
 
-w = 5 * w/max(abs(w));
+
+%w = 5 * w/max(abs(w));
 %soundsc(w,fs);
 %wavwrite(w,fs,'4 sequences 150 ms');
 

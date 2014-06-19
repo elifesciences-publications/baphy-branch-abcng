@@ -15,22 +15,23 @@ switch nargin
     O.NoResponseTime   = 0.5; % seconds
     O.LightCueDuration          = 0.0; % seconds
     O.EarlyWindow         = 0.25; % seconds
-    O.ResponseWindow  = 2; % seconds
     O.TimeOutError             = 3; % seconds
     O.TimeOutEarly             = 1; % seconds
     O.CenterRewardAmount = 0.02;% ml
     O.CenteringRewardDelay = 0.5; % s (time after trial onset to give the centering delay)
     O.PrewardAmount      = 0.0; % ml
-    O.RewardAmount       = 0.2; % ml
+    O.RewardAmount       = 0.175; % ml
     O.MinRewardAmount    = 0.02;
     O.IncrementRewardAmount     = 0.03; % ml
     O.MaxIncrementRewardNb      = 5;   
-    O.LEDfeedback = 1;
-    O.MinimalDelayResponse = 0.07;
-    O.AfterResponseDuration = 2; % s (Record for this time after response);
+    O.LEDfeedback = 0;
+    O.MinimalDelayResponse = 0.1;
+    O.AfterResponseDuration = 1.2; % s (Record for this time after response);
     O.ShockDuration = 0; % seconds
     O.PunishSound        = 'Noise'; 
-    O.Simulick               = 0; % simulate licks
+    O.GradualResponse = 0;
+    O.Simulick               = 0;
+    O.ExtendResponseWindow = 0;% simulate licks
     O.UserDefinableFields = {...
       'InterTrialInterval','edit',NaN,...
       'NoResponseTime','edit',NaN,...
@@ -49,8 +50,10 @@ switch nargin
       'MinimalDelayResponse','edit',NaN,...
       'AfterResponseDuration','edit',NaN,...
       'ShockDuration','edit',NaN,...
-      'PunishSound','popupmenu','None|Noise',...
-      'Simulick','edit',1};
+      'GradualResponse','edit',NaN,...      
+      'PunishSound','popupmenu','None|Noise|Buzz',...
+      'Simulick','edit',1,...
+      'ExtendResponseWindow','edit',NaN};
     O = class(O,'RewardSubTarget');
     O = ObjUpdate(O);
   case 1
