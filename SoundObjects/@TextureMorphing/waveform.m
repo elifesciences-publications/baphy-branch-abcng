@@ -58,7 +58,7 @@ D0type = Par.D0shape;
 Dtype = getfield(Par,['D' num2str(ChangedD_Num) 'shape']);   
 DifficultyLvl = getfield(Par,['DifficultyLvl_D' num2str(ChangedD_Num)]);
 DiffLvl = DifficultyLvl(DifficultyNum);       % given in %
-Quantal_Delta = getfield(Par,QuantalDelta);       % given in %
+Quantal_Delta = getfield(Par,'QuantalDelta');       % given in %
 if DiffLvl==0; ToC = min(Par.MinToC,ToC-StimulusBisDuration); end    % Catch trial are shortened by TarWindow duration
     
 D0param = [FO OctaveNb Par.IniSeed Global_TrialNb Quantal_Delta];
