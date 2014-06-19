@@ -14,7 +14,7 @@ if ~isfield(P,'Microphone') error('A microphone must be specified'); end
 Sep = HF_getSep; Path = which('baphy');
 Path = [Path(1:find(Path==Sep,1,'last')),'Hardware',Sep,'Speakers',Sep];
 FileName = [Path,'SpeakerCalibration_',P.Speaker,'_',P.Microphone,'.mat'];
-if exist(FileName,'file')
+if exist(FileName,'file')==2
   tmp = load(FileName); R = tmp.R;
 else
   error(['Calibration File "',escapeMasker(FileName),'" does not exist.']);
