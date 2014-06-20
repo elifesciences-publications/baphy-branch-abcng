@@ -6,16 +6,15 @@ switch nargin
 case 0
     % if no input arguments, create a default object
     s = SoundObject('RSS', 100000, 0, 0, 0, {}, 1, ...
-                    {'Duration','edit',1,'Subsets','edit',1, ...
-                     'NoiseType','popupmenu',...
-                     'None|White|Pink|Jet2|F16|MachineGun|City|SpectSmooth',...
-                     'SNR','edit',1000,'ReverbTime','edit',0});
+                    {'Duration','edit',1,'Subsets','edit',1,...
+                    'SplitChannels','popupmenu','no|yes'});
     o.Subsets = 1;
     o.SNR=100;
     o.NoiseType = 'White';
     o.ReverbTime = 0;
     o.Duration = 1;
     o.SoundPath = '';
+    o.SplitChannels = 'no';
     o = class(o,'RSS',s);
     o = ObjUpdate (o);
 case 1

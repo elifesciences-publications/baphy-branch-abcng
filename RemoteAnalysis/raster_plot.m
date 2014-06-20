@@ -325,13 +325,14 @@ elseif options.raster,
    data(isnan(data))=0;
    
    % bin at 10 ms
-   smfilt=ones(1,10)./10;
+   bn=10;
+   smfilt=ones(1,bn)./bn;
    data2=conv2(data,smfilt,'same');
-   data2=data2(:,5:10:end);
+   data2=data2(:,round(bn/2):bn:end);
    dn2=conv2(dn,smfilt,'same');
-   dn2=dn2(:,5:10:end);
-   
-   data2=(0.2-data2)./0.2;
+   dn2=dn2(:,round(bn/2):bn:end);
+   %keyboard
+   data2=(0.1-data2)./0.1;
    data2(data2>1)=1;
    data2(data2<0)=0;
    data3=data2;

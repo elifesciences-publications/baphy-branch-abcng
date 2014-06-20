@@ -54,8 +54,18 @@ for lidx=1:length(lfpchans),
       
       % downsample prior to saving cache file
       if isfield(options,'rasterfs') && options.rasterfs<lfpfs,
-         ltrialidx=ceil(ltrialidx*options.rasterfs./lfpfs);
-         rl=resample(double(rl),options.rasterfs,lfpfs);
+         ltrialidxnew=zeros(size(ltrialidx));
+         ltrialidx=cat(1,ltrialidx,length(rl)+1);
+         rlnew=[];
+         stepsize=lfpfs./options.rasterfs;
+         smfilt=ones(round(stepsize),1);
+         for ll=1:length(ltrialidxnew),
+            ltrialidxnew(ll)=length(rlnew)+1;
+            tl=rconv2(rl(ltrialidx(ll):(ltrialidx(ll+1)-1)),smfilt);
+            rlnew=cat(1,rlnew,tl(round((stepsize/2):stepsize:length(tl))));
+         end
+         rl=rlnew;
+         ltrialidx=ltrialidxnew;
       end
       lfpout(:,lidx)=rl;
       
