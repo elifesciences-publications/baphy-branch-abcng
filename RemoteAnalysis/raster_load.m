@@ -83,6 +83,8 @@ switch datause,
         options.tag_masks={'Ref'};
     case {'Target Only'},
         options.tag_masks={'Targ'};
+    case {'Both'},
+        options.tag_masks={'SPECIAL-ALL'};
     case {'Trial by trial'},
         options.tag_masks={'SPECIAL-TRIAL'};
     case {'Collapse reference'},

@@ -51,10 +51,10 @@ if ~mod(TrialIndex,exptparams.TrialBlock) || (isempty(AIData) && isempty(TrialSo
         text(0.3,1  ,'DR','FontWeight','bold','color','b','HorizontalAlignment','center');
         text(0.4,1  ,'DI','FontWeight','bold','HorizontalAlignment','center');
         text(0.5,1  ,'WaR','FontWeight','bold','color','b','HorizontalAlignment','center');
-        text(0.6,1  ,'InfR','FontWeight','bold','HorizontalAlignment','center');
-        text(0.7,1  ,'bHR','FontWeight','bold','color','b','HorizontalAlignment','center');
-        text(0.8,1  ,'bFR','FontWeight','bold','HorizontalAlignment','center');
-        text(0.9,1  ,'bDR','FontWeight','bold','color','b','HorizontalAlignment','center');
+        %text(0.6,1  ,'InfR','FontWeight','bold','HorizontalAlignment','center');
+        text(0.6,1  ,'bHR','FontWeight','bold','color','b','HorizontalAlignment','center');
+        text(0.7,1  ,'bFR','FontWeight','bold','HorizontalAlignment','center');
+        text(0.8,1  ,'bDR','FontWeight','bold','color','b','HorizontalAlignment','center');
     end
     % display trialnumber, SR, HR, DR, hitnum, Snooze Hit Rate, Snooze, shams,
     text(0, ind, num2str(TrialIndex),'FontWeight','bold','HorizontalAlignment','center');
@@ -64,10 +64,10 @@ if ~mod(TrialIndex,exptparams.TrialBlock) || (isempty(AIData) && isempty(TrialSo
         text(.3, ind, num2str(exptparams.Performance(end).DiscriminationRate,'%2.0f'),'FontWeight','bold','HorizontalAlignment','center','color','b');
         text(.4, ind, num2str(exptparams.Performance(end).DiscriminationIndex,'%2.0f'),'FontWeight','bold','HorizontalAlignment','center');
         text(.5, ind, num2str(exptparams.Performance(end).WarningRate,'%2.0f'),'FontWeight','bold','color','b','HorizontalAlignment','center');
-        text(.6, ind, num2str(exptparams.Performance(end).IneffectiveRate,'%2.0f'),'FontWeight','bold','HorizontalAlignment','center');
-        text(.7, ind, num2str(exptparams.Performance(end).RecentHitRate,'%2.0f'),'FontWeight','bold','color','b','HorizontalAlignment','center');
-        text(.8, ind, num2str(exptparams.Performance(end).RecentFalseAlarmRate,'%2.0f'),'FontWeight','bold','HorizontalAlignment','center');
-        text(.9, ind, num2str(exptparams.Performance(end).RecentDiscriminationRate,'%2.0f'),'FontWeight','bold','color','b','HorizontalAlignment','center');
+        %text(.6, ind, num2str(exptparams.Performance(end).IneffectiveRate,'%2.0f'),'FontWeight','bold','HorizontalAlignment','center');
+        text(.6, ind, num2str(exptparams.Performance(end).RecentHitRate,'%2.0f'),'FontWeight','bold','color','b','HorizontalAlignment','center');
+        text(.7, ind, num2str(exptparams.Performance(end).RecentFalseAlarmRate,'%2.0f'),'FontWeight','bold','HorizontalAlignment','center');
+        text(.8, ind, num2str(exptparams.Performance(end).RecentDiscriminationRate,'%2.0f'),'FontWeight','bold','color','b','HorizontalAlignment','center');
         %         text(.14, ind, num2str(exptparams.Performance(end).LickRate,'%2.0f'),'FontWeight','bold','color','b','HorizontalAlignment','center');
         %         text(.14, ind, num2str(exptparams.Performance(end).LickRate,'%2.0f'),'FontWeight','bold','color','b','HorizontalAlignment','center');
         %         text(.14, ind, num2str(exptparams.Performance(end).LickRate,'%2.0f'),'FontWeight','bold','color','b','HorizontalAlignment','center');
@@ -92,8 +92,9 @@ end
 
 %% display Hitrate, FalseAlarmRate, DI across trials
 subplot(4,4,1:4);
+hl=zeros(4,1);
 if isfield(exptparams,'UniqueTargets') && length(exptparams.UniqueTargets)>1
-    plot(100*cat(1,exptparams.Performance(1:end-1).HitRate),'-',...
+    hl(1)=plot(100*cat(1,exptparams.Performance(1:end-1).HitRate),'-',...
         'LineWidth',2,'color',[1 .5 .5]);
     hold on;
     UniqueCount=length(exptparams.UniqueTargets);
@@ -106,19 +107,19 @@ if isfield(exptparams,'UniqueTargets') && length(exptparams.UniqueTargets)>1
             'MarkerFaceColor',colormtx(jj,:),'MarkerSize',5,'color',colormtx(jj,:));
     end
 else
-    plot(100*cat(1,exptparams.Performance(1:end-1).HitRate),'o-',...
+    hl(1)=plot(100*cat(1,exptparams.Performance(1:end-1).HitRate),'o-',...
         'LineWidth',2,'MarkerFaceColor',[1 .5 .5],'MarkerSize',5,'color',[1 .5 .5]);
 end
 hold on;
-plot(100*cat(1,exptparams.Performance(1:end-1).FalseAlarmRate),'<-',...
+hl(2)=plot(100*cat(1,exptparams.Performance(1:end-1).FalseAlarmRate),'<-',...
     'LineWidth',2,'MarkerFaceColor',[.1 .5 .1],'MarkerSize',5,'color',[.1 .5 .1]);
-plot(100*cat(1,exptparams.Performance(1:end-1).DiscriminationIndex),'-',...
+hl(3)=plot(100*cat(1,exptparams.Performance(1:end-1).DiscriminationIndex),'-',...
      'LineWidth',1,'color',[0 0 0]);
 
 % also, show which trials were Ineffective:
-AllIneffective = cat(1,exptparams.Performance(1:TrialIndex).Ineffective);
-AllIneffective(find(AllIneffective==0))=nan;
-plot(110*AllIneffective,'r*','markersize',10);
+AllIneffective = cat(1,exptparams.Performance(1:TrialIndex).FalseAlarm);
+AllIneffective(AllIneffective==0)=nan;
+hl(4)=plot(110*AllIneffective,'r*','markersize',10);
 if isfield(exptparams.Performance,'NullTrial'),
     AllNull = cat(1,exptparams.Performance(1:TrialIndex).NullTrial);
     AllNull=find(AllNull==1);
@@ -128,7 +129,7 @@ if isfield(exptparams.Performance,'NullTrial'),
 end
 axis ([0 (TrialIndex+1) 0 115]);
 title(titleMes,'FontWeight','bold','interpreter','none');
-h=legend({'HR','FAR','DI','Inef'},'Location','SouthWest');
+h=legend(hl,{'HR','FAR','DI','Inef'},'Location','SouthWest');
 LegPos = get(h,'position');
 set(h,'fontsize',8);
 LegPos(1) = 0.005; % put the legend on the far left of the screen

@@ -41,6 +41,7 @@ function [r,tags,trialset,exptevents]=loadevpraster(mfile,channel,rasterfs,...
              sigthreshold,includeprestim,tag_masks,lfp,trialrange)
 
 global C_r C_raw C_mfilename C_rasterfs C_sigthreshold
+global BAPHY_LAB
 
 %
 % SORT OF HORRIBLY COMPLICATED CODE FOR DEALING WITH TWO DIFFERENT
@@ -420,7 +421,7 @@ for trialidx=trialrange,
           raster=conv2(rs,smfilt,'same');
           raster=raster(round((auxfs./rasterfs./2):(auxfs./rasterfs):end));
        end
-    elseif size(C_r,2)>=channel & size(C_r,1)>=trialcount & ...
+    elseif size(C_r,2)>=channel && size(C_r,1)>=trialcount && ...
            ~isempty(C_r{trialidx,1}),
         % the raster has been successfully cached. just use it.
         raster=C_r{trialidx,channel};
@@ -429,7 +430,7 @@ for trialidx=trialrange,
         % generate/use cachefile that already has spike events extracted from evp
         % for this channel/sigthreshold
         if isempty(big_rs),
-            if globalparams.HWSetup==3 || globalparams.HWSetup==11,
+            if strcmpi(BAPHY_LAB,'default') && (globalparams.HWSetup==3 || globalparams.HWSetup==11),
                 %for SPR2: use 1.0 shockNaNwindow addby py@6/25/2013
                 cachefile=cacheevpspikes(evpfile,channel,sigthreshold,0,0,1.0);
             else
@@ -442,8 +443,8 @@ for trialidx=trialrange,
             end
         end
         
-        thistrialidx=find(big_rs.trialid==trialidx);
-        spikeevents=big_rs.spikebin(thistrialidx);
+        % find spike events for this trial
+        spikeevents=big_rs.spikebin(big_rs.trialid==trialidx);
         
         hithappened=find(hittrials==trialidx);
         if 0 && ~isempty(hittime),
@@ -672,7 +673,7 @@ if (isempty(tag_masks) || length(tag_masks{1})<8 || ...
 end
 
 % sort FTC data by frequency
-if ~isempty(strfind(mfile,'_FTC')),
+if ~isempty(strfind(mfile,'_FTC')) && length(tags)>1,
     unsortedtags=zeros(length(tags),1);
     for cnt1=1:length(tags),
         temptags = strrep(strsep(tags{cnt1},',',1),' ','');

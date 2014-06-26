@@ -178,13 +178,13 @@ end
 % numeric values in tags
 unsortedtags=zeros(length(tags),1);
 slabels={};
+%           strcmpi(exptparams.TrialObject.ReferenceHandle.descriptor, 'Click') || ...
 if isempty(strfind(upper(datause),'LICK')) && ...
         isempty(strfind(upper(datause),'COLLAPSE')) &&  ...
         isempty(strfind(upper(datause),'PER TRIAL')) &&  ...
         isfield(exptparams,'TrialObject') && ...
         isfield(exptparams.TrialObject,'ReferenceHandle') && ...
         (strcmpi(exptparams.TrialObject.ReferenceHandle.descriptor, 'RandomTone') ||...
-           strcmpi(exptparams.TrialObject.ReferenceHandle.descriptor, 'Click') || ...
            (strcmpi(exptparams.TrialObject.ReferenceHandle.descriptor, 'NoiseBurst') && ...
                exptparams.TrialObject.ReferenceHandle.SimulCount==1) || ...
            (strcmpi(exptparams.TrialObject.ReferenceHandle.descriptor, 'ComplexChord') && ...
@@ -209,6 +209,8 @@ data    = [];
 labels  = [];
 singlabels  = {};
 keepidx=zeros(size(r,3),1);
+unique_suffix={};
+suffix_category=zeros(size(r,3),1);
 for cnt1 = 1:size(r,3)
    keepidx(cnt1)=sum(sum(~isnan(r(:,:,cnt1))))>0;
    if keepidx(cnt1),
@@ -217,23 +219,46 @@ for cnt1 = 1:size(r,3)
           temptags{2}=temptags{1};
       end
       singlabels{end+1} = temptags{2};
-      labels{end+1} = temptags{2};
-      for cnt2 = 1:size(r,2)
-         if sum(~isnan(r(:,cnt2,cnt1)))>0,
-            data(end+1,:) = squeeze(r(:,cnt2,cnt1));
-            if cnt2>1
-               % label duplicate tags with 'D -' prefix
-               labels{end+1} = ['D -' temptags{2}];
-            end
-         end
-         %if isnumeric(labels{end}),
-         %    labels{end}=mat2str(labels{end});
-         %end
+      if length(temptags)>=3,
+          tsuf=strtrim(strrep(strrep(temptags{3},'Reference',''),'Target',''));
+      else
+          tsuf='';
       end
-      %drawnow
+      suffidx=find(strcmp(tsuf,unique_suffix));
+      if isempty(suffidx),
+          unique_suffix{end+1}=tsuf;
+          suffix_category(cnt1)=length(unique_suffix);
+      else
+          suffix_category(cnt1)=suffidx;
+      end
+      
+      if ~isempty(tsuf),
+          labels{end+1}= [temptags{2} ' ' tsuf];
+      else
+          labels{end+1} = temptags{2};
+      end
+      
+       for cnt2 = 1:size(r,2)
+          if sum(~isnan(r(:,cnt2,cnt1)))>0,
+             data(end+1,:) = squeeze(r(:,cnt2,cnt1));
+             if cnt2>1
+                %label duplicate tags with 'D -' prefix
+                labels{end+1} = ['D -' temptags{2}];
+             end
+          end
+%          %if isnumeric(labels{end}),
+%          %   labels{end}=mat2str(labels{end});
+%          %end
+       end
    end
 end
-r=r(:,:,find(keepidx));
+
+keepidx=find(keepidx);
+r=r(:,:,keepidx);
+
+% [~,ksort]=sort(suffix_category(keepidx));
+% r=r(:,:,keepidx(ksort));
+% labels=labels(ksort);
 
 % now set anything with D to empty:
 empt = strfind(labels,'D -');
@@ -300,13 +325,14 @@ elseif options.raster,
    data(isnan(data))=0;
    
    % bin at 10 ms
-   smfilt=ones(1,10)./10;
+   bn=10;
+   smfilt=ones(1,bn)./bn;
    data2=conv2(data,smfilt,'same');
-   data2=data2(:,5:10:end);
+   data2=data2(:,round(bn/2):bn:end);
    dn2=conv2(dn,smfilt,'same');
-   dn2=dn2(:,5:10:end);
-   
-   data2=(0.2-data2)./0.2;
+   dn2=dn2(:,round(bn/2):bn:end);
+   %keyboard
+   data2=(0.1-data2)./0.1;
    data2(data2>1)=1;
    data2(data2<0)=0;
    data3=data2;
@@ -385,9 +411,9 @@ if options.psth && size(r,2)>1,
     
     snr=abs(rpsth./(rpstherr+(rpstherr==0)));
     outlieridx=find(snr<2 & rpsth>nanmean(rpsth(:)).*2);
-    if length(outlieridx)>0 && ~options.lfp,
-        warning('removing outliers!');
-        [snr(outlieridx) (snr(outlieridx)./2).^2 rpsth(outlieridx).*rasterfs]
+    if ~isempty(outlieridx) && ~options.lfp,
+        disp('removing outliers in raster_plot');
+        %[snr(outlieridx) (snr(outlieridx)./2).^2 rpsth(outlieridx).*rasterfs]
         rpsth(outlieridx)=rpsth(outlieridx).*(snr(outlieridx)./2).^2;
         rpstherr(outlieridx)=rpstherr(outlieridx).*(snr(outlieridx)./2).^2;
     end

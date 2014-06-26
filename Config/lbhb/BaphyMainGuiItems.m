@@ -9,7 +9,7 @@ function varargout = BaphyMainGuiItems (field,globalparams)
 switch field
   % Tester:
   case 'Tester'
-    varargout{1} = {'Austin Powers','Dani','Erica','Henry','Sean','Stephen'};
+    varargout{1} = {'Austin Powers','Dani','Henry','Hillary','Sean','Stephen','Zack'};
     % Ferret Names:
   case 'Ferret'
     if dbopen,
@@ -54,9 +54,11 @@ switch field
   case 'HWSetup'
     % Sound Proof rooms:
     varargout{1} = {'0: Test', '1: SB 1',...
-        '2: LB 1 (Primary=R)', '3: LB 1 (Primary=L)',...
-        '4: LB 2 (Primary=R)', '5: LB 2 (Primary=L)', '6: DR 1 (Primary=R)',...
-        '7: DR 1 (Primary=L)'};
+                    '2: LB 1 (Primary=R)', '3: LB 1 (Primary=L)',...
+                    '4: LB 2 (Primary=R)', '5: LB 2 (Primary=L)',...
+                    '6: DR 1 (Primary=R)', '7: DR 1 (Primary=L)',...
+                    '8: LB 1 (Primary=R+Opt)', '9: LB 1 (Primary=L+Opt)',...
+                   };
   case 'HWSetupSpecs',
     % boilerplate descriptor of recording setup for saving to gPenetration
     % in celldb.

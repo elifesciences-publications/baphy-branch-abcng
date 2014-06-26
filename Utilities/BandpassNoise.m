@@ -17,6 +17,8 @@ if tempFs>20000,
     tempFs=round(tempFs./1000)*1000;
 elseif tempFs>10000,
     tempFs=round(tempFs./500)*500;
+elseif tempFs>5000,
+    tempFs=round(tempFs./250)*250;
 end
 
 tempbins=round(Duration*tempFs)+100;
@@ -31,6 +33,6 @@ tw=filtfilt(FilterParams(1,:),FilterParams(2,:),tw);
 % resample to higher rate
 %[tempFs SamplingRate]
 w=resample(tw,SamplingRate,tempFs);
-if length(w)>SamplingRate*Duration,
-  w=w(1:(SamplingRate*Duration));
+if length(w)>ceil(SamplingRate*Duration),
+  w=w(1:ceil(SamplingRate*Duration));
 end

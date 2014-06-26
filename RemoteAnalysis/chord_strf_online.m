@@ -57,21 +57,25 @@ if strcmpi(exptparams.TrialObject.ReferenceClass,'RandomTone') || ...
         ~isfield(exptparams.TrialObject.ReferenceHandle,'SimulCount') || ...
         exptparams.TrialObject.ReferenceHandle.SimulCount==1,
     
-    options.PreStimSilence=exptparams.TrialObject.ReferenceHandle.PreStimSilence;
-    options.PostStimSilence=exptparams.TrialObject.ReferenceHandle.PostStimSilence;
+    ReferencePreStimSilence=max(exptparams.TrialObject.ReferenceHandle.PreStimSilence,0.1);
+    ReferenceDuration=exptparams.TrialObject.ReferenceHandle.Duration;
+    ReferencePostStimSilence=max(exptparams.TrialObject.ReferenceHandle.PostStimSilence,0.1);
+    
+    options.PreStimSilence=ReferencePreStimSilence;
+    options.PostStimSilence=ReferencePostStimSilence;
     options.rasterfs=100;
     disp('chord_strf_online: Loading response...');
-    [r,tags]=raster_load(mfile,channel,unit,options);
+    [r_ref,tags_ref]=raster_load(mfile,channel,unit,options);
     
     fset=[];
-    for ii=1:length(tags),
-        tt=strsep(tags{ii},',',1);
+    for ii=1:length(tags_ref),
+        tt=strsep(tags_ref{ii},',',1);
         fset=cat(1,fset,str2num(tt{2}));
     end
     [unique_freq,~,mapidx]=unique(fset);
     freqcount=length(unique_freq);
     
-    TrialCount=sum(~isnan(r(1,:)));
+    TrialCount=sum(~isnan(r_ref(1,:)));
     MaxFreq=min(TrialCount./4,30);
     if freqcount>MaxFreq,
         newidx=round(linspace(1,freqcount+1,MaxFreq+1));
@@ -83,56 +87,133 @@ if strcmpi(exptparams.TrialObject.ReferenceClass,'RandomTone') || ...
         end
         [unique_freq,~,mapidx]=unique(fset);
         freqcount=length(unique_freq);
-     end
+    end
+    stimuluscount=freqcount;
+    repcount=size(r_ref,2);
+    stimulusvalues=unique_freq;
     
-    b=zeros(freqcount,1);
-    p=zeros(freqcount,1);
-    pe=zeros(freqcount,1);
-    bbase=1:round(options.PreStimSilence.*options.rasterfs+1);
-    bb=round(options.PreStimSilence.*options.rasterfs+1):...
-       round(size(r,1)-options.PostStimSilence.*options.rasterfs);
-    baseline=nanmean(nanmean(r(1:bb(1),:)));
-    
-    for ii=1:freqcount,
-        tr=r(bbase,:,find(mapidx==ii));
-        b(ii)=nanmean(tr(:));
-        tr=r(bb,:,find(mapidx==ii));
-        p(ii)=nanmean(tr(:))-b(ii)+baseline;
-        pe(ii)=nanstd(tr(:))./sqrt(sum(~isnan(tr(:))));
+    % find the time bins for the pre-stimulus epoch
+    spontbins=1:round(ReferencePreStimSilence*options.rasterfs);
+    onsetbins=round(ReferencePreStimSilence*options.rasterfs+1):...
+       round((ReferencePreStimSilence+0.05)*options.rasterfs);
+    sustbins=round((ReferencePreStimSilence+0.05)*options.rasterfs+1):...
+       round((ReferencePreStimSilence+0.1)*options.rasterfs);
+    offsetbins=round((ReferencePreStimSilence+ReferenceDuration)*options.rasterfs+1):...
+       round((ReferencePreStimSilence+ReferenceDuration+0.05)*options.rasterfs);
+    meanspontaneous=zeros(freqcount,1);
+    semspontaneous=zeros(freqcount,1);
+    meanonset=zeros(freqcount,1);
+    semonset=zeros(freqcount,1);
+    meansustained=zeros(freqcount,1);
+    semsustained=zeros(freqcount,1);
+    meanoffset=zeros(freqcount,1);
+    semoffset=zeros(freqcount,1);
+
+    if strcmpi(exptparams.TrialObject.ReferenceClass,'NoiseSample'),
+        RISVAR=1;  % response = PSTH variance
+        %baseline=nanmean(nanstd(nanmean(r_ref(spontbins,:,:),2),0,1));
+        %sembaseline=nanstd(nanstd(nanmean(r_ref(spontbins,:,:),2),0,1))./sqrt(stimuluscount);
+        globalmean=nanmean(nanmean(r_ref(spontbins,:)));
+        baseline=nanmean(nanmean((r_ref(spontbins,:)-globalmean).^2));
+        sembaseline=nanmean(nanmean((r_ref(spontbins,:)-globalmean).^2))./sqrt(sum(~isnan(r_ref(1,:))));
+    else
+        RISVAR=0;  % response = mean firing rate
+        baseline=nanmean(nanmean(r_ref(spontbins,:)));
     end
     
-    ps=gsmooth(p,freqcount./40);
-    mm=min(find(ps==max(ps)));
-    if p(mm)-2.*pe(mm)>baseline,
+    
+    for ii=1:freqcount,
+        if RISVAR,
+            meanspontaneous(ii)=baseline;
+            semspontaneous(ii)=sembaseline;
+            tr=r_ref(onsetbins,:,mapidx==ii);
+            meanonset(ii)=nanmean(nanmean((tr(:,:)-globalmean).^2));
+            semonset(ii)=nanstd(nanmean((tr(:,:)-globalmean).^2))./sqrt(sum(~isnan(tr(1,:))));
+            tr=r_ref(sustbins,:,mapidx==ii);
+            meansustained(ii)=nanmean(nanmean((tr(:,:)-globalmean).^2));
+            semsustained(ii)=nanstd(nanmean((tr(:,:)-globalmean).^2))./sqrt(sum(~isnan(tr(1,:))));
+            tr=r_ref(offsetbins,:,mapidx==ii);
+            meanoffset(ii)=nanmean(nanmean((tr(:,:)-globalmean).^2));
+            semoffset(ii)=nanstd(nanmean((tr(:,:)-globalmean).^2))./sqrt(sum(~isnan(tr(1,:))));
+        else
+            tr=r_ref(spontbins,:,mapidx==ii);
+            meanspontaneous(ii)=nanmean(tr(:));
+            semspontaneous(ii)=nanstd(tr(:))./sqrt(sum(~isnan(tr(:))));
+            tr=r_ref(onsetbins,:,mapidx==ii);
+            meanonset(ii)=nanmean(tr(:))-meanspontaneous(ii)+baseline;
+            semonset(ii)=nanstd(tr(:))./sqrt(sum(~isnan(tr(:))));
+            tr=r_ref(sustbins,:,mapidx==ii);
+            meansustained(ii)=nanmean(tr(:))-meanspontaneous(ii)+baseline;
+            semsustained(ii)=nanstd(tr(:))./sqrt(sum(~isnan(tr(:))));
+            tr=r_ref(offsetbins,:,mapidx==ii);
+            meanoffset(ii)=nanmean(tr(:))-meanspontaneous(ii)+baseline;
+            semoffset(ii)=nanstd(tr(:))./sqrt(sum(~isnan(tr(:))));
+        end
+        
+    end
+    
+    bf=0; bf_sust=0;
+    ps=gsmooth(meanonset,freqcount./40);
+    mm=find(ps==max(ps), 1 );
+    if meanonset(mm)-2*semonset(mm)>baseline,
         bf=unique_freq(mm);
-    else
-        bf=0;
+    end
+    ps=gsmooth(meansustained,freqcount./40);
+    mm_sust=find(ps==max(ps), 1 );
+    if meansustained(mm_sust)-2*semsustained(mm_sust)>baseline,
+        bf_sust=unique_freq(mm_sust);
     end
     
     sfigure(get(axeshandle,'Parent'));
     axes(axeshandle);
-    plot([0 freqcount+1],[0 0]+baseline,'k--');
-    hold on
-    errorbar(p,pe);
-    if bf>0,
-        plot(mm,p(mm),'ro');
-    end
-    
-    hold off
-    
-    xt=[1 floor(freqcount./2) freqcount];
-    set(gca,'XTick',xt,'XTickLabel',unique_freq(xt));
-    aa=axis;
-    axis([0 freqcount+1 aa(3:4)]);
-    if bf>0,
-        ht=title(sprintf('E%d Rep%d BF=%.0f',...
-                         channel,size(r,2),bf));
+    if RISVAR,
+        errorbar(repmat((1:stimuluscount)',[1 2]),...
+            [meanonset meansustained],...
+            [semonset semsustained]);
     else
-        ht=title(sprintf('E%d Rep%d BF=nan',...
-                         channel,size(r,2)));
+        errorbar(repmat((1:stimuluscount)',[1 3]),...
+            [meanonset meansustained meanoffset],...
+            [semonset semsustained semoffset]);
+    end
+    hold on
+    plot([1 stimuluscount],[0 0]+mean(meanspontaneous),'b--');
+    if bf>0,
+        plot(mm,meanonset(mm),'bo');
+    end
+    if bf_sust>0,
+        plot(mm_sust,meansustained(mm_sust),'go');
+    end
+    hold off
+    set(gca,'XLim',[0 stimuluscount+1]);  % make x axis look nice
+    if max(stimulusvalues)>4000,
+        stimulusKHz=round(stimulusvalues./100)./10;
+    elseif max(stimulusvalues)>100
+        stimulusKHz=round(stimulusvalues./10)./100;
+    else
+        stimulusKHz=stimulusvalues;
+    end
+    stimlabelidx=1:2:stimuluscount;
+    set(gca,'XTick',stimlabelidx,'XTickLabel',stimulusKHz(stimlabelidx));
+    
+    if RISVAR,
+        legend('Onset','Sust');
+        ylabel('Spike std (spikes/sec)');
+    else
+        legend('Onset','Sust','Offset');
+        ylabel('Spike rate (spikes/sec)');
+    end
+    if max(stimulusvalues)>100
+        xlabel('Stimulus frequency (KHz)');
+    else
+        xlabel('Stimulus ID');
+    end
+    if bf>0 || bf_sust>0,
+        ht=title(sprintf('E%d Rep%d BF=%.0f (on) %.0f (sust)',channel,repcount,bf,bf_sust));
+    else
+        ht=title(sprintf('E%d Rep%d BF=nan',channel,repcount));
     end
     set(ht,'Interpreter','none');
-    set(gcf,'Name',sprintf('%s(%d)',basename(mfile),size(r,2)));
+    set(gcf,'Name',sprintf('%s(%d)',basename(mfile),repcount));
     
     return
 end

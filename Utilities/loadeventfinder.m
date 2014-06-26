@@ -258,19 +258,22 @@ else
             tgoodidx(ii)=1;
         end
     end
-    tags={tags{find(tgoodidx)}};
+    tags=tags(find(tgoodidx));
     
-    for jj=1:length(tag_masks),
-        ttfind=(strfind(upper(tags),upper(tag_masks{jj})));
-        tt2=[];
-        for ii=1:length(ttfind),
-            if ~isempty(ttfind{ii}),
-                tt2=[tt2 ii];
+    if length(tag_masks)==1 && strcmp(tag_masks{1},'SPECIAL-ALL'),
+        % keep all tags separate
+    else
+        for jj=1:length(tag_masks),
+            ttfind=(strfind(upper(tags),upper(tag_masks{jj})));
+            tt2=[];
+            for ii=1:length(ttfind),
+                if ~isempty(ttfind{ii}),
+                    tt2=[tt2 ii];
+                end
             end
+            tags={tags{tt2}};
         end
-        tags={tags{tt2}};
-    end
-    
+    end    
     % figure out when each event to be rastered started and stopped
     if sum(includeprestim)>0 && length(includeprestim)>1,
         [eventtime,evtrials,Note,eventtimeoff]=evtimes(exptevents,['Stim*']);

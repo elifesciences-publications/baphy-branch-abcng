@@ -23,9 +23,10 @@ case 0
     % if no input arguments, create a default object
     s = SoundObject ('Click', 40000, 0, 0, 0, ...
         {''}, 1, {'ClickWidth','edit',0.001,'ClickRate','edit',10,...        
-        'Duration','edit',1});
+        'JitterSD','edit',0,'Duration','edit',1});
     o.ClickWidth = .001;
     o.ClickRate = 10;
+    o.JitterSD=0;
     o.Duration = 1;  %
     o = class(o,'Click',s);
     o = ObjUpdate (o);

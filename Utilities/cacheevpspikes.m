@@ -193,7 +193,10 @@ for iBlock=1:NBlocks                 %
           hold off
           title(num2str(trialidx));
           drawnow;
-     elseif isempty(bigartifacts)
+          if cNSpikes>0,
+             cNSpikes
+          end
+      elseif isempty(bigartifacts)
          if sigthreshold>0,
             tspikebin=[0;diff(-cTrialData>(sigthreshold*sigma))>0];
          else
@@ -241,9 +244,6 @@ for iBlock=1:NBlocks                 %
          %end
          
          cNSpikes = length(tspikebin);
-         if cNSpikes>0,
-             cNSpikes
-         end
       end
       
       %if VERBOSE fprintf(['Trial : ',n2s(cTrial),' [ ',num2str(length(tspikebin)),' triggers found ]\n']); end

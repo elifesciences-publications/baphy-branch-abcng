@@ -180,7 +180,7 @@ for ii=1:NElectrodes
       elseif strcmpi(options.runclass,'RDT') || ...
               strcmpi(options.ReferenceClass,'NoiseSample'),
           if strcmp(options.datause,'Per trial') || strcmp(options.datause,'Per trial pre-target'),
-              options.filtfmt='qspecgram';
+              options.filtfmt='qlspecgram';
               options.rasterfs=100;
               
               % for RDT NoiseSamples, use boosting to estimate strf
@@ -192,7 +192,8 @@ for ii=1:NElectrodes
         % for speech and sporcs, use boosting to estimate strf
         boost_online(mfile,Electrode,unit,AH(ii),options);
       elseif strcmpi(options.runclass,'VOC'),
-        options.filtfmt='specgramv';
+        %options.filtfmt='specgramv';
+        options.filtfmt='gamma';
         % for speech and sporcs, use boosting to estimate strf
         boost_online(mfile,Electrode,unit,AH(ii),options);
       elseif strcmpi(options.runclass,'tst')  %for multi-level tuning

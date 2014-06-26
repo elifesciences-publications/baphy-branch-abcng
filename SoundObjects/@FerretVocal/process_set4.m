@@ -75,6 +75,10 @@ while sum(savailable)>0,
          exptevents(ecount).Name=['Stim , ' dd(sidx).name(1:(end-4))];
          exptevents(ecount).StartTime=wstart./fs;
          exptevents(ecount).StopTime=(wstart+slen(sidx))./fs;
+         fprintf('%d %.2f-%.2f %s\n',widx,...
+                 exptevents(ecount).StartTime,...
+                 exptevents(ecount).StopTime,exptevents(ecount).Name);
+         
       end
    end
    if length(w)>finallen*fs,
