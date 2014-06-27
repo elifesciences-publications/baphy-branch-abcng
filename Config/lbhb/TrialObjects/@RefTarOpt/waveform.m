@@ -169,24 +169,55 @@ TrialDuration=TrialBins./TrialSamplingRate;
 %'LightPulseRate','edit',50,...
 %'LightPulseDuration','edit',0.01,...
 %'LightPulseShift','edit',0,...
-%'LightEpoch','popupmenu','Sound|Sound Onset|Whole Trial'};
-switch par.LightEpoch,
-    case 'Whole Trial',
-        LightBand=zeros(TrialBins,1);
-        LightStepSize=TrialSamplingRate./par.LightPulseRate;
-        LightOnBins=round(LightPulseDuration.*TrialSamplingRate);
-        ii=round(par.LightPulseShift.*TrialSamplingRate);
-        while ii<TrialBins,
-            if ii+LightOnBins>TrialBins,
-                LightBand((ii+1):end)=5;
-            else
-                LightBand(ii+(1:LightOnBins))=5;
+%'LightEpoch','popupmenu','Sound|Sound Onset|Whole'};
+LightBand=zeros(TrialBins,1);
+if LightTrial
+    disp('Light on trial');
+    LightStepSize=TrialSamplingRate./par.LightPulseRate;
+    LightOnBins=round(par.LightPulseDuration.*TrialSamplingRate);
+   switch par.LightEpoch,
+        case 'WholeTrial',
+            ii=round(par.LightPulseShift.*TrialSamplingRate);
+            while ii<TrialBins,
+                if ii+LightOnBins>TrialBins,
+                    LightBand((ii+1):end)=5;
+                else
+                    LightBand(ii+(1:LightOnBins))=5;
+                end
+                ii=ii+LightStepSize;
             end
-            ii=ii+LightStepSize;
-        end
-        
-    otherwise
-        error([par.LightEpoch, ' LightEpoch not supported yet']);
+            
+        case 'SoundOnset',
+            for evidx=2:3:length(events),
+                StimStartTime=events(evidx).StartTime;
+                LightStartTime=StimStartTime+par.LightPulseShift;
+                LightStartBin=round(LightStartTime*TrialSamplingRate);
+                LightBand(LightStartBin+(1:LightOnBins))=5;
+            end
+            
+        case 'Sound',
+            for evidx=2:3:length(events),
+                StimStartTime=events(evidx).StartTime;
+                StimStopTime=events(evidx).StopTime;
+                LightStartTime=StimStartTime+par.LightPulseShift;
+                while LightStartTime<StimStopTime,
+                    LightStartBin=round(LightStartTime*TrialSamplingRate);
+                    LightBand(LightStartBin+(1:LightOnBins))=5;
+                    LightStartTime=LightStartTime+1./par.LightPulseRate;
+                end
+            end
+            
+        otherwise
+            error([par.LightEpoch, ' LightEpoch not supported yet']);
+    end
+else
+    disp('Light off trial');
+end
+
+if size(TrialSound,2)<2,
+    TrialSound=cat(2,TrialSound,zeros(size(TrialSound)),LightBand);
+else
+    TrialSound=cat(2,TrialSound,LightBand);
 end
 
 

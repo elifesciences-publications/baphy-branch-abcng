@@ -12,7 +12,7 @@ if nargin<3, RepIndex = 1;end
 if RepOrTrial == 0, return; end
 % read the trial parameters
 par = get(o);
-% if strcmpi(exptparams.
+
 NumRef = par.NumberOfRefPerTrial(:);
 IsLookup = isempty(NumRef) | ~isnumeric(NumRef);
 % for now, lets assume Lookup table:
@@ -90,16 +90,18 @@ for cnt1=1:length(RefNumTemp)
 end
 
 % Inserting new stuff for Optical channel.  Double the number of trials.
-
-LightTrial=[zeros(1,NumberOfTrials) ones(1,NumberOfTrials)];
+%
+LightTrial=[zeros(1,TotalTrials) ones(1,TotalTrials)];
 RefTrialIndex=cat(2,RefTrialIndex,RefTrialIndex);
-TargetIndex=cat(2,TargetIndex,TargetIndex);
-NumberOfTrials=NumberOfTrials*2;
+TotalTrials=TotalTrials*2;
 
-[~,si]=sort(rand(1,NumberOfTrials));
+[~,si]=sort(rand(1,TotalTrials));
 LightTrial=LightTrial(si);
 RefTrialIndex=RefTrialIndex(si);
-TargetIndex=TargetIndex(si);
+if ~isempty(TargetIndex),
+    TargetIndex=cat(2,TargetIndex,TargetIndex);
+    TargetIndex=TargetIndex(si);
+end
 
 o = set(o,'LightTrial',LightTrial);
 o = set(o,'ReferenceIndices',RefTrialIndex);
