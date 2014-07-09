@@ -1,4 +1,4 @@
-function [env]=ozgf_filterbank(input, lowcf, highcf, n_chans, inputfs, outputfs, align_peak)
+function [env, CFs, Q_factor]=ozgf_filterbank(input, lowcf, highcf, n_chans, inputfs, outputfs, align_peak)
 % envs = ozgf_filterbank(input, lowcf, highcf, numchans, inputfs, outputfs,
 % align_peak)
 %
@@ -20,7 +20,8 @@ m.N_order     = 4;  % aka, number of pairs of poles
 m.M_order     = 1;  % aka, number of stacked zeros
 CFs = logspace(log10(lowcf/1000), log10(highcf/1000), n_chans);
 m.center_freq_khz = CFs; % 0.2-20Khz
-m.Q_factor    = ones(1, n_chans) * (1.0*CFs(1) ./ (CFs(2) - CFs(1))); % Actually the offset from 1/sqrt(2)
+Q_factor    = ones(1, n_chans) * (1.0*CFs(1) ./ (CFs(2) - CFs(1))); % Actually the offset from 1/sqrt(2)
+m.Q_factor  = Q_factor;
 m.delayms     = zeros(1,n_chans); % Input delays in ms
 m.time_align  = align_peak;
 

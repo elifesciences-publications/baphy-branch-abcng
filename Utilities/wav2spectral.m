@@ -276,8 +276,9 @@ switch lower(filtfmt),
     stimparam.ff=cfs;
   case 'ozgf',
     % One Zero Gammatone-like Filter (Lyon et al)    
-    [stim] = ozgf_filterbank(wav,200,20000,chancount, fsin, fsout, false);
-    
+    [stim, cfs, Qs] = ozgf_filterbank(wav,200,20000,chancount, fsin, fsout, false);
+    stimparam.ff = cfs;
+    stimparam.Q_factors = Qs;    
   case 'gamma264',
     [gamma_bms, gamma_envs, ~, ~, cfs] = ...
         gammatonebank(wav,2000,64000,chancount,f,false);
