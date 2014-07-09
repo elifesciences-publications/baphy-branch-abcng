@@ -41,48 +41,13 @@ end
 
 parmfile=[cellfiledata(fidx).stimpath cellfiledata(fidx).stimfile];
 spikefile=[cellfiledata(fidx).path cellfiledata(fidx).respfile];
-options.rasterfs=50;
+options.rasterfs=100;
 options.channel=cellfiledata(1).channum;
 options.unit=cellfiledata(1).unit;
 options.resp_shift=0.0;
 
 % r=response (time X trialcount), only for correct trials
 [r,params]=load_RDT_by_trial(parmfile,spikefile,options); 
-
-
-if 1,
-    % load the stimulus spectrogram
-    options.filtfmt='gamma';
-    options.chancount=30;
-    s=loadstimbytrial(parmfile,options);
-    
-    % extract only correct trials, which should match size(r,2)
-    % and only save mixed stream stimululs spectrogram s(:,:,:,3)
-    s=s(:,:,params.CorrectTrials,3);
-    
-    %trialidx=4;
-    %goodbins=find(~isnan(s(1,:,trialidx)));
-    %clf
-    %subplot(2,1,1);
-    %imagesc(s(:,goodbins,trialidx));
-    %axis xy;
-    %subplot(2,1,2);
-    %plot(r(goodbins,trialidx));
-else
-    s=[];
-end
-
-% load narf STRF if exists
-%narf_modelname='gtSNS30_log2_wc03_dep1perchan_siglog100_fit05';
-narf_modelname='gtSNS30_log2_wc03_fir_siglog100_fit05';
-strfs=get_strf_from_model(262,{cellid},{narf_modelname});
-if ~isempty(strfs{1}),
-    strf=strfs{1};
-else
-    strf=[];
-end
-
-
 
 rrefall=[];
 rtar1solo=[];
@@ -156,28 +121,30 @@ for t=1:TarRepCount,
     bb=round(params.rasterfs.*params.PreStimSilence) + (t-1).*length(br) ...
        + (1:length(br));
     if t==1,
-        %r1=nanmean([rtar1solo(bb,:) rref1solo],2);
-        %r2=nanmean([rtar2solo(bb,:) rref2solo],2);
+        r1s=nanmean([rtar1solo(bb,:) rref1solo],2);
+        r2s=nanmean([rtar2solo(bb,:) rref2solo],2);
         %r1=nanmean(rref1,2);
         %r2=nanmean(rref2,2);
-        r1=nanmean([rtar1solo(bb,:)],2);
-        r2=nanmean([rtar2solo(bb,:)],2);
+        r1=nanmean([rtar1(bb,:) rref1],2);
+        r2=nanmean([rtar2(bb,:) rref2],2);
+        %r1=nanmean([rtar1solo(bb,:)],2);
+        %r2=nanmean([rtar2solo(bb,:)],2);
     end
     
     tr=nanmean(rtar1solo(bb,:),2);
-    NScaleFactor(t,1,1)=r1'*tr./(r1'*r1);
+    NScaleFactor(t,1,1)=r1s'*tr./(r1s'*r1s);
     tr=nanmean(rtar1(bb,:),2);
     NScaleFactor(t,1,2)=r1'*tr./(r1'*r1);
     tr=nanmean(rtar2solo(bb,:),2);
-    NScaleFactor(t,2,1)=r2'*tr./(r2'*r2);
+    NScaleFactor(t,2,1)=r2s'*tr./(r2s'*r2s);
     tr=nanmean(rtar2(bb,:),2);
     NScaleFactor(t,2,2)=r2'*tr./(r2'*r2);
     tr=nanmean(rtar1solo(bb,:),2);
-    ScaleFactor(t,1,1)=r1'*tr./(r1'*r1).*max(r1);
+    ScaleFactor(t,1,1)=r1s'*tr./(r1s'*r1s).*max(r1s);
     tr=nanmean(rtar1(bb,:),2);
     ScaleFactor(t,1,2)=r1'*tr./(r1'*r1).*max(r1);
     tr=nanmean(rtar2solo(bb,:),2);
-    ScaleFactor(t,2,1)=r2'*tr./(r2'*r2).*max(r2);
+    ScaleFactor(t,2,1)=r2s'*tr./(r2s'*r2s).*max(r2s);
     tr=nanmean(rtar2(bb,:),2);
     ScaleFactor(t,2,2)=r2'*tr./(r2'*r2).*max(r2);
 end
@@ -190,14 +157,58 @@ rref2=cat(1,zb,repmat(nanmean(rref2,2),[TarRepCount 1]));
 
 figure(1);
 clf
-subplot(3,1,1);
+
+subplot(3,2,1);
+cla
+boundbins=round(options.rasterfs.*0.05);
+tt=((1:size(params.r_avg,1))-boundbins-0.5)./options.rasterfs;
+for ii=1:params.SampleCount
+    tr=[params.r_raster{ii,1} params.r_raster{ii,3}];
+    mr=nanmean(tr,2);
+    if ii==params.TargetIdx(1),
+        plot(tt,mr,'r','LineWidth',2);
+    elseif ii==params.TargetIdx(2),
+        plot(tt,mr,'g','LineWidth',2);
+    else
+        plot(tt,mr,'k','LineWidth',0.5);
+    end
+    
+    hold on
+end
+
+ttsf=params.SampleStarts(1:TarRepCount)./params.rasterfs-params.PreStimSilence;
+if ~isempty(rtar1solo),
+    subplot(3,2,3);
+    plot(ttsf,NScaleFactor(:,1,1),'rs-');
+    hold on
+    plot(ttsf,NScaleFactor(:,1,2),'ro-');
+    
+    hold off
+    aa=axis;
+    legend('tarsolo','tardual');
+end
+title(sprintf('target 1 (sample #%d)',params.TargetIdx(1)));
+if ~isempty(rtar2solo),
+    subplot(3,2,5);
+    plot(ttsf,NScaleFactor(:,2,1),'gs-');
+    hold on
+    plot(ttsf,NScaleFactor(:,2,2),'go-');
+    
+    hold off
+    aa=axis;
+    legend('tarsolo','tardual');
+end
+title(sprintf('target 2 (sample #%d)',params.TargetIdx(2)));
+
+
+subplot(3,2,2);
 tt=(1:TarBins)./params.rasterfs-params.PreStimSilence;
 ttsf=params.SampleStarts(1:TarRepCount)./params.rasterfs-params.PreStimSilence;
 plot(tt,nanmean(rrefall(1:TarBins,:),2),'LineWidth',2,'Color',[0.6 0.6 1]);
 title([cellid ' -- reference']);
 aa1=axis;
 
-subplot(3,1,2);
+subplot(3,2,4);
 if ~isempty(rtar1solo),
     plot(tt,rref1solo(1:TarBins),'b-');
     hold on
@@ -216,7 +227,7 @@ end
 title(sprintf('target #%d',params.TargetIdx(1)));
 aa2=axis;
 
-subplot(3,1,3);
+subplot(3,2,6);
 if ~isempty(rtar2solo),
     plot(tt,rref2solo(1:TarBins),'b-');
     hold on
@@ -236,10 +247,9 @@ title(sprintf('target #%d',params.TargetIdx(2)));
 aa3=axis;
 aamax=[aa1(1:2) 0 max([aa1(4) aa2(4) aa3(4)])];
 
-for ii=1:3,
-    subplot(3,1,ii);
-    axis(aamax);
-end
+return
+
+
 
 ccmatrix=cell(length(params.TargetIdx),1);
 msematrix=cell(length(params.TargetIdx),1);

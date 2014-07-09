@@ -133,6 +133,6 @@ end
 env_inputfs = squeeze(env_inputfs);
 smfilt=ones(scale, 1)./ scale; % Low pass boxcar filter
 tmp=conv2(smfilt, [1], env_inputfs, 'same');
-env=tmp(scale/2:scale:size(tmp,1), :);
+env=tmp(round(scale/2:scale:size(tmp,1)), :);
 
 end

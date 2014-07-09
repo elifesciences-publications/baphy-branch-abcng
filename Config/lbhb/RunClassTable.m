@@ -112,6 +112,8 @@ elseif isempty(tar),
             runclass = 'PPS';
         case 'RSS';
             runclass = 'RSS';
+        case 'NATURALSOUNDS';
+            runclass = 'NAT';
         otherwise
             runclass = '';
     end

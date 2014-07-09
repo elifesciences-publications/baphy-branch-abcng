@@ -5,7 +5,16 @@
 %
 % r - binned spike rates [Time x StimSequence x Cell]
 % params - a bunch of details about the stimulus sequences and
-%          behavior on each trial
+%          behavior on each trial. of particular interest:
+% params.r_raster{sidx,cond} - snipped out rasters for each
+%  noise sample (sidx=1..SampleCount) in 5 contexts:
+%    cond=1: reference/dual stream
+%    cond=2: target/dual stream
+%    cond=3: reference/single stream
+%    cond=4: target/single stream
+%    cond=5: non-target/dual stream
+% params.r_trialpos{sidx,cond} - position in noise sequence of each response 
+% params.BigSequenceMatrix - list of samples in each trial
 %
 % created SVD 2013-10-11
 %
@@ -124,7 +133,6 @@ function [r,params]=load_RDT_by_trial(parmfile,spikefile,options)
         
         [r,tags,trialset,exptevents,sortextras]=...
             loadsiteraster(spikefile,[],[],options);
-        
         CellCount=size(r,3);
         
         % trim stray bins from end of each trial
@@ -136,7 +144,7 @@ function [r,params]=load_RDT_by_trial(parmfile,spikefile,options)
         params.CorrectTrials=trialset;
         
         % compute average response to each stimulus -- ref or tar cond
-        binsperstim=options.rasterfs.*params.SampleDur;
+        binsperstim=round(options.rasterfs.*params.SampleDur);
         pb=params.PreStimSilence.*options.rasterfs;
         if strcmpi(exptparams.TrialObject.descriptor,'StreamNoise'),
             maxsamples=exptparams.TrialObject.SamplesPerTrial;
@@ -167,6 +175,7 @@ function [r,params]=load_RDT_by_trial(parmfile,spikefile,options)
         r_raster=cell(params.SampleCount,5);
         r_second=cell(params.SampleCount,5);
         r_repSlot=cell(params.SampleCount,5);
+        r_trialpos=cell(params.SampleCount,5);
         for sidx=1:params.SampleCount,
             for tidx=1:length(trialset),
                 trialidx=trialset(tidx);
@@ -184,7 +193,8 @@ function [r,params]=load_RDT_by_trial(parmfile,spikefile,options)
                         cond=0;
                     elseif params.TargetStartBin(trialidx)>0 && ...
                             ii>params.TargetStartBin(trialidx) && ...
-                            params.BigSequenceMatrix(ii,2,trialidx)==sidx,
+                            params.BigSequenceMatrix(ii,2,trialidx)==sidx && ...
+                            params.BigSequenceMatrix(ii,1,trialidx)~=sidx,
                         % background stream during target
                         cond=5;
                     elseif (ii<=params.TargetStartBin(trialidx) ||...
@@ -228,6 +238,7 @@ function [r,params]=load_RDT_by_trial(parmfile,spikefile,options)
                                 params.BigSequenceMatrix(ii,2,trialidx);
                         end
                         r_repSlot{sidx,cond}(r_count(sidx,cond),1)=repSlot;
+                        r_trialpos{sidx,cond}(r_count(sidx,cond),1)=ii;
                     end
                 end
             end
@@ -242,6 +253,7 @@ function [r,params]=load_RDT_by_trial(parmfile,spikefile,options)
         params.r_ref=r_ref;
         params.r_tar=r_tar;
         params.r_repSlot=r_repSlot;
-    end
+        params.r_trialpos=r_trialpos;
+     end
 
  

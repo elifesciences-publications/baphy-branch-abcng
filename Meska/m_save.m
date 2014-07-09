@@ -190,6 +190,7 @@ for jj=1:UNITCOUNT,
             q{jj}=sprintf('cluster %d maps to %s (%d spikes, trials %s)\n',...
                 jj,CELLIDS{unitmap(jj)},length(spmatch),goodtrials{unitmap(jj)});
         else
+           goodtrials{unitmap(jj)}='';
             q{jj}=sprintf('cluster %d maps to %s (%d spikes)\n',...
                 jj,CELLIDS{unitmap(jj)},length(spmatch));
         end
@@ -235,7 +236,7 @@ end
 % cells. and so on. crap clusters tacked on at the end
 unitmean=zeros(size(SPIKESET,1),max(unitmap));
 unitstd=zeros(size(SPIKESET,1),max(unitmap));
-spksav1=cell(12,1);
+spksav1=cell(max(unitmap),1);
 for ba=unique(unitmap(:)')
     if ba>0,
         ab=find(unitmap==ba);
