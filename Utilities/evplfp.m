@@ -51,7 +51,9 @@ for lidx=1:length(lfpchans),
       fprintf('not found. generating from evp...\n');
       [spikechancount,auxchancount,trialcount,spikefs,auxfs,lfpchancount,lfpfs]=evpgetinfo(evpfile);
       [~,~,~,~,rl,ltrialidx]=evpread(evpfile,'spikeelecs',[],'lfpelecs',lfpchans(lidx),'SRlfp',options.rasterfs);
-      
+      if evpversion(evpfile)==5,
+         lfpfs=options.rasterfs;
+      end
       % downsample prior to saving cache file
       if isfield(options,'rasterfs') && options.rasterfs<lfpfs,
          ltrialidxnew=zeros(size(ltrialidx));
