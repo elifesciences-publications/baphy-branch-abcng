@@ -88,7 +88,12 @@ if ( ~isempty(P.spikechans) || ~exist(filename,'file')),
 end
 
 %% CHECK FOR RESORTING OF CHANNELS (MAPS CHANNEL TO ELECTRODES)
-P = LF_checkElecs2Chans(filename,P);
+if dbopen,
+    P = LF_checkElecs2Chans(filename,P);
+else
+    disp('no celldb connection, skipping LF_checkElecs2Chans');
+end
+
 
 %% BRANCH FOR DIFFERENT EVP VERSIONS
 switch EVPVERSION

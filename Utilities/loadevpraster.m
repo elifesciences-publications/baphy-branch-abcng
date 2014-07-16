@@ -1,11 +1,14 @@
 % function [r,tags,trialset,exptevents]=loadevpraster(mfile,options)
 %
+% load evp, identify spike events by thresholding derivative, extract
+% responses relative to each Stim* event
+%
 % inputs:
 %  mfile - baphy parameter file name
 %  options - struction can contain the following fields:
 %   channel - electrode channel (default 1)
 %   unit - unit number (default 1)
-%   rasterfs in Hz (default 1000)
+%   rasterfs sampling/binning rate in Hz (default 1000)
 %   includeprestim - raster includes silent period before stimulus onset
 %   tag_masks - cell array of strings to filter tags, eg,
 %       {'torc','reference'} or {'target'}. AND logic. default ={}.
@@ -16,24 +19,19 @@
 %          -ORDER
 %       SPECIAL-LICK
 %   psthonly - shape of r (default -1, see below)
-%   sorter - preferentially load spikes sorted by sorter.  if not
-%            sorted by sorter, just take primary sorting
 %   includeincorrect - if 1, load all trials, not just correct (default 0)
-%
-% load evp, identify spike events by thresholding derivative, extract
-% responses relative to each Stim* event
-% rasterfs - if 0, use defaults: 1000 for evp data, LFP sampling rate for LFP
-% tag_masks - cell array of filters that must appear in tags to be included in output raster (eg, {'TORC'} will only return responses associated with torc events
-% lfp - set to 1 to return LFP data instead of evp raster
+%   lfp - set to 1 to return LFP data instead of evp raster
 %           (downsampled to rasterfs)
-%         - if 2, load lick data (ignore channel)
-% mua - set to 1 to return MUA (instantaneous energy) instead of evp raster
+%       - if 2, load lick data (ignore channel)
+%   mua - set to 1 to return MUA (instantaneous energy) instead of evp raster
+%   rawtrace - set to 1 to return raw EVP signal, downsampled to rasterfs
 %
+% 2006-01-13 : added caching to speed evp loading during online analysis
 % 2007-10-04: changed SVD, altered syntax to allow for arbitary number of
 %             options. old syntax still works:
-% function [r,tags,trialset,exptevents]=loadevpraster
-% 2006-01-13 : added caching to speed evp loading during online analysister(mfile,channel,rasterfs,sigthreshold,...
-%                  includeprestim,tag_masks,lfp)s.
+% function [r,tags,trialset,exptevents]=...
+%                loadevpraster(mfile,channel,rasterfs,sigthreshold,...
+%                              includeprestim,tag_masks,lfp)
 %
 % created SVD 2005-12-01
 %
