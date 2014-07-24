@@ -45,7 +45,14 @@ o = set(o,'CurrentTargetPositions',{'center'});
 o = set(o,'MorphingDuration',Par.MorphingDuration);
 if strcmp(Par.Inverse_D0Dbis,'yes'); ReverseNb = 1; else ReverseNb = 0; end
 
-% SET FREQUENCY RANGE AND ITS MIDDLE POINT F0
+% SET BIN NUMBER IN THE DISTRIBUTION + FREQUENCY RANGE AND ITS MIDDLE POINT F0
+tmp = str2num(get(o,'Distri_Morphing_BinNb'));
+if isempty(tmp)
+    DistriBinNb = 8; MaxMorphingNb = 4;      % Usual Psychophysics parameter
+else
+    DistriBinNb = tmp(1); MaxMorphingNb = tmp(2);
+end
+Par.DistriBinNb = DistriBinNb; Par.MaxMorphingNb = MaxMorphingNb;
 F0 = log2( Par.FrequencyRange_LB * 2^(log2(Par.FrequencyRange_UB/Par.FrequencyRange_LB)/2) ) ;  % center of the distribution
 ToneInterval = Par.ToneInterval;
 XDistriInterval = Par.XDistriInterval;
@@ -84,25 +91,24 @@ for ChangedD_Num = 1:ChangedD_Nb
     Dtype = getfield(Par,['D' num2str(ChangedD_Num) 'shape']);   
     switch Dtype
         case 'contig_increm'
-            MorphingNb(ChangedD_Num) = 4;
+            MorphingNb(ChangedD_Num) = MaxMorphingNb;
             ChannelDistance = 1;
-            ChannelDistancesByMorphing{ChangedD_Num} = ones(1,4)*ChannelDistance;
-            Bins2Change{ChangedD_Num} = [1:2 ; 3:4 ; 5:6 ; 7:8];
+            ChannelDistancesByMorphing{ChangedD_Num} = ones(1,MaxMorphingNb)*ChannelDistance;
+            Bins2Change{ChangedD_Num} = repmat([1 2],MaxMorphingNb,1) + repmat((0:2:((MaxMorphingNb-1)*2))',1,2);  %[1:2 ; 3:4 ; 5:6 ; 7:8]; 
         case 'fixed_increm'
             MorphingNb(ChangedD_Num) = 1;
             ChannelDistance = 1;
-            ChannelDistancesByMorphing{ChangedD_Num} = ones(1,4)*ChannelDistance;
-            PossibleBins = {1:2 ; 3:4 ; 5:6 ; 7:8};
+            ChannelDistancesByMorphing{ChangedD_Num} = ChannelDistance;
+            PossibleBins = mat2cell( repmat([1 2],MaxMorphingNb,1) + repmat((0:2:((MaxMorphingNb-1)*2))',1,2) ,ones(1,MaxMorphingNb),2 );  %{1:2 ; 3:4 ; 5:6 ; 7:8};
             Bin2ChangeIndex = getfield(Par,[ 'D' num2str(ChangedD_Num) 'param' ]);
             Bins2Change{ChangedD_Num} = PossibleBins{Bin2ChangeIndex};
         case 'non_contig_increm'
             ChannelDistances = getfield(Par,[ 'D' num2str(ChangedD_Num) 'param' ]);
             MorphingNb(ChangedD_Num) = 0; Bins2Change{ChangedD_Num} = []; ChannelDistancesByMorphing{ChangedD_Num} = [];
             for ChannelDistance = ChannelDistances
-                BinNb = 8;
-                IntervalNb = BinNb-ChannelDistance;
+                IntervalNb = DistriBinNb-ChannelDistance;
                 MorphingNb(ChangedD_Num) = MorphingNb(ChangedD_Num) + IntervalNb;
-                IntervalLst = ( 1:(BinNb-ChannelDistance) );
+                IntervalLst = ( 1:(DistriBinNb-ChannelDistance) );
                 IntervalLst = [ IntervalLst' IntervalLst'+ChannelDistance ];
                 Bins2Change{ChangedD_Num}( (size(Bins2Change{ChangedD_Num},1)+1) : (size(Bins2Change{ChangedD_Num},1)+IntervalNb) ,:) = IntervalLst;
                 ChannelDistancesByMorphing{ChangedD_Num} = [ChannelDistancesByMorphing{ChangedD_Num} ones(1,IntervalNb)*ChannelDistance];

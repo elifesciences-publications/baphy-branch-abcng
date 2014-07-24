@@ -49,6 +49,7 @@ tmp = get(O,'MorphingTypeByInd'); MorphingNum = tmp(Index);
 tmp = get(O,'DifficultyLvlByInd'); DifficultyNum = tmp(Index);
 tmp = get(O,'ReverseByInd'); Reverse = tmp(Index); 
 Bins2Change = get(O,'Bins2Change');
+DistriBinNb = Par.DistriBinNb;
 
 % DO
 PlotDistributions = 0;
@@ -63,7 +64,7 @@ if DiffLvl==0; ToC = min(Par.MinToC,ToC-StimulusBisDuration); end    % Catch tri
     
 D0param = [FO OctaveNb Par.IniSeed Global_TrialNb Quantal_Delta];
 Dparam = [D0param(1:end-3) Bins2Change{ChangedD_Num}(MorphingNum,:)];    % We don't need a Seed to modify the original distribution
-[D0,ChangeD,D0information] = BuildMorphing(D0type,Dtype,D0param,Dparam,XDistri,MorphingNum,DiffLvl,PlotDistributions,sF,FrequencySpace);
+[D0,ChangeD,D0information] = BuildMorphing(D0type,Dtype,D0param,Dparam,DistriBinNb,XDistri,MorphingNum,DiffLvl,PlotDistributions,sF,FrequencySpace);
 
 % GENERATE SEQUENCES OF FROZEN PATTERNS // LOAD THE APPROPRIATE ONE
 if not( strcmp(Mode,'NoFrozen') )
@@ -117,7 +118,7 @@ end
 % ATTENUATE THE FIRST PART OF THE STIMULUS
 w = [FirstPart' ; SecondPart'];
 if Par.AttenuationD0~=0
-  global LoudnessAdjusted; LoudnessAdjusted  = 1;  
+  global LoudnessAdjusted; LoudnessAdjusted  = 1; 
   NormFactor = maxLocalStd(w,sF,floor(length(w)/sF));
   RatioToDesireddB = 10^(Par.AttenuationD0/20);   % dB to ratio in SPL
   FirstPart = FirstPart*RatioToDesireddB;

@@ -22,6 +22,7 @@ IsRef = get(o,'IsRef');
 FirstFrequency = get(o,'FirstFrequency');
 Intervals = get(o,'Intervals');
 SimilareTones= get(o,'SimilareTones');
+LoudnessCue = get(o,'LoudnessCue')
 
 TORC = get(o,'TORC');
 TorcDur = get(o,'TorcDuration');
@@ -133,7 +134,7 @@ NextTry = 1;
 %index -1 pour obtenir trial sans ref
 if strcmp(IsRef,'yes') == 1
  
-  for j = RefNow+1:RefNow+index
+  for j = RefNow+1:RefNow+index-1
   
   %if j <  RefNow+index+1 && strcmp(Stimtype,'With Ref')
    % if strcmp(IsRef,'yes')
@@ -173,7 +174,7 @@ if strcmp(IsRef,'yes') == 1
       ev = AddEvent(ev, ['ReferenceSequence , ', num2str(j-RefNow), ' / ',num2str(index), ' - ', num2str(TrialNum) ],...
         [ ], ev(end).StopTime, ev(end).StopTime + length([wSeq(:);gapSeq(1:round(length(gapSeq)/2));wTorc(:);gapSeq(:)])/fs );
       
-      w=[w;wSeq(:)/MSeq;gapSeq(1:round(length(gapSeq)/2));wTorc(:)/MTORC;gapSeq(:)];
+      w=[w;10^(LoudnessCue/10)*wSeq(:)/MSeq;gapSeq(1:round(length(gapSeq)/2));wTorc(:)/MTORC;gapSeq(:)];
       
       %     if i==1
       %        w=[prestim;w];
