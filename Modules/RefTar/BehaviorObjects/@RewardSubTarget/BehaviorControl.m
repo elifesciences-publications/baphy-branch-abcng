@@ -31,7 +31,8 @@ MinRewardAmount = get(O,'MinRewardAmount');
 IncrementRewardAmount = get(O,'IncrementRewardAmount');
 MaxIncrementRewardNb = get(O,'MaxIncrementRewardNb');
 SamplingRate = get(get(exptparams.TrialObject,'TargetHandle'),'SamplingRate');
-
+  Gap = get(get(exptparams.TrialObject,'TargetHandle'),'SequenceGap');
+  SeqLen = StimEvents(end-1).StopTime - StimEvents(end-2).StartTime;
 %% GET TARGET & REFERENCE INDICES
 tmp = get(exptparams.TrialObject,'ReferenceIndices'); ReferenceIndices = tmp{exptparams.InRepTrials};
 tmp = get(exptparams.TrialObject,'TargetIndices'); TargetIndices = tmp{exptparams.InRepTrials};
@@ -128,7 +129,7 @@ DetectType = 'ON'; LickOccured = 0;
       cLickSensor = 'None'; cLickSensorNot = 'None';     
     end   
     Events=AddEvent(Events,['LICK,',cLickSensor],TrialIndex,ResponseTime,[]);
-    if ~get(O,'GradualResponse')
+    if ~get(O,'GradualResponse')%&& ResponseTime >  StimEvents(1).StopTime + SeqLen/2;
       break
     elseif get(O,'GradualResponse') && ResponseTime >TarWindow(1) 
       break
@@ -188,7 +189,7 @@ if any( CountingLicks>TarWindow(1)  & CountingLicks < TarWindow(2) ) % && BadLic
   Outcome = 'HIT';
  % IndexLicks = find( CountingLicks>TarWindow(1)  & CountingLicks < TarWindow(2) );
   ResponseTime = CountingLicks(end);
-elseif ~isempty(CountingLicks) && all( CountingLicks<TarWindow(1) )
+elseif ~isempty(CountingLicks) && all( CountingLicks<TarWindow(1) )%& CountingLicks >(StimEvents(1).StopTime + SeqLen/2)  )
   Outcome = 'EARLY';
   % IndexLicks = find( CountingLicks<TarWindow(1) ); 
   ResponseTime = CountingLicks(1);  

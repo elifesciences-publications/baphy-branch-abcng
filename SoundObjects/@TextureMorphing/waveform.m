@@ -118,7 +118,7 @@ end
 % ATTENUATE THE FIRST PART OF THE STIMULUS
 w = [FirstPart' ; SecondPart'];
 if Par.AttenuationD0~=0
-  global LoudnessAdjusted; LoudnessAdjusted  = 1;  
+  global LoudnessAdjusted; LoudnessAdjusted  = 1; 
   NormFactor = maxLocalStd(w,sF,floor(length(w)/sF));
   RatioToDesireddB = 10^(Par.AttenuationD0/20);   % dB to ratio in SPL
   FirstPart = FirstPart*RatioToDesireddB;

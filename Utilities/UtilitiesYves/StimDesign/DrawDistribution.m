@@ -29,19 +29,27 @@ switch DistributionName
         HalfCutOct = DistributionPara(2)/2;
         DCoffset = 1/(2*HalfCutOct);
         SeedPerm = DistributionPara(3);    
-        QuantalWeights = [-1 -1 -1 0 0 1 1 1];
+        if DistriBinNb==8
+          QuantalWeights = [-1 -1 -1 0 0 1 1 1];
+        elseif DistriBinNb==6
+          QuantalWeights = [-1 -1 0 0 1 1];
+        else
+          error({'Please indicate the quantal weight distribution for this <DistriBinNb>';'<DistriBinNb> should be even'});
+        end
         UniqueIniDistriNum = DistributionPara(4);         % used to have uniform distribution of levels in all channels
-        Quantal_Delta = DistributionPara(5);  % in %
+        Quantal_Delta = DistributionPara(5);                    % in %
         IniDistriNum = mod(UniqueIniDistriNum-1,DistriBinNb)+1;
         BlockNb = ((UniqueIniDistriNum-IniDistriNum)/DistriBinNb) + 1;
         
         DeltasBlock = BuildDeltasBlock(QuantalWeights,BlockNb*SeedPerm);   % The same block is built for the [n,n+DistriBinNb-1] following D0s
-                                                                           %with uniform probability of -1 and +1 bins.
+                                                                                                                                     %with uniform probability of -1 and +1 bins.
         Deltas = DeltasBlock(IniDistriNum,:);
         Deltas = [-100/Quantal_Delta Deltas -100/Quantal_Delta];
         Deltas = Deltas*Quantal_Delta;
-        Fbins = [0 mu-HalfCutOct mu-(HalfCutOct-HalfCutOct/(DistriBinNb/2)) mu-(HalfCutOct-2*HalfCutOct/(DistriBinNb/2)) mu-(HalfCutOct-3*HalfCutOct/(DistriBinNb/2)) mu-(HalfCutOct-4*HalfCutOct/(DistriBinNb/2)) ...
-            mu-(HalfCutOct-5*HalfCutOct/(DistriBinNb/2)) mu-(HalfCutOct-6*HalfCutOct/(DistriBinNb/2)) mu-(HalfCutOct-7*HalfCutOct/(DistriBinNb/2)) mu-(HalfCutOct-8*HalfCutOct/(DistriBinNb/2))];
+        Fbins = [0 mu-HalfCutOct];
+        for BinNum = 1:length(QuantalWeights)
+          Fbins = [Fbins  mu-(HalfCutOct-BinNum*HalfCutOct/(DistriBinNb/2))];
+        end
         
         g = @(x,Fbins,Deltas,DCoffset) DCoffset * ( 1+ Deltas( cell2mat(arrayfun(@(x)find(x>=(Fbins),1,'last'),x,'UniformOutput',0)) )/100 );
         f = @(x) g(x,Fbins,Deltas,DCoffset);            
@@ -68,7 +76,9 @@ CurveArea = trapz(log2(x),f(log2(x)));
 NormFactor = 1/CurveArea;
 Normf = @(x,K) f(x)*K;
 f = @(x) Normf(log2(x),NormFactor);
-
+if any(f(x)<0)
+  error('Please adjust Difficulty level')
+end
 
 function DeltasBlock = BuildDeltasBlock(QuantalWeights,SeedPerm)
 RPerm = RandStream('mrg32k3a','Seed',SeedPerm);   % mcg16807 is fucked up

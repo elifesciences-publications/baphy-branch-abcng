@@ -45,7 +45,7 @@ o = set(o,'CurrentTargetPositions',{'center'});
 o = set(o,'MorphingDuration',Par.MorphingDuration);
 if strcmp(Par.Inverse_D0Dbis,'yes'); ReverseNb = 1; else ReverseNb = 0; end
 
-% SET FREQUENCY RANGE AND ITS MIDDLE POINT F0
+% SET BIN NUMBER IN THE DISTRIBUTION + FREQUENCY RANGE AND ITS MIDDLE POINT F0
 tmp = str2num(get(o,'Distri_Morphing_BinNb'));
 if isempty(tmp)
     DistriBinNb = 8; MaxMorphingNb = 4;      % Usual Psychophysics parameter
