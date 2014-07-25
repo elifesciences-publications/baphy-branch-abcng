@@ -1,4 +1,4 @@
-function [f,D0information] = DrawDistribution(DistributionName,DistributionPara,X)
+function [f,D0information] = DrawDistribution(DistributionName,DistributionPara,X,DistriBinNb)
 
 x = X;	% x-abscissa used for normalizing distribution function area
 switch DistributionName
@@ -9,7 +9,6 @@ switch DistributionName
         g =  @(x,x1,x2,ConstantValue) (x>x1) .* (x<x2) .* ConstantValue;
         f =  @(x) g(x,mu-HalfCutOct,mu+HalfCutOct,ConstantValue);
 	case 'random_spectra'
-        DistriBinNb = 8;
         MaxDelta = 50;  % in %
         mu = DistributionPara(1);        
         HalfCutOct = DistributionPara(2)/2;
@@ -26,7 +25,6 @@ switch DistributionName
         g = @(x,Fbins,Deltas,DCoffset) DCoffset * (1+ Deltas( cell2mat(arrayfun(@(x)find(x>=(Fbins),1,'last'),x,'UniformOutput',0)) ) /100);
         f = @(x) g(x,Fbins,Deltas,DCoffset);
 	case 'quantal_random_spectra'
-        DistriBinNb = 8;
         mu = DistributionPara(1);        
         HalfCutOct = DistributionPara(2)/2;
         DCoffset = 1/(2*HalfCutOct);
@@ -48,7 +46,6 @@ switch DistributionName
         g = @(x,Fbins,Deltas,DCoffset) DCoffset * ( 1+ Deltas( cell2mat(arrayfun(@(x)find(x>=(Fbins),1,'last'),x,'UniformOutput',0)) )/100 );
         f = @(x) g(x,Fbins,Deltas,DCoffset);            
     case 'increment'
-        DistriBinNb = 8;
         h = DistributionPara{2};
         DistributionPara = DistributionPara{1};
         mu = DistributionPara(1);
@@ -61,7 +58,7 @@ switch DistributionName
         
         x3 = mu-HalfCutOct; x4 = mu+HalfCutOct;
         Increment = ConstantValue*PercentChange;
-        Decrement = ConstantValue*PercentChange/3;
+        Decrement = ConstantValue*PercentChange/(DistriBinNb/2-1);
         g =  @(x,FBins2Change,Increment ,x3,x4,Decrement,h) ( ( (x>=FBins2Change(1,1)) .* (x<FBins2Change(1,2)) ) | ( (x>=FBins2Change(2,1)) .* (x<FBins2Change(2,2)) ) ).* (h(2.^x)+Increment) + ( ( not( (x>=FBins2Change(1,1)) .* (x<FBins2Change(1,2)) ) & not( (x>=FBins2Change(2,1)) .* (x<FBins2Change(2,2)) ) ) .* ((x>=x3) .* (x<x4)) ) .* (h(2.^x)-Decrement);
         f =  @(x) g(x,FBins2Change,Increment ,x3,x4,Decrement,h);
 end

@@ -4,18 +4,19 @@ D0type = varargin{1};
 Dtype = varargin{2};
 D0para = varargin{3};
 Dpara = varargin{4};
-X = varargin{5};
-MorphingNum = varargin{6};
-DiffLvl = varargin{7};
-PlotMe = varargin{8};
-sF = varargin{9};
-FrequencySpace = varargin{10};
-[D0,DOinformation] = DrawDistribution(D0type,D0para,X);   % so far, only uniform or random_spectra (seed is given for random_spectra)
+DistriBinNb = varargin{5};
+X = varargin{6};
+MorphingNum = varargin{7};
+DiffLvl = varargin{8};
+PlotMe = varargin{9};
+sF = varargin{10};
+FrequencySpace = varargin{11};
+[D0,DOinformation] = DrawDistribution(D0type,D0para,X,DistriBinNb);   % so far, only uniform or random_spectra (seed is given for random_spectra)
 LineName = [MorphingNum ' ' num2str(DiffLvl) '%'];
  
 D2paraTemp = Dpara; clear Dpara; Dpara{1} = [D2paraTemp DiffLvl]; Dpara{2} = D0;
 if ~isempty(strfind(Dtype,'increm')); Dtype = 'increment'; end
-ChangeD = DrawDistribution(Dtype,Dpara,X);
+ChangeD = DrawDistribution(Dtype,Dpara,X,DistriBinNb);
 
 % Build the stimulus from the 2 distributions
 if nargout>3 || (nargin>=7 && PlotMe)
