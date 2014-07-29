@@ -60,7 +60,7 @@ Dtype = getfield(Par,['D' num2str(ChangedD_Num) 'shape']);
 DifficultyLvl = getfield(Par,['DifficultyLvl_D' num2str(ChangedD_Num)]);
 DiffLvl = DifficultyLvl(DifficultyNum);       % given in %
 Quantal_Delta = getfield(Par,'QuantalDelta');       % given in %
-if DiffLvl==0; ToC = min(Par.MinToC,ToC-StimulusBisDuration); end    % Catch trial are shortened by TarWindow duration
+if DiffLvl==0; ToC = max(Par.MinToC,ToC-StimulusBisDuration); end    % Catch trial are shortened by TarWindow duration
     
 D0param = [FO OctaveNb Par.IniSeed Global_TrialNb Quantal_Delta];
 Dparam = [D0param(1:end-3) Bins2Change{ChangedD_Num}(MorphingNum,:)];    % We don't need a Seed to modify the original distribution
