@@ -31,7 +31,7 @@ IncrementRewardAmount = get(O,'IncrementRewardAmount');
 MaxIncrementRewardNb = get(O,'MaxIncrementRewardNb');
 
 %% GET TARGET & REFERENCE INDICES
-tmp = get(exptparams.TrialObjeNewSlicect,'ReferenceIndices'); ReferenceIndices = tmp{exptparams.InRepTrials};
+tmp = get(exptparams.TrialObject,'ReferenceIndices'); ReferenceIndices = tmp{exptparams.InRepTrials};
 tmp = get(exptparams.TrialObject,'TargetIndices'); TargetIndices = tmp{exptparams.InRepTrials};
 
 %% COMPUTE RESPONSE WINDOWS
@@ -62,8 +62,8 @@ Simulick = get(O,'Simulick'); if Simulick; LickTime = rand*(TarWindow(2)+1); end
 MinimalDelayResponse = get(O,'MinimalDelayResponse');
 
 SF = get(TH,'SamplingRate');
-AnticipatedLoadingDuration = 0.1;
-SliceDuration = 0.5;
+AnticipatedLoadingDuration = 0.15;
+SliceDuration = 0.03*25;
 
 TrialObject = get(exptparams.TrialObject);
 LickTargetOnly = TrialObject.LickTargetOnly;
