@@ -113,6 +113,8 @@ while ContinueExp == 1
         end
       else
         HW = IOLoadSound(HW, TrialSound);
+      elseif strcmp( class(BehaveObject) , 'RewardTargetContinuous' )
+        HW = IOLoadSound(HW, zeros(size(TrialSound)));  
       end
 
       % force at least 500 ms pause between trials in SPR2

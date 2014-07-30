@@ -57,17 +57,60 @@ else
   TarWindow(2) = TarWindow(1);
 end
 RefWindow = [0,TarWindow(1)];
-Objects.Tar = TH;
 Simulick = get(O,'Simulick'); if Simulick; LickTime = rand*(TarWindow(2)+1); end
 MinimalDelayResponse = get(O,'MinimalDelayResponse');
-
-SF = get(TH,'SamplingRate');
-AnticipatedLoadingDuration = 0.15;
-SliceDuration = 0.03*25;
 
 TrialObject = get(exptparams.TrialObject);
 LickTargetOnly = TrialObject.LickTargetOnly;
 RewardSnooze = TrialObject.RewardSnooze;
+
+%% SOUND SLICES
+SF = get(TH,'SamplingRate');
+AnticipatedLoadingDuration = 0.15;
+Par = get(TH,'Par');
+ChordDuration = Par.ToneDuration;
+SliceDuration = 0.250; SliceDuration = round(SliceDuration/ChordDuration)*ChordDuration;            % sec.
+SlicesInAsegment = round(SliceDuration/ChordDuration);
+SegmentMeanDuration = 3;        % sec.
+SegmentStdDuration = 1;         % sec.
+SegmentMinDuration = 0.6; SegmentMinDuration = round(SegmentMinDuration/ChordDuration/SlicesInAsegment);             % segment nb
+SegmentPostHitDuration = 1; SegmentPostHitDuration = round(SegmentPostHitDuration/ChordDuration/SlicesInAsegment);   % segment nb
+SegmentPostFADelay = 2; SegmentPostFADelay = round(SegmentPostFADelay/ChordDuration/SlicesInAsegment);               % segment nb
+BufferSize = 45; BufferSize = round(BufferSize/ChordDuration/SlicesInAsegment);                                      % segment nb
+CatchIndices = find(DifficultyLvl==0);           
+IndexLst = 1:(CatchIndices(1)-1); for CatchNum = 2:length(CatchIndices); IndexLst = [IndexLst (CatchIndices(CatchNum-1)+1) : (CatchIndices(CatchNum)+1) ]; end
+IndexLst = [IndexLst (CatchIndices(end)+1):str2num(get(TH,'MaxIndex')) ];
+
+%% SOUND OBJECTS
+% Initial distribution SO
+THcatch = TH;
+THcatch = set(THcatch,'PreStimSilence',0);
+THcatch = set(THcatch,'MinToC',ChordDuration*2);
+THcatch = ObjUpdate(THcatch);
+% Incremented distribution SO
+THincr = TH;
+THincr = set(THincr,'PreStimSilence',0);
+THincr = set(THincr,'MinToC',SliceDuration*2);
+THincr = set(THincr,'Inverse_D0Dbis','yes');
+THincr = set(THincr,'StimulusBisDuration',ChordDuration);
+THincr = ObjUpdate(THincr);
+
+%% BUILD SEQUENCES OF INDEX
+SliceCounter = 1; IndexListing = []; SegmentDurations = [];
+Xnormcdf = 0:ChordDuration:(SegmentMeanDuration+3*SegmentStdDuration);
+SegmentDurationDistri = normcdf(Xnormcdf,SegmentMeanDuration,SegmentStdDuration); SegmentDurationDistri([1 length(SegmentDurationDistri)]) = [0 1];
+for RepetitionNum = 1: round(BufferSize/(round(SegmentMeanDuration/ChordDuration)*ChordDuration))
+    ShuffledInd = ones(1,2*length(IndexLst)) * CatchIndices(1);
+    ShuffledInd( 2:2:2*length(IndexLst) )= shuffle(IndexLst);
+    IndexListing = [ IndexListing ShuffledInd ];
+    SegmentDurations_tmp = interp1( SegmentDurationDistri , Xnormcdf , rand(1,length(ShuffledInd)) );
+    SegmentDurations = [ SegmentDurations max(round(SegmentDurations_tmp/ChordDuration/SlicesInAsegment),SegmentMinDuration) ];
+end
+IndexSequence = zeros(1,sum(SegmentDurations));
+for IndNum = 1:length(IndexListing)
+    IndexSequence( sum(SegmentDurations(1:(IndNum-1))) + 1:SegmentDurations(IndNum)) = IndexListing(IndNum);
+end
+IndexSequence = IndexSequence(1:BufferSize);
 
 %% PREPARE FOR PREWARD
 cPositions = {'center'};
@@ -95,8 +138,18 @@ AllLickSensorNames = SensorNames(~cellfun(@isempty,strfind(SensorNames,'Touch'))
 tic; StartingBloc = toc; CurrentTime = IOGetTimeStamp(HW); InitialTime = CurrentTime;
 fprintf(['Running Trial [ <=',n2s(exptparams.LogDuration),'s ] ... ']);
 
-while CurrentTime < (StartingBloc+30)
-    w = waveform(TH,1,SliceDuration,[],randi(100,1));
+SliceCounter = 0;
+while CurrentTime < (StartingBloc+BufferSize)
+    SliceCounter = SliceCounter+1;
+    Index = IndexSequence(SliceCounter);
+    
+    % Re-parameterize the SO according to what is needed
+    if ismember(Index,CatchIndices)
+        w = waveform(THcatch,Index,SliceDuration,[],SliceCounter*TrialIndex);
+    else % Incremented distribution. 'Inverse_D0Dbis' is true, so we have to choos ehte right index
+        w = waveform(THincr,Index*2,SliceDuration,[],SliceCounter*TrialIndex);
+    end
+    
     NewSlice = w(1:round(SliceDuration*SF));
     HW = IOLoadSound(HW, NewSlice);
     NextSliceTiming = CurrentTime+length(NewSlice)/SF;
