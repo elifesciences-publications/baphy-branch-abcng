@@ -197,8 +197,6 @@ switch Outcome
     LightEvents = LF_TimeOut(HW,get(O,'TimeOutEarly'),LEDfeedback,TrialIndex,Outcome);
     Events = AddEvent(Events, LightEvents, TrialIndex);
     
-
-
   case 'ERROR'; % STOP SOUND, HIGH VOLUME NOISE, LIGHT ON, TIME OUT
     StopEvent = IOStopSound(HW); Events = AddEvent(Events, StopEvent, TrialIndex);
     if strcmp(get(O,'PunishSound'),'Noise') 

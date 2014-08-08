@@ -110,11 +110,11 @@ while ContinueExp == 1
           HW = IOLoadSound(HW, TrialSound(:,[2 1]));
         else
           HW = IOLoadSound(HW, TrialSound(:,[1 1]));
-        end
+        end      
+      elseif strcmp( class(BehaveObject) , 'RewardTargetContinuous' )
+        
       else
         HW = IOLoadSound(HW, TrialSound);
-      elseif strcmp( class(BehaveObject) , 'RewardTargetContinuous' )
-        HW = IOLoadSound(HW, zeros(size(TrialSound)));  
       end
 
       % force at least 500 ms pause between trials in SPR2
@@ -126,7 +126,9 @@ while ContinueExp == 1
       end
       
       %% MAIN ACQUISITION SECTION
-      [StartEvent,HW] = IOStartAcquisition(HW);
+      if ~strcmp( class(BehaveObject) , 'RewardTargetContinuous' )  % Acquisition starts within BehaviorControl.m
+        [StartEvent,HW] = IOStartAcquisition(HW);
+      end
       
       % HAND CONTROL TO LICK MONITOR TO CONTROL REWARD/SHOCK
       [BehaviorEvents, exptparams] = ...

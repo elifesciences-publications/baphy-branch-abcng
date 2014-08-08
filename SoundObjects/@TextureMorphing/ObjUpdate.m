@@ -128,23 +128,23 @@ o = set(o,'Par',Par);
 Names = cell(MaxIndex,1);
 % ENUMERATE ALL CONDITIONS
 DistributionTypeByInd = []; MorphingTypeByInd = []; DifficultyLvlByInd = []; ReverseByInd = [];
-ConditionNbForEachD = MorphingNb.*DifficultyLvlNb;
+ConditionNbForEachD = MorphingNb.*DifficultyLvlNb*(ReverseNb+1);
 for ChangedD_Num = 1:ChangedD_Nb
-    MorphingNbForThisCond = MorphingNb(ChangedD_Num); DifficultyLvlNbForThisCond = DifficultyLvlNb(ChangedD_Num);
+    MorphingNbForThisDistri = MorphingNb(ChangedD_Num); DifficultyLvlNbForThisDistri = DifficultyLvlNb(ChangedD_Num);
     DistributionTypeByInd_temp = ones(1,ConditionNbForEachD(ChangedD_Num))*ChangedD_Num;
     DistributionTypeByInd = [DistributionTypeByInd DistributionTypeByInd_temp];
 
-    MorphingTypeByInd_temp = repmat(1:MorphingNbForThisCond,[1 ConditionNbForEachD(ChangedD_Num)/MorphingNbForThisCond]);
+    MorphingTypeByInd_temp = repmat(1:MorphingNbForThisDistri,[1 ConditionNbForEachD(ChangedD_Num)/MorphingNbForThisDistri]);
     MorphingTypeByInd_temp = sort(MorphingTypeByInd_temp);
     MorphingTypeByInd = [ MorphingTypeByInd MorphingTypeByInd_temp ];
 
-    DifficultyLvlByInd_temp = repmat(1:DifficultyLvlNbForThisCond,[1 ConditionNbForEachD(ChangedD_Num)/(MorphingNbForThisCond*DifficultyLvlNbForThisCond)]);
+    DifficultyLvlByInd_temp = repmat(1:DifficultyLvlNbForThisDistri,[1 ConditionNbForEachD(ChangedD_Num)/(MorphingNbForThisDistri*DifficultyLvlNbForThisDistri)]);
     DifficultyLvlByInd_temp = sort(DifficultyLvlByInd_temp);
-    DifficultyLvlByInd = [ DifficultyLvlByInd repmat(DifficultyLvlByInd_temp,[1 MorphingNbForThisCond]) ];
+    DifficultyLvlByInd = [ DifficultyLvlByInd repmat(DifficultyLvlByInd_temp,[1 MorphingNbForThisDistri]) ];
 
-    ReverseByInd_temp = repmat(0:ReverseNb,[1 ConditionNbForEachD(ChangedD_Num)/(MorphingNbForThisCond*DifficultyLvlNbForThisCond*(ReverseNb+1))]);
+    ReverseByInd_temp = repmat(0:ReverseNb,[1 ConditionNbForEachD(ChangedD_Num)/(MorphingNbForThisDistri*DifficultyLvlNbForThisDistri*(ReverseNb+1))]);
     ReverseByInd_temp = sort(ReverseByInd_temp);
-    ReverseByInd = [ ReverseByInd repmat(ReverseByInd_temp,[1 (MorphingNbForThisCond*DifficultyLvlNbForThisCond)]) ];
+    ReverseByInd = [ ReverseByInd repmat(ReverseByInd_temp,[1 (MorphingNbForThisDistri*DifficultyLvlNbForThisDistri)]) ];
 end
 
 % WARNING

@@ -54,9 +54,8 @@ for ChordNum = 1:ChordNb
     TrialTonesF = ToneFrequencies((PreviousRandomChordNum+1):(PreviousRandomChordNum+NbTonesChord));
     TrialTonesPhase = TonePhases((PreviousRandomChordNum+1):(PreviousRandomChordNum+NbTonesChord));    
     PreviousRandomChordNum = PreviousRandomChordNum+NbTonesChord;
-    for Fnum = 1:NbTonesChord
-        Tone = SingleTone(TrialTonesF(Fnum),Lvl,sF,ChordDuration,TrialTonesPhase(Fnum));
-        Chord = Chord + Tone;
+    if ~isempty(TrialTonesF)
+      Chord = SingleChord(TrialTonesF,Lvl,sF,ChordDuration,TrialTonesPhase);
     end
     Stimulus((ChordNum-1)*length(ChordTimeSamples)+1 : ChordNum*length(ChordTimeSamples)) = Chord;
     
