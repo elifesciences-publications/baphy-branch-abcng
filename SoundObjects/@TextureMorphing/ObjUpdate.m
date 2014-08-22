@@ -96,12 +96,12 @@ for ChangedD_Num = 1:ChangedD_Nb
             ChannelDistancesByMorphing{ChangedD_Num} = ones(1,MaxMorphingNb)*ChannelDistance;
             Bins2Change{ChangedD_Num} = repmat([1 2],MaxMorphingNb,1) + repmat((0:2:((MaxMorphingNb-1)*2))',1,2);  %[1:2 ; 3:4 ; 5:6 ; 7:8]; 
         case 'fixed_increm'
-            MorphingNb(ChangedD_Num) = 1;
-            ChannelDistance = 1;
-            ChannelDistancesByMorphing{ChangedD_Num} = ChannelDistance;
-            PossibleBins = mat2cell( repmat([1 2],MaxMorphingNb,1) + repmat((0:2:((MaxMorphingNb-1)*2))',1,2) ,ones(1,MaxMorphingNb),2 );  %{1:2 ; 3:4 ; 5:6 ; 7:8};
             Bin2ChangeIndex = getfield(Par,[ 'D' num2str(ChangedD_Num) 'param' ]);
-            Bins2Change{ChangedD_Num} = PossibleBins{Bin2ChangeIndex};
+            MorphingNb(ChangedD_Num) = length(Bin2ChangeIndex); % this allows several bins to be chosen, in different proportions (like for Difficulty)
+            ChannelDistance = 1;
+            ChannelDistancesByMorphing{ChangedD_Num} = ones(1,MaxMorphingNb)*ChannelDistance;
+            PossibleBins = repmat([1 2],MaxMorphingNb,1) + repmat((0:2:((MaxMorphingNb-1)*2))',1,2);  %{1:2 ; 3:4 ; 5:6 ; 7:8};            
+            Bins2Change{ChangedD_Num} = PossibleBins(Bin2ChangeIndex,:);
         case 'non_contig_increm'
             ChannelDistances = getfield(Par,[ 'D' num2str(ChangedD_Num) 'param' ]);
             MorphingNb(ChangedD_Num) = 0; Bins2Change{ChangedD_Num} = []; ChannelDistancesByMorphing{ChangedD_Num} = [];
