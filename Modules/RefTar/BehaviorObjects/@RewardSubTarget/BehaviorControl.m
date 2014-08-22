@@ -31,29 +31,25 @@ MinRewardAmount = get(O,'MinRewardAmount');
 IncrementRewardAmount = get(O,'IncrementRewardAmount');
 MaxIncrementRewardNb = get(O,'MaxIncrementRewardNb');
 SamplingRate = get(get(exptparams.TrialObject,'TargetHandle'),'SamplingRate');
-  Gap = get(get(exptparams.TrialObject,'TargetHandle'),'SequenceGap');
-  SeqLen = StimEvents(end-1).StopTime - StimEvents(end-2).StartTime;
+
 %% GET TARGET & REFERENCE INDICES
 tmp = get(exptparams.TrialObject,'ReferenceIndices'); ReferenceIndices = tmp{exptparams.InRepTrials};
 tmp = get(exptparams.TrialObject,'TargetIndices'); TargetIndices = tmp{exptparams.InRepTrials};
 
 %% COMPUTE RESPONSE WINDOWS
-str1ind = strfind(StimEvents(end-3).Note,'/') -2;
-%str1ind = str1ind(1); 
-str2ind = strfind(StimEvents(end-3).Note,'/') +2; 
-%str2ind = str2ind(1);
-if isempty(str1ind); Index = 0; 
-else Index = str2num(StimEvents(end-3).Note((str1ind+1):(str2ind-1))); end
+str1ind = strfind(StimEvents(end-2).Note,'-'); str1ind = str1ind(end)+2;
+str2ind = strfind(StimEvents(end-2).Note,','); str2ind = str2ind(end)-2;
+Index = str2num(StimEvents(end-2).Note((str1ind):(str2ind)));
 
-TarInd = find(~cellfun(@isempty,strfind({StimEvents.Note},'LickWindow')));
+% TarInd = find(~cellfun(@isempty,strfind({StimEvents.Note},'LickWindow')));
 EarlyWindow = StimEvents(end-1).StartTime;
-LickWindowTime = StimEvents(end-1).StopTime - EarlyWindow;
+EndWindow = StimEvents(end-1).StopTime;
 TargetStartTime = 0; %StimEvents(TarInd(1)).StartTime;
 MinimalDelayResponse = get(O,'MinimalDelayResponse');
 ExtendResponseWindow = get(O,'ExtendResponseWindow');
 
-TarWindow(1) = TargetStartTime + EarlyWindow + MinimalDelayResponse;
-TarWindow(2) = TargetStartTime + EarlyWindow +LickWindowTime +ExtendResponseWindow;% get(O,'ResponseWindow');
+TarWindow(1) = EarlyWindow + MinimalDelayResponse;
+TarWindow(2) = EndWindow + ExtendResponseWindow;
 
 RefWindow = [0,TarWindow(1)];
 Objects.Tar = get(exptparams.TrialObject,'TargetHandle');
@@ -128,7 +124,7 @@ DetectType = 'ON'; LickOccured = 0;
     else
       cLickSensor = 'None'; cLickSensorNot = 'None';     
     end   
-    Events=AddEvent(Events,['LICK,',cLickSensor],TrialIndex,ResponseTime,[]);
+    Events = AddEvent(Events,['LICK,',cLickSensor],TrialIndex,ResponseTime,[]);
     if ~get(O,'GradualResponse')%&& ResponseTime >  StimEvents(1).StopTime + SeqLen/2;
       break
     elseif get(O,'GradualResponse') && ResponseTime >TarWindow(1) 
@@ -156,20 +152,20 @@ DetectType = 'ON'; LickOccured = 0;
   end
 end
 
-% Count number of references where a lick occured
-if get(O,'GradualResponse')
-  DidItLicks = zeros(1,length(StimEvents) - 3);
-  if not(isempty(CountingLicks))
-    for j = 1:length(CountingLicks)
-      for jj = 2:length(StimEvents)-2
-        if CountingLicks(j)>StimEvents(jj).StartTime && CountingLicks(j)<StimEvents(jj).StopTime && DidItLicks(jj) == 0
-          DidItLicks(jj)=j ;
-        end
-      end
-    end
-  end
-  BadLickSum = sum(DidItLicks ~= 0);
-end
+% % Count number of references where a lick occured
+% if get(O,'GradualResponse')
+%   DidItLicks = zeros(1,length(StimEvents) - 3);
+%   if not(isempty(CountingLicks))
+%     for j = 1:length(CountingLicks)
+%       for jj = 2:length(StimEvents)-2
+%         if CountingLicks(j)>StimEvents(jj).StartTime && CountingLicks(j)<StimEvents(jj).StopTime && DidItLicks(jj) == 0
+%           DidItLicks(jj)=j ;
+%         end
+%       end
+%     end
+%   end
+%   BadLickSum = sum(DidItLicks ~= 0);
+% end
 
 %   MinimalInterval = 0.250*HW.params.fsAI;     % samples  
 %   LickTimings = find( diff( LickData(:,cP.LickSensorInd) ) >0)';
@@ -201,8 +197,12 @@ else  % CASES NO LICK AND LATE LICK
 %     otherwise                  Outcome = 'ERROR';
 %   end
 end
-Events=AddEvent(Events,['OUTCOME,',Outcome],TrialIndex,ResponseTime,[]);
-if strcmp(Outcome,'HIT'); Outcome2Display = [Outcome ', Index = ' num2str( get(Objects.Tar,'DifficultyLvlByInd') ) ' RT = ' num2str(ResponseTime-TarWindow(1)+MinimalDelayResponse)]; else Outcome2Display = [ Outcome ', Index = ' num2str( get(Objects.Tar,'DifficultyLvlByInd') ) ]; end
+Events = AddEvent(Events,['OUTCOME,',Outcome],TrialIndex,ResponseTime,[]);
+if strcmp(Outcome,'HIT')
+  Outcome2Display = [Outcome ' / ' num2str(Index) ', RT = ' num2str(ResponseTime-TarWindow(1)+MinimalDelayResponse)];
+else
+  Outcome2Display = [Outcome ' / ' num2str(Index)];
+end
 fprintf(['\t [ ',Outcome2Display,' ] ... ']);
 
 %% ACTUALIZE VISUAL FEEDBACK FOR THE SUBJECT
@@ -270,10 +270,13 @@ switch Outcome
     NbContiguousLastHits = find(strcmp(LastOutcomes,'EARLY'),1,'first')-1;   % Only Early are taken into account
     if isempty(NbContiguousLastHits), NbContiguousLastHits = length( find(strcmp(LastOutcomes,'HIT')) );
     else NbContiguousLastHits = NbContiguousLastHits - length( find(strcmp(LastOutcomes(1:(NbContiguousLastHits+1)),'SNOOZE')) ); end  % But Snoozes don't give bonus
-    if get(O,'GradualResponse')
-    RewardAmount = MinRewardAmount + (RewardAmount-MinRewardAmount)*((length(StimEvents) - 3)-BadLickSum)/(length(StimEvents) - 3)
-    end
+%     if get(O,'GradualResponse')
+%       RewardAmount = MinRewardAmount + ...
+%         (RewardAmount-MinRewardAmount)*((length(StimEvents) - 3)-BadLickSum)/(length(StimEvents) - 3)
+%     end
    
+    RewardAmount = RewardAmount + IncrementRewardAmount*NbContiguousLastHits;
+
     PumpDuration = RewardAmount/globalparams.PumpMlPerSec.(PumpName);
     % pause(0.05); % PAUSE TO ALLOW FOR HEAD TURNING
     PumpEvent = IOControlPump(HW,'Start',PumpDuration,PumpName);

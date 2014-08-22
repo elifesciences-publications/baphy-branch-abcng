@@ -30,27 +30,28 @@ else
   CurrentTrialIndex = TargetIndices( mod(TrialIndex,get(SO,'MaxIndex')) );  % Condition number
 end
 CurrentTrialIndex = CurrentTrialIndex{1};
-DiffiLevels =get(SO,'MaxIndex');
-%DistributionTypes = get(SO,'DistributionTypeByInd');
+MaxIndex =get(SO,'MaxIndex');
+IndexLst = 1:MaxIndex;
+TarInd = find(~cellfun(@isempty,strfind({StimEvents.Note},'TargetSequence')));
+str1ind = strfind(StimEvents(TarInd).Note,'-'); str1ind = str1ind(end)+2;
+str2ind = strfind(StimEvents(TarInd).Note,','); str2ind = str2ind(end)-2;
+IndexNow = str2num(StimEvents(TarInd).Note((str1ind):(str2ind)));
+% EarlyWindow = StimEvents(TarInd(end)+1).StartTime;
+% EndWindow = StimEvents(TarInd(end)+1).StopTime;
 
-%DistributionTypeNow = DistributionTypes(CurrentTrialIndex); 
-DifficultyLvl = 1:DiffiLevels; %str2num(get(SO,['DifficultyLvl_D' num2str(DistributionTypeNow)]));
-DifficultyNow = get(SO,'DifficultyLvlByInd');%( DiffiLevels(CurrentTrialIndex) );
+TrialIndexMat = zeros(length(unique(IndexLst ,'stable')),3);
 
-TrialDiffiMat = zeros(length(unique(DifficultyLvl ,'stable')),3);
-
-  TrialDiffiLvl = find(DifficultyNow==unique(DifficultyLvl ,'stable'));
-  TrialSuccessCase = find( strcmp({'HIT','SNOOZE','EARLY'} , {AllPerf(end).Outcome}) );
-  TrialDiffiMat(TrialDiffiLvl,TrialSuccessCase) = 1;
-
+TrialIndexLvl = find(IndexNow==unique(IndexLst ,'stable'));
+TrialSuccessCase = find( strcmp({'HIT','SNOOZE','EARLY'} , {AllPerf(end).Outcome}) );
+TrialIndexMat(TrialIndexLvl,TrialSuccessCase) = 1;
 
 if TrialIndex == 1   
-  DiffiMatPreviousTrial = zeros(length(unique(DifficultyLvl ,'stable')),3);
+  IndexMatPreviousTrial = zeros(length(unique(IndexLst ,'stable')),3);
 else
   cPreviousTrial = exptparams.Performance(TrialIndex-1);
-  DiffiMatPreviousTrial = cPreviousTrial.DiffiMat;
+  IndexMatPreviousTrial = cPreviousTrial.DiffiMat;
 end
-DiffiMat = DiffiMatPreviousTrial+TrialDiffiMat;
+DiffiMat = IndexMatPreviousTrial+TrialIndexMat;
 cP.DiffiMat = DiffiMat;
 
 % compute hit rates for the different sensors/responses
@@ -75,18 +76,18 @@ cP.ErrorRateRecent = sum(strcmp({RecentPerf.Outcome},'ERROR'))/AverageSteps;
 switch cP.DetectType
   case 'ON';   % Corrected by Yves / 2013/10
     if ~isnan(cP.LickSensorInd)%&& ~isempty(cP.LickData)
-%       if ~get(TO,'LickTargetOnly')
-%         cP.LickTime = find(LickData(:,cP.LickSensorInd)>0.5,1,'first');
-%       else
-        MinimalInterval = 0.300*HW.params.fsAI;     % samples  
+      if ~get(TO,'LickTargetOnly')
+        cP.LickTime = find(LickData(:,cP.LickSensorInd)>0.5,1,'first');
+      else
+        MinimalInterval = 0.300*HW.params.fsAI;     % samples
         LickTimings = find( diff( LickData(:,cP.LickSensorInd) ) >0)';   % ascending wave
         FarLickTimingsIndex = unique( [1 find(diff(LickTimings)>MinimalInterval)+1] );
-         if ~isnan(LickTimings)
-        cP.LickTime = LickTimings(FarLickTimingsIndex);
-         else 
-           cP.LickTime = []; 
-         end
-%       end
+        if ~isnan(LickTimings)
+          cP.LickTime = LickTimings(FarLickTimingsIndex);
+        else
+          cP.LickTime = [];
+        end
+      end
     else cP.LickTime = []; 
     end
   case 'OFF';

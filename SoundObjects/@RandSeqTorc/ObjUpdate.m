@@ -1,27 +1,8 @@
 function o = ObjUpdate (o)
 % Update the changes of a Stream_AB object
 % Pingbo, December 2005
-% modified in Aprul, 2006
-FirstFrequency = get(o,'FirstFrequency');
-Intervals = get(o,'Intervals');
-NoteDur = get(o,'NoteDur');
-NoteGap = get(o,'NoteGap');
-TorcDur = get(o,'TorcDuration');
-TorcFreq = get(o,'FrequencyRange');
-TorcRates = get(o,'TorcRates');
-SeqGap = get(o,'SequenceGap');
-PastRef = get(o,'PastRef');% duration is second
-TrialN = get(o,'TrialN');
-IsRef= get(o,'IsRef');
-% index = get(o,'Index');
-
-% PastRef = get(o,'PastRef')
-% o = set(o, 'PastRef',PastRef);
-if strcmp(IsRef,'no')==1
-  o = set(o,'MaxIndex',1);
-
-end
-
+% modified in April, 2006
+% 2013: Thomas // 2014: Yves
 
 % if TrialN > length(PastRef)
 %     %RefNow = sum(PastRef(1:TrialNum-1));
@@ -44,16 +25,15 @@ end
 o = set(o,'AllTargetPositions',{'center'});   % for Bernhard script [PerformanceAnalysis.m]
 o = set(o,'CurrentTargetPositions',{'center'});
 
-if TrialN == 0    
-  KeyNum = round(prod(clock)*5/10000)
+if isempty(get(o,'Key'))  % First trial
+  KeyNum = round(prod(clock)*5/10000);
   %Key = RandStream('mrg32k3a','Seed',KeyNum);
-  o = set(o,'Key',KeyNum);
-  o = set(o,'TrialN', 1);
   %Key = round( Rtoday.rand(1,1)*100 );   % With RandStream('mrg32k3a'), it is important to work with large numbers,                                         %because there is a heavy correlation between two seeds that belong to the same integer interval [n,n+1[
 else
-  Key = get(o,'Key')  ;
-  %o = set(o,'Key', Key);
+  KeyNum = get(o,'Key');
 end
+o = set(o,'Key',KeyNum);
+
 % Type=lower(get(o,'Type'));
 % if strcmpi(Type(1:2),'si') || strcmpi(Type,'single')  
 %     o=set(o,'Type','Single');       %fixed pair
