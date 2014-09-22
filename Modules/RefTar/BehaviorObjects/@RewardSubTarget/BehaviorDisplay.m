@@ -138,7 +138,7 @@ if ~isempty(ResponseData)
 end
 
 Yaxis_tmp = get(AH.TarTiming,'ylim');
-for RefNum = 1:(MaxIndex-1)
+for RefNum = 1:MaxIndex
   set(PH.TarTiming.GreyBoxes(RefNum),'ydata',[ 0 0 Yaxis_tmp(2) Yaxis_tmp(2) 0 ]);
 end
 
@@ -249,7 +249,6 @@ else % CREATE A NEW SET OF HANDLES
   PlotOutcomes = {'Hit','Snooze','Early'};
 %   DiffiNb = length(unique(get(get(exptparams.TrialObject,'TargetHandle'),'DifficultyLvlByInd')));
  % UniqueDiffiLvl_D1 = unique( str2num(get(get(exptparams.TrialObject,'TargetHandle'),'DifficultyLvl_D1')) ,'stable');
- UniqueDiffiLvl_D1 = get(get(exptparams.TrialObject,'TargetHandle'),'DifficultyLvlByInd');
   DiffiMat = exptparams.Performance(end).DiffiMat;% UniqueDiffiNb = size(DiffiMat,1);
   UniqueDiffiNb = get(get(exptparams.TrialObject,'TargetHandle'),'MaxIndex');
  
@@ -258,7 +257,7 @@ else % CREATE A NEW SET OF HANDLES
           PH.DiffiDistri.Bar(DiffiNum,PlotNum) = plot( repmat(DiffiNum+0.22*(PlotNum-2),2,1) , zeros(2,1),...
               '-','Linewidth',6,'Color',Colors.(PlotOutcomes{PlotNum}));
        %   NewXaxisStr{DiffiNum} = ['+' num2str(UniqueDiffiLvl_D1(DiffiNum)) '%'];
-          NewXaxisStr{DiffiNum} = ['+' num2str(DiffiNum) 'Ref'];
+          NewXaxisStr{DiffiNum} = [num2str(DiffiNum-1) ' Ref'];
       end
   end
   set(gca, 'XTick',1:DiffiNum); set (gca, 'XTickLabel', NewXaxisStr);
@@ -269,15 +268,20 @@ else % CREATE A NEW SET OF HANDLES
   AH.TarTiming = axes('Pos',DC{5}); hold on; box on;
   O = get(exptparams.TrialObject,'TargetHandle');
   
-  %  for j =1:length(StimEvents)-4
-  MaxRefNb = get(get(exptparams.TrialObject,'TargetHandle'),'MaxIndex');
-  Gap = get(get(exptparams.TrialObject,'TargetHandle'),'SequenceGap');
-  SeqLen = StimEvents(end-1).StopTime - StimEvents(end-2).StartTime;
-  MaxLen =  StimEvents(1).StopTime + (MaxRefNb)*SeqLen - 1.5 * Gap;
-  for RefNum = 1:MaxRefNb
-    Start = StimEvents(1).StopTime+(SeqLen)*(RefNum-1) -MaxLen;
-    Stop = Start + (SeqLen) - 1.5*Gap ;
-    PH.TarTiming.GreyBoxes(RefNum) = fill([Start Stop Stop Start],[0 0 1 1 ],[.7 .7 .7]);
+  MaxSeqNb = get(get(exptparams.TrialObject,'TargetHandle'),'MaxIndex');
+  InterSequenceGap = get(get(exptparams.TrialObject,'TargetHandle'),'SequenceGap');
+  TorcDuration = get(get(exptparams.TrialObject,'TargetHandle'),'TorcDuration');
+  ToneDur = get(get(exptparams.TrialObject,'TargetHandle'),'ToneDur');
+  InterToneGap = get(get(exptparams.TrialObject,'TargetHandle'),'ToneGap');
+  isTORC = get(get(exptparams.TrialObject,'TargetHandle'),'TORC');
+  
+  SeqLen = (ToneDur+InterToneGap)*4;
+  RespWinLen = 2*InterSequenceGap + strcmp(isTORC,'yes')*TorcDuration;
+  
+  for SeqNum = 1:MaxSeqNb
+    Start = -(SeqLen+RespWinLen)*(SeqNum-1);
+    Stop = Start-SeqLen;
+    PH.TarTiming.GreyBoxes(SeqNum) = fill([Start Stop Stop Start],[0 0 1 1 ],[.7 .7 .7]);
   end
   
   PlotOutcomes = {'Hit','Snooze','Early'}; Conditions = get(O,'Names');

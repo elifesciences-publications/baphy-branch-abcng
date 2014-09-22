@@ -1,51 +1,37 @@
-function [w, ev,o]=waveform (o,index,IsRef,Mode,TrialNum)
-% function w=waveform(t);
-% this function is the waveform generator for object TonesSequence
-%
-%Pingbo, December 2005.
-
+function [w,ev,o] = waveform(o,index,IsRef,Mode,TrialNum)
+% 2013: Thomas // 2014: Yves
+% index is the Nb of Ref+1
 fs = get(o,'SamplingRate');
 PreStimSilence = get(o,'PreStimSilence');
 PostStimSilence = get(o,'PostStimSilence');
 
-
-o = set(o,'DifficultyLvlByInd',index);
-
-% the parameters of Stream_AB object
-SameRef = get(o,'SameRef');
-IsBuzz = get(o,'IsBuzz');
-NoteDur = get(o,'NoteDur');
-NoteGap = get(o,'NoteGap');
-SeqGap = get(o,'SequenceGap');% duration is second
-IsRef = get(o,'IsRef'); 
+% PARAMETERS OF RandSeqTorc OBJECT
+SameRef = get(o,'SameRef');  % unique tone in the reference
+UniqueToneIndex = get(o,'UniqueToneIndex');
+ToneDur = get(o,'ToneDur');  % sec.
+ToneGap = get(o,'ToneGap');  % sec.
+SeqGap = get(o,'SequenceGap');  % sec.
 
 FirstFrequency = get(o,'FirstFrequency');
-Intervals = get(o,'Intervals');
-SimilareTones= get(o,'SimilareTones');
-LoudnessCue = get(o,'LoudnessCue')
+Intervals = get(o,'Intervals');     % in semitones
+IdenticalTones= get(o,'IdenticalTones');
+LoudnessCue = get(o,'LoudnessCue');
 
 TORC = get(o,'TORC');
 TorcDur = get(o,'TorcDuration');
 TorcFreq = get(o,'FrequencyRange');
 TorcRates = get(o,'TorcRates');
 
+% RANDOM NUMBER GENERATOR
 Key = get(o,'Key');
 TrialKey = RandStream('mrg32k3a','Seed',Key);
 PastRef = get(o,'PastRef');
-% 
-% if index > MaxIndex
-%   index = MaxIndex;
-% end
 
-% if strcmp(Stimtype,'Target Only')
-%   o = set(o,'MaxIndex',1);
-% else MaxIndex = get(o,'MaxIndex');
-% end
-
+% PastRef STORES THE PREVIOUS INDEX
 if isempty(PastRef) 
    RefNow = 0;
    o = set(o,'PastRef',[PastRef index]);
-elseif length(PastRef) >= TrialNum && index == PastRef(TrialNum)
+elseif length(PastRef)>=TrialNum && index==PastRef(TrialNum)  % When you load a SO from a previous experiment
    RefNow = sum(PastRef(1:TrialNum)) - PastRef(TrialNum);
 elseif length(PastRef) > TrialNum && index ~= PastRef(TrialNum)
    error('Valeur index attendue: %d', PastRef(TrialNum));
@@ -54,178 +40,131 @@ elseif length(PastRef) < TrialNum
    o = set(o,'PastRef',[PastRef index]);
 end
 
-
-% create an instance of torc object:
-global globalparams;
-global exptparams_Copy;
-
+% Create an instance of torc object:
 TorcObj = Torc(fs,...
     0, ...                          % No Loudness
     PreStimSilence, ...    % Put the PreStimSilence before torc.
     PostStimSilence, ...     % Put half of gap after torc, the other half goes before tone
     TorcDur, TorcFreq, TorcRates);
 
-% now generate a tone with specified frequency:
-
-Frequency =[FirstFrequency];
+% Now generate a tone with specified frequency:
+Frequency = FirstFrequency;
 for k = 2:length(Intervals)
-    Frequency(k) = Frequency(k-1)*2^(Intervals(k)/12);
-    
+    Frequency(k) = Frequency(k-1)*2^(Intervals(k)/12);    
 end
 
-PermIndex = find(SimilareTones ~= 1);
-MustPermIndex = find(SimilareTones == -1);
-NoPermIndex = find(SimilareTones == 1);
-[RandTaille, ~] = size(perms(Frequency(PermIndex)));
-SeqFrequencyPerm = zeros(RandTaille,length(Frequency));
+% MATRIX OF PERMUTATION WITH CONTRAINS
+PermIndex = find(IdenticalTones ~= 1);
+MustPermIndex = find(IdenticalTones == -1);
+NoPermIndex = find(IdenticalTones == 1);
+[PermSizeRow,PermSizeCol] = size(perms(Frequency(PermIndex)));
+SeqFrequencyPerm = zeros(PermSizeRow,length(Frequency));
 SeqFrequencyNoPerm = SeqFrequencyPerm;
-SeqFrequencyPerm(:,PermIndex) = perms(Frequency(PermIndex));
 
-SeqFrequencyNoPerm(1,NoPermIndex) = Frequency(NoPermIndex);
-size(SeqFrequencyNoPerm(2:RandTaille,:));
-size(repmat(SeqFrequencyNoPerm(1,:),RandTaille-1,1));
-SeqFrequencyNoPerm(2:RandTaille,:) = repmat(SeqFrequencyNoPerm(1,:),RandTaille-1,1);
+SeqFrequencyPerm(:,PermIndex) = perms(Frequency(PermIndex));
+SeqFrequencyNoPerm(:,NoPermIndex) = repmat(Frequency(NoPermIndex),PermSizeRow,1);
 SeqFrequency = SeqFrequencyNoPerm + SeqFrequencyPerm;
 
 for q = 1:length(MustPermIndex)
-    if ismember(Frequency(q),SeqFrequency(:,q))
+    if any(SeqFrequency(:,q) == Frequency(q))
        [BadSeq, ~] = find(SeqFrequency(:,q) == Frequency(q));
        SeqFrequency(BadSeq,:) = [];
     end
 end
+% Remove potential Target sequence
+for q = size(SeqFrequency,1):-1:1
+    if all(SeqFrequency(q,:) == Frequency)
+       SeqFrequency(q,:) = [];
+    end
+end
 
-
-[RandTaille, ~] = size(SeqFrequency);
+% MATRIX OF PERMUTATION AND TORC INDICES FOR MAKING SURE WE PRESENT
+%EACH OF THEM IN A BALANCED WAY
+[RefNb,~] = size(SeqFrequency);
 RandSequence = [];
 RandTORC = [];
-for i = 1:100
-    RandSequence = [RandSequence TrialKey.randperm(RandTaille)];
-    RandTORC = [RandTORC TrialKey.randperm(30)];
+TorcNb = 30;
+for RepNum = 1:100
+    RandSequence = [RandSequence TrialKey.randperm(RefNb)];
+    RandTORC = [RandTORC TrialKey.randperm(TorcNb)];
 end
 
-TargetFreq = Frequency;
-TargetSequence = [];
+% BUILD THE WAVEFORM
+t = 0:1/fs:ToneDur;
+gap = zeros(round(ToneGap*fs),1);
+gapSeq = zeros(round(SeqGap*fs),1);
+prestim = zeros(round(PreStimSilence*fs),1);
+poststim = zeros(round(PostStimSilence*fs),1);
 
-t=0:1/fs:NoteDur;
-
-gap=zeros(round(NoteGap*fs),1);
-gapSeq=zeros(round(SeqGap*fs),1);
-NoteDur=length(t)/fs;
-NoteGap=length(gap)/fs;
-
-w=[];ev=[];
-prestim=zeros(round(PreStimSilence*fs),1);
-poststim=zeros(round(PostStimSilence*fs),1);
-
-if strcmp(IsBuzz,'yes')
-      Tbuzz = [0:1/fs:0.7]; Xbuzz = sin(2.*pi.*110.*Tbuzz); 
-      Ybuzz = square(2*pi*440*Tbuzz + Xbuzz);
-      Mbuzz = maxLocalStd(Ybuzz,fs,length(Tbuzz)/fs);
-      Ybuzz = Ybuzz/Mbuzz;
-else
-      Ybuzz = 0;
-end
-
-ev = AddEvent(ev,['PreStimSilence 1 / 1'],[],0,PreStimSilence); 
+w = []; ev = [];
+% PRESTIM
+ev = AddEvent(ev,['PreStimSilence - ' , num2str(TrialNum)],[],0,PreStimSilence); 
 w = [w ; prestim(:)];
 
-%INDEX = index;
-NextTry = 1;
-%index -1 pour obtenir trial sans ref
-if strcmp(IsRef,'yes') == 1
- 
-  for j = RefNow+1:RefNow+index-1
+% REFERENCE(S)
+for j = (RefNow+1) : (RefNow+index-1)  % index-1 is the number of Ref  
+  LocalSeq = SeqFrequency(RandSequence(j),:);  % Select the right permutation
+  % TORC
+  if strcmp(TORC,'yes')
+    [wTorc, eTorc] = waveform(TorcObj, RandTORC(j));
+    MTORC = maxLocalStd(wTorc,fs,length(wTorc)/fs);
+  else
+    wTorc = []; MTORC = 1;
+  end 
   
-  %if j <  RefNow+index+1 && strcmp(Stimtype,'With Ref')
-   % if strcmp(IsRef,'yes')
-      
-      LocalSeq = SeqFrequency(RandSequence(j),:) ;
-      
-      if strcmp(TORC,'yes')
-        [wTorc, eTorc] = waveform(TorcObj, RandTORC(j));
-      else
-        wTorc = 0;
-      end
-      
-      while LocalSeq == Frequency
-        LocalSeq = SeqFrequency(RandSequence(RefNow+NextTry+index),:);
-        NextTry = NextTry +1;
-      end
-      
-      wSeq = zeros(1,1);
-      
-      for i=1:length(Frequency)
-        if strcmp(SameRef,'yes')
-          temp = 1;
-         w0=addenv(sin(2*pi*Frequency(2)*t),fs);  
-         % w0=addenv(sin(2*pi*LocalSeq(temp)*t),fs);
-          wSeq=[wSeq;w0(:);gap(:)];
-        else
-          temp = i;
-          w0=addenv(sin(2*pi*LocalSeq(temp)*t),fs);
-          wSeq=[wSeq;w0(:);gap(:)];
-        end
-       
-      end
-      
-      MSeq = maxLocalStd(wSeq,fs,length(wSeq)/fs);
-      MTORC = maxLocalStd(wTorc,fs,length(wTorc)/fs);
-      
-      ev = AddEvent(ev, ['ReferenceSequence , ', num2str(j-RefNow), ' / ',num2str(index), ' - ', num2str(TrialNum) ],...
-        [ ], ev(end).StopTime, ev(end).StopTime + length([wSeq(:);gapSeq(1:round(length(gapSeq)/2));wTorc(:);gapSeq(:)])/fs );
-      
-      w=[w;10^(LoudnessCue/10)*wSeq(:)/MSeq;gapSeq(1:round(length(gapSeq)/2));wTorc(:)/MTORC;gapSeq(:)];
-      
-      %     if i==1
-      %        w=[prestim;w];
-      %        ev=ev_struct(ev,['Note ' num2str(Frequency(i))],PreStimSilence,NoteDur,NoteGap);
-      %     else
-      %        ev=ev_struct(ev,['Note ' num2str(Frequency(i))],0,NoteDur,NoteGap);
-      %     end
-  %  end
-    
-  %else%if j == RefNow+index +1
+  wSeq = [];  
+  for FreqNum = 1:length(Frequency)
+    if strcmp(SameRef,'yes')
+      w0 = addenv(sin(2*pi*Frequency(UniqueToneIndex)*t),fs);
+    else
+      w0 = addenv(sin(2*pi*LocalSeq(FreqNum)*t),fs);
+    end
+    wSeq = [wSeq;w0(:);gap(:)];    
   end
+  
+  MSeq = maxLocalStd(wSeq,fs,length(wSeq)/fs);
+  Segment2Add = [10^(LoudnessCue/20)*wSeq(:)/MSeq ; gapSeq(:) ; wTorc(:)/MTORC ; gapSeq(:)];
+  
+  ev = AddEvent(ev, ['ReferenceSequence , ', num2str(j-RefNow), ' / ',num2str(index), ' - ', num2str(TrialNum) ],...
+    [ ], ev(end).StopTime, ev(end).StopTime + length(Segment2Add)/fs );
+  
+  w = [w ; Segment2Add];
+  
+  %     if i==1
+  %        w=[prestim;w];
+  %        ev=ev_struct(ev,['Note ' num2str(Frequency(i))],PreStimSilence,ToneDur,ToneGap);
+  %     else
+  %        ev=ev_struct(ev,['Note ' num2str(Frequency(i))],0,ToneDur,ToneGap);
+  %     end
 end
 
-    for k=1:length(Frequency)
-      
-      wTarg=addenv(sin(2*pi*Frequency(k)*t),fs);
-      TargetSequence=[TargetSequence;wTarg(:);gap(:)];
-      
-    end
-    
-    if strcmp(TORC,'yes')
-      [wTorc, eTorc] = waveform(TorcObj, RandTORC(j+1));
-    else
-      wTorc = 0;
-    end
-    MSeq = maxLocalStd(TargetSequence(:),fs,length(TargetSequence(:))/fs);
-    MTORC = maxLocalStd(wTorc,fs,length(wTorc)/fs);
-    
-    ev = AddEvent(ev, ['TargetSequence ' , ' - ',num2str(TrialNum) ],...
-      [ ], ev(end).StopTime, ev(end).StopTime + length(TargetSequence(:))/fs );
-    
-    %w=[TargetSequence(:);zeros(3*fs,1);w;TargetSequence(:);gapSeq(:);wTorc(:)];
-    w=[w;TargetSequence(:)/MSeq;gapSeq(1:round(length(gapSeq)/2));wTorc(:)/MTORC;gapSeq(:);zeros(round(0.3*fs),1);Ybuzz(:)];
-    %ev=ev_struct(ev,['Note ' num2str(Frequency(i))],0,NoteDur,PostStimSilence);
-    
-  
-  
+% TARGET
+TargetSequence = [];
+for FreqNum = 1:length(Frequency)
+  wTarg = addenv(sin(2*pi*Frequency(FreqNum)*t),fs);
+  TargetSequence = [TargetSequence ; wTarg(:) ; gap(:)];
+end
+if strcmp(TORC,'yes')
+  [wTorc, eTorc] = waveform(TorcObj, RandTORC(j+1));
+  MTORC = maxLocalStd(wTorc,fs,length(wTorc)/fs);
+else
+  wTorc = []; MTORC = 1;
+end
+MSeq = maxLocalStd(TargetSequence(:),fs,length(TargetSequence(:))/fs);
+ev = AddEvent(ev, ['TargetSequence' , ' - ',num2str(TrialNum)  , ' - ' , num2str(index) ],...
+  [ ], ev(end).StopTime, ev(end).StopTime + length(TargetSequence(:))/fs );
 
+%w=[TargetSequence(:);zeros(3*fs,1);w;TargetSequence(:);gapSeq(:);wTorc(:)];
+Segment2Add = [TargetSequence(:)/MSeq ; gapSeq(:) ; wTorc(:)/MTORC ; gapSeq(:)];
+w = [w ; Segment2Add];
+%ev=ev_struct(ev,['Note ' num2str(Frequency(i))],0,ToneDur,PostStimSilence);
+TimeLickWindow = length([gapSeq(:) ; wTorc(:) ; gapSeq(:)]);
+ev = AddEvent(ev, 'LickWindow', [], ev(end).StopTime, ev(end).StopTime+TimeLickWindow/fs);
 
-%w = 5 * w/max(abs(w));
-%soundsc(w,fs);
-%wavwrite(w,fs,'4 sequences 150 ms');
+% POSTSTIM
+w = [w ; poststim(:)];
+ev = AddEvent(ev,['PostStimSilence - ' , num2str(TrialNum)],[], ev(end).StopTime, ev(end).StopTime + PostStimSilence); 
 
-
-% ADD EVENTS
-%ev=[]; ev = AddEvent(ev,[''],[],0,PreStimSilence); 
-if exist('Mode','var') && strcmp(Mode,'Simulation'); return; end
-    TimeEndRefSeq = length(w) - length([TargetSequence(:);gapSeq(1:round(length(gapSeq)/2));wTorc(:)/MTORC;gapSeq(:);Ybuzz(:)]); 
-    TimeEndTargSeq = length(w) - length([gapSeq(1:round(length(gapSeq)/2));wTorc(:)/MTORC;gapSeq(:);Ybuzz(:)]); 
-    TimeLickWindow = length([gapSeq(1:round(length(gapSeq)/2));wTorc(:)/MTORC;gapSeq(:)]);
-% 
 % ev = AddEvent(ev, ['RefSequence , ' num2str(index),' - ',num2str(TrialNum) ],...
 %   [ ], ev(end).StopTime, ev(end).StopTime + TimeEndRefSeq);    
 %     
@@ -238,10 +177,7 @@ if exist('Mode','var') && strcmp(Mode,'Simulation'); return; end
 % % [a,b,c]  = ParseStimEvent(ev(end),0); 
 % ev = AddEvent(ev, ['LickWindow ,' b ',' c], [], ev(end).StopTime, ev(end).StopTime+TimeLickWindow);
 
-ev = AddEvent(ev, 'LickWindow', [], ev(end).StopTime, ev(end).StopTime+TimeLickWindow/fs);
-ev = AddEvent(ev, 'BuzzSnooze', [], ev(end).StopTime, ev(end).StopTime+length(Ybuzz)/fs);
-% x: duree entre la fin de la sequence et la fin du son
-
+if exist('Mode','var') && strcmp(Mode,'Simulation'); return; end
 
 
 %add 5 ms rise/fall time ===================================
@@ -274,49 +210,4 @@ ev(N+2) = struct('Note',['Stim , ' Name],'StartTime',...
               offset+PreStim, 'StopTime', offset+PreStim+Duration,'Trial',[]);
 ev(N+3) = struct('Note',['PostStimSilence , ' Name],...
               'StartTime',offset+PreStim+Duration, 'StopTime',offset+PreStim+Duration+PostStim,'Trial',[]);
-
-
-%============================================= 
-function [x] = dosynth(freqs,amps,phase,d,fs);
-% function [x] = dosynth(freqs,amps,phase,d,fs);
-% freqs: list of frequencies;
-% amps: list of amplitudes
-% phase: list of phases (in radian)
-% d: duration
-% fs: sampling frequency
-
-t = [0:1/fs:d-1/fs];
-x = zeros(size(t));
-for i = 1:1:length(freqs);
-	x = x+amps(i)*cos(2*pi*freqs(i)*t+phase(i));
-end
-    
-%=============================================
-function [xr] = ramp(x,rtime,fs);
-% [xr] = ramp(x,rtime,fs);
-% rtime in seconds!!
-
-lt = length(x);
-tr = [0:1/fs:rtime-1/fs];
-lr = length(tr);
-rampup = ((cos(2*pi*tr/rtime/2+pi)+1)/2).^2; 
-rampdown = ((cos(2*pi*tr/rtime/2)+1)/2).^2; 
-xr = x;
-xr(:,1:lr) = rampup.*x(:,1:lr);
-xr(:,lt-lr+1:lt) = rampdown.*x(:,lt-lr+1:lt);
-
-%============================================================
-function [r] = rms(x)
-
-if size(x,1)>size(x,2)
-  x = x';
-end
-
-if size(x,1) == 1
-  r = sqrt(x*x'/size(x,2));
-else
-  r(1) = sqrt(x(1,:)*x(1,:)'/size(x,2));
-  r(2) = sqrt(x(2,:)*x(2,:)'/size(x,2));
-end
-
 
