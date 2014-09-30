@@ -112,7 +112,8 @@ if ~ReuseFigure
   % CREATE NEW AXES
   for ii=1:NElectrodes
     Electrode = Electrodes(ii);
-    DC{ii} = DCAll{end-round(ElectrodesXY(Electrode,2))+1,round(ElectrodesXY(Electrode,1))};
+%     DC{ii} = DCAll{end-round(ElectrodesXY(Electrode,2))+1,round(ElectrodesXY(Electrode,1))};
+    DC{ii} = DCAll{end-round(ElectrodesXY(ii,2))+1,round(ElectrodesXY(ii,1))};
     figure(BATCH_FIGURE_HANDLE); % MAKE SURE TO PLOT INTO CORRECT FIGURE
     AH(ii) = axes('Position',DC{ii},'FontSize',6);
   end

@@ -190,14 +190,35 @@ if isempty(strfind(upper(datause),'LICK')) && ...
            (strcmpi(exptparams.TrialObject.ReferenceHandle.descriptor, 'ComplexChord') && ...
                exptparams.TrialObject.ReferenceHandle.SecondToneAtten==-1 && ...
                sum(exptparams.TrialObject.ReferenceHandle.AM)==0 && ...
-               isempty(exptparams.TrialObject.ReferenceHandle.LightSubset))),
+               isempty(exptparams.TrialObject.ReferenceHandle.LightSubset))) || ...
+           (  isfield(exptparams.TrialObject,'TargetHandle') &&  isfield(exptparams.TrialObject.TargetHandle,'descriptor') && ...
+           ( strcmpi(exptparams.TrialObject.TargetHandle.descriptor, 'TextureMorphing') &&  str2num(exptparams.TrialObject.TargetHandle.FrozenPatternsNb)>0 ) )
 
-    for cnt1=1:length(tags),
+    if  ~isfield(exptparams.TrialObject.TargetHandle,'descriptor') || (~( strcmpi(exptparams.TrialObject.TargetHandle.descriptor, 'TextureMorphing') &&  str2num(exptparams.TrialObject.TargetHandle.FrozenPatternsNb)>0 ))     
+      for cnt1=1:length(tags),
         temptags = strrep(strsep(tags{cnt1},',',1),' ','');
         unsortedtags(cnt1) = str2num(temptags{2});
+      end
+      [sortedtags, index] = sort(unsortedtags); % sort the numeric tags
+    else
+      RepTag = strrep(tags,'-',',');
+      for TagNum = 1:length(tags)
+        SpcInd = findstr( RepTag{TagNum} , ' ');
+        MatCond(TagNum,:) = str2num(RepTag{TagNum}(SpcInd(3):SpcInd(end-2)));
+      end
+%       P.MFile = mfile;
+%       P.Identifier = MD_MFile2Identifier(P.MFile);
+%       I = getRecInfo('Identifier',P.Identifier,'Quick',2);
+%       Trials = Events2Trials('Events',I.exptevents,'Stimclass','texturemorphing','Runclass',I.Runclass,...
+%         'RefSO',I.exptparams.TrialObject.ReferenceHandle,'TargetSO',I.exptparams.TrialObject.TargetHandle);
+      [a,IndexSortInd] = sort(MatCond(:,2),'ascend');
+      [a,ToCSortInd] = sort(MatCond(IndexSortInd,end),'descend'); ToCSortInd = IndexSortInd(ToCSortInd);
+      [a,DiffSortInd] = sort(MatCond(ToCSortInd,5),'descend'); DiffSortInd = ToCSortInd(DiffSortInd);
+      [a,MorphingSortInd] = sort(MatCond(DiffSortInd,4),'ascend'); MorphingSortInd = DiffSortInd(MorphingSortInd);
+      [a,FrozenSortInd] = sort(MatCond(MorphingSortInd,end-1),'ascend');
+      index = MorphingSortInd(FrozenSortInd);
+      % sorted by FrozenNum/MorphingNum/DiffNum/ToC/TrialNb
     end
-
-    [sortedtags, index] = sort(unsortedtags); % sort the numeric tags
 
     tags={tags{index}};
     r=r(:,:,index);
@@ -516,9 +537,10 @@ end
 
 if options.raster,
    LabelIndex  = find(~strcmpi(labels,'EMPTY'));
-   if length(LabelIndex)>25
-      LabelIndex = LabelIndex(round(linspace(1,length(LabelIndex),25)));
-   end
+   %14/08-YB: temp modif
+%    if length(LabelIndex)>25
+%       LabelIndex = LabelIndex(round(linspace(1,length(LabelIndex),25)));
+%    end
    if max(LabelIndex)>1,
       set(gca, 'ytick', LabelIndex/size(data,1));
       set(gca, 'yticklabel', labels(LabelIndex));

@@ -4,15 +4,15 @@ FrozenAdress = 'C:\Code\baphy\Utilities\UtilitiesYves\FrozenPatterns';
 FrozenPatternsNb = 16;
 GenerateFrozen = 1;
 ChordDuration = 0.03;
-FrozenDuration = 1;   % s
+FrozenDuration = 2.5;   % s
 FrozenDuration = round(FrozenDuration/ChordDuration)*ChordDuration;
-IsFef = []; Mode = []; 
+IsFef = []; Mode = [];
 for FrozenNum = 1:FrozenPatternsNb
     o = TextureMorphing();
     o = set(o,'Inverse_D0Dbis','no');
     o = set(o,'PreStimSilence',0);
-    o = set(o,'MinToC',num2str(ceil(2*FrozenDuration)));
-    o = set(o,'MaxToC',num2str(ceil(3*FrozenDuration)));
+    o = set(o,'MinToC',num2str(FrozenDuration));
+    o = set(o,'MaxToC',num2str(FrozenDuration));
     o = set(o,'FrequencyRange',[500 20000]);
     o = ObjUpdate(o);
     MaxIndex = get(o,'MaxIndex');

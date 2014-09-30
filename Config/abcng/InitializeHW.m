@@ -44,8 +44,8 @@ switch globalparams.HWSetup
     %% ANALOG INPUT
     HW=niCreateAI(HW,DAQID,'ai0:1','Touch,Microphone',['/',DAQID,'/PFI0']);
     
-    %% ANALOG OUTPUT
-    HW=niCreateAO(HW,DAQID,'ao0:1','SoundOutL,SoundOutR',['/',DAQID,'/PFI1']);
+    %% ANALOG OUTPUT % 14/09-YB: rmv independant audio channels for introducing Opto
+    HW=niCreateAO(HW,DAQID,'ao0:1','SoundOut,OptTrig',['/',DAQID,'/PFI1']);
     
     %% SETUP SPEAKER CALIBRATION
     switch globalparams.HWSetup

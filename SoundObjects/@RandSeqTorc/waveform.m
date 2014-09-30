@@ -17,35 +17,32 @@ Intervals = get(o,'Intervals');     % in semitones
 IdenticalTones= get(o,'IdenticalTones');
 LoudnessCue = get(o,'LoudnessCue');
 
+% Create an instance of TORC object:
 TORC = get(o,'TORC');
 TorcDur = get(o,'TorcDuration');
 TorcFreq = get(o,'FrequencyRange');
 TorcRates = get(o,'TorcRates');
-
+TORCPreStimSilence = 0; TORCPostStimSilence = 0;
+TorcObj = Torc(fs,0, ...                          % No Loudness
+    TORCPreStimSilence,TORCPostStimSilence,TorcDur, TorcFreq, TorcRates);
+  
 % RANDOM NUMBER GENERATOR
 Key = get(o,'Key');
 TrialKey = RandStream('mrg32k3a','Seed',Key);
 PastRef = get(o,'PastRef');
 
 % PastRef STORES THE PREVIOUS INDEX
-if isempty(PastRef) 
+if isempty(PastRef)  % First trial
    RefNow = 0;
    o = set(o,'PastRef',[PastRef index]);
-elseif length(PastRef)>=TrialNum && index==PastRef(TrialNum)  % When you load a SO from a previous experiment
+elseif length(PastRef) < TrialNum   % during the experiment, only this condition should be true
+   RefNow = sum(PastRef);
+   o = set(o,'PastRef',[PastRef index]);
+elseif length(PastRef) >= TrialNum && index == PastRef(TrialNum)  % When you load a SO from a previous experiment
    RefNow = sum(PastRef(1:TrialNum)) - PastRef(TrialNum);
 elseif length(PastRef) > TrialNum && index ~= PastRef(TrialNum)
    error('Valeur index attendue: %d', PastRef(TrialNum));
-elseif length(PastRef) < TrialNum
-   RefNow = sum(PastRef);
-   o = set(o,'PastRef',[PastRef index]);
 end
-
-% Create an instance of torc object:
-TorcObj = Torc(fs,...
-    0, ...                          % No Loudness
-    PreStimSilence, ...    % Put the PreStimSilence before torc.
-    PostStimSilence, ...     % Put half of gap after torc, the other half goes before tone
-    TorcDur, TorcFreq, TorcRates);
 
 % Now generate a tone with specified frequency:
 Frequency = FirstFrequency;

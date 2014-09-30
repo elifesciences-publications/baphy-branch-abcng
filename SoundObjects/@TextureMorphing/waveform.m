@@ -34,10 +34,14 @@ CurrentRepetitionNb = ceil(Global_TrialNb/MaxIndex);
 
 % GENERATE Timing of Change [ToC]
 if isempty(IsToc) || IsToc==0
+  if Par.MinToC == Par.MaxToC
+    ToC = Par.MinToC;
+  else
     RToC = RandStream('mt19937ar','Seed',IniSeed*Global_TrialNb);   % mcg16807 is fucked up
     lambda = 0.15; 
     ToC = PoissonProcessPsychophysics(lambda,Par.MaxToC-Par.MinToC,1,RToC);
     ToC = ToC + Par.MinToC;
+  end
 else
     ToC = IsToc;
 end
@@ -66,6 +70,17 @@ D0param = [FO OctaveNb Par.IniSeed Global_TrialNb Quantal_Delta];
 Dparam = [D0param(1:end-3) Bins2Change{ChangedD_Num}(MorphingNum,:)];    % We don't need a Seed to modify the original distribution
 [D0,ChangeD,D0information] = BuildMorphing(D0type,Dtype,D0param,Dparam,DistriBinNb,XDistri,MorphingNum,DiffLvl,PlotDistributions,sF,FrequencySpace);
 
+% REVERSE S0 AND Sbis
+if Reverse            % Rem.: 'NoFrozen' is compulsory when 'Inverse_D0Dbis'==1
+    if not( strcmp(Mode,'NoFrozen') )
+      disp('WARNING: ''NoFrozen'' is compulsory when ''Inverse_D0Dbis''==1.')
+    end
+    Stimulus0Duration = StimulusBisDuration;
+    StimulusBisDuration = ToC;
+elseif not(Reverse)
+    Stimulus0Duration = ToC; 
+end
+
 % GENERATE SEQUENCES OF FROZEN PATTERNS // LOAD THE APPROPRIATE ONE
 if not( strcmp(Mode,'NoFrozen') )
     FrozenRepetitionNb = ceil(MaxIndex*CurrentRepetitionNb/FrozenPatternsNb);
@@ -82,15 +97,13 @@ if not( strcmp(Mode,'NoFrozen') )
     end
     load([ FrozenPatternsAdress filesep 'FrozenPatterns.mat' ]);
     FrozenPattern = FrozenPatterns{FrozenPatternNum};
+    if Par.MinToC>=FrozenPatternDuration
+      Stimulus0Duration = Stimulus0Duration-FrozenPatternDuration;
+    else
+      disp(['WARNING: MinToc should be larger than FrozenPatternDuration (=' num2str(FrozenPatternDuration) ').'])
+    end
 else
     FrozenPatternNum = 0;
-end
-
-if Reverse            % Rem.: 'NoFrozen' is compulsory when 'Inverse_D0Dbis'==1
-    Stimulus0Duration = StimulusBisDuration;
-    StimulusBisDuration = ToC;
-elseif not(Reverse)
-    Stimulus0Duration = ToC; 
 end
 
 % BUILD D0 STIMULUS ('REFERENCE' located in the TARGET)
