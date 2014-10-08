@@ -1,4 +1,4 @@
-function [ w , ev , O , D0 , ChangeD , Parameters] = waveform(O,Index,IsToc,Mode,Global_TrialNb)
+function [ w , ev , O , D0 , ChangeD , Parameters] = waveform(O,Index,IsRef,Mode,Global_TrialNb)
 % Waveform generator for the class TextureMorphing
 % See main file for how the Index selects the stimuli
 % Adapted from BiasedShepardPair - Yves 2013
@@ -33,17 +33,13 @@ if Index > MaxIndex; error('Number of available Stimuli exceeded'); end
 CurrentRepetitionNb = ceil(Global_TrialNb/MaxIndex);
 
 % GENERATE Timing of Change [ToC]
-if isempty(IsToc) || IsToc==0
-  if Par.MinToC == Par.MaxToC
+if Par.MinToC == Par.MaxToC
     ToC = Par.MinToC;
-  else
+else
     RToC = RandStream('mt19937ar','Seed',IniSeed*Global_TrialNb);   % mcg16807 is fucked up
-    lambda = 0.15; 
+    lambda = 0.15;
     ToC = PoissonProcessPsychophysics(lambda,Par.MaxToC-Par.MinToC,1,RToC);
     ToC = ToC + Par.MinToC;
-  end
-else
-    ToC = IsToc;
 end
 ToC = round(ToC/ChordDuration)*ChordDuration;
 
@@ -163,7 +159,9 @@ ev = AddEvent(ev,['STIM , ' StimulusOrderStr ' ' num2str(Index),' - ',num2str(Gl
 [a,b,c]  = ParseStimEvent(ev(2),0);
 ev(1).Note = ['PreStimSilence ,' b ',' c];
 [a,b,c]  = ParseStimEvent(ev(end),0); 
-ev = AddEvent(ev,['PostStimSilence ,' b ',' c],[],ev(end).StopTime,ev(end).StopTime+AfterChangeSoundDuration+PostStimSilence);
+ev = AddEvent(ev,['Change ,' b ',' c],[],ev(end).StopTime,ev(end).StopTime+AfterChangeSoundDuration);
+[a,b,c]  = ParseStimEvent(ev(end),0); 
+ev = AddEvent(ev,['PostStimSilence ,' b ',' c],[],ev(end).StopTime,ev(end).StopTime+PostStimSilence);
 
 % OUPUT ON THE FLY STIM. PARAMETERS RANDOMLY BUT DETERMINISTICALLY GENERATED
 if nargout>5

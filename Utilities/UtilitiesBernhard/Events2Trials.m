@@ -74,6 +74,19 @@ else % PARSE INDICES BY STIMCLASS
           end
       end
       
+	case 'optosilence'
+        T.Durations = [P.Events(PostSilenceInd).StartTime] - [P.Events(PreSilenceInd).StopTime];
+        for iT = 1:length(TrialInd)
+             T.Tags{iT} = Notes{TrialInd(iT)+2};
+             if strcmp(T.Tags{iT}(find(T.Tags{iT}==',',1,'last')+2:end),'reference+light')
+                 T.Indices{iT} = 1;
+             elseif strcmp(T.Tags{iT}(find(T.Tags{iT}==',',1,'last')+2:end),'reference+nolight')
+                 T.Indices{iT} = 2;
+             else
+                 disp('tag not recognized');
+             end
+        end
+      
     case 'texturemorphing'
       TargetStimInd = StimInd(~cellfun(@isempty,strfind(Notes(StimInd),', target')));
       Vars = {'Index','Global_TrialNb','ChangedD_Num','MorphingNum','DifficultyNum','FrozenPatternNum','ToC'};
