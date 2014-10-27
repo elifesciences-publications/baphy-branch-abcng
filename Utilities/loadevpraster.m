@@ -133,7 +133,6 @@ if lfp==2,
    end
 end
 
-
 [pp,bb,ee]=fileparts(evpfile);
 bbpref=strsep(bb,'_');
 bbpref=bbpref{1};
@@ -296,7 +295,7 @@ if isempty(hittrials),
 %    [hittime,hittrials]=evtimes(exptevents,'BEHAVIOR,PUMP*');
 end
 if trialcount<1 || ~globalparams.ExperimentComplete,
-    trialcount=exptevents(end).Trial;
+    trialcount=min(trialcount,exptevents(end).Trial);
 end
 if ~exist('trialrange','var') || isempty(trialrange),
     if ~includeincorrect && ~isempty(hittrials),
