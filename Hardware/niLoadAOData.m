@@ -14,7 +14,8 @@ AOChannels=AO.NumChannels;
 if DataChannels==1 && AOChannels>1, 
   Data=repmat(Data,[1 AOChannels]);
 elseif DataChannels>1 && DataChannels~=AOChannels,
-  error('expect size(Data,2) to match number of output channels');
+  error(sprintf('size(Data,2)=%d, expected to match AO count (%d)',...
+      size(Data,2),AOChannels));
 end
 
 %make sure to align Data columns to output channels;
