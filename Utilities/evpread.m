@@ -45,7 +45,7 @@ if isempty(USECOMMONREFERENCE) USECOMMONREFERENCE = 1; end
 Info = [];
 
 %% PARSE ARGUMENTS
-if length(varargin) > 0 & ~ischar(varargin{1}) % OLD ARGUMENT STYLE
+if ~isempty(varargin) && ~ischar(varargin{1}) % OLD ARGUMENT STYLE
   %P.spikechans = varargin{1};
   P.spikeelecs = varargin{1};
   if length(varargin)>1 P.auxchans = varargin{2}; end
@@ -69,7 +69,7 @@ if ~isfield(P,'rawchans') P.rawchans = [ ]; end
 if ~isfield(P,'trials') || isempty(P.trials), P.trials = inf; end
 if ~isfield(P,'filterstyle') P.filterstyle = 'butter'; end
 if ~isfield(P,'wrap') P.wrap = 0; end
-if ~isfield(P,'SRlfp') P.SRlfp = 2000; end
+if ~isfield(P,'SRlfp') P.SRlfp = 2000; end % downsample 
 if ~isfield(P,'dataformat') P.dataformat = 'linear'; end
 
 %% CHECK EVP VERSION
@@ -88,7 +88,12 @@ if ( ~isempty(P.spikechans) || ~exist(filename,'file')),
 end
 
 %% CHECK FOR RESORTING OF CHANNELS (MAPS CHANNEL TO ELECTRODES)
-P = LF_checkElecs2Chans(filename,P);
+if dbopen,
+    P = LF_checkElecs2Chans(filename,P);
+else
+    disp('no celldb connection, skipping LF_checkElecs2Chans');
+end
+
 
 %% BRANCH FOR DIFFERENT EVP VERSIONS
 switch EVPVERSION

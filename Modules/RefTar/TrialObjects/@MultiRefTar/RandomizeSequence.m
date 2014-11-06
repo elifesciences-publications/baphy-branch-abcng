@@ -7,8 +7,8 @@ function [exptparams] = RandomizeSequence (o, exptparams, globalparams, RepIndex
 % SVD 2011-06-06, ripped off of Reference Target
 %
 
-if nargin<4, RepOrTrial = 0;end   % default is its a trial call
-if nargin<3, RepIndex = 1;end
+if ~exist('RepOrTrial','var'), RepOrTrial = 0;end   % default is its a trial call
+if ~exist('RepIndex','var'), RepIndex = 1;end
 
 % read the trial parameters
 par = get(o);
@@ -52,19 +52,34 @@ if RepOrTrial == 0,
         
     else
         % was either a false alarm or miss, need to repeat current trial
-        
-        fprintf('Error trial: repeating and incrementing the rep trials from %d to %d\n',...
-            par.NumberOfTrials,par.NumberOfTrials+1);
-        o=set(o,'ReferenceIndices',...
-            {par.ReferenceIndices{1:trialidx} par.ReferenceIndices{trialidx:end}});
-        NewTargetIndices={par.TargetIndices{1:trialidx} par.TargetIndices{trialidx:end}};
-        NewCatchIndices={par.CatchIndices{1:trialidx} par.CatchIndices{trialidx:end}};
-        NewCatchSeg=[par.CatchSeg(1:trialidx); par.CatchSeg(trialidx:end)];
-        if strcmpi(exptparams.Performance(end).ThisTrial,'Miss') && ~isempty(par.TargetIndices{trialidx}),
+        NewNumberOfTrials=par.NumberOfTrials+1;
+        if strcmpi(exptparams.Performance(end).ThisTrial,'Miss') && ...
+                ~isempty(par.TargetIndices{trialidx}),
             NewTargetIndex=find(rand>[0 cumsum(TargetIdxFreq)], 1, 'last' );
-            fprintf('Missed last target.  Repeating same reference with targetidx=%d\n',NewTargetIndex);
-            NewTargetIndices{trialidx+1}=NewTargetIndex;
+            newslot=ceil(rand*(NewNumberOfTrials-trialidx))+trialidx;
+            fprintf('Miss: Repeating reference with targetidx=%d\n',...
+                    NewTargetIndex);
+        else
+            NewTargetIndex=par.TargetIndices{trialidx};
+            newslot=trialidx+1;
+            fprintf('FA: repeating and upping trial count from %d to %d\n',...
+                    par.NumberOfTrials,NewNumberOfTrials);
         end
+        
+        NewReferenceIndices={par.ReferenceIndices{1:(newslot-1)} ...
+                            par.ReferenceIndices{trialidx} ...
+                            par.ReferenceIndices{newslot:end}};
+        NewTargetIndices={par.TargetIndices{1:(newslot-1)} ...
+                          NewTargetIndex ...
+                          par.TargetIndices{newslot:end}};
+        NewCatchIndices={par.CatchIndices{1:(newslot-1)} ...
+                         par.CatchIndices{trialidx} ...
+                         par.CatchIndices{newslot:end}};
+        NewCatchSeg=[par.CatchSeg(1:(newslot-1));  ...
+                     par.CatchSeg(trialidx);  ...
+                     par.CatchSeg(newslot:end)];
+        
+        o=set(o,'ReferenceIndices',NewReferenceIndices);
         o=set(o,'TargetIndices',NewTargetIndices);
         o=set(o,'CatchIndices',NewCatchIndices);
         o=set(o,'CatchSeg',NewCatchSeg);

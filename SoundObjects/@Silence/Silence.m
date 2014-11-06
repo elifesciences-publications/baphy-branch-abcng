@@ -8,7 +8,9 @@ function o = Silence (o);
 switch nargin
 case 0
     % if no input arguments, create a default object
-    s = SoundObject ('Silence', 40000, 0, 0, 0, {'Silence'}, 1, {'SamplingRate','edit',40000, 'Duration','edit',1});
+    s = SoundObject ('Silence', 40000, 0, 0, 0, {'Silence'}, 1, {'SamplingRate','edit',40000 ,...
+        'RefRepCount','edit',1,'Duration','edit',1});
+    o.RefRepCount = 1;
     o.Duration = 1;
     o = class(o,'Silence',s);
     o = ObjUpdate (o);

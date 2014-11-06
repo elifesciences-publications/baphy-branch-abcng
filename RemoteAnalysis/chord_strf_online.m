@@ -196,12 +196,14 @@ if strcmpi(exptparams.TrialObject.ReferenceClass,'RandomTone') || ...
     set(gca,'XTick',stimlabelidx,'XTickLabel',stimulusKHz(stimlabelidx));
     
     if RISVAR,
-        legend('Onset','Sust');
+        hl=legend('Onset','Sust');
         ylabel('Spike std (spikes/sec)');
     else
-        legend('Onset','Sust','Offset');
+        hl=legend('Onset','Sust','Offset');
         ylabel('Spike rate (spikes/sec)');
     end
+    legend(gca,'boxoff');
+    set(hl,'FontSize',5);
     if max(stimulusvalues)>100
         xlabel('Stimulus frequency (KHz)');
     else

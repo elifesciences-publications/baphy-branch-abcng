@@ -167,9 +167,12 @@ if strcmpi(exptparams.TrialObjectClass,'StreamNoise') || ...
             max(find(exptparams.TrialObject.ReferenceCountFreq)-1);
     end
     BigStimMatrix=-ones(SamplesPerTrial,2,TrialCount);
-    if strcmpi(filtfmt,'qspecgram'),
+    if strcmpi(filtfmt,''),
         [qstim,tstimparam]...
             =loadstimfrombaphy(parmfile,[],[],'specgramv',fsout,chancount);
+    elseif strcmpi(filtfmt,'qlspecgram'),
+        [qstim,tstimparam]...
+            =loadstimfrombaphy(parmfile,[],[],'specgram',fsout,chancount);
     end
     
 else
@@ -180,7 +183,7 @@ MaxTrialLen=round(max(evtimes(exptevents,'TRIALSTOP').*fsout));
 for trialidx=1:TrialCount,
     ThisTrialLength=evtimes(exptevents,'TRIALSTOP',trialidx);
     fprintf('Trial %d (len %.2f)\n',trialidx,ThisTrialLength);
-    if strcmpi(filtfmt,'qspecgram'),
+    if strcmpi(filtfmt,'qspecgram') || strcmpi(filtfmt,'qlspecgram'),
         ThisTrialBins=round(ThisTrialLength.*fsout);
         w=zeros(ThisTrialBins,chancount);
     elseif strcmpi(filtfmt,'envelope'),
@@ -217,7 +220,7 @@ for trialidx=1:TrialCount,
         n=get(o,'Names');
         ff=find(strcmp(strtrim(NoteParts{2}),n),1);
         
-        if strcmpi(filtfmt,'qspecgram') && ...
+        if (strcmpi(filtfmt,'qspecgram') || strcmpi(filtfmt,'qlspecgram')) && ...
                 (strcmpi(exptparams.TrialObjectClass,'StreamNoise') ||...
                  strcmpi(exptparams.TrialObjectClass,'RepDetect')),
             % special treatment for stream noise
@@ -307,8 +310,8 @@ for trialidx=1:TrialCount,
     end
     
     if strcmpi(filtfmt,'none') || strcmpi(filtfmt,'wav') ||...
-            strcmpi(filtfmt,'envelope') || strcmpi(filtfmt,'qspecgram'),
-        if ~strcmpi(filtfmt,'envelope') && ~strcmpi(filtfmt,'qspecgram'),
+            strcmpi(filtfmt,'envelope') || strcmpi(filtfmt,'qspecgram') || strcmpi(filtfmt,'qlspecgram'),
+        if ~strcmpi(filtfmt,'envelope') && ~strcmpi(filtfmt,'qspecgram') && ~strcmpi(filtfmt,'qlspecgram'),
             % envelope has already been downsampled
             tstim=[];
             for ww=1:size(w,2),
@@ -327,11 +330,19 @@ for trialidx=1:TrialCount,
         else
             sfigure(fh);
         end
+        if trialidx==1
+            stim=zeros(chancount,MaxTrialLen,TrialCount,maxstreams).*nan;
+        end
+        
         for sidx=1:size(w,2),
-            [tstim,tstimparam]=...
-                wav2spectral(w(:,sidx),filtfmt,TrialFs,fsout,chancount);
-            if trialidx==1 && sidx==1,
-                stim=zeros(size(tstim,2),MaxTrialLen,TrialCount,maxstreams).*nan;
+            mm=max(find(abs(w(:,sidx))>0));
+            if ~isempty(mm),
+                fprintf('%d samples: ',mm);
+                [tstim,tstimparam]=...
+                    wav2spectral(w(1:mm,sidx),filtfmt,TrialFs,fsout,chancount);
+            else
+                fprintf('empty stream\n');
+                tstim(:)=0;
             end
             stim(:,1:size(tstim,1),trialidx,sidx)=tstim';
         end

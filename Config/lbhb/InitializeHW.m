@@ -12,7 +12,7 @@ function [HW, globalparams] = InitializeHW (globalparams)
 
 global FORCESAMPLINGRATE
 
-if ~exist('globalparams','var')
+if ~exist('globalparams','var'),
     globalparams=struct();
 end
 if ~isfield(globalparams,'HWSetup'),
@@ -44,12 +44,19 @@ switch globalparams.HWSetup
     niResetDevice(DAQID);
     
     %% DIGITAL IO
-    HW=niCreateDO(HW,DAQID,'port0/line0:1','TrigAI,TrigAO','InitState',[0 0]);
-    HW=niCreateDO(HW,DAQID,'port0/line2','Light','InitState',0);
+    
+    % Copied from LB-1 (yes, the comment below says copied from SB-1, but
+    % that was an older version of this setup).
+    HW=niCreateDO(HW,DAQID,'port0/line0:2','TrigAI,TrigAO,TrigAIInv','InitState',[0 0 1]);
+    % port0/line2 reserved for inverse TrigAI
     HW=niCreateDO(HW,DAQID,'port0/line3','Pump','InitState',0);
-    HW=niCreateDO(HW,DAQID,'port0/line4','Shock','InitState',0);
-
-    HW=niCreateDI(HW,DAQID,'port0/line5','Touch');
+    HW=niCreateDI(HW,DAQID,'port0/line4','Touch');
+    HW=niCreateDO(HW,DAQID,'port0/line5','Light','InitState',0);
+    HW=niCreateDO(HW,DAQID,'port0/line6','Light2','InitState',1);
+    HW=niCreateDO(HW,DAQID,'port0/line7','Light3','InitState',0);
+    %HW=niCreateDO(HW,DAQID,'port0/line4','Shock','InitState',0);
+    
+    %HW=niCreateDI(HW,DAQID,'port0/line5','Touch');
     
     %% ANALOG INPUT
     HW=niCreateAI(HW,DAQID,'ai0:1','Touch,Microphone','/Dev1/PFI0');
@@ -65,7 +72,7 @@ switch globalparams.HWSetup
     % no filter, so use higher AO sampling rate in some sound objects:
     FORCESAMPLINGRATE=[];
 
-  case {2,3},  % (LB-1) LARGE SOUND BOOTH 1 -- Copied mostly from SB-1
+  case {2,3,8,9},  % (LB-1) LARGE SOUND BOOTH 1 -- Copied mostly from SB-1
       % setup 2 = audio channel 1 (AO0) on Right
       % setup 3 = audio channel 2 (AO0) on Left
 
@@ -88,10 +95,17 @@ switch globalparams.HWSetup
     HW=niCreateAI(HW,DAQID,'ai0:1','Touch,Microphone','/Dev1/PFI0');
     
     %% ANALOG OUTPUT
+    % multiple configurations for the same booth
     if globalparams.HWSetup==2
         HW=niCreateAO(HW,DAQID,'ao0:1','SoundOut1,SoundOut2','/Dev1/PFI1');
-    else
+    elseif globalparams.HWSetup==3,
         HW=niCreateAO(HW,DAQID,'ao0:1','SoundOut2,SoundOut1','/Dev1/PFI1');
+    elseif globalparams.HWSetup==8,
+        HW=niCreateAO(HW,DAQID,'ao0:2','SoundOut2,SoundOut1,LightOut1',...
+                      '/Dev1/PFI1');
+    else,
+        HW=niCreateAO(HW,DAQID,'ao0:2','SoundOut2,SoundOut1,LightOut1',...
+                      '/Dev1/PFI1');
     end
     
     % no filter, so use higher AO sampling rate in some sound objects:

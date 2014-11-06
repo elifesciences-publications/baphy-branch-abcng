@@ -1,3 +1,4 @@
+
 function o = ObjUpdate (o);
 %
 
@@ -17,6 +18,8 @@ elseif soundset==4  %new infiant ferret VC set
    soundpath = [object_spec(1).path filesep 'Sounds_set4'];
 elseif soundset==5  %new infiant ferret VC set
    soundpath = [object_spec(1).path filesep 'Sounds_set5'];
+elseif soundset==6  % temporally distorted and noisy set of 3
+   soundpath = [object_spec(1).path filesep 'Sounds_set6'];
 else
     disp('Wrong subset!!'); 
     return; 

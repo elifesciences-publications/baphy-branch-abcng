@@ -180,7 +180,7 @@ for ii=1:NElectrodes
       elseif strcmpi(options.runclass,'RDT') || ...
               strcmpi(options.ReferenceClass,'NoiseSample'),
           if strcmp(options.datause,'Per trial') || strcmp(options.datause,'Per trial pre-target'),
-              options.filtfmt='qspecgram';
+              options.filtfmt='qlspecgram';
               options.rasterfs=100;
               
               % for RDT NoiseSamples, use boosting to estimate strf

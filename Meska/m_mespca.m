@@ -1488,10 +1488,12 @@ for ii=1:length(rawdata),
       
       if isfield(FILEDATA,'ReferenceClass'),
          if strcmp(FILEDATA.ReferenceClass,'Torc') || ...
+                 strcmp(FILEDATA.ReferenceClass,'Torc2') || ...
                  strcmp(FILEDATA.ReferenceClass,'NoiseBurst'),
             buttSTRF_Callback;
          elseif strcmp(FILEDATA.ReferenceClass,'RandomTone') || ...
-                 strcmp(FILEDATA.ReferenceClass,'SpNoise'),
+                 strcmp(FILEDATA.ReferenceClass,'SpNoise') || ...
+                 strcmp(FILEDATA.ReferenceClass,'FerretVocal'),
             buttRaster_Callback;
          end
       end

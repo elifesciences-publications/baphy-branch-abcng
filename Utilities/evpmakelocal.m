@@ -16,9 +16,9 @@ end
 copytoseil=0;
 if ~exist(filename,'file') && exist([filename,'.gz']),
    filename=[filename,'.gz'];
-elseif onseil && ~exist(filename,'file'),
-   filename=strrep(filename,'/homes/svd/data/','/auto/data/');
-
+elseif onseil==1 && ~exist(filename,'file'),
+   filename=strrep(filename,'/homes/svd/data/','/auto/data/')
+   
    copytoseil=1;
    
 elseif ~exist(filename,'file'),
@@ -109,8 +109,6 @@ elseif strcmp(filename((end-3):end),'.tgz'),
       evplocal=[LocalDir bb filesep dd(1).name];
       delete([bb '.tar']);
       cd(savepwd);
-      
-      
    end
 elseif (strcmpi(filename(1:3),'m:\') || ...
         strcmpi(filename(1:10),'/auto/data') || ...

@@ -272,7 +272,13 @@ switch lower(filtfmt),
     smfilt=ones(1,round(fsin/fsout))./round(fsin/fsout);
     gamma_envs=conv2(gamma_envs,smfilt,'same');
     stim=gamma_envs(:,round((fsin/fsout./2):(fsin/fsout):size(gamma_envs,2)))';
+  
     stimparam.ff=cfs;
+  case 'ozgf',
+    % One Zero Gammatone-like Filter (Lyon et al)    
+    [stim, cfs, Qs] = ozgf_filterbank(wav,200,20000,chancount, fsin, fsout, false);
+    stimparam.ff = cfs;
+    stimparam.Q_factors = Qs;    
   case 'gamma264',
     [gamma_bms, gamma_envs, ~, ~, cfs] = ...
         gammatonebank(wav,2000,64000,chancount,f,false);

@@ -97,7 +97,7 @@ elseif EVPVersion==5,
     %spikechancount =length(unique({data.enums}));
     spikefs = header(7);
     lfpchancount = spikechancount;
-    lfpfs = spikefs;
+    lfpfs = nan;
     auxchancount = 0;
     
     header=[EVPVersion spikechancount auxchancount spikefs auxfs trialcount lfpchancount lfpfs 0 0];

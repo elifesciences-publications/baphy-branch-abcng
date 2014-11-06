@@ -9,7 +9,7 @@ function varargout = BaphyMainGuiItems (field,globalparams)
 switch field
   % Tester:
   case 'Tester'
-    varargout{1} = {'Austin Powers','Dani','Henry','Sean','Stephen','Zack'};
+    varargout{1} = {'Austin Powers','Brad','Dani','Henry','Hillary','Sean','Stephen','Zack'};
     % Ferret Names:
   case 'Ferret'
     if dbopen,
@@ -54,9 +54,11 @@ switch field
   case 'HWSetup'
     % Sound Proof rooms:
     varargout{1} = {'0: Test', '1: SB 1',...
-        '2: LB 1 (Primary=R)', '3: LB 1 (Primary=L)',...
-        '4: LB 2 (Primary=R)', '5: LB 2 (Primary=L)', '6: DR 1 (Primary=R)',...
-        '7: DR 1 (Primary=L)'};
+                    '2: LB 1 (Primary=R)', '3: LB 1 (Primary=L)',...
+                    '4: LB 2 (Primary=R)', '5: LB 2 (Primary=L)',...
+                    '6: DR 1 (Primary=R)', '7: DR 1 (Primary=L)',...
+                    '8: LB 1 (Primary=R+Opt)', '9: LB 1 (Primary=L+Opt)',...
+                   };
   case 'HWSetupSpecs',
     % boilerplate descriptor of recording setup for saving to gPenetration
     % in celldb.
@@ -80,7 +82,7 @@ switch field
                 varargout{1}.electrodenotes='FHC: size, impendence not specified';
             end
             varargout{1}.ear='B';
-        case {2,3},
+        case {2,3,8,9},
             varargout{1}.racknotes=sprintf('Large booth 1, pump cal: %.2f ml/sec',globalparams.PumpMlPerSec.Pump);
             if ~globalparams.training,
                 varargout{1}.probenotes=sprintf('%d-channel. Well position: XXX',globalparams.numchans);
@@ -139,7 +141,7 @@ switch field
          end
         case {1,6,7}
         varargout{1}='H:\daq\';  % ie, save direct to the server
-      case {2,3}
+      case {2,3,8,9}
           if strcmpi(globalparams.Physiology,'No'),
               varargout{1}='H:\daq\';  % for training, save direct to the server
           else
@@ -161,10 +163,8 @@ switch field
         varargout{1}=1;
       case 1,
         varargout{1}=0;      % no pump installed
-      case 2,
+      case {2,3,8,9},
         varargout{1}=0.467;  % Nima calibrated 2006-5-18
-      case 3,
-        varargout{1}=0.24;   % SVD calibrated 2006-05-19
       case {4,5}
         varargout{1}=0.233;   % SVD calibrated 2006-05-10
      otherwise

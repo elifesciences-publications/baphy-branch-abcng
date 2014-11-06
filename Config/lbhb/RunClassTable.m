@@ -110,6 +110,10 @@ elseif isempty(tar),
             runclass = 'ATS';
         case 'PIPSEQUENCE';
             runclass = 'PPS';
+        case 'RSS';
+            runclass = 'RSS';
+        case 'NATURALSOUNDS';
+            runclass = 'NAT';
         otherwise
             runclass = '';
     end
@@ -124,6 +128,8 @@ else
                 runclass = 'BVT';
             elseif strcmpi(get(ref,'descriptor'),'SPNOISE'),
                 runclass = 'TSP';
+            elseif strcmpi(get(ref,'descriptor'),'RSS'),
+                runclass = 'RVT';
             else
                 runclass = 'PTD';
             end

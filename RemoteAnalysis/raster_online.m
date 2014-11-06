@@ -42,6 +42,9 @@ catch
     pause(1);
     [r,tags]=raster_load(mfile,channel,unit,options);
 end
+repcount=sum(~isnan(r(:,:)),2);
+stopat=max(find(repcount>=max(floor(repcount./5))));
+r=r(1:stopat,:,:);
 
 if ~isempty(strfind(mfile,'DMS')),
    %keyboard

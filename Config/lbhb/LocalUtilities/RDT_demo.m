@@ -41,7 +41,7 @@ end
 
 parmfile=[cellfiledata(fidx).stimpath cellfiledata(fidx).stimfile];
 spikefile=[cellfiledata(fidx).path cellfiledata(fidx).respfile];
-options.rasterfs=500;
+options.rasterfs=50;
 options.channel=cellfiledata(1).channum;
 options.unit=cellfiledata(1).unit;
 options.resp_shift=0.0;
@@ -158,6 +158,8 @@ for t=1:TarRepCount,
     if t==1,
         %r1=nanmean([rtar1solo(bb,:) rref1solo],2);
         %r2=nanmean([rtar2solo(bb,:) rref2solo],2);
+        %r1=nanmean(rref1,2);
+        %r2=nanmean(rref2,2);
         r1=nanmean([rtar1solo(bb,:)],2);
         r2=nanmean([rtar2solo(bb,:)],2);
     end
