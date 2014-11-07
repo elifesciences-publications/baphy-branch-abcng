@@ -63,10 +63,14 @@ w(1:length(ramp)) = w(1:length(ramp)) .* ramp;
 w(end-length(ramp)+1:end) = w(end-length(ramp)+1:end) .* flipud(ramp);
 % If the object has Duration parameter, cut the sound to match it, if
 % possible:
-if isfield(get(o),'Duration')
+if isfield(get(o),'Duration'),
     Duration = ifstr2num(get(o,'Duration'));
-    totalSamples = floor(Duration * SamplingRate);
-    w = w(1:min(length(w),totalSamples));
+    if Duration>0,
+        totalSamples = floor(Duration * SamplingRate);
+        w = w(1:min(length(w),totalSamples));
+    else
+        Duration = length(w) / SamplingRate;
+    end
 else
     Duration = length(w) / SamplingRate;
 end
