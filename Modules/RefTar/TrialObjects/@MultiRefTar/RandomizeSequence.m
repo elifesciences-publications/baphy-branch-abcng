@@ -7,8 +7,8 @@ function [exptparams] = RandomizeSequence (o, exptparams, globalparams, RepIndex
 % SVD 2011-06-06, ripped off of Reference Target
 %
 
-if nargin<4, RepOrTrial = 0;end   % default is its a trial call
-if nargin<3, RepIndex = 1;end
+if ~exist('RepOrTrial','var'), RepOrTrial = 0;end   % default is its a trial call
+if ~exist('RepIndex','var'), RepIndex = 1;end
 
 % read the trial parameters
 par = get(o);

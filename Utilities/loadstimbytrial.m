@@ -330,11 +330,19 @@ for trialidx=1:TrialCount,
         else
             sfigure(fh);
         end
+        if trialidx==1
+            stim=zeros(chancount,MaxTrialLen,TrialCount,maxstreams).*nan;
+        end
+        
         for sidx=1:size(w,2),
-            [tstim,tstimparam]=...
-                wav2spectral(w(:,sidx),filtfmt,TrialFs,fsout,chancount);
-            if trialidx==1 && sidx==1,
-                stim=zeros(size(tstim,2),MaxTrialLen,TrialCount,maxstreams).*nan;
+            mm=max(find(abs(w(:,sidx))>0));
+            if ~isempty(mm),
+                fprintf('%d samples: ',mm);
+                [tstim,tstimparam]=...
+                    wav2spectral(w(1:mm,sidx),filtfmt,TrialFs,fsout,chancount);
+            else
+                fprintf('empty stream\n');
+                tstim(:)=0;
             end
             stim(:,1:size(tstim,1),trialidx,sidx)=tstim';
         end

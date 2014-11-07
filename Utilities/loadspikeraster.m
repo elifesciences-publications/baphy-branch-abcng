@@ -592,8 +592,10 @@ function spkfile = LF_copyForSeil(spkfile)
 
 % special code for copying temp files over to seil cluster
 ss_stat=onseil;
+%fprintf('LF_copyForSeil: ss_stat=%d local copy exists=%d\n',...
+%   [ss_stat exist(spkfile,'file')]);
 if ss_stat && ~exist(spkfile,'file'),
-
+   
    trin=spkfile;
    if ss_stat==1,
        disp('mapping file to seil');

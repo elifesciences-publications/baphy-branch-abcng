@@ -24,7 +24,7 @@ function varargout = dbchooserawfile(varargin)
 
 % Edit the above text to modify the response to help dbchooserawfile
 
-% Last Modified by GUIDE v2.5 05-Jun-2014 08:16:36
+% Last Modified by GUIDE v2.5 22-Jul-2014 09:47:21
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;

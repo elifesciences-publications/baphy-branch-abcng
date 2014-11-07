@@ -16,51 +16,27 @@ function raster_plot(mfile,r,tags,h,options);
 
 global ES_LINE  ES_SHADE
 
-if ~exist('options','var'),
-   options=[];
-end
-if ~isfield(options,'channel'),
-    options.channel=1;
-end
-if ~isfield(options,'unit'),
-    options.unit=1;
-end
 if ~exist('h','var') || isempty(h),
     figure;
     h=gca;
     drawnow;
 end
 if ~exist('options','var'),
-    options=[];
+    options=struct();
 end
-if ~isfield(options,'rasterfs'),
-    options.rasterfs=1000;
-end
-if ~isfield(options,'sigthreshold'),
-    options.sigthreshold=4;
-end
-if ~isfield(options,'datause'),
-    options.datause='Reference';
-end
-if ~isfield(options,'psth'),
-    options.psth=0;
-end
-if ~isfield(options,'psthfs'),
-    options.psthfs=20;
-end
-if ~isfield(options,'lfp'),
-    options.lfp=0;
-end
-if ~isfield(options,'lick'),
-    options.lick=0;
-end
-if ~isfield(options,'usesorted'),
-    options.usesorted=0;
-end
-if ~isfield(options,'compact'),
-    options.compact=0;
-end
+options.channel=getparm(options,'channel',1);
+options.unit=getparm(options,'unit',1);
+options.rasterfs=getparm(options,'rasterfs',1000);
+options.sigthreshold=getparm(options,'sigthreshold',4);
+options.datause=getparm(options,'datause','Reference');
+options.psth=getparm(options,'psth',0);
+options.psthfs=getparm(options,'psthfs',20);
+options.lfp=getparm(options,'lfp',0);
+options.lick=getparm(options,'lick',0);
+options.usesorted=getparm(options,'usesorted',0);
+options.compact=getparm(options,'compact',0);
 options.raster=getparm(options,'raster',1);
+options.raster_pix=getparm(options,'raster_pix',1);
 if options.lfp,
     % must calculate average ("psth"), since lfp doesn't give rasters
    options.psth=1;
@@ -70,7 +46,6 @@ elseif ~options.psth,
 end
 
 tic;
-
 if options.lick
     disp('Loading licks...');
     toptions=options;
@@ -331,6 +306,12 @@ elseif options.raster,
    data2=data2(:,round(bn/2):bn:end);
    dn2=conv2(dn,smfilt,'same');
    dn2=dn2(:,round(bn/2):bn:end);
+   
+   if options.raster_pix>1,
+       rsmooth=ones(round(options.raster_pix));
+       data2=conv2(data2,rsmooth,'same');
+   end
+   
    %keyboard
    data2=(0.1-data2)./0.1;
    data2(data2>1)=1;

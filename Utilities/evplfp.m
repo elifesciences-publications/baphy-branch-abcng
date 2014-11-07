@@ -49,7 +49,9 @@ for lidx=1:length(lfpchans),
    
    if ~exist(cachefile,'file') || trialcount<max(trials),
       fprintf('not found. generating from evp...\n');
+      
       [spikechancount,auxchancount,trialcount,spikefs,auxfs,lfpchancount,lfpfs]=evpgetinfo(evpfile);
+      
       [~,~,~,~,rl,ltrialidx]=evpread(evpfile,'spikeelecs',[],'lfpelecs',lfpchans(lidx),'SRlfp',options.rasterfs);
       if evpversion(evpfile)==5,
          lfpfs=options.rasterfs;
