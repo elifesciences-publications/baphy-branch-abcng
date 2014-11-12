@@ -195,7 +195,7 @@ if LightTrial
                 LightBand(LightStartBin+(1:LightOnBins))=5;
             end
             
-        case 'Sound',
+        case 'WholeSound',
             for evidx=2:3:length(events),
                 StimStartTime=events(evidx).StartTime;
                 StimStopTime=events(evidx).StopTime;
@@ -207,6 +207,17 @@ if LightTrial
                 end
             end
             
+        case {'PreRef','PostRef'}
+          LocusStr = par.LightEpoch(1:(strfind(par.LightEpoch,'Ref')-1));
+          IndStimSil = find( ~cellfun(@isempty,strfind( {ev.Note},'Reference')) &  ~cellfun(@isempty,strfind( {ev.Note}, [LocusStr 'StimSilence'])) );
+          StimStartTime=ev(IndStimSil).StartTime;
+          StimStopTime=ev(IndStimSil).StopTime;
+          LightStartTime=StimStartTime+par.LightPulseShift;
+          while LightStartTime<StimStopTime,
+            LightStartBin=round(LightStartTime*TrialSamplingRate);
+            LightBand(LightStartBin+(1:LightOnBins))=5;
+            LightStartTime=LightStartTime+1./par.LightPulseRate;
+          end
         otherwise
             error([par.LightEpoch, ' LightEpoch not supported yet']);
     end

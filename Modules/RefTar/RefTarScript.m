@@ -104,7 +104,7 @@ while ContinueExp == 1
       % svd 2012-10-27: moved IOLoadSound after CanStart to allow sounds to
       % be played during CanStart prior to beginning of the aquisition
       % period of the trial. Shouldn't cause any serious changes in timing
-      %using the 2nd SOUNDOUT as pumpcontrol  by PY @ 9-2/2012
+      %using the 2nd SOUNDOUT as pumpcontrol by PY @ 9-2/2012
       if strcmpi(BAPHY_LAB,'nsl') && globalparams.HWSetup==3 
         if size(TrialSound,2)==2
           HW = IOLoadSound(HW, TrialSound(:,[2 1]));

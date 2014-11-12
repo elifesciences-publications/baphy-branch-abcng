@@ -21,7 +21,7 @@ case 0
     RefTarO.LightPulseRate=50;
     RefTarO.LightPulseDuration=0.01;
     RefTarO.LightPulseShift=0;
-    RefTarO.LightEpoch='Sound';
+    RefTarO.LightEpoch='WholeSound';
     
     RefTarO.NumberOfTrials = 30;  % In memory of Torcs!
     RefTarO.NumberOfRefPerTrial = []; 
@@ -32,6 +32,7 @@ case 0
     RefTarO.TargetIndices = '[]';
     RefTarO.ShamPercentage = 0;
     RefTarO.LightTrial=[];
+    RefTarO.Pairing=0;
     
     % old (unused)
     RefTarO.NoPreStimForFirstRef = 0; % if 1, the first reference will not 
@@ -44,11 +45,11 @@ case 0
     RefTarO.RunClass = '[]';
     RefTarO.UserDefinableFields = ...
         {'OveralldB','edit',65,...
-         'RelativeTarRefdB','edit',0,...
          'LightPulseRate','edit',50,...
          'LightPulseDuration','edit',0.01,...
          'LightPulseShift','edit',0,...
-         'LightEpoch','popupmenu','Sound|SoundOnset|WholeTrial'};
+         'Pairing','edit',0,...
+         'LightEpoch','popupmenu','WholeSound|SoundOnset|WholeTrial|PreRef|PostRef'};
     
     RefTarO = class(RefTarO,'RefTarOpt');
     RefTarO = ObjUpdate(RefTarO);

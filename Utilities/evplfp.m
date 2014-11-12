@@ -39,7 +39,7 @@ for lidx=1:length(lfpchans),
    if exist(cachefile,'file'),
       data=load(cachefile);
       trialcount=data.trialcount;
-      if trialcount==max(trials),
+      if trialcount>=max(trials),
           lfpout(:,lidx)=data.rl;
           ltrialidx=data.ltrialidx;
           lfpfs=data.lfpfs;
