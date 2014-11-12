@@ -107,7 +107,7 @@ else % PARSE INDICES BY STIMCLASS
          else
            T.Indices{iT} = T.Index{iT};
          end
-         T.Times{iT} = [P.Events(StimInd(iT)).StartTime,P.Events(TargetStimInd(iT)).StopTime];
+         T.Times{iT} = [P.Events(TargetStimInd(iT)).StartTime,P.Events(TargetStimInd(iT)).StopTime];
          T.Tags{iT} = cNote(CommaInds(1)+1:CommaInds(2)-1);
          T.Durations{iT} = diff(T.Times{iT}); 
        end
