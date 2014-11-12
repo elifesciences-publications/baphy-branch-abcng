@@ -33,9 +33,9 @@ end
 
 % ASSIGN TRIAL PROPERTIES BY STIMCLASS
 if P.TimeIndex % RETURN INDICES BY TRIALNUMBER
-    T.Indices = [1:length(TrialInd)];
+    T.Indices = {1:length(TrialInd)};
     T.SortInd = [1:length(TrialInd)];
-    [tmp,T.SortInd] = sort(T.Indices,'ascend');
+    [tmp,T.SortInd] = sort(cell2mat(T.Indices),'ascend');
 else % PARSE INDICES BY STIMCLASS
   switch lower(P.Stimclass)
     case {'torcs','torc','clickdiscrim'};

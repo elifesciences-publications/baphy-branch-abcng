@@ -91,17 +91,22 @@ end
 
 % Inserting new stuff for Optical channel.  Double the number of trials.
 %
-LightTrial=[zeros(1,TotalTrials) ones(1,TotalTrials)];
-RefTrialIndex=cat(2,RefTrialIndex,RefTrialIndex);
-TotalTrials=TotalTrials*2;
-
-[~,si]=sort(rand(1,TotalTrials));
-LightTrial=LightTrial(si);
-RefTrialIndex=RefTrialIndex(si);
-if ~isempty(TargetIndex),
+if ~get(o,'Pairing')
+  LightTrial=[zeros(1,TotalTrials) ones(1,TotalTrials)];
+  RefTrialIndex=cat(2,RefTrialIndex,RefTrialIndex);
+  TotalTrials=TotalTrials*2;
+  
+  [~,si]=sort(rand(1,TotalTrials));
+  LightTrial=LightTrial(si);
+  RefTrialIndex=RefTrialIndex(si);
+  if ~isempty(TargetIndex),
     TargetIndex=cat(2,TargetIndex,TargetIndex);
     TargetIndex=TargetIndex(si);
+  end
+else
+  LightTrial=ones(1,TotalTrials);
 end
+    
 
 o = set(o,'LightTrial',LightTrial);
 o = set(o,'ReferenceIndices',RefTrialIndex);
