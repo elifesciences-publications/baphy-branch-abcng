@@ -133,43 +133,49 @@ end
 TrialSound0=TrialSound;
 chancount=size(TrialSound,2);
 if ~isempty(TarTrialIndex)
-    TarTrialIndex = par.TargetIndices{TrialIndex}; % get the index of reference sounds for current trial
+    ThisTarIdx = par.TargetIndices{TrialIndex}; % get the index of reference sounds for current trial
+else
+    ThisTarIdx = par.TargetIndices{1};
+end
+
+TargetChannel=par.TargetChannel;
+if isempty(TargetChannel),
+  TargetChannel=1;
+elseif length(TargetChannel)<TargetChannel,
+  TargetChannel=TargetChannel(1);
+else
+  TargetChannel=TargetChannel(ThisTarIdx);
+end
+
+RelativeTarRefdB=par.RelativeTarRefdB;
+if isempty(RelativeTarRefdB),
+  RelativeTarRefdB=0;
+elseif length(RelativeTarRefdB)<ThisTarIdx,
+  RelativeTarRefdB=RelativeTarRefdB(1);
+else
+  RelativeTarRefdB=RelativeTarRefdB(ThisTarIdx);
+end
+ScaleBy=10^(RelativeTarRefdB/20);
     
-    TargetChannel=par.TargetChannel;
-    if isempty(TargetChannel),
-      TargetChannel=1;
-    elseif length(TargetChannel)<TargetChannel,
-      TargetChannel=TargetChannel(1);
-    else
-      TargetChannel=TargetChannel(TarTrialIndex);
-    end
-    
-    RelativeTarRefdB=par.RelativeTarRefdB;
-    if isempty(RelativeTarRefdB),
-      RelativeTarRefdB=0;
-    elseif length(RelativeTarRefdB)<TarTrialIndex,
-      RelativeTarRefdB=RelativeTarRefdB(1);
-    else
-      RelativeTarRefdB=RelativeTarRefdB(TarTrialIndex);
-    end
-    ScaleBy=10^(RelativeTarRefdB/20);
-    
-    TarObject = set(TarObject, 'SamplingRate', TrialSamplingRate);
-    % generate the target sound:
-    [w, ev] = waveform(TarObject, TarTrialIndex, 0); % 0 means its target
-    
-    % svd 2009-06-29 make sure that sound is in a column
-    if size(w,2)>size(w,1),
-        w=w';
-    end
-    
-    % shift single-channel target to appropriate output channel
-    if size(w,2)==1 && TargetChannel>1,
-        w=[repmat(zeros(size(w)),[1 TargetChannel-1]) w];
-    end
-    % pad higher channels with zero
-    w=[w zeros(length(w),chancount-size(w,2))];
-    
+TarObject = set(TarObject, 'SamplingRate', TrialSamplingRate);
+% generate the target sound:
+[w, ev] = waveform(TarObject, ThisTarIdx, 0); % 0 means its target
+ev_save=ev;
+
+% svd 2009-06-29 make sure that sound is in a column
+if size(w,2)>size(w,1),
+    w=w';
+end
+
+% shift single-channel target to appropriate output channel
+if size(w,2)==1 && TargetChannel>1,
+    w=[repmat(zeros(size(w)),[1 TargetChannel-1]) w];
+end
+% pad higher channels with zero
+w=[w zeros(length(w),chancount-size(w,2))];
+
+if ~isempty(TarTrialIndex),
+    % this trial has a regular target, save it
     fprintf('TarTrialIndex=%d (%d dB, channel %d)\n',TarTrialIndex,RelativeTarRefdB, TargetChannel);
     if OverlapRefTar,
         TarBins=TarStartBin+round(get(TarObject,'PreStimSilence').*TrialSamplingRate)+....
@@ -184,7 +190,7 @@ if ~isempty(TarTrialIndex)
         w=w.*ScaleBy;
         
         if TarMatchContour && ~isempty(refenv),
-            tarenv=refenv(TarStartBin-1+(1:size(w,1)),TarTrialIndex);
+            tarenv=refenv(TarStartBin-1+(1:size(w,1)),ThisTarIdx);
             tarenv=tarenv.*0.75+0.25;
             w=w.*tarenv;
             TrialSound(TarStartBin-1+(1:size(w,1)),:)=...
@@ -225,7 +231,8 @@ if ~isempty(TarTrialIndex)
     else
         % no overlap
         fprintf('Tar ScaleBy: %.2f\n',ScaleBy);
-        TrialSound = [TrialSound ; w*ScaleBy ];
+        w=w.*ScaleBy;
+        TrialSound = [TrialSound ; w ];
     end
     
     % now, add Target to the event list, correct the time stamp with
@@ -238,8 +245,30 @@ if ~isempty(TarTrialIndex)
     end
     LastEvent = ev(end).StopTime;
     events = [events ev];
+else
+    w=w.*ScaleBy;
+end
+
+% if specified, tack a final "reminder target" on the end of the trial
+% to provide an easy (low-reward) hit if the actual target was missed.
+if par.ReminderTarget,
+    % use same waveform as target
+    ev=ev_save;
     
-    % normalize the sound, because the level control is always from attenuator.
+    ReminderStartTime=size(TrialSound,1)/TrialSamplingRate;
+    TrialSound=[TrialSound ; w];
+    for cnt2 = 1:length(ev),
+        ev(cnt2).Note = [ev(cnt2).Note ' , Reminder'];
+        ev(cnt2).StartTime = ev(cnt2).StartTime + ReminderStartTime;
+        ev(cnt2).StopTime = ev(cnt2).StopTime + ReminderStartTime;
+        ev(cnt2).Trial = TrialIndex;
+    end
+    LastEvent = ev(end).StopTime;
+    events = [events ev];
+end    
+    
+% normalize the sound, because the level control is always from attenuator.
+if ~isempty(TarTrialIndex)
     TrialSound = 5 * TrialSound / max(abs(TrialSound0(:)));
 else
     TrialSound = 5 * TrialSound / max(abs(TrialSound(:)));
@@ -344,6 +373,11 @@ if ~isempty(CatchTrialIndex)
     LastEvent = max(cat(1,events.StopTime));
 end
 
+if PostTrialBins>0,
+   TrialSound=cat(1,TrialSound,zeros(PostTrialBins,chancount));
+   events(end).StopTime=events(end).StopTime+PostTrialSilence;
+end
+
 if strcmp(BAPHY_LAB,'lbhb'),
    % debug code
    sfigure(1);
@@ -367,13 +401,6 @@ if strcmp(BAPHY_LAB,'lbhb'),
    plot(Hpsd);                % Plot the PSD.
    
    drawnow
-end
-
-
-if PostTrialBins>0,
-   TrialSound=cat(1,TrialSound,zeros(PostTrialBins,chancount));
-   events(end).StopTime=events(end).StopTime+PostTrialSilence;
-
 end
 
 Refloudness = get(RefObject,'Loudness');

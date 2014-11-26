@@ -1,4 +1,3 @@
-
 function o = ObjUpdate (o);
 %
 % piggyback on top of speech object to get waveform
@@ -14,6 +13,7 @@ BaseSound=strtrim(get(o,'BaseSound'));
 Subsets = get(o,'Subsets');
 SetSizeMult = get(o,'SetSizeMult');
 CoherentFrac = get(o,'CoherentFrac');
+SingleBandFrac = get(o,'SingleBandFrac');
 ShuffleOnset=get(o,'ShuffleOnset');  % if 1, randomly rotate stimulus waveforms in time
 RepIdx=get(o,'RepIdx');
 Duration=get(o,'Duration');  % if 1, randomly rotate stimulus waveforms in time
@@ -58,6 +58,8 @@ if bandcount>1,
     MaxIncoherent=MaxIndex-coherentcount;
     idxset=idxset([1:MaxIncoherent (end-coherentcount+1):end],:);
     
+    % shift signals in the different bands randomly to avoid correlations
+    % from average cadence of sentences
     if ShuffleOnset,
         if ShuffleOnset==1,
             d=Duration;
@@ -70,6 +72,21 @@ if bandcount>1,
         ShuffledOnsetTimes(MaxIncoherent:end,2:end)=...
             repmat(ShuffledOnsetTimes(MaxIncoherent:end,1),[1 bandcount-1]);
     end
+
+    % set some ids to zero so that only one band has sound
+    if SingleBandFrac>0,
+       SingleBandCount=round(MaxIndex.*SingleBandFrac./bandcount);
+       SingleBandIdx=repmat(1:SingleBandCount,[bandcount+1 1]);
+       LeftoverIdx=SingleBandCount+(1:(MaxIndex-length(SingleBandIdx(:))));
+       idxset=idxset([SingleBandIdx(:);LeftoverIdx(:)],:);
+       ShuffledOnsetTimes=ShuffledOnsetTimes([SingleBandIdx(:);LeftoverIdx(:)],:);
+       for kk=1:SingleBandCount,
+          for jj=1:bandcount,
+             idxset((kk-1)*(bandcount+1)+jj+1,[1:(jj-1) (jj+1):end])=0;
+          end
+       end
+    end
+    
     % return random seed to previous state
     rand('seed',saveseed);
 else
@@ -94,7 +111,8 @@ SPNOISE_EMTX.(EnvVarName)=Env.emtx;
 o=set(o,'idxset',idxset);
 o=set(o,'ShuffledOnsetTimes',ShuffledOnsetTimes);
 o=set(o,'MaxIndex',MaxIndex);
-o=set(o,'Phonemes',Env.Phonemes);
+% removed phoneme labels to save space in parmfiles
+%o=set(o,'Phonemes',Env.Phonemes);
 o=set(o,'SamplingRateEnv',Env.fs);
 o=set(o,'UseBPNoise',UseBPNoise);
 Names=Env.Names;
@@ -103,7 +121,11 @@ Names=cell(1,MaxIndex);
 for ii=1:MaxIndex,
     Names{ii}=['BNB'];
     for bb=1:bandcount,
-        Names{ii}=[Names{ii} '+' Env.Names{idxset(ii,bb)}];
+       if idxset(ii,bb)
+          Names{ii}=[Names{ii} '+' Env.Names{idxset(ii,bb)}];
+       else
+          Names{ii}=[Names{ii} '+null'];
+       end
     end
 end
 

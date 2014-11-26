@@ -23,6 +23,9 @@ UseBPNoise=get(o,'UseBPNoise');
 BaseSound=strtrim(get(o,'BaseSound'));
 Subsets = get(o,'Subsets');
 BaselineFrac=get(o,'BaselineFrac');
+idxset=get(o,'idxset');
+ShuffledOnsetTimes=get(o,'ShuffledOnsetTimes');
+SingleBandFrac=get(o,'SingleBandFrac');
 
 EnvVarName=[BaseSound,num2str(Subsets)];
 %emtx = get(o,'emtx');
@@ -31,17 +34,24 @@ emtx = SPNOISE_EMTX.(EnvVarName);
 timesamples = (1 : round(Duration*SamplingRate))' / SamplingRate;
 w=zeros(size(timesamples));
 
-% force same carrier signal each time!!!!
+% force same carrier signal each time!!!!  preserve same carrier for
+% single-band versions but keep backward compatible with previous
+if SingleBandFrac>0,
+   % figure out idxs of component bands
+   rseed=idxset(find(idxset(1:index,1)>0, 1, 'last' ),1);
+else
+   rseed=index;
+end
 saveseed=rand('seed');
-rand('seed',index*20);
+savenseed=randn('seed');
+rand('seed',rseed*20);
+randn('seed',rseed*20);
 
 if isempty(RelAttenuatedB) || length(RelAttenuatedB)<length(LowFreq),
   RelAttenuatedB=zeros(size(LowFreq));
 end
 
 bandcount=min([length(HighFreq),length(LowFreq),length(RelAttenuatedB)]);
-idxset=get(o,'idxset');
-ShuffledOnsetTimes=get(o,'ShuffledOnsetTimes');
 
 if length(IterateStepMS)<bandcount,
    IterateStepMS=repmat(IterateStepMS(1),[1 bandcount]);
@@ -90,7 +100,11 @@ for bb=1:bandcount,
     tw=tw./max(abs(tw(:)));
     
     % extract appropriate envelope and resample to match desired output fs
-    sp=emtx(:,idxset(index,bb));
+    if idxset(index,bb)>0
+       sp=emtx(:,idxset(index,bb));
+    else
+       sp=zeros(size(emtx(:,1)));
+    end
     sp=sp(1:find(~isnan(sp), 1, 'last' ));
     % repeat envelope if Duration longer than orginal waveform
     % (3-sec, typically)
@@ -115,6 +129,10 @@ for bb=1:bandcount,
     
     % apply envelope
     tw=tw.*sp;
+    
+    if SingleBandFrac && max(abs(tw))>0,
+       tw=tw./max(abs(tw));
+    end
     
     % adjust level relative to other bands
     level_scale=10.^(-RelAttenuatedB(bb)./20);
@@ -152,3 +170,4 @@ event(3) = struct('Note',['PostStimSilence , ' Names{index}],...
 
 % return random seed to previous state
 rand('seed',saveseed);
+randn('seed',savenseed);

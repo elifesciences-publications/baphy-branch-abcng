@@ -57,6 +57,7 @@ if RepOrTrial == 0,
                 ~isempty(par.TargetIndices{trialidx}),
             NewTargetIndex=find(rand>[0 cumsum(TargetIdxFreq)], 1, 'last' );
             newslot=ceil(rand*(NewNumberOfTrials-trialidx))+trialidx;
+            %newslot=trialidx+1; % temp svd kludge
             fprintf('Miss: Repeating reference with targetidx=%d\n',...
                     NewTargetIndex);
         else

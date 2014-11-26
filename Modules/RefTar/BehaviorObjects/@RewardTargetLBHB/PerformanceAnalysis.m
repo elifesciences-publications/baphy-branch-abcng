@@ -131,8 +131,8 @@ for cnt2 = 1:NumRef
 end
 %FalseAlarm = sum(RefFalseAlarm)/NumRef;
 if NullTrial,
-    RefFalseAlarm=sum(LickData)>0;
-    FalseAlarm=sum(LickData)>0;
+    RefFalseAlarm=sum(LickData(1:min(length(LickData),round(fs*RefResponseWin(end)))))>0;
+    FalseAlarm=sum(LickData(1:min(length(LickData),round(fs*RefResponseWin(end)))))>0;
     TarResponseLick=0;
     TarEarlyLick=0;
     TarFirstLick=nan;
