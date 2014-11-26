@@ -338,6 +338,10 @@ if strcmpi(trialparms.descriptor,'MultiRefTar'),
         if ~isnan(ct(tt)) 
             st(find(PossibleRefTimes==perf(tt).FirstCatchTime))=1;
         end
+        %debugging
+        if size(st,2)~= 1
+            keyboard
+        end
         cstimtype=cat(1,cstimtype,st);
         %if ~isnan(ct(tt)) && perf(tt).FirstLickTime>perf(tt).FirstCatchTime,
         %    cstimtime=cat(1,cstimtime,perf(tt).FirstCatchTime);
