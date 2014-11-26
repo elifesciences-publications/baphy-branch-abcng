@@ -83,8 +83,12 @@ if RepOrTrial == 0,
         o=set(o,'TargetIndices',NewTargetIndices);
         o=set(o,'CatchIndices',NewCatchIndices);
         o=set(o,'CatchSeg',NewCatchSeg);
+        % svd fixed bug 2014-11-24 where RefDuration was assigned to the
+        % next trail rather than the new slot for misses.
         o=set(o,'SingleRefDuration',...
-            [par.SingleRefDuration(1:trialidx) par.SingleRefDuration(trialidx:end)]);
+            [par.SingleRefDuration(1:(newslot-1)) ...
+            par.SingleRefDuration(trialidx) ...
+            par.SingleRefDuration(newslot:end)]);
         o=set(o,'NumberOfTrials',par.NumberOfTrials+1);
         exptparams.TrialObject = o;
     end
