@@ -90,6 +90,9 @@ else
   if ~exist('lfp','var'),
     lfp=0;
   end
+  if ~exist('rawtrace','var'),
+    rawtrace=0;
+  end
   includeincorrect=0;
   lfp_clean=0;
   mua=0;
@@ -597,7 +600,8 @@ if (isempty(tag_masks) || length(tag_masks{1})<8 || ...
     isempty(strfind(mfile,'_CCH')) && ...
     isempty(strfind(mfile,'_MTS')) && ...
     isempty(strfind(mfile,'_ALM')) && ...
-    isempty(strfind(mfile,'_PHD')),
+    isempty(strfind(mfile,'_PHD')) && ...
+    isempty(strfind(tags{1},'Light')),
   %       isempty(strfind(mfile,'_AMN')) && ...
   maptoidx=zeros(1,length(tags));
   for ii=1:length(tags),

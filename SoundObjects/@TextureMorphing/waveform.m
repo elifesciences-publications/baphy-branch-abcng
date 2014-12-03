@@ -1,4 +1,4 @@
-function [ w , ev , O , D0 , ChangeD , Parameters] = waveform(O,Index,IsToc,Mode,Global_TrialNb)
+function [ w , ev , O , D0 , ChangeD , Parameters] = waveform(O,Index,IsRef,Mode,Global_TrialNb)
 % Waveform generator for the class TextureMorphing
 % See main file for how the Index selects the stimuli
 % Adapted from BiasedShepardPair - Yves 2013
@@ -14,6 +14,7 @@ PostStimSilence = get(O,'PostStimSilence');
 IniSeed = get(O,'IniSeed');
 FrozenPatternsAdress = get(O,'FrozenPatternsAdress');
 Par = get(O,'Par');
+BinToC = Par.BinToC;
 FrozenPatternsNb = Par.FrozenPatternsNb;
 if FrozenPatternsNb == 0; Mode = 'NoFrozen'; end
 StimulusBisDuration = Par.StimulusBisDuration;
@@ -33,13 +34,13 @@ if Index > MaxIndex; error('Number of available Stimuli exceeded'); end
 CurrentRepetitionNb = ceil(Global_TrialNb/MaxIndex);
 
 % GENERATE Timing of Change [ToC]
-if isempty(IsToc) || IsToc==0
-    RToC = RandStream('mt19937ar','Seed',IniSeed*Global_TrialNb);   % mcg16807 is fucked up
-    lambda = 0.15; 
-    ToC = PoissonProcessPsychophysics(lambda,Par.MaxToC-Par.MinToC,1,RToC);
-    ToC = ToC + Par.MinToC;
+if Par.MinToC == Par.MaxToC
+    ToC = Par.MinToC;
 else
-    ToC = IsToc;
+    RToC = RandStream('mt19937ar','Seed',IniSeed*Global_TrialNb);   % mcg16807 is fucked up
+    lambda = 0.15;
+    ToC = PoissonProcessPsychophysics(lambda,Par.MaxToC-Par.MinToC,1,RToC,BinToC);
+    ToC = ToC + Par.MinToC;
 end
 ToC = round(ToC/ChordDuration)*ChordDuration;
 
@@ -66,6 +67,17 @@ D0param = [FO OctaveNb Par.IniSeed Global_TrialNb Quantal_Delta];
 Dparam = [D0param(1:end-3) Bins2Change{ChangedD_Num}(MorphingNum,:)];    % We don't need a Seed to modify the original distribution
 [D0,ChangeD,D0information] = BuildMorphing(D0type,Dtype,D0param,Dparam,DistriBinNb,XDistri,MorphingNum,DiffLvl,PlotDistributions,sF,FrequencySpace);
 
+% REVERSE S0 AND Sbis
+if Reverse            % Rem.: 'NoFrozen' is compulsory when 'Inverse_D0Dbis'==1
+    if not( strcmp(Mode,'NoFrozen') )
+      disp('WARNING: ''NoFrozen'' is compulsory when ''Inverse_D0Dbis''==1.')
+    end
+    Stimulus0Duration = StimulusBisDuration;
+    StimulusBisDuration = ToC;
+elseif not(Reverse)
+    Stimulus0Duration = ToC; 
+end
+
 % GENERATE SEQUENCES OF FROZEN PATTERNS // LOAD THE APPROPRIATE ONE
 if not( strcmp(Mode,'NoFrozen') )
     FrozenRepetitionNb = ceil(MaxIndex*CurrentRepetitionNb/FrozenPatternsNb);
@@ -82,15 +94,13 @@ if not( strcmp(Mode,'NoFrozen') )
     end
     load([ FrozenPatternsAdress filesep 'FrozenPatterns.mat' ]);
     FrozenPattern = FrozenPatterns{FrozenPatternNum};
+    if Par.MinToC>=FrozenPatternDuration
+      Stimulus0Duration = Stimulus0Duration-FrozenPatternDuration;
+    else
+      disp(['WARNING: MinToc should be larger than FrozenPatternDuration (=' num2str(FrozenPatternDuration) ').'])
+    end
 else
     FrozenPatternNum = 0;
-end
-
-if Reverse            % Rem.: 'NoFrozen' is compulsory when 'Inverse_D0Dbis'==1
-    Stimulus0Duration = StimulusBisDuration;
-    StimulusBisDuration = ToC;
-elseif not(Reverse)
-    Stimulus0Duration = ToC; 
 end
 
 % BUILD D0 STIMULUS ('REFERENCE' located in the TARGET)
@@ -150,7 +160,9 @@ ev = AddEvent(ev,['STIM , ' StimulusOrderStr ' ' num2str(Index),' - ',num2str(Gl
 [a,b,c]  = ParseStimEvent(ev(2),0);
 ev(1).Note = ['PreStimSilence ,' b ',' c];
 [a,b,c]  = ParseStimEvent(ev(end),0); 
-ev = AddEvent(ev,['PostStimSilence ,' b ',' c],[],ev(end).StopTime,ev(end).StopTime+AfterChangeSoundDuration+PostStimSilence);
+ev = AddEvent(ev,['Change ,' b ',' c],[],ev(end).StopTime,ev(end).StopTime+AfterChangeSoundDuration);
+[a,b,c]  = ParseStimEvent(ev(end),0); 
+ev = AddEvent(ev,['PostStimSilence ,' b ',' c],[],ev(end).StopTime,ev(end).StopTime+PostStimSilence);
 
 % OUPUT ON THE FLY STIM. PARAMETERS RANDOMLY BUT DETERMINISTICALLY GENERATED
 if nargout>5

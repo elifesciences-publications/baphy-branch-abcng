@@ -1,4 +1,4 @@
-function stplot(stdata,lfreq,tleng,smooth,noct,clim,siglev)
+function clim = stplot(stdata,lfreq,tleng,smooth,noct,clim,siglev)
 % stplot(stdata,lfreq,tleng,smooth,smooth,noct,clim,siglev)
 % the user can also pass the standard deviation matrix, in which case the
 % contours will be displayed.

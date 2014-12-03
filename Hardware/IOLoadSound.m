@@ -50,8 +50,8 @@ switch HW.params.HWSetup
       switch HW.Calibration.Loudness.Method
         case 'MaxLocalStd';
           Duration = HW.Calibration.Loudness.Parameters.Duration;
-          Val = maxLocalStd(stim(:),HW.params.fsAO,Duration);
-          stim =  HW.Calibration.Loudness.Parameters.SignalMatlab80dB*stim/Val;
+          Val = maxLocalStd(stim(:,1),HW.params.fsAO,Duration);
+          stim(:,1) =  HW.Calibration.Loudness.Parameters.SignalMatlab80dB*stim(:,1)/Val;
       end
     end
     LoudnessAdjusted = 0;
@@ -84,7 +84,12 @@ switch HW.params.HWSetup
     
     switch IODriver(HW)
       case 'NIDAQMX';
-      
+        
+      % fill in empty AO channels with zeros %14/09-YB: from Steve' code
+        if size(stim,2)<HW.AO(1).NumChannels,
+           stim=cat(2,stim,zeros(size(stim,1),HW.AO(1).NumChannels-size(stim,2)));
+       end
+        
       % RESET TRIGGER LINE
       aoidx=find(strcmp({HW.Didx.Name},'TrigAO'));
       TriggerDIO=HW.Didx(aoidx).Task;

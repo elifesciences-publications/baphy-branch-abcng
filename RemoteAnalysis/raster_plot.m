@@ -177,6 +177,7 @@ end
 % now for FTC, which is random tone object, sort the raster rows based on
 % numeric values in tags
 unsortedtags=zeros(length(tags),1);
+unsortedlighttags=zeros(length(tags),1);
 slabels={};
 if isempty(strfind(upper(datause),'LICK')) && ...
         isempty(strfind(upper(datause),'COLLAPSE')) &&  ...
@@ -190,17 +191,67 @@ if isempty(strfind(upper(datause),'LICK')) && ...
            (strcmpi(exptparams.TrialObject.ReferenceHandle.descriptor, 'ComplexChord') && ...
                exptparams.TrialObject.ReferenceHandle.SecondToneAtten==-1 && ...
                sum(exptparams.TrialObject.ReferenceHandle.AM)==0 && ...
-               isempty(exptparams.TrialObject.ReferenceHandle.LightSubset))),
+               isempty(exptparams.TrialObject.ReferenceHandle.LightSubset))) || ...
+           (  isfield(exptparams.TrialObject,'TargetHandle') &&  isfield(exptparams.TrialObject.TargetHandle,'descriptor') && ...
+           ( strcmpi(exptparams.TrialObject.TargetHandle.descriptor, 'TextureMorphing') &&  str2num(exptparams.TrialObject.TargetHandle.FrozenPatternsNb)>0 ) )
 
-    for cnt1=1:length(tags),
+    if  ~isfield(exptparams.TrialObject.TargetHandle,'descriptor') || (~( strcmpi(exptparams.TrialObject.TargetHandle.descriptor, 'TextureMorphing') &&  str2num(exptparams.TrialObject.TargetHandle.FrozenPatternsNb)>0 ))     
+      for cnt1=1:length(tags),
         temptags = strrep(strsep(tags{cnt1},',',1),' ','');
         unsortedtags(cnt1) = str2num(temptags{2});
+      end
+      [sortedtags, index] = sort(unsortedtags); % sort the numeric tags
+    else
+      RepTag = strrep(tags,'-',',');
+      for TagNum = 1:length(tags)
+        SpcInd = findstr( RepTag{TagNum} , ' ');
+        MatCond(TagNum,:) = str2num(RepTag{TagNum}(SpcInd(3):SpcInd(end-2)));
+      end
+%       P.MFile = mfile;
+%       P.Identifier = MD_MFile2Identifier(P.MFile);
+%       I = getRecInfo('Identifier',P.Identifier,'Quick',2);
+%       Trials = Events2Trials('Events',I.exptevents,'Stimclass','texturemorphing','Runclass',I.Runclass,...
+%         'RefSO',I.exptparams.TrialObject.ReferenceHandle,'TargetSO',I.exptparams.TrialObject.TargetHandle);
+      [a,IndexSortInd] = sort(MatCond(:,2),'ascend');
+      [a,ToCSortInd] = sort(MatCond(IndexSortInd,end),'descend'); ToCSortInd = IndexSortInd(ToCSortInd);
+      [a,DiffSortInd] = sort(MatCond(ToCSortInd,5),'descend'); DiffSortInd = ToCSortInd(DiffSortInd);
+      [a,MorphingSortInd] = sort(MatCond(DiffSortInd,4),'ascend'); MorphingSortInd = DiffSortInd(MorphingSortInd);
+      [a,FrozenSortInd] = sort(MatCond(MorphingSortInd,end-1),'ascend');
+      index = MorphingSortInd(FrozenSortInd);
+      % sorted by FrozenNum/MorphingNum/DiffNum/ToC/TrialNb
     end
 
-    [sortedtags, index] = sort(unsortedtags); % sort the numeric tags
-
     tags={tags{index}};
+    Note = {Note{index}};
     r=r(:,:,index);
+end
+
+% Light/NoLight conditions
+% Pure tone: r = time x repeat per condition x condition number || sorted in loadevpratser.m from alphabetical tags
+% Random tones: r = time x 1 x trial number || sorted just above with numeric  tags
+if size(r,2)==1
+for cnt1=1:length(Note),
+  if  ~isempty( findstr('Light',Note{cnt1}) )
+    if  ~isempty( findstr('+Light',Note{cnt1}) )
+      unsortedlighttags(cnt1) = 1;
+    elseif ~isempty( findstr('+NoLight',Note{cnt1}) )
+      unsortedlighttags(cnt1) = 0;
+    else
+      error('Light conditions not recognized.');
+    end
+  else
+    unsortedlighttags(cnt1) = 0;
+  end
+  if length(unique(unsortedlighttags))>1
+    SepLightLineY = length(find(unsortedlighttags==1))/length(unsortedlighttags);
+  end
+end
+[sortedlighttags, lightindex] = sort(unsortedlighttags);
+Note = {Note{lightindex}};
+r=r(:,:,lightindex);
+tags={tags{lightindex}};
+elseif ~isempty(findstr('Light',tags{1}))
+  SepLightLineY = size(r,2)/(size(r,2)*size(r,3));
 end
 
 % convert from r matrix (output from loadevpraster) to data matrix that's
@@ -349,6 +400,10 @@ elseif options.raster,
    colormap(gray);
    axis([-PreStimSilence size(data,2)./rasterfs-PreStimSilence 0 1]);
    axis xy
+end
+
+if exist('SepLightLineY')
+   hold on; plot([-PreStimSilence:(1./rasterfs),(size(data,2)./rasterfs)-PreStimSilence],[1 1]*SepLightLineY,'k--');
 end
 
 % plot psth / average lfp, if requested
@@ -516,9 +571,10 @@ end
 
 if options.raster,
    LabelIndex  = find(~strcmpi(labels,'EMPTY'));
-   if length(LabelIndex)>25
-      LabelIndex = LabelIndex(round(linspace(1,length(LabelIndex),25)));
-   end
+   %14/08-YB: temp modif
+%    if length(LabelIndex)>25
+%       LabelIndex = LabelIndex(round(linspace(1,length(LabelIndex),25)));
+%    end
    if max(LabelIndex)>1,
       set(gca, 'ytick', LabelIndex/size(data,1));
       set(gca, 'yticklabel', labels(LabelIndex));

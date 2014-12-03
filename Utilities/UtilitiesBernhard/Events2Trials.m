@@ -33,9 +33,9 @@ end
 
 % ASSIGN TRIAL PROPERTIES BY STIMCLASS
 if P.TimeIndex % RETURN INDICES BY TRIALNUMBER
-    T.Indices = [1:length(TrialInd)];
+    T.Indices = {1:length(TrialInd)};
     T.SortInd = [1:length(TrialInd)];
-    [tmp,T.SortInd] = sort(T.Indices,'ascend');
+    [tmp,T.SortInd] = sort(cell2mat(T.Indices),'ascend');
 else % PARSE INDICES BY STIMCLASS
   switch lower(P.Stimclass)
     case {'torcs','torc','clickdiscrim'};
@@ -74,6 +74,19 @@ else % PARSE INDICES BY STIMCLASS
           end
       end
       
+	case 'optosilence'
+        T.Durations = [P.Events(PostSilenceInd).StartTime] - [P.Events(PreSilenceInd).StopTime];
+        for iT = 1:length(TrialInd)
+             T.Tags{iT} = Notes{TrialInd(iT)+2};
+             if strcmp(T.Tags{iT}(find(T.Tags{iT}==',',1,'last')+2:end),'reference+light')
+                 T.Indices{iT} = 1;
+             elseif strcmp(T.Tags{iT}(find(T.Tags{iT}==',',1,'last')+2:end),'reference+nolight')
+                 T.Indices{iT} = 2;
+             else
+                 disp('tag not recognized');
+             end
+        end
+      
     case 'texturemorphing'
       TargetStimInd = StimInd(~cellfun(@isempty,strfind(Notes(StimInd),', target')));
       Vars = {'Index','Global_TrialNb','ChangedD_Num','MorphingNum','DifficultyNum','FrozenPatternNum','ToC'};
@@ -94,7 +107,7 @@ else % PARSE INDICES BY STIMCLASS
          else
            T.Indices{iT} = T.Index{iT};
          end
-         T.Times{iT} = [P.Events(StimInd(iT)).StartTime,P.Events(TargetStimInd(iT)).StopTime];
+         T.Times{iT} = [P.Events(TargetStimInd(iT)).StartTime,P.Events(TargetStimInd(iT)).StopTime];
          T.Tags{iT} = cNote(CommaInds(1)+1:CommaInds(2)-1);
          T.Durations{iT} = diff(T.Times{iT}); 
        end
