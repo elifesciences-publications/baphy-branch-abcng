@@ -43,7 +43,7 @@ Par.MorphingDuration = 0;
 o = set(o,'AllTargetPositions',{'center'});   % for Bernhard script [PerformanceAnalysis.m]
 o = set(o,'CurrentTargetPositions',{'center'});
 o = set(o,'MorphingDuration',Par.MorphingDuration);
-if strcmp(Par.Inverse_D0Dbis,'yes'); ReverseNb = 1; else ReverseNb = 0; end
+if strcmp(get(o,'Inverse_D0Dbis'),'yes'); ReverseNb = 1; else ReverseNb = 0; end
 
 % SET BIN NUMBER IN THE DISTRIBUTION + FREQUENCY RANGE AND ITS MIDDLE POINT F0
 tmp = str2num(get(o,'Distri_Morphing_BinNb'));
@@ -148,7 +148,7 @@ for ChangedD_Num = 1:ChangedD_Nb
 end
 
 % WARNING
-if strcmp(Par.Inverse_D0Dbis,'yes') && Par.FrozenPatternsNb~=0
+if strcmp(get(o,'Inverse_D0Dbis'),'yes') && Par.FrozenPatternsNb~=0
     disp('************ You should not have Frozen pattern in Reverse Mode. ************')
 end
 

@@ -14,6 +14,7 @@ PostStimSilence = get(O,'PostStimSilence');
 IniSeed = get(O,'IniSeed');
 FrozenPatternsAdress = get(O,'FrozenPatternsAdress');
 Par = get(O,'Par');
+BinToC = Par.BinToC;
 FrozenPatternsNb = Par.FrozenPatternsNb;
 if FrozenPatternsNb == 0; Mode = 'NoFrozen'; end
 StimulusBisDuration = Par.StimulusBisDuration;
@@ -38,7 +39,7 @@ if Par.MinToC == Par.MaxToC
 else
     RToC = RandStream('mt19937ar','Seed',IniSeed*Global_TrialNb);   % mcg16807 is fucked up
     lambda = 0.15;
-    ToC = PoissonProcessPsychophysics(lambda,Par.MaxToC-Par.MinToC,1,RToC);
+    ToC = PoissonProcessPsychophysics(lambda,Par.MaxToC-Par.MinToC,1,RToC,BinToC);
     ToC = ToC + Par.MinToC;
 end
 ToC = round(ToC/ChordDuration)*ChordDuration;
