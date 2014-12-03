@@ -90,6 +90,9 @@ else
   if ~exist('lfp','var'),
     lfp=0;
   end
+  if ~exist('rawtrace','var'),
+    rawtrace=0;
+  end
   includeincorrect=0;
   lfp_clean=0;
   mua=0;
