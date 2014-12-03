@@ -39,31 +39,36 @@ switch RepOrTrial
     P.TrialTags = P.TrialTags(RandInd);
     
   case 0 % TRIAL CALL (MODIFY SET BASED ON PERFORMANCE)
-    switch P.ReinsertTrials
-      case 0; % nothing needs to be done
-      case -1; % when you do not want to change TrialIndexLst (e.g. MemoClicks)
-        CurrentTrial = Counter;
-        TrialIndex = exptparams.TotalTrials;
-        if strcmpi(exptparams.Performance(end).Outcome,'EARLY')    % 2014/02-YB: SNOOZE is not considered
-          % REPEAT LAST INDEX AT RANDOM POSITION IN THE REMAINING
-          R = RandStream('mt19937ar','Seed',CurrentTrial);
-          RemInd = CurrentTrial:P.NumberOfTrials;
-          Inds = [1:CurrentTrial,RemInd(R.randperm(length(RemInd)))];
-          if length(Inds) ~= P.NumberOfTrials+1 warning('Check reinsertion of correction trials'); end
-          P.ReferenceIndices =  P.ReferenceIndices(Inds);
-          P.TargetIndices = P.TargetIndices(Inds);
-          P.TrialTags = P.TrialTags(Inds);
-          P.NumberOfTrials = P.NumberOfTrials + 1;
-        end        
-      otherwise;
-        TrialIndex = exptparams.TotalTrials;
-        if strcmpi(exptparams.Performance(end).Outcome,'EARLY')    % 2014/02-YB: SNOOZE is not considered
-          % 2014/02-YB: reinsertion (in the next 8) of TrialIndex sent to <waveform> (in order to re-generate the same ToC)
-%           P.TrialIndexLst(TrialIndex+randi(8,1)) =P.TrialIndexLst(TrialIndex);
-          P.TrialIndexLst(TrialIndex+P.ReinsertTrials) =P.TrialIndexLst(TrialIndex);
-        end
+    if P.ReinsertTrials~=0
+      switch P.ReinsertTrials<0
+        case 1 % when you do not want to change TrialIndexLst (e.g. MemoClicks)
+          InNextTrialNb = -(P.ReinsertTrials);
+          CurrentTrial = Counter;
+          TrialIndex = exptparams.TotalTrials;
+          if strcmpi(exptparams.Performance(end).Outcome,'EARLY') ||... % 2014/02-YB: SNOOZE was not considered
+              strcmpi(exptparams.Performance(end).Outcome,'SNOOZE') 
+            % REPEAT LAST INDEX AT RANDOM POSITION IN THE REMAINING
+            R = RandStream('mt19937ar','Seed',CurrentTrial);
+            RemInd = CurrentTrial:P.NumberOfTrials;
+            while length(RemInd)<InNextTrialNb
+              RemInd = [RemInd 1:P.NumberOfTrials];
+            end
+            Inds = [1:CurrentTrial,RemInd(R.randperm(length(RemInd)))];
+            P.ReferenceIndices =  P.ReferenceIndices(Inds);
+            P.TargetIndices = P.TargetIndices(Inds);
+            P.TrialTags = P.TrialTags(Inds);
+            P.NumberOfTrials = length(Inds);
+          end
+        case 0
+          TrialIndex = exptparams.TotalTrials;
+          R = RandStream('mt19937ar','Seed',TrialIndex);
+          if strcmpi(exptparams.Performance(end).Outcome,'EARLY')    % 2014/02-YB: SNOOZE is not considered
+            % 2014/02-YB: reinsertion (in the next <P.ReinsertTrials>) of TrialIndex sent to <waveform> (in order to re-generate the same ToC)
+            RndNextInd = R.randperm(P.ReinsertTrials);
+            P.TrialIndexLst(TrialIndex+RndNextInd(1)) = P.TrialIndexLst(TrialIndex);
+          end
+      end
     end
-    
   otherwise error('Unknown Option for ''RepOrTrial''!');
 end
 % SET VARIABLES FOR REFTAR

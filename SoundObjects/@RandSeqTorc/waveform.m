@@ -1,6 +1,7 @@
 function [w,ev,o] = waveform(o,index,IsRef,Mode,TrialNum)
 % 2013: Thomas // 2014: Yves
 % index is the Nb of Ref+1
+
 fs = get(o,'SamplingRate');
 PreStimSilence = get(o,'PreStimSilence');
 PostStimSilence = get(o,'PostStimSilence');
@@ -84,7 +85,7 @@ end
 RandSequence = [];
 RandTORC = [];
 TorcNb = 30;
-for RepNum = 1:100
+for RepNum = 1:(ceil(RefNow/RefNb)+RefNb)
     RandSequence = [RandSequence TrialKey.randperm(RefNb)];
     RandTORC = [RandTORC TrialKey.randperm(TorcNb)];
 end
@@ -112,10 +113,12 @@ for j = (RefNow+1) : (RefNow+index-1)  % index-1 is the number of Ref
     wTorc = []; MTORC = 1;
   end 
   
-  wSeq = [];  
+  wSeq = [];
+  % Pick up a random unique frequency if Ref are single-frequencied
+  if strcmp(SameRef,'yes'); ThisTrial_FreqNum = TrialKey.randi(length(UniqueToneIndex),1); end
   for FreqNum = 1:length(Frequency)
     if strcmp(SameRef,'yes')
-      w0 = addenv(sin(2*pi*Frequency(UniqueToneIndex)*t),fs);
+      w0 = addenv(sin(2*pi*Frequency(UniqueToneIndex(ThisTrial_FreqNum))*t),fs);
     else
       w0 = addenv(sin(2*pi*LocalSeq(FreqNum)*t),fs);
     end

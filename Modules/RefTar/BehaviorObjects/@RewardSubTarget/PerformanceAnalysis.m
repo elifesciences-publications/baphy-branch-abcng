@@ -10,6 +10,8 @@ AllPerf = exptparams.Performance;
 
 %% CURRENT PERFORMANCE
 cP = AllPerf(TrialIndex);
+TO = exptparams.TrialObject;
+TargetIndices = get(TO,'TargetIndices');
 % warning('YVES : reactivate this line and set AllTargetPositions in your Soundobject');
 % cP.AllTargetPositions = {'center'};
 cP.AllTargetPositions = get(get(exptparams.TrialObject,'TargetHandle'),'AllTargetPositions');
@@ -20,10 +22,25 @@ cP.SnoozeRate = sum(strcmp({AllPerf.Outcome},'SNOOZE'))/TrialIndex;
 cP.EarlyRate = sum(strcmp({AllPerf.Outcome},'EARLY'))/TrialIndex;
 cP.ErrorRate = sum(strcmp({AllPerf.Outcome},'ERROR'))/TrialIndex;  % no ERROR in the detection change task
 
+% DISCRIMINATION
+if get(O,'GradualResponse')
+  HitRate = cP.HitRate;
+  FaRate = sum([AllPerf.FaNb]) / ( sum( [AllPerf(1:TrialIndex).TargetIndices] - 1) + cP.FaNb );
+  if FaRate==0
+    cP.DiscriminationRate = 0;
+  elseif HitRate==0
+    cP.DiscriminationRate = 0;
+  else
+    cP.DiscriminationRate = norminv(HitRate)-norminv(FaRate);
+  end
+  cP.DiscriminationRate = (cP.DiscriminationRate/3) +0.5;
+else
+  cP.DiscriminationRate = prod(cP.HitRate);
+  if isnan(cP.DiscriminationRate) cP.DiscriminationRate = 0; end
+end
+
 % cluster by difficulty for plot purpoises
-TO = exptparams.TrialObject;
 SO = get(TO,'TargetHandle');
-TargetIndices = get(TO,'TargetIndices');
 if mod(TrialIndex,get(SO,'MaxIndex')) ==0
   CurrentTrialIndex = TargetIndices(get(SO,'MaxIndex'));
 else
@@ -60,8 +77,6 @@ for i=1:length(cP.AllTargetPositions)
   for j=1:TrialIndex cTargetsInd(j) = any(strcmp(AllPerf(j).CurrentTargetPositions,cP.AllTargetPositions{i})); end
   cP.HitRates(i) = sum(cTargetsInd.*cHitInd)/sum(cTargetsInd);
 end
-cP.DiscriminationRate = prod(cP.HitRate);
-if isnan(cP.DiscriminationRate) cP.DiscriminationRate = 0; end
 cP.Trials = TrialIndex;
 
 %% RECENT PERFORMANCE
@@ -77,13 +92,30 @@ switch cP.DetectType
   case 'ON';   % Corrected by Yves / 2013/10
     if ~isnan(cP.LickSensorInd)%&& ~isempty(cP.LickData)
       if ~get(TO,'LickTargetOnly')
-        cP.LickTime = find(LickData(:,cP.LickSensorInd)>0.5,1,'first');
+        if ~get(O,'GradualResponse')
+          LickTimings = find(LickData(:,cP.LickSensorInd)>0.5,1,'first');
+        else
+          LickTimings = find(LickData(:,cP.LickSensorInd)>0.5);
+        end
+        if ~isempty(LickTimings) && ...
+            ( strcmp('HIT' , {AllPerf(end).Outcome}) && any(LickTimings/HW.params.fsAI>cP.TarWindow(1)) && any(LickTimings/HW.params.fsAI<cP.TarWindow(2)) ) ||...
+            ( strcmp('EARLY' , {AllPerf(end).Outcome}) && any(LickTimings/HW.params.fsAI<cP.TarWindow(1)) )
+          cP.LickTime = LickTimings;
+        elseif (strcmp('HIT' , {AllPerf(end).Outcome}) || strcmp('EARLY' , {AllPerf(end).Outcome}))
+          cP.LickTime = exptparams.Performance(end).LickTime*HW.params.fsAI;   % if lick too short and not detected in <LickTimings>
+        elseif strcmp('SNOOZE' , {AllPerf(end).Outcome})
+          cP.LickTime = [];
+        end
       else
         MinimalInterval = 0.300*HW.params.fsAI;     % samples
         LickTimings = find( diff( LickData(:,cP.LickSensorInd) ) >0)';   % ascending wave
         FarLickTimingsIndex = unique( [1 find(diff(LickTimings)>MinimalInterval)+1] );
-        if ~isnan(LickTimings)
+        if ~isempty(LickTimings) &&...
+            (strcmp('HIT' , {AllPerf(end).Outcome}) || strcmp('EARLY' , {AllPerf(end).Outcome}))
           cP.LickTime = LickTimings(FarLickTimingsIndex);
+        elseif isempty(LickTimings) &&...
+            (strcmp('HIT' , {AllPerf(end).Outcome}) || strcmp('EARLY' , {AllPerf(end).Outcome}))
+          cP.LickTime = exptparams.Performance(end).LickTime*HW.params.fsAI;   % if lick too short and not detected in <LickTimings>
         else
           cP.LickTime = [];
         end
@@ -98,8 +130,13 @@ switch cP.DetectType
 end
 if isempty(cP.LickTime); cP.LickTime = NaN; cP.LickSensorInd = NaN; end  % pump after catch induces fake licks
 cP.LickTime = cP.LickTime/HW.params.fsAI;
+if get(O,'GradualResponse') && ~strcmp('SNOOZE' , {AllPerf(end).Outcome})
+  MinimalInterval = 0.250;     % samples
+  FarLickTimingsIndex = unique( [1 (find(diff(cP.LickTime)>MinimalInterval)+1)'] );
+  cP.LickTime = cP.LickTime(FarLickTimingsIndex);
+end
 Licks = cP.LickTime(cP.LickTime < cP.TarWindow(2));
-cP.FirstLickRelTarget = Licks - cP.TarWindow(1);
+cP.FirstLickRelTarget = Licks' - cP.TarWindow(1);
 cP.FirstLickRelReference = cP.LickTime - cP.RefWindow(1);
 
 %% WRITE BACK

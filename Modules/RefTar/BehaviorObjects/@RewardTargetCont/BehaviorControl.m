@@ -27,6 +27,7 @@ Events = [ ];
 exptparams.WaterUnits = 'milliliter';
 RewardAmount = get(O,'RewardAmount');
 PrewardAmount = get(O,'PrewardAmount');
+MinRewardAmount = get(O,'MinRewardAmount');
 IncrementRewardAmount = get(O,'IncrementRewardAmount');
 MaxIncrementRewardNb = get(O,'MaxIncrementRewardNb');
 
@@ -55,6 +56,7 @@ else
   TarWindow(1) = TargetStartTime + EarlyWindow  + get(O,'ResponseWindow');
   TarWindow(2) = TarWindow(1);
 end
+TimeBin = 3; MaxTimeBin = floor(TarWindow(1)/TimeBin);
 RefWindow = [0,TarWindow(1)];
 Objects.Tar = get(exptparams.TrialObject,'TargetHandle');
 Simulick = get(O,'Simulick'); if Simulick; LickTime = rand*(TarWindow(2)+1); end
@@ -87,6 +89,7 @@ SensorChannels=find(strcmp(SensorNames,'Touch'));
 AllLickSensorNames = SensorNames(~cellfun(@isempty,strfind(SensorNames,'Touch')));
 
 % SYNCHRONIZE COMPUTER CLOCK WITH DAQ TIME
+CountingLicks = [];
 tic; CurrentTime = IOGetTimeStamp(HW); InitialTime = CurrentTime;
 fprintf(['Running Trial [ <=',n2s(exptparams.LogDuration),'s ] ... ']);
 while CurrentTime < exptparams.LogDuration
@@ -115,6 +118,7 @@ DetectType = 'ON'; LickOccured = 0;
   % PROCESS LICK GENERALLY
   if LickOccured
     ResponseTime = CurrentTime; 
+    CountingLicks = [CountingLicks ResponseTime];
     cSensorChannels = SensorChannels(find(cLick,1,'first'));
     if ~isempty(cSensorChannels)
       cLickSensorInd = find(cLick,1,'first');
@@ -124,8 +128,14 @@ DetectType = 'ON'; LickOccured = 0;
       cLickSensor = 'None'; cLickSensorNot = 'None';
     end
    
-    Events=AddEvent(Events,['LICK,',cLickSensor],TrialIndex,ResponseTime,[]);
-    break;
+    Events = AddEvent(Events,['LICK,',cLickSensor],TrialIndex,ResponseTime,[]);
+    if ~get(O,'GradualResponse')%&& ResponseTime >  StimEvents(1).StopTime + SeqLen/2;
+      break
+    elseif get(O,'GradualResponse') && ResponseTime > (TarWindow(1) + MinimalDelayResponse) && ResponseTime<TarWindow(2)
+      break
+    elseif  get(O,'GradualResponse')
+      LickOccured = 0;
+    end
   end
   
   % GIVE LIGHT CUE ON REWARD SIDE
@@ -145,18 +155,41 @@ DetectType = 'ON'; LickOccured = 0;
     fprintf('\b ... '); Prewarded = 1;
   end
 end
-% IF NO RESPONSE OCCURED
-if ~LickOccured ResponseTime = inf; end
 
-if LickOccured
+% Count number of reference segments where a lick occured
+if get(O,'GradualResponse')
+  DidItLicks = zeros(1,MaxTimeBin);
+  for LickNum = 1:length(CountingLicks)
+    if CountingLicks(LickNum)<=TarWindow(1)
+      tbNum = max(1,floor(CountingLicks(LickNum)/TimeBin));
+      if DidItLicks(tbNum) == 0
+        DidItLicks(tbNum) = 1;
+      end
+    end
+  end
+  BadLickSum = sum(DidItLicks);
+else
+  BadLickSum = 0;
+end
+
+% IF NO RESPONSE OCCURED
+if ~LickOccured && isempty(CountingLicks); ResponseTime = inf; end
+
+if ~isempty(CountingLicks)
   fprintf(['\t Lick detected [ ',cLickSensor,', at ',n2s(ResponseTime,3),'s ] ... ']);
 else
   fprintf(['\t No Lick detected ... ']); cLickSensor = ''; 
 end
 
 %%  PROCESS LICK
-if ResponseTime < (TarWindow(1) +MinimalDelayResponse)
+if ~isempty(CountingLicks) && all( CountingLicks < (TarWindow(1) + MinimalDelayResponse) )
   Outcome = 'EARLY';
+  ResponseTime = CountingLicks(1);
+elseif ~isempty(CountingLicks) && any( CountingLicks>(TarWindow(1) + MinimalDelayResponse) & CountingLicks<TarWindow(2) ) % HIT OR ERROR
+  switch cLickSensor % CHECK WHERE THE LICK OCCURED
+    case TargetSensors;   Outcome = 'HIT'; ResponseTime = CountingLicks(end); % includes ambigous if both are specified 
+    otherwise;                   Outcome = 'ERROR';
+  end  
 elseif ResponseTime > TarWindow(2)  % CASES NO LICK AND LATE LICK
   if ~CatchTrial
     Outcome = 'SNOOZE';
@@ -165,13 +198,8 @@ elseif ResponseTime > TarWindow(2)  % CASES NO LICK AND LATE LICK
     cLickSensor = TargetSensors{1}; cLickSensorNot = 'None';
     Outcome = 'HIT'; % includes ambigous if both are specified
   end
-else % HIT OR ERROR
-  switch cLickSensor % CHECK WHERE THE LICK OCCURED
-    case TargetSensors;   Outcome = 'HIT'; % includes ambigous if both are specified 
-    otherwise;                   Outcome = 'ERROR';
-  end
 end
-Events=AddEvent(Events,['OUTCOME,',Outcome],TrialIndex,ResponseTime,[]);
+Events = AddEvent(Events,['OUTCOME,',Outcome],TrialIndex,ResponseTime,[]);
 if strcmp(Outcome,'HIT'); Outcome2Display = [Outcome ', RT = ' num2str(ResponseTime-TarWindow(1))]; else Outcome2Display = Outcome; end
 fprintf(['\t [ ',Outcome2Display,' ] ... ']);
 
@@ -232,7 +260,11 @@ switch Outcome
       if ~(RewardSnooze); RewardAmount = 0; else RewardAmount = RewardAmount/3; pause(0.2); end 
     else
       RewardAmount = RewardAmount * (0.5 + (TarWindow(1)-MinToC)/(MaxToC-MinToC)) + IncrementRewardAmount*NbContiguousLastHits;
-    end   
+    end
+    if get(O,'GradualResponse')
+      RewardAmount = MinRewardAmount + (RewardAmount-MinRewardAmount)*(MaxTimeBin-BadLickSum)/MaxTimeBin;
+    end
+    
     PumpDuration = RewardAmount/globalparams.PumpMlPerSec.(PumpName);
     % pause(0.05); % PAUSE TO ALLOW FOR HEAD TURNING
     PumpEvent = IOControlPump(HW,'Start',PumpDuration,PumpName);

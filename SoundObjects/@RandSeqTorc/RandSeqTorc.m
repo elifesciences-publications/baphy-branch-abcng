@@ -29,7 +29,7 @@ case 0
     o.Intervals = [0 -2 1 -2];
     o.ToneDur = 0.075;
     o.ToneGap = 0.025;
-    o.SequenceGap = [0.5];
+    o.SequenceGap = 0.5;
     o.LoudnessCue = 0;
     o.TORC = 'yes';
     o.OctaveRange=[0 1];      %contour move up/down tange in octave

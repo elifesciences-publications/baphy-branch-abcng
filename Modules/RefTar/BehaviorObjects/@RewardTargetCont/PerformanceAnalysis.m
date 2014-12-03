@@ -76,11 +76,21 @@ cP.ErrorRateRecent = sum(strcmp({RecentPerf.Outcome},'ERROR'))/AverageSteps;
 switch cP.DetectType
   case 'ON';   % Corrected by Yves / 2013/10
     if ~isnan(cP.LickSensorInd)
-      if ~get(TO,'LickTargetOnly')
-        cP.LickTime = find(LickData(:,cP.LickSensorInd)>0.5,1,'first');
+      if ~get(TO,'LickTargetOnly')        
+        if ~get(O,'GradualResponse')
+          cP.LickTime = find(LickData(:,cP.LickSensorInd)>0.5,1,'first');
+        else
+          LickTimings = find(LickData(:,cP.LickSensorInd)>0.5);
+          if ~isempty(LickTimings)
+            MinimalInterval = 0.400*HW.params.fsAI;     % samples
+            FarLickTimingsIndex = unique( [1 find(diff(LickTimings)>MinimalInterval)'+1] );
+            cP.LickTime = LickTimings(FarLickTimingsIndex);
+          else
+            cP.LickTime = LickTimings;
+          end
+        end
       else
-        MinimalInterval = 0.250*HW.params.fsAI;     % samples  
-        LickTimings = find( diff( LickData(:,cP.LickSensorInd) ) >0)';
+        MinimalInterval = 0.250*HW.params.fsAI;     % samples
         FarLickTimingsIndex = unique( [1 find(diff(LickTimings)>MinimalInterval)+1] );
         cP.LickTime = LickTimings(FarLickTimingsIndex);
       end
@@ -94,7 +104,7 @@ switch cP.DetectType
 end
 if isempty(cP.LickTime) || CatchTrial; cP.LickTime = NaN; cP.LickSensorInd = NaN; end  % pump after catch induces fake licks
 cP.LickTime = cP.LickTime/HW.params.fsAI;
-cP.FirstLickRelTarget = cP.LickTime - cP.TarWindow(1);
+cP.FirstLickRelTarget = cP.LickTime' - cP.TarWindow(1);
 cP.FirstLickRelReference = cP.LickTime - cP.RefWindow(1);
 
 %% WRITE BACK

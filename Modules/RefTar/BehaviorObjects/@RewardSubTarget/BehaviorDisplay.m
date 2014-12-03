@@ -29,6 +29,15 @@ SRin = HW.params.fsAI;
 MaxIndex = get(get(exptparams.TrialObject,'TargetHandle'),'MaxIndex');
 cTargetIndex = exptparams.Performance(TrialIndex).TargetIndices;
 
+InterSequenceGap = get(get(exptparams.TrialObject,'TargetHandle'),'SequenceGap');
+TorcDuration = get(get(exptparams.TrialObject,'TargetHandle'),'TorcDuration');
+ToneDur = get(get(exptparams.TrialObject,'TargetHandle'),'ToneDur');
+InterToneGap = get(get(exptparams.TrialObject,'TargetHandle'),'ToneGap');
+isTORC = get(get(exptparams.TrialObject,'TargetHandle'),'TORC');
+
+SeqLen = (ToneDur+InterToneGap)*4;
+RespWinLen = 2*InterSequenceGap + strcmp(isTORC,'yes')*TorcDuration;
+
 %% NAME FIGURE
 FigName = ['Ferret: ',globalparams.Ferret,' | ',...
   'Ref: ',get(exptparams.TrialObject,'ReferenceClass') ' | ',...
@@ -111,28 +120,59 @@ if ~isempty(ResponseData)
       case 'ALL'; OutInd = [1:length(Outcomes)];
       otherwise OutInd = find(strcmp(Outcomes,upper(PlotOutcomes{iO})));
     end
-    if ~isempty(OutInd)
-     %  LengthRef = StimEvents(end - 1).StopTime -StimEvents(end - 3).StopTime;
-  %LengthSeq = StimEvents(end - 2).StopTime -StimEvents(end - 3).StopTime;
- % ResponseTime = mod(ResponseTime - StimEvents(1).StopTime, LengthRef);
+    %  LengthRef = StimEvents(end - 1).StopTime -StimEvents(end - 3).StopTime;
+    % LengthSeq = StimEvents(end - 2).StopTime -StimEvents(end - 3).StopTime;
+    % ResponseTime = mod(ResponseTime - StimEvents(1).StopTime, LengthRef);
+    Sensors = {exptparams.Performance(OutInd).LickSensor};
+    USensors = unique(Sensors); USensors = setdiff(USensors,'None');
+    %       Bins = [-TarWindow(1):0.1:diff(TarWindow)+0.5];
+    %       Bins = -3:0.1:3;
+    %       if ~isempty(USensors)
+    %         for i=1:length(USensors)
+    %           cInd = find(strcmp(Sensors,USensors{i}));
+    %           cLicks = Licks(cInd);
+    %           cHist(i,:) = hist(cLicks,Bins);
+    %           set(PH.TarTiming.RespHist(iO,i),'xdata',Bins,'ydata',cHist(i,:)+iO*0.05);
+    %         end
+    %         axis([Bins([1,end]),0,max(cHist(:))+1]);
+    %       end
+    Bins = -MaxIndex*(SeqLen+RespWinLen) : 0.15 : 2*RespWinLen; i =1;
+    
+    TrialNb = length(exptparams.Performance);
+    if get(O,'GradualResponse') && ~strcmp('SNOOZE',upper(PlotOutcomes{iO}))
+      Tind = [];
+      if strcmp('HIT',upper(PlotOutcomes{iO}))    % I take only the positive licks
+        Licks = [exptparams.Performance(OutInd).FirstLickRelTarget];
+        Licks = Licks(Licks>=0);
+        for TrialNum = OutInd
+          Tind = [Tind ...
+            exptparams.Performance(TrialNum).TargetIndices*ones(1,length(find(exptparams.Performance(TrialNum).FirstLickRelTarget>=0)))];
+        end
+      elseif strcmp('EARLY',upper(PlotOutcomes{iO}))  % I also want in the Early histogram the early licks of the Hit trials
+        Licks = [exptparams.Performance(OutInd).FirstLickRelTarget];
+        for TrialNum = OutInd
+          Tind = [Tind ...
+            exptparams.Performance(TrialNum).TargetIndices*ones(1,length(exptparams.Performance(TrialNum).FirstLickRelTarget))];
+        end
+        
+        OutInd = find(strcmp(Outcomes,'HIT'));
+        HitTrial_Licks = [exptparams.Performance(OutInd).FirstLickRelTarget];
+        HitTrial_Licks = HitTrial_Licks(HitTrial_Licks<0);
+        Licks = [Licks HitTrial_Licks];
+        for TrialNum = OutInd
+          Tind = [Tind ...
+            exptparams.Performance(TrialNum).TargetIndices*ones(1,length(find(exptparams.Performance(TrialNum).FirstLickRelTarget<0)))];
+        end
+      end
+    else
       Licks = [exptparams.Performance(OutInd).FirstLickRelTarget];
-      Sensors = {exptparams.Performance(OutInd).LickSensor};
-      USensors = unique(Sensors); USensors = setdiff(USensors,'None');
-      %       Bins = [-TarWindow(1):0.1:diff(TarWindow)+0.5];
-      %       Bins = -3:0.1:3;
-      %       if ~isempty(USensors)
-      %         for i=1:length(USensors)
-      %           cInd = find(strcmp(Sensors,USensors{i}));
-      %           cLicks = Licks(cInd);
-      %           cHist(i,:) = hist(cLicks,Bins);
-      %           set(PH.TarTiming.RespHist(iO,i),'xdata',Bins,'ydata',cHist(i,:)+iO*0.05);
-      %         end
-      %         axis([Bins([1,end]),0,max(cHist(:))+1]);
-      %       end
-      Bins = -3:0.1:3; i =1;
+      Tind = [exptparams.Performance(OutInd).TargetIndices];
+    end
+    if ~isempty(Licks)
+      Licks = Licks-(MaxIndex-Tind)*(SeqLen+RespWinLen);
       cHist(i,:) = hist(Licks,Bins); ForAxisHist(iO,:,:) = cHist(i,:);
       set(PH.TarTiming.RespHist(iO,i),'xdata',Bins,'ydata',cHist(i,:)+iO*0.05);
-      axis([Bins([1,end]),0,max(ForAxisHist(:))+1]);
+      set(AH.TarTiming,'YLim',[0,max(ForAxisHist(:))+1]);
     end
   end
 end
@@ -294,7 +334,7 @@ else % CREATE A NEW SET OF HANDLES
     end
   end
   
-  set(AH.TarTiming,'XLim',[-.4 2])
+  set(AH.TarTiming,'XLim',[-MaxSeqNb*(SeqLen+RespWinLen) 2*RespWinLen])
   ylabel('Trial nb.',AxisLabelOpt{:});
   xlabel('Time rel. Responsewindow [seconds]',AxisLabelOpt{:}); 
   
