@@ -177,6 +177,7 @@ end
 % now for FTC, which is random tone object, sort the raster rows based on
 % numeric values in tags
 unsortedtags=zeros(length(tags),1);
+unsortedlighttags=zeros(length(tags),1);
 slabels={};
 if isempty(strfind(upper(datause),'LICK')) && ...
         isempty(strfind(upper(datause),'COLLAPSE')) &&  ...
@@ -221,7 +222,36 @@ if isempty(strfind(upper(datause),'LICK')) && ...
     end
 
     tags={tags{index}};
+    Note = {Note{index}};
     r=r(:,:,index);
+end
+
+% Light/NoLight conditions
+% Pure tone: r = time x repeat per condition x condition number || sorted in loadevpratser.m from alphabetical tags
+% Random tones: r = time x 1 x trial number || sorted just above with numeric  tags
+if size(r,2)==1
+for cnt1=1:length(Note),
+  if  ~isempty( findstr('Light',Note{cnt1}) )
+    if  ~isempty( findstr('+Light',Note{cnt1}) )
+      unsortedlighttags(cnt1) = 1;
+    elseif ~isempty( findstr('+NoLight',Note{cnt1}) )
+      unsortedlighttags(cnt1) = 0;
+    else
+      error('Light conditions not recognized.');
+    end
+  else
+    unsortedlighttags(cnt1) = 0;
+  end
+  if length(unique(unsortedlighttags))>1
+    SepLightLineY = length(find(unsortedlighttags==1))/length(unsortedlighttags);
+  end
+end
+[sortedlighttags, lightindex] = sort(unsortedlighttags);
+Note = {Note{lightindex}};
+r=r(:,:,lightindex);
+tags={tags{lightindex}};
+elseif ~isempty(findstr('Light',tags{1}))
+  SepLightLineY = size(r,2)/(size(r,2)*size(r,3));
 end
 
 % convert from r matrix (output from loadevpraster) to data matrix that's
@@ -370,6 +400,10 @@ elseif options.raster,
    colormap(gray);
    axis([-PreStimSilence size(data,2)./rasterfs-PreStimSilence 0 1]);
    axis xy
+end
+
+if exist('SepLightLineY')
+   hold on; plot([-PreStimSilence:(1./rasterfs),(size(data,2)./rasterfs)-PreStimSilence],[1 1]*SepLightLineY,'k--');
 end
 
 % plot psth / average lfp, if requested

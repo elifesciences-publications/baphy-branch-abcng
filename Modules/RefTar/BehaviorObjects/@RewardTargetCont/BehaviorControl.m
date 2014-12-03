@@ -44,7 +44,7 @@ DifficultyLvlByInd = get(get(exptparams.TrialObject,'TargetHandle'),'DifficultyL
 DifficultyNow = DifficultyLvl( DifficultyLvlByInd(Index) );
 
 TarInd = find(~cellfun(@isempty,strfind({StimEvents.Note},'Target')));
-EarlyWindow = StimEvents(end).StartTime;        % include 0.4s PreStimSilence / 2s Frozen / ToC (without response window)
+EarlyWindow = StimEvents(end-1).StartTime;        % include 0.4s PreStimSilence / 2s Frozen / ToC (without response window)
 TargetStartTime = 0; %StimEvents(TarInd(1)).StartTime;
 if DifficultyNow~=0 % not a catch trial
   CatchTrial = 0;
