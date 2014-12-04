@@ -51,7 +51,7 @@ for k = 2:length(Intervals)
     Frequency(k) = Frequency(k-1)*2^(Intervals(k)/12);    
 end
 
-% MATRIX OF PERMUTATION WITH CONTRAINS
+% MATRIX OF PERMUTATION WITH CONTRAINTS
 PermIndex = find(IdenticalTones ~= 1);
 MustPermIndex = find(IdenticalTones == -1);
 NoPermIndex = find(IdenticalTones == 1);
