@@ -1,6 +1,6 @@
-function [w,ev,o] = waveform(o,index,IsRef,Mode,TrialNum)
+function [w,ev,o,Parameters] = waveform(o,index,IsRef,Mode,TrialNum)
 % 2013: Thomas // 2014: Yves
-% index is the Nb of Ref+1
+% index is the Nb of Ref+1 (total nb of sequences)
 
 fs = get(o,'SamplingRate');
 PreStimSilence = get(o,'PreStimSilence');
@@ -51,29 +51,29 @@ PermIndex = find(IdenticalTones ~= 1);
 MustPermIndex = find(IdenticalTones == -1);
 NoPermIndex = find(IdenticalTones == 1);
 [PermSizeRow,PermSizeCol] = size(perms(TargetF(PermIndex)));
-SeqTargetFPerm = zeros(PermSizeRow,length(TargetF));
-SeqTargetFNoPerm = SeqTargetFPerm;
+SeqFrequencyPerm = zeros(PermSizeRow,length(TargetF));
+SeqFrequencyNoPerm = SeqFrequencyPerm;
 
-SeqTargetFPerm(:,PermIndex) = perms(TargetF(PermIndex));
-SeqTargetFNoPerm(:,NoPermIndex) = repmat(TargetF(NoPermIndex),PermSizeRow,1);
-SeqTargetF = SeqTargetFNoPerm + SeqTargetFPerm;
+SeqFrequencyPerm(:,PermIndex) = perms(TargetF(PermIndex));
+SeqFrequencyNoPerm(:,NoPermIndex) = repmat(TargetF(NoPermIndex),PermSizeRow,1);
+SeqFrequency = SeqFrequencyNoPerm + SeqFrequencyPerm;
 
 for q = 1:length(MustPermIndex)
-    if any(SeqTargetF(:,q) == TargetF(q))
-       [BadSeq, ~] = find(SeqTargetF(:,q) == TargetF(q));
-       SeqTargetF(BadSeq,:) = [];
+    if any(SeqFrequency(:,q) == TargetF(q))
+       [BadSeq, ~] = find(SeqFrequency(:,q) == TargetF(q));
+       SeqFrequency(BadSeq,:) = [];
     end
 end
 % Remove potential Target sequence
-for q = size(SeqTargetF,1):-1:1
-    if all(SeqTargetF(q,:) == TargetF)
-       SeqTargetF(q,:) = [];
+for q = size(SeqFrequency,1):-1:1
+    if all(SeqFrequency(q,:) == TargetF)
+       SeqFrequency(q,:) = [];
     end
 end
 
 % MATRIX OF PERMUTATION AND TORC INDICES FOR MAKING SURE WE PRESENT
 %EACH OF THEM IN A BALANCED WAY
-[RefNb,~] = size(SeqTargetF);
+[RefNb,~] = size(SeqFrequency);
 RandSequence = [];
 RandTORC = [];
 TorcNb = 30;
@@ -100,9 +100,9 @@ if RampProbability>0
   RampPosition = find(TrialKey.rand(1,(index-1))<RampProbability);
   AscRampPosition = RampPosition(TrialKey.rand(1,length(RampPosition))>0.5);  % Half ascending
   DescRampPosition = setdiff(RampPosition,AscRampPosition);                   % Half descending
-else RampPosition = []; end
+else RampPosition = []; AscRampPosition = []; DescRampPosition = []; end
 for j = (RefNow+1) : (RefNow+index-1)  % index-1 is the number of Ref  
-  LocalSeq = SeqTargetF(RandSequence(j),:);  % Select the right permutation
+  LocalSeq = SeqFrequency(RandSequence(j),:);  % Select the right permutation
   % TORC
   if strcmp(TORC,'yes')
     [wTorc, eTorc] = waveform(TorcObj, RandTORC(j));
@@ -148,12 +148,12 @@ for j = (RefNow+1) : (RefNow+index-1)  % index-1 is the number of Ref
   
   w = [w ; Segment2Add];
   
-  %     if i==1
-  %        w=[prestim;w];
-  %        ev=ev_struct(ev,['Note ' num2str(TargetF(i))],PreStimSilence,ToneDur,ToneGap);
-  %     else
-  %        ev=ev_struct(ev,['Note ' num2str(TargetF(i))],0,ToneDur,ToneGap);
-  %     end
+  % LABEL OF SEQUENCE TONES
+  if strcmp(SameRef,'yes')
+      Parameters.Sequences(j-RefNow,:) = ones(1,4)*UniqueToneIndex(ThisTrial_FreqNum);
+  else
+      for FreqNum = 1:length(TargetF); Parameters.Sequences(j-RefNow,FreqNum) = find( TargetF == LocalSeq(FreqNum) ); end
+  end
 end
 
 % TARGET
