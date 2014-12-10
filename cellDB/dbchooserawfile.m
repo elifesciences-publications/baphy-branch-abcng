@@ -83,7 +83,7 @@ uiwait(handles.figure1);
 % haven't been set
 function initialize_display(hObject,handles,user);
 
-global CELLDB_USER CELLDB_ANIMAL CELLDB_SITEID CELLDB_RUNCLASS
+global CELLDB_USER CELLDB_ANIMAL CELLDB_SITEID CELLDB_RUNCLASS CELLDB_ALLANIMALS
 global CELLDB_CHANNEL CELLDB_SIGMA CELLDB_GLOBAL_SIGMA CHOOSING_TEMPLATE
 global USECOMMONREFERENCE
 global SIGTHRESH BAPHYHOME
@@ -106,6 +106,7 @@ userdata=mysql(sql);
 users=cell(length(userdata),1);
 [users{:}]=deal(userdata.userid);
 
+set(handles.checkAllAnimals,'Value',CELLDB_ALLANIMALS);
 checkAllAnimals_Callback(hObject, [], handles);
 
 % load last settings
@@ -120,7 +121,6 @@ end
 
 set(handles.popTester,'String',users);
 set(handles.popTester,'Value',useridx);
-
 
 % Update handles structure
 guidata(hObject, handles);
@@ -678,10 +678,11 @@ function checkAllAnimals_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-global CELLDB_ANIMAL BAPHY_LAB
+global CELLDB_ANIMAL CELLDB_ALLANIMALS BAPHY_LAB
 
 % Hint: get(hObject,'Value') returns toggle state of checkAllAnimals
 allAnimals=get(handles.checkAllAnimals,'Value');
+CELLDB_ALLANIMALS=allAnimals;
 
 if ~allAnimals && ~isempty(BAPHY_LAB),
    sql=['SELECT DISTINCT min(gCellMaster.id) as id,gCellMaster.animal ',...
