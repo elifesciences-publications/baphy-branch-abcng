@@ -106,13 +106,13 @@ userdata=mysql(sql);
 users=cell(length(userdata),1);
 [users{:}]=deal(userdata.userid);
 
-set(handles.checkAllAnimals,'Value',CELLDB_ALLANIMALS);
-checkAllAnimals_Callback(hObject, [], handles);
-
 % load last settings
 if isempty(CELLDB_ANIMAL),
    load_db_settings;
 end
+
+set(handles.checkAllAnimals,'Value',CELLDB_ALLANIMALS);
+checkAllAnimals_Callback(hObject, [], handles);
 
 useridx=find(strcmp(CELLDB_USER,users));
 if isempty(useridx),
