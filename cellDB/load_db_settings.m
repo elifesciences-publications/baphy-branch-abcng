@@ -1,12 +1,12 @@
-function load_db_settings;
+function load_db_settings
 
 global CELLDB_USER CELLDB_ANIMAL CELLDB_SITEID CELLDB_RUNCLASS
-global CELLDB_CHANNEL CELLDB_SIGMA CELLDB_GLOBAL_SIGMA CELLDB_PENID
+global CELLDB_CHANNEL CELLDB_SIGMA CELLDB_GLOBAL_SIGMA CELLDB_PENID CELLDB_ALLANIMALS
 global USECOMMONREFERENCE
 global BAPHYHOME
 
 configfile=[BAPHYHOME filesep 'Config' filesep 'MeskaSettings.mat'];
-
+CELLDB_ALLANIMALS=0;
 if exist(configfile,'file'),
     fprintf('loading %s\n',configfile);
     
@@ -32,6 +32,7 @@ if exist(configfile,'file'),
         else
             CELLDB_GLOBAL_SIGMA=0;
         end
+        CELLDB_ALLANIMALS=getparm(usersettings,'all_animals',0);
         if isfield(usersettings,'common_reference'),
             USECOMMONREFERENCE=usersettings.common_reference;
         end

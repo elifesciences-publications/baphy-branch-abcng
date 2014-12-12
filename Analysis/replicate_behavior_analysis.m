@@ -83,8 +83,9 @@ for cnt1 = 1:TotalTrial
             globalparams, exptparams, ThisTrial, Lick);
         % disabled display per Block
         if ~mod(cnt1,exptparams.TrialBlock) || cnt1==TotalTrial,
-            exptparams = BehaviorDisplay(exptparams.BehaveObject, HW, StimEvents, globalparams, ...
-                exptparams, ThisTrial, Lick, []);
+            exptparams = BehaviorDisplay(exptparams.BehaveObject, HW, ...
+                                         StimEvents, globalparams, ...
+                                         exptparams, ThisTrial, Lick, []);
             set(gcf,'Name',basename);
         end
     end
