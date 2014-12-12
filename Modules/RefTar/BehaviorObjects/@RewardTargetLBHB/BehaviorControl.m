@@ -268,14 +268,10 @@ while CurrentTime < exptparams.LogDuration  % while trial is not over
     end
 
     % CHECK FOR Reminder Hit - Lick in reminder response window
-    if (Lick) && RemTrial && RemResponseWin(1)<CurrentTime && RemResponseWin(2)>=CurrentTime,
+    if (Lick) && RemTrial && ~RemHitThisTrial && RemResponseWin(1)<CurrentTime && RemResponseWin(2)>=CurrentTime,
       RemHitThisTrial = 1;
-      fprintf('Reminder Hit -- ');
-      if StopTargetFA<1
-         WaterFraction = 0.1;
-      else
-         WaterFraction = 1;
-      end
+      fprintf('Reminder Hit (20%% std reward) -- ');
+      WaterFraction = 0.2;
       PumpDuration = get(o,'PumpDuration') * WaterFraction;
       if PumpDuration > 0
          ev = IOControlPump (HW,'start',PumpDuration);
@@ -289,8 +285,9 @@ while CurrentTime < exptparams.LogDuration  % while trial is not over
     end
 
     % FIXED REWARD FOR TRAINING
-    if BehaviorParms.TrainingPumpDur>0 && ~TrainingRewardGiven && ...
-        CurrentTime>mean(TarResponseWin(1:2)) && ~HitThisTrial,
+    if BehaviorParms.TrainingPumpDur>0 && ~TrainingRewardGiven && ~HitThisTrial && ...
+        ((~RemTrial && CurrentTime>mean(TarResponseWin(1:2))) ||...
+         (RemTrial && CurrentTime>mean(RemResponseWin(1:2)))),
       disp('Giving training auto-reward in middle of target response window');
       PumpDuration = BehaviorParms.TrainingPumpDur;
       ev = IOControlPump(HW,'start',PumpDuration);

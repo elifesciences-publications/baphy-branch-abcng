@@ -247,7 +247,8 @@ while ContinueExp == 1
   end
 end % CHECK FOR CONTINUING EXPERIMENT
 exptparams.StopTime = clock;
-if ~isfield(exptparams,'volreward') exptparams.volreward = exptparams.Water; end
+% svd commented out line 2014-12-01 because it isn't needed any more?
+% if ~isfield(exptparams,'volreward') exptparams.volreward = exptparams.Water; end
 
 %% POSTPROCESSING
 switch HW.params.DAQSystem
@@ -349,7 +350,7 @@ if globalparams.rawid>0 && dbopen,
       sql=['INSERT INTO gHealth (animal_id,animal,date,water,trained,schedule,addedby,info) VALUES'...
         '(',num2str(adata.id),',"',globalparams.Ferret,'",',...
         '"',datestr(now,29),'",'...
-        num2str(exptparams.volreward),',1,1,"',DB_USER,'","dms_run.m")'];
+        num2str(exptparams.Water),',1,1,"',DB_USER,'","dms_run.m")'];
     end
     mysql(sql);
   end
