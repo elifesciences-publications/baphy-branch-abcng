@@ -3,20 +3,23 @@ function [w, ev,o] = waveform (o,index,IsRef,Mode,TrialNum)
 % index is the Nb of CT
 % function w=waveform(t);
 % this function is the waveform generator for objectMemoClicks
-fs = get(o,'SamplingRate');
-PreStimSilence = get(o,'PreStimSilence');
+
+fs              = get(o,'SamplingRate');
+PreStimSilence  = get(o,'PreStimSilence');
 PostStimSilence = get(o,'PostStimSilence');
 
-% PARAMETERS OF MemoClicks OBJECT
-RateRN = get(o,'RateRNPercent');
-RateRef = get(o,'RateRefPercent');
-prestim = zeros(round(PreStimSilence*fs),1);
-poststim = zeros(round(PostStimSilence*fs),1);
-SeqGap = get(o,'SequenceGap');  % duration in second
+%% PARAMETERS OF MemoClicks OBJECT
+
+RateRC    = get(o,'RateRCPercent');
+RateRefRC = get(o,'RateRefRCPercent');
+prestim   = zeros(round(PreStimSilence*fs),1);
+poststim  = zeros(round(PostStimSilence*fs),1);
+SeqGap    = get(o,'SequenceGap');  % duration in second
 w = [];ev = [];
-% INITIALIZE Daniel's OBJECT
-sP.fs = fs;
-sP.replength = get(o,'SingleTrainDuration'); % duration of a single repeat
+
+%% INITIALIZE Daniel's OBJECT
+sP.fs         = fs;
+sP.replength = get(o,'ClickTrainDur'); % duration of a single repeat
 sP.nreps = get(o,'nreps'); % number of repeats
 sP.testtype = 1;
 sP.seed = [];
@@ -25,19 +28,8 @@ sP.noiseSNR = get(o,'SNR'); % add lowpass noise with given SNR. Cutoff is = high
 sP.clickdur = 0.00005;
 sP.maxgap = get(o,'maxgap');
 sP.mingap = get(o,'mingap');
-
-% Create an instance of TORC object:
-PutTORC = get(o,'IntroduceTORC');
-if PutTORC
-  TorcDur = get(o,'TorcDuration');
-  TorcFreq = get(o,'FrequencyRange');
-  TorcRates = get(o,'TorcRates');
-  TORCPreStimSilence = 0; TORCPostStimSilence = 0;
-  TorcObj = Torc(fs,0, ...                          % No Loudness
-    TORCPreStimSilence,TORCPostStimSilence,TorcDur, TorcFreq, TorcRates);
-end
   
-% RANDOM NUMBER GENERATOR
+%% RANDOM NUMBER GENERATOR
 Key = get(o,'Key');
 TrialKey = RandStream('mrg32k3a','Seed',Key);
 PastRef = get(o,'PastRef');
@@ -57,19 +49,21 @@ elseif length(PastRef) > TrialNum && index ~= PastRef(TrialNum)
    error('Valeur index attendue: %d', PastRef(TrialNum));
 end
 
-% Sequences of 0 1 2 (stimtype)
-RandSequence = [ones(1,floor(RateRN)) 2*ones(1,floor(RateRef)) zeros(1,floor((100-RateRN - RateRef)))];
+%% Sequences of 0 1 2 (stimtype)
+RandSequence = [ones(1,floor(RateRC)) 2*ones(1,floor(RateRefRC)) zeros(1,floor((100-RateRC - RateRefRC)))];
 RandPick = [];
 for i = 1:4
     RandPick = [RandPick TrialKey.randperm(100)];
 end
 
 gapSeq = zeros(round(SeqGap*fs),1);
-ev = AddEvent(ev,'PreStimSilence',[],0,PreStimSilence); 
-w = [w ; prestim(:)];
-% GENERATE CLICK TRAINS
+ev     = AddEvent(ev,'PreStimSilence',[],0,PreStimSilence); 
+w      = [w ; prestim(:)];
+
+%% GENERATE CLICK TRAINS
 for j = (RefNow+1) : (RefNow+index)    
-    sP.stimtype = RandSequence(RandPick(j)); % stimulus type: 0 is N, 1 is RN, 2 is RefRN
+    sP.stimtype = RandSequence(RandPick(j)); % stimulus type: 0 is C, 1 is RC, 2 is RefRC
+    
     if sP.stimtype == 2
        sP.seed = Key;
     else
@@ -83,18 +77,54 @@ for j = (RefNow+1) : (RefNow+index)
     ev = AddEvent(ev, ['ReferenceSequence , ', num2str(j-RefNow), ' / ',num2str(index), ' - ', num2str(TrialNum) ],...
         [ ], ev(end).StopTime, ev(end).StopTime + length([wSeq(:) ; gapSeq(:)])/fs );     
 end
-% END WITH TORC
-TorcSequence = [];
-if PutTORC
-  [wTarg, eTorc] = waveform(TorcObj, 1);    % so far, only 1 TORC pattern
-  TorcSequence = [TorcSequence;wTarg(:); gapSeq(:)];
-  MSeq = maxLocalStd(TorcSequence(:),sP.fs,length(TorcSequence(:))/fs);
-  TorcSequence = [TorcSequence(:)/MSeq ; gapSeq(:)];
-  w = [w ; TorcSequence];
-end
-ev = AddEvent(ev, ['TargetSequence ' , ' - ',num2str(TrialNum) ],...
-  [ ], ev(end).StopTime, ev(end).StopTime + length(TorcSequence(:))/fs );
 
+%% END WITH NOISE
+% Taken from Noise.waveform
+% Params: Duration, HighPassFc, LowPassFc, PreStimSilence, PostStimSilence
+
+NoisePreStimSilence  = get(o,'NoisePreStim');
+NoisePostStimSilence = get(o,'NoisePostStim');
+NoiseDuration        = get(o,'NoiseDur');
+hp_f                 = get(o,'NoiseHPF');
+lp_f                 = get(o,'NoiseLPF');
+bp_option            = get(o,'NoiseFilter'); 
+TotalBins            = fs.*(NoisePreStimSilence+NoiseDuration+NoisePostStimSilence);
+
+% noise vector
+wn=randn(TotalBins,1);
+
+% band pass filter 
+if ~isempty(bp_option),
+    [Bh,Ah]=butter(2,hp_f*2/fs,'high');
+    wn = filter(Bh,Ah,wn);
+    
+    [Bl,Al]=butter(2,lp_f*2/fs,'low');
+    wn = filter(Bl,Al,wn);
+    
+end
+
+% make pre- and post-stim silences actually silent
+wn   = wn(round(NoisePreStimSilence.*fs+1):round((NoisePreStimSilence+NoiseDuration).*fs));
+ramp = hanning(round(.01 * fs*2));
+ramp = ramp(1:floor(length(ramp)/2));
+wn(1:length(ramp))         = wn(1:length(ramp)) .* ramp;
+wn(end-length(ramp)+1:end) = wn(end-length(ramp)+1:end) .* flipud(ramp);
+
+% normalize min/max +/-5
+wn = 5 ./ max(abs(wn(:))) .* wn;
+
+% Now, put it in the silence:
+wn = [zeros(NoisePreStimSilence*fs,1) ; wn(:) ; zeros(NoisePostStimSilence*fs,1)];
+
+%%
+% Add white noise to stimulus vector
+w = [w; wn];
+
+% Event3:
+ev = AddEvent(ev, ['TargetSequence ' , ' - ',num2str(TrialNum) ],...
+  [ ], ev(end).StopTime, ev(end).StopTime + length(wn(:))/fs );
+
+% Add poststim to stimulus vector
 w = [w ; poststim(:)];
 ev = AddEvent(ev, 'PostSilence', [], ev(end).StopTime, ev(end).StopTime + PostStimSilence);
 
