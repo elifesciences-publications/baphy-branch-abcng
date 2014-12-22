@@ -19,7 +19,7 @@ P = get(O); % Get parameters
 
 switch RepOrTrial
   case 1 % REPETITION CALL (GENERATE FULL INITIAL SET)
-    CurrentRepetition = Counter;    
+    CurrentRepetition = Counter;
     k=0; tmp = cell(P.TargetMaxIndex*P.ReferenceMaxIndex,1);
     P.TrialTags = tmp; P.ReferenceIndices = tmp; P.TargetIndices = tmp;
     for iT = 1:P.TargetMaxIndex
@@ -30,12 +30,18 @@ switch RepOrTrial
       end
     end
     TotalReferences = k; P.NumberOfTrials = k;
-      
+    
     % RANDOMIZE ORDER OF THE TRIALS USING THE CURRENT REPETITION
     R = RandStream('mt19937ar','Seed',CurrentRepetition);
     RandInd = R.randperm(TotalReferences);
     P.ReferenceIndices = P.ReferenceIndices(RandInd);
-    P.TargetIndices = P.TargetIndices(RandInd);
+    if ~isempty( get(O,'ReplaySession') )
+      PreviousSessionIndex = get(O,'PreviousSessionIndex');
+      if isfield(exptparams,'TotalTrials'); ElapsedTrialNb = exptparams.TotalTrials; else ElapsedTrialNb = 0; end
+      P.TargetIndices = mat2cell(PreviousSessionIndex(ElapsedTrialNb + (1:P.NumberOfTrials))',ones(1,P.NumberOfTrials),1);
+    else
+      P.TargetIndices = P.TargetIndices(RandInd);
+    end
     P.TrialTags = P.TrialTags(RandInd);
     
   case 0 % TRIAL CALL (MODIFY SET BASED ON PERFORMANCE)
@@ -46,7 +52,7 @@ switch RepOrTrial
           CurrentTrial = Counter;
           TrialIndex = exptparams.TotalTrials;
           if strcmpi(exptparams.Performance(end).Outcome,'EARLY') ||... % 2014/02-YB: SNOOZE was not considered
-              strcmpi(exptparams.Performance(end).Outcome,'SNOOZE') 
+              strcmpi(exptparams.Performance(end).Outcome,'SNOOZE')
             % REPEAT LAST INDEX AT RANDOM POSITION IN THE REMAINING
             R = RandStream('mt19937ar','Seed',CurrentTrial);
             RemInd = CurrentTrial:P.NumberOfTrials;
@@ -71,6 +77,7 @@ switch RepOrTrial
     end
   otherwise error('Unknown Option for ''RepOrTrial''!');
 end
+
 % SET VARIABLES FOR REFTAR
 O = set(O,'ReferenceIndices',P.ReferenceIndices);
 O = set(O,'TargetIndices',P.TargetIndices);
