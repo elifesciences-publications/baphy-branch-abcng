@@ -115,13 +115,15 @@ for j = (RefNow+1) : (RefNow+index-1)  % index-1 is the number of Ref
   
   wSeq = [];
   % 2) SINGLE-FREQUENCIED REF
-  if strcmp(SameRef,'yes'); ThisTrial_FreqNum = TrialKey.randi(length(UniqueToneIndex),1); end
-  if any(AscRampPosition==(j-RefNow)) && ThisTrial_FreqNum == 3
+  if strcmp(SameRef,'yes')
+    ThisTrial_FreqNum = TrialKey.randi(length(UniqueToneIndex),1);
+    if any(AscRampPosition==(j-RefNow)) && ThisTrial_FreqNum == 3
       DescRampPosition = [DescRampPosition j-RefNow];
       AscRampPosition(AscRampPosition==(j-RefNow)) = [];
-  elseif any(DescRampPosition==(j-RefNow)) && ThisTrial_FreqNum == 4
+    elseif any(DescRampPosition==(j-RefNow)) && ThisTrial_FreqNum == 4
       AscRampPosition = [AscRampPosition j-RefNow];
-      DescRampPosition(DescRampPosition==(j-RefNow)) = [];      
+      DescRampPosition(DescRampPosition==(j-RefNow)) = [];
+    end
   end
   
   % BUILD TONES
