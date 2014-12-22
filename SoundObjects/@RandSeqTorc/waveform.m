@@ -1,7 +1,7 @@
 function [w,ev,o,Parameters] = waveform(o,index,IsRef,Mode,TrialNum)
 % 2013: Thomas // 2014: Yves
 % index is the Nb of Ref+1 (total nb of sequences)
-
+Parameters = [];
 fs = get(o,'SamplingRate');
 PreStimSilence = get(o,'PreStimSilence');
 PostStimSilence = get(o,'PostStimSilence');
