@@ -230,7 +230,7 @@ end
 % Pure tone: r = time x repeat per condition x condition number || sorted in loadevpratser.m from alphabetical tags
 % Random tones: r = time x 1 x trial number || sorted just above with numeric  tags
 if size(r,2)==1
-for cnt1=1:length(Note),
+for cnt1=1:length(tags),
   if  ~isempty( findstr('Light',Note{cnt1}) )
     if  ~isempty( findstr('+Light',Note{cnt1}) )
       unsortedlighttags(cnt1) = 1;
