@@ -12,7 +12,7 @@ if isempty(CLEAR_MFILE_AFTER_LOAD),
     CLEAR_MFILE_AFTER_LOAD=1;
 end
 
-if strcmp(computer,'PCWIN') Sep = '\'; else Sep = '/'; end
+if strcmp(computer,'PCWIN64') Sep = '\'; else Sep = '/'; end
 
 % special code for copying temp files over to seil cluster
 ss_stat=onseil;

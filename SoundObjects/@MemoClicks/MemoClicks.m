@@ -44,7 +44,7 @@ switch nargin
         
         % Stim conditions
         o.MaxIndex              = 3;  % no. of conditions
-        o.Key                   =  []; % replace seed no. of earlier block for re-test
+        o.Key                   =  2516392; % replace seed no. of earlier block for re-test
         o.Seeds                = [];
         o.PastRef               = [];
         o.Stimulus              = [];

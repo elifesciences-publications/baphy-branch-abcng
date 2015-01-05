@@ -9,7 +9,7 @@ checkField(P,'Username','nsl.umd');
 checkField(P,'Password','feartheferret');
 
 switch architecture
-  case 'PCWIN';
+  case 'PCWIN64';
     
     WinVersion = evalc('! ver');
     Pos = strfind(WinVersion,'[Version ');
