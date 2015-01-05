@@ -1,7 +1,7 @@
 function [w,ev,o,Parameters] = waveform(o,index,IsRef,Mode,TrialNum)
 % 2013: Thomas // 2014: Yves
 % index is the Nb of Ref+1 (total nb of sequences)
-
+Parameters = [];
 fs = get(o,'SamplingRate');
 PreStimSilence = get(o,'PreStimSilence');
 PostStimSilence = get(o,'PostStimSilence');
@@ -18,6 +18,8 @@ TargetF = get(o,'TargetF');
 RampInterval = get(o,'RampInterval');     % in semitones
 IdenticalTones= get(o,'IdenticalTones');
 LoudnessCue = get(o,'LoudnessCue');
+
+Parameters.Sequences = [];
 
 % Create an instance of TORC object:
 TORC = get(o,'TORC');
@@ -201,7 +203,7 @@ if exist('Mode','var') && strcmp(Mode,'Simulation'); return; end
 
 
 %add 5 ms rise/fall time ===================================
-function s=addenv(s1,fs);
+function s=addenv(s1,fs)
 f=ones(size(s1));
 pn=round(fs*0.005);    % 5 ms rise/fall time 
 up = sin(2*pi*(0:pn-1)/(4*pn)).^2;   %add sinramp

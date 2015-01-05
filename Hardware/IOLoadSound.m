@@ -103,6 +103,7 @@ switch HW.params.HWSetup
       HW=niSetAOSamplingRate(HW);
       
       % actually load the samples
+      figure;plot(stim);
       SamplesLoaded=niLoadAOData(HW.AO(1),stim);     
       case 'DAQTOOLBOX';
     

@@ -41,7 +41,8 @@ while ContinueExp == 1
   exptparams.TrialObject = ObjUpdate(exptparams.TrialObject);
   iRep = 0;
   TrialIndexLst = 1:(exptparams.TrialBlock*exptparams.Repetition);    % List of trial nb sent to <waveform>; modified during reinsertion
-  if any(strcmp(fieldnames(exptparams.TrialObject),'TrialIndexLst')); exptparams.TrialObject = set(exptparams.TrialObject,'TrialIndexLst',TrialIndexLst); end
+  if (isfield(exptparams.TrialObject,'TrialIndexLst') && isempty(get(exptparams.TrialObject,'TrialIndexLst'))) ||...
+      ~isfield(exptparams.TrialObject,'TrialIndexLst'); exptparams.TrialObject = set(exptparams.TrialObject,'TrialIndexLst',TrialIndexLst); end
   while iRep < exptparams.Repetition; % REPETITION LOOP
     iRep = iRep+1;
     if ~ContinueExp, break; end

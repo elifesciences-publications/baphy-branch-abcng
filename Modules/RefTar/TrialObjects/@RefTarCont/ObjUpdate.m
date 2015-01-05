@@ -5,6 +5,30 @@ function O = ObjUpdate (O)
 
 Ref = get(O,'ReferenceHandle');
 Tar = get(O,'TargetHandle');
+
+if ~isempty( get(O,'ReplaySession') ) && isstr(get(O,'TrialIndexLst')) && strcmp(get(O,'TrialIndexLst'),'[]')
+    if get(O,'ReinsertTrials')~=0
+        error('Conflict ReinsertTrials || ReplaySession')
+    else
+        global globalparams
+        globalparamsBU = globalparams;
+        if isfield(globalparams,'mfilename')
+          Path2PreviousM = globalparamsBU.mfilename;
+          LastSlashIndex = findstr(Path2PreviousM,'\'); LastSlashIndex = LastSlashIndex(end);
+          Path2PreviousM = Path2PreviousM(1:LastSlashIndex);
+          Path2PreviousM = [Path2PreviousM get(O,'ReplaySession')];
+          run(Path2PreviousM);
+          IniSeed = exptparams.TrialObject.TargetHandle.IniSeed;
+          Tar = set(Tar,'IniSeed',IniSeed);
+          TrialIndexLst = exptparams.TrialObject.TrialIndexLst;
+          O = set(O,'TrialIndexLst',TrialIndexLst);
+          O = set(O,'PreviousSessionIndex',[exptparams(1).Performance(:).TargetIndices]);
+          globalparams = globalparamsBU;
+        end
+    end
+end
+
+
 if ~isempty(Ref)
   Ref = ObjUpdate(Ref);
   O = set(O,'ReferenceHandle',Ref);
