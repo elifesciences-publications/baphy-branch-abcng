@@ -6,8 +6,9 @@ function O = ObjUpdate (O)
 Ref = get(O,'ReferenceHandle');
 Tar = get(O,'TargetHandle');
 
-if ( ( isstr( get(O,'ReplaySession') ) && ~strcmp(get(O,'ReplaySession'),'') ) || ~isempty( get(O,'ReplaySession') ) ) &&...
-    ( ( isstr(get(O,'TrialIndexLst')) && strcmp(get(O,'TrialIndexLst'),'[]') ) || isempty(get(O,'TrialIndexLst')) )
+% if ( ( isstr( get(O,'ReplaySession') ) && ~strcmp(get(O,'ReplaySession'),'') ) || ~isempty( get(O,'ReplaySession') ) ) &&...
+%     ( ( isstr(get(O,'TrialIndexLst')) && strcmp(get(O,'TrialIndexLst'),'[]') ) || isempty(get(O,'TrialIndexLst')) )
+if  ~isempty( get(O,'ReplaySession') ) && isempty(get(O,'TrialIndexLst'))
     if get(O,'ReinsertTrials')~=0
         error('Conflict ReinsertTrials || ReplaySession')
     else
