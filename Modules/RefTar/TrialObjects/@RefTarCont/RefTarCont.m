@@ -44,6 +44,7 @@ case 0
     O.ReinsertTrials = 0;
     O.VisualDisplay =0;
     O.RewardSnooze = 0;
+    O.ReplaySession = '';
     O.LickTargetOnly =0;
     O.NumberOfTrials = 30;
     O.ReferenceMaxIndex = 0;
@@ -52,13 +53,14 @@ case 0
     O.TargetIndices = '[]';
     O.TrialTags = '[]';
     O.RunClass = '[]';
-    O.TrialIndexLst = '[]';
+    O.TrialIndexLst = [];
+    O.PreviousSessionIndex = [];
     O.UserDefinableFields = {...
       'OveralldB','edit',O.OveralldB,...
       'ReinsertTrials','edit',O.ReinsertTrials,...
       'VisualDisplay','edit',O.VisualDisplay,...
       'RewardSnooze','edit',O.RewardSnooze,...
-      'LickTargetOnly','edit',O.LickTargetOnly};
+      'ReplaySession','edit',O.ReplaySession};
     O = class(O,'RefTarCont');
     O = ObjUpdate(O);
     % Beware: ReinsertTrials == -1 --> Index is reinjected

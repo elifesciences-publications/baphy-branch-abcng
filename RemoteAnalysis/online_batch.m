@@ -112,11 +112,15 @@ if ~ReuseFigure
   % CREATE NEW AXES
   for ii=1:NElectrodes
     Electrode = Electrodes(ii);
-    DC{ii} = DCAll{end-round(ElectrodesXY(Electrode,2))+1,round(ElectrodesXY(Electrode,1))};
+%     DC{ii} = DCAll{end-round(ElectrodesXY(Electrode,2))+1,round(ElectrodesXY(Electrode,1))};
+    DC{ii} = DCAll{end-round(ElectrodesXY(ii,2))+1,round(ElectrodesXY(ii,1))};
     figure(BATCH_FIGURE_HANDLE); % MAKE SURE TO PLOT INTO CORRECT FIGURE
     AH(ii) = axes('Position',DC{ii},'FontSize',6);
   end
 else % REUSE AXES
+  for ii=1:NElectrodes % Recreate DC for opto (division of AH for Light/NoLight)
+    DC{ii} = DCAll{end-round(ElectrodesXY(ii,2))+1,round(ElectrodesXY(ii,1))};
+  end
   AH = get(BATCH_FIGURE_HANDLE,'Children');
   Types = get(AH,'Type'); Ind = strcmp(Types,'axes');
   AH = sort(AH(Ind));
@@ -200,7 +204,7 @@ for ii=1:NElectrodes
           % standard TORC strf
           options.usefirstcycle=0;
           options.tfrac = 1;
-          [strf,snr(ii)]=strf_online(mfile,Electrode,AH(ii),options);
+          [strf,snr(ii)]=strf_online(mfile,Electrode,AH(ii),options,DC{ii});
         else
           mfilename = [mfile,'.m'];
           spkpath = mfile(1:strfind(mfile,filename)-1);

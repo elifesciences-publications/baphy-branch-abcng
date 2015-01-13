@@ -4,7 +4,7 @@ startdir = pwd;
 
 % CHECK SPECIAL SOLUTIONS ON CERTAIN PLATFORMS/COMPUTERS
 switch computer
-  case 'PCWIN';
+  case 'PCWIN64';
     tempfile = 'localdecompress.tmp';
     % TEST FOR CYGWIN (WORKS ONLY IF PARENT DIRECTORY IS WRITABLE)
     [Check,Output] = system('which tar');

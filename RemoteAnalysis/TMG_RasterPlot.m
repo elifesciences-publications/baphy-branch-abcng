@@ -55,7 +55,7 @@ for iT=1:NTrials % LOOP OVER TRIALS
   cI = find(cIndex==AllIndices);
   
   cStart = Trials.Times{iT}(1) + PreTarDuration;
-  cStop = Trials.Times{iT}(2); % + + FrozenPatternDuration;
+  cStop = Trials.Times{iT}(2); % + FrozenPatternDuration;
   cResponse = SpiketimesByTrial{iT}( SpiketimesByTrial{iT} >= cStart & SpiketimesByTrial{iT} < cStop );
   Responses{cI,TrialCountByIndex(cI)+1} = cResponse;
   TrialCountByIndex(cI) = TrialCountByIndex(cI) +1;
@@ -71,7 +71,9 @@ for cIndex = AllIndices'
     end
   end
 end
-plot(P.Axis,repmat(FrozenPatternDuration,1,2),[AllIndices(1)-0.5 AllIndices(end)+0.5],'Color',[0.7,0.7,0.7],'LineWidth',2);
+if FrozenPatternDuration~=0
+  plot(P.Axis,repmat(FrozenPatternDuration,1,2),[AllIndices(1)-0.5 AllIndices(end)+0.5],'Color',[0.7,0.7,0.7],'LineWidth',2);
+end
 
 
 title(P.Axis,['E',n2s(P.Electrode),' U',n2s(P.Unit), ' Spont: ' num2str(mean(SpontRates(iT))) 'Hz']);

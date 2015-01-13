@@ -50,6 +50,11 @@ switch HW.params.HWSetup
     % the loudness itself, e.g. useful for ClickTrains
     global LoudnessAdjusted;
     if isempty(LoudnessAdjusted) || ~LoudnessAdjusted
+      switch HW.Calibration.Loudness.Method
+        case 'MaxLocalStd';
+          Duration = HW.Calibration.Loudness.Parameters.Duration;
+          Val = maxLocalStd(stim(:),HW.params.fsAO,Duration);
+          stim =  HW.Calibration.Loudness.Parameters.SignalMatlab80dB*stim/Val;
       for SpeakerNum = 1:SpeakerNb
         switch HW.Calibration(SpeakerNum).Loudness.Method
           case 'MaxLocalStd';
@@ -89,7 +94,6 @@ switch HW.params.HWSetup
     
     switch IODriver(HW)
       case 'NIDAQMX';
-      
       % RESET TRIGGER LINE
       aoidx=find(strcmp({HW.Didx.Name},'TrigAO'));
       TriggerDIO=HW.Didx(aoidx).Task;
@@ -106,6 +110,9 @@ switch HW.params.HWSetup
       global SecondChannelAO;
       if ~isempty(SecondChannelAO) & ~SecondChannelAO & SpeakerNb == 1
         stim(:,2) = stim(:,1);
+      % fill in empty AO channels with zeros %14/09-YB: from Steve' code
+      elseif  ~isempty(SecondChannelAO) & ~SecondChannelAO & size(stim,2)<HW.AO(1).NumChannels  
+        stim=cat(2,stim,zeros(size(stim,1),HW.AO(1).NumChannels-size(stim,2)));
       end
       % actually load the samples
       SamplesLoaded=niLoadAOData(HW.AO(1),stim);     

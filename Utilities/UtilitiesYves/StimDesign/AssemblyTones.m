@@ -16,6 +16,10 @@ if nargout>1; ToneMatrix=zeros(length(FrequencySpace),floor(ChordNb));  end;    
 N = round(3*AverageNbTonesChord*ChordNb);   % More than needed
 CumDistri = cumsum(Distribution(X));
 CumDistri = CumDistri/max(CumDistri);
+
+% Added for accounting to the following: the increment brings down the other bins to 0
+X = X(find(CumDistri>0,1,'first')-1:end);
+CumDistri = CumDistri(find(CumDistri>0,1,'first')-1:end);
 % Remove doublons in the CumDistri to allow interpolation
 % and avoid boundary effects
 [FirstCumDistri,FirstUniIndex] = unique(CumDistri,'first');
@@ -50,9 +54,8 @@ for ChordNum = 1:ChordNb
     TrialTonesF = ToneFrequencies((PreviousRandomChordNum+1):(PreviousRandomChordNum+NbTonesChord));
     TrialTonesPhase = TonePhases((PreviousRandomChordNum+1):(PreviousRandomChordNum+NbTonesChord));    
     PreviousRandomChordNum = PreviousRandomChordNum+NbTonesChord;
-    for Fnum = 1:NbTonesChord
-        Tone = SingleTone(TrialTonesF(Fnum),Lvl,sF,ChordDuration,TrialTonesPhase(Fnum));
-        Chord = Chord + Tone;
+    if ~isempty(TrialTonesF)
+      Chord = SingleChord(TrialTonesF,Lvl,sF,ChordDuration,TrialTonesPhase);
     end
     Stimulus((ChordNum-1)*length(ChordTimeSamples)+1 : ChordNum*length(ChordTimeSamples)) = Chord;
     

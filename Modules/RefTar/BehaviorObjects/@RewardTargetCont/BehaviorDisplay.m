@@ -125,7 +125,11 @@ if ~isempty(ResponseData)
       %         end
       %         axis([Bins([1,end]),0,max(cHist(:))+1]);
       %       end
-      Bins = -3:0.1:3; i =1;
+      if ~get(O,'GradualResponse')
+        Bins = -3:0.1:3; i =1;
+      else
+        Bins = -10:0.25:3; i =1;
+      end
       cHist(i,:) = hist(Licks,Bins); ForAxisHist(iO,:,:) = cHist(i,:);
       set(PH.TarTiming.RespHist(iO,i),'xdata',Bins,'ydata',cHist(i,:)+iO*0.05);
       axis([Bins([1,end]),0,max(ForAxisHist(:))+1]);

@@ -22,8 +22,8 @@ for id=1:length(HW.AO)
   S = DAQmxGetSampClkRate(HW.AO(id).Ptr,ActualRate);
   if S NI_MSG(S); end
   S = DAQmxTaskControl(HW.AO(id).Ptr,NI_decode('DAQmx_Val_Task_Verify'));
-  if S NI_MSG(S); end
-  
+%   if S NI_MSG(S); end %14/07-YB: commented because warning messages were annoying for ontinuous stimulation (@RewardTargetContinuous)
+
   %disp(['AOSampling:  Intended SR: ',n2s(P.SR),' Actual SR: ',n2s(get(ActualRate,'Value'))]);
   
 end

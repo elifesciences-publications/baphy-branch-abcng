@@ -184,15 +184,23 @@ for cnt1 = 1:length(DefaultFields)/3
   % now if the CurrentField is edit, get its value from the tempObject which has
   % the last values. But if its popupmenu, then load it with defaults
   % from object constructor (UserDefinableFields)"
-  switch CurrentField{2}
+  switch CurrentField{2}  
     case 'popupmenu'; % if its a popupmenu, find the 'value' of the saved information
       DivPos = strfind(CurrentField{3},'|');
       if ~strcmp(CurrentField{1},'MTTRates')
-      SavePos = strfind(CurrentField{3},get(SavedObject, CurrentField{1}));
+        SavePos = strfind(CurrentField{3},get(SavedObject, CurrentField{1}));
       else
         SavePos=[];
       end
-      if isempty(SavePos) SavePos=1; end
+      if length(SavePos)>1  % 2014/01-YB: there are several string values that share common strings
+        if any( ismember( ( SavePos+length(get(SavedObject, CurrentField{1})) ) , DivPos ) )
+          SavePos = SavePos( ismember( ( SavePos+length(get(SavedObject, CurrentField{1})) ) , DivPos ) );
+        else % it is the last value
+          SavePos = SavePos(end);
+        end
+      elseif isempty(SavePos)
+        SavePos=1;
+      end
       DefaultValue = find(DivPos>SavePos,1);
       if isempty(DefaultValue), DefaultValue = length(DivPos)+1;end
       DefaultString = CurrentField{3};

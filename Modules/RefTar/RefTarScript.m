@@ -38,10 +38,17 @@ exptparams.comment = [...
 
 %% MAIN LOOP
 while ContinueExp == 1
-  exptparams.TrialObject = ObjUpdate(exptparams.TrialObject);
+  if exist('iRep')==0
+    exptparams.TrialObject = ObjUpdate(exptparams.TrialObject);
+    TrialIndexLst = 1:(exptparams.TrialBlock*exptparams.Repetition);    % List of trial nb sent to <waveform>; modified during reinsertion
+     if (isfield(struct(exptparams.TrialObject),'TrialIndexLst') && isempty(get(exptparams.TrialObject,'TrialIndexLst'))); exptparams.TrialObject = set(exptparams.TrialObject,'TrialIndexLst',TrialIndexLst); end
+  elseif isfield(struct(exptparams.TrialObject),'TrialIndexLst')
+    TrialIndexLst = get(exptparams.TrialObject,'TrialIndexLst');
+    TrialIndexLst = [ TrialIndexLst , max(TrialIndexLst) + (1:(exptparams.TrialBlock*exptparams.Repetition)) ];    % List of trial nb sent to <waveform>; modified during reinsertion
+     exptparams.TrialObject = set(exptparams.TrialObject,'TrialIndexLst',TrialIndexLst);
+  end  
+ 
   iRep = 0;
-  TrialIndexLst = 1:(exptparams.TrialBlock*exptparams.Repetition);    % List of trial nb sent to <waveform>; modified during reinsertion
-  if any(strcmp(fieldnames(exptparams.TrialObject),'TrialIndexLst')); exptparams.TrialObject = set(exptparams.TrialObject,'TrialIndexLst',TrialIndexLst); end
   while iRep < exptparams.Repetition; % REPETITION LOOP
     iRep = iRep+1;
     if ~ContinueExp, break; end
@@ -104,13 +111,15 @@ while ContinueExp == 1
       % svd 2012-10-27: moved IOLoadSound after CanStart to allow sounds to
       % be played during CanStart prior to beginning of the aquisition
       % period of the trial. Shouldn't cause any serious changes in timing
-      %using the 2nd SOUNDOUT as pumpcontrol  by PY @ 9-2/2012
+      %using the 2nd SOUNDOUT as pumpcontrol by PY @ 9-2/2012
       if strcmpi(BAPHY_LAB,'nsl') && globalparams.HWSetup==3 
         if size(TrialSound,2)==2
           HW = IOLoadSound(HW, TrialSound(:,[2 1]));
         else
           HW = IOLoadSound(HW, TrialSound(:,[1 1]));
-        end
+        end      
+      elseif strcmp( class(BehaveObject) , 'RewardTargetContinuous' )
+        
       else
         HW = IOLoadSound(HW, TrialSound);
       end
@@ -124,7 +133,9 @@ while ContinueExp == 1
       end
       
       %% MAIN ACQUISITION SECTION
-      [StartEvent,HW] = IOStartAcquisition(HW);
+      if ~strcmp( class(BehaveObject) , 'RewardTargetContinuous' )  % Acquisition starts within BehaviorControl.m
+        [StartEvent,HW] = IOStartAcquisition(HW);
+      end
       
       % HAND CONTROL TO LICK MONITOR TO CONTROL REWARD/SHOCK
       [BehaviorEvents, exptparams] = ...

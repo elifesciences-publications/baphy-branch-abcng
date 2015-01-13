@@ -43,7 +43,7 @@ Par.MorphingDuration = 0;
 o = set(o,'AllTargetPositions',{'center'});   % for Bernhard script [PerformanceAnalysis.m]
 o = set(o,'CurrentTargetPositions',{'center'});
 o = set(o,'MorphingDuration',Par.MorphingDuration);
-if strcmp(Par.Inverse_D0Dbis,'yes'); ReverseNb = 1; else ReverseNb = 0; end
+if strcmp(get(o,'Inverse_D0Dbis'),'yes'); ReverseNb = 1; else ReverseNb = 0; end
 
 % SET BIN NUMBER IN THE DISTRIBUTION + FREQUENCY RANGE AND ITS MIDDLE POINT F0
 tmp = str2num(get(o,'Distri_Morphing_BinNb'));
@@ -96,12 +96,12 @@ for ChangedD_Num = 1:ChangedD_Nb
             ChannelDistancesByMorphing{ChangedD_Num} = ones(1,MaxMorphingNb)*ChannelDistance;
             Bins2Change{ChangedD_Num} = repmat([1 2],MaxMorphingNb,1) + repmat((0:2:((MaxMorphingNb-1)*2))',1,2);  %[1:2 ; 3:4 ; 5:6 ; 7:8]; 
         case 'fixed_increm'
-            MorphingNb(ChangedD_Num) = 1;
-            ChannelDistance = 1;
-            ChannelDistancesByMorphing{ChangedD_Num} = ChannelDistance;
-            PossibleBins = mat2cell( repmat([1 2],MaxMorphingNb,1) + repmat((0:2:((MaxMorphingNb-1)*2))',1,2) ,ones(1,MaxMorphingNb),2 );  %{1:2 ; 3:4 ; 5:6 ; 7:8};
             Bin2ChangeIndex = getfield(Par,[ 'D' num2str(ChangedD_Num) 'param' ]);
-            Bins2Change{ChangedD_Num} = PossibleBins{Bin2ChangeIndex};
+            MorphingNb(ChangedD_Num) = length(Bin2ChangeIndex); % this allows several bins to be chosen, in different proportions (like for Difficulty)
+            ChannelDistance = 1;
+            ChannelDistancesByMorphing{ChangedD_Num} = ones(1,MaxMorphingNb)*ChannelDistance;
+            PossibleBins = repmat([1 2],MaxMorphingNb,1) + repmat((0:2:((MaxMorphingNb-1)*2))',1,2);  %{1:2 ; 3:4 ; 5:6 ; 7:8};            
+            Bins2Change{ChangedD_Num} = PossibleBins(Bin2ChangeIndex,:);
         case 'non_contig_increm'
             ChannelDistances = getfield(Par,[ 'D' num2str(ChangedD_Num) 'param' ]);
             MorphingNb(ChangedD_Num) = 0; Bins2Change{ChangedD_Num} = []; ChannelDistancesByMorphing{ChangedD_Num} = [];
@@ -128,27 +128,27 @@ o = set(o,'Par',Par);
 Names = cell(MaxIndex,1);
 % ENUMERATE ALL CONDITIONS
 DistributionTypeByInd = []; MorphingTypeByInd = []; DifficultyLvlByInd = []; ReverseByInd = [];
-ConditionNbForEachD = MorphingNb.*DifficultyLvlNb;
+ConditionNbForEachD = MorphingNb.*DifficultyLvlNb*(ReverseNb+1);
 for ChangedD_Num = 1:ChangedD_Nb
-    MorphingNbForThisCond = MorphingNb(ChangedD_Num); DifficultyLvlNbForThisCond = DifficultyLvlNb(ChangedD_Num);
+    MorphingNbForThisDistri = MorphingNb(ChangedD_Num); DifficultyLvlNbForThisDistri = DifficultyLvlNb(ChangedD_Num);
     DistributionTypeByInd_temp = ones(1,ConditionNbForEachD(ChangedD_Num))*ChangedD_Num;
     DistributionTypeByInd = [DistributionTypeByInd DistributionTypeByInd_temp];
 
-    MorphingTypeByInd_temp = repmat(1:MorphingNbForThisCond,[1 ConditionNbForEachD(ChangedD_Num)/MorphingNbForThisCond]);
+    MorphingTypeByInd_temp = repmat(1:MorphingNbForThisDistri,[1 ConditionNbForEachD(ChangedD_Num)/MorphingNbForThisDistri]);
     MorphingTypeByInd_temp = sort(MorphingTypeByInd_temp);
     MorphingTypeByInd = [ MorphingTypeByInd MorphingTypeByInd_temp ];
 
-    DifficultyLvlByInd_temp = repmat(1:DifficultyLvlNbForThisCond,[1 ConditionNbForEachD(ChangedD_Num)/(MorphingNbForThisCond*DifficultyLvlNbForThisCond)]);
+    DifficultyLvlByInd_temp = repmat(1:DifficultyLvlNbForThisDistri,[1 ConditionNbForEachD(ChangedD_Num)/(MorphingNbForThisDistri*DifficultyLvlNbForThisDistri)]);
     DifficultyLvlByInd_temp = sort(DifficultyLvlByInd_temp);
-    DifficultyLvlByInd = [ DifficultyLvlByInd repmat(DifficultyLvlByInd_temp,[1 MorphingNbForThisCond]) ];
+    DifficultyLvlByInd = [ DifficultyLvlByInd repmat(DifficultyLvlByInd_temp,[1 MorphingNbForThisDistri]) ];
 
-    ReverseByInd_temp = repmat(0:ReverseNb,[1 ConditionNbForEachD(ChangedD_Num)/(MorphingNbForThisCond*DifficultyLvlNbForThisCond*(ReverseNb+1))]);
+    ReverseByInd_temp = repmat(0:ReverseNb,[1 ConditionNbForEachD(ChangedD_Num)/(MorphingNbForThisDistri*DifficultyLvlNbForThisDistri*(ReverseNb+1))]);
     ReverseByInd_temp = sort(ReverseByInd_temp);
-    ReverseByInd = [ ReverseByInd repmat(ReverseByInd_temp,[1 (MorphingNbForThisCond*DifficultyLvlNbForThisCond)]) ];
+    ReverseByInd = [ ReverseByInd repmat(ReverseByInd_temp,[1 (MorphingNbForThisDistri*DifficultyLvlNbForThisDistri)]) ];
 end
 
 % WARNING
-if strcmp(Par.Inverse_D0Dbis,'yes') && Par.FrozenPatternsNb~=0
+if strcmp(get(o,'Inverse_D0Dbis'),'yes') && Par.FrozenPatternsNb~=0
     disp('************ You should not have Frozen pattern in Reverse Mode. ************')
 end
 

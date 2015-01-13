@@ -105,7 +105,9 @@ elseif isempty(tar),
     case 'WHITENOISE'
       runclass = 'WHN';
     case 'TEXTUREMORPHING';
-      runclass = 'TMG';      
+      runclass = 'TMG';
+    case 'MEMOCLICKS';
+      runclass = 'MMC';      
     otherwise
       runclass = '';
   end
@@ -211,7 +213,7 @@ else
     case 'TEXTUREMORPHING';
       runclass = 'TMG';
     case 'MEMOCLICKS';
-      runclass = 'MCK';      
+      runclass = 'MMC';       
     case 'RANDSEQTORC';
       runclass = 'RST';      
     case 'WHITENOISE'

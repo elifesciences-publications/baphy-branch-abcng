@@ -12,16 +12,23 @@ SamplingRate=get(o,'SamplingRate');
 PreStimSilence=get(o,'PreStimSilence');
 Duration=get(o,'Duration');
 PostStimSilence=get(o,'PostStimSilence');
-bp_f=get(o,'Filter');
+f_bp=get(o,'Filter');
 Names=get(o,'Names');
+Frozen=str2num(get(o,'Frozen'));
 
 TotalBins=round(SamplingRate.*(PreStimSilence+Duration+PostStimSilence));
 
 if strcmpi(NoiseType,'white'),
    % even for white, always load if from file. (Jan-9-2008, Nima)
-   randn('seed',index);
+%    randn('seed',index);
    
-   w=randn(TotalBins,1);
+  if isempty(Frozen)
+    w = randn(TotalBins,1);
+  else
+    Key = Frozen;
+    TrialKey = RandStream('mrg32k3a','Seed',Key);
+    w = TrialKey.randn(TotalBins,1);
+  end
    
 else
    [w,fs] = wavread([soundpath filesep lower(NoiseType) '.wav']);
@@ -37,8 +44,11 @@ else
 end
 
 % bandpass filter the noise between LowFreq and HighFreq
-if ~isempty(bp_f),
-   w=filtfilt(bp_f,1,w);
+if ~isempty(f_bp),
+%    w=filtfilt(f_bp,1,w);
+   
+   w = filter(f_bp{1,1},f_bp{1,2},w);
+   w = filter(f_bp{2,1},f_bp{2,2},w);
 end
 
 % make pre- and post-stimsilences actually silent

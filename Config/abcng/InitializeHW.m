@@ -16,6 +16,7 @@ HW=HWDefaultNidaq(globalparams);
 
 Physiology = ~strcmp(globalparams.Physiology,'No');
 
+
 % Based on the hardware setup, start the initialization:
 switch globalparams.HWSetup
   
@@ -24,9 +25,9 @@ switch globalparams.HWSetup
     HW.AO = audioplayer(rand(4000,1), HW.params.fsAO);
     HW.AI = HW.AO;
     HW.DIO.Line.LineName = {'Touch','TouchL','TouchR'};
-    
   case 1 % ALL RECORDING BOOTHS SHOULD REMAIN IDENTICAL AS LONG AS POSSIBLE
     SetupNames = {'SB1'};
+    
     globalparams.HWSetupName = SetupNames{globalparams.HWSetup};
     
     DAQID = 'D0'; % NI BOARD ID WHICH CONTROLS STIMULUS & BEHAVIOR
@@ -76,14 +77,19 @@ switch globalparams.HWSetup
     %% ANALOG INPUT
     HW=niCreateAI(HW,DAQID,'ai0:1','Touch,Microphone',['/',DAQID,'/PFI0']);
     
-    %% ANALOG OUTPUT
-    HW=niCreateAO(HW,DAQID,'ao0:1','SoundOutL,SoundOutR',['/',DAQID,'/PFI1']);
+    %% ANALOG OUTPUT % 14/09-YB: rmv independant audio channels for introducing Opto
+    HW=niCreateAO(HW,DAQID,'ao0:1','SoundOut,OptTrig',['/',DAQID,'/PFI1']);
     
     %% SETUP SPEAKER CALIBRATION
-    HW.Calibration.Speaker = ['SHIE800',globalparams.HWSetupName];
+    switch globalparams.HWSetup
+        case 3            
+            HW.Calibration.Speaker = ['SHIE800',globalparams.HWSetupName];
+        case 2
+            HW.Calibration.Speaker = ['RS',globalparams.HWSetupName];
+    end
     HW.Calibration.Microphone = 'GRAS46BE';
     HW.Calibration = IOLoadCalibration(HW.Calibration);
-       
+    
     %% COMMUNICATE WITH MANTA
     if Physiology  [HW,globalparams] = IOConnectWithManta(HW,globalparams); end
   

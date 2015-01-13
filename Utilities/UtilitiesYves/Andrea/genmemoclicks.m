@@ -19,7 +19,7 @@ noise_lowcut = 50;
 x_scalefactor = 100;
 
 %% deal with random number generator
-%rng('default')
+rng('default')
 %if (~isempty(sP.seed) & sP.stimtype == 2)
     rng(sP.seed);
 %else
@@ -68,13 +68,13 @@ for irep = 1:1:sP.nreps
         % convert to samples
         clicksamples = ceil(clicktimes*sP.fs);
         for iclicksamp = 1:1:nclicksamp
-            xseg(clicksamples+iclicksamp-1) = 1;
+          xseg(clicksamples+iclicksamp-1) = 1;
+        end
+        if sP.highpass ~= 0
+          xseg = filter(B,A,xseg);
         end
     end
-    if sP.highpass ~= 0
-        xseg = filter(B,A,xseg);
-    end
-        
+    
     x = [x xseg];
 
 end

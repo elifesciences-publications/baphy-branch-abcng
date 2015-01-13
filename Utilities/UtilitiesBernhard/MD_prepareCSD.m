@@ -51,7 +51,7 @@ end
 
 % SAVE FOR CSDplotter
 Sep = HF_getSep;
-if strcmp('PCWIN',computer) Base = ['D:\']; else Base = '/media/storage/'; end
+if strcmp('PCWIN64',computer) Base = ['D:\']; else Base = '/media/storage/'; end
 OutFile = [Base,'Results',Sep,P.Animal,Sep,'LFPforCSD.mat'];
 fprintf(['Saving to ',OutFile,'\n']);
 save(OutFile,'LFP');
