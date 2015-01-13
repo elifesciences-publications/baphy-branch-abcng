@@ -19,7 +19,7 @@ noise_lowcut = 50;
 x_scalefactor = 100;
 
 %% deal with random number generator
-%rng('default')
+rng('default')
 %if (~isempty(sP.seed) & sP.stimtype == 2)
     rng(sP.seed);
 %else

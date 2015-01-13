@@ -44,7 +44,7 @@ case 0
     O.ReinsertTrials = 0;
     O.VisualDisplay =0;
     O.RewardSnooze = 0;
-    O.ReplaySession = '[]';
+    O.ReplaySession = '';
     O.LickTargetOnly =0;
     O.NumberOfTrials = 30;
     O.ReferenceMaxIndex = 0;
