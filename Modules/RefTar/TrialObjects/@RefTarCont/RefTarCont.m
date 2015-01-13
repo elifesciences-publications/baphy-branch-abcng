@@ -53,7 +53,7 @@ case 0
     O.TargetIndices = '[]';
     O.TrialTags = '[]';
     O.RunClass = '[]';
-    O.TrialIndexLst = '[]';
+    O.TrialIndexLst = [];
     O.PreviousSessionIndex = [];
     O.UserDefinableFields = {...
       'OveralldB','edit',O.OveralldB,...

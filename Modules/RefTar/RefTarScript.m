@@ -38,11 +38,17 @@ exptparams.comment = [...
 
 %% MAIN LOOP
 while ContinueExp == 1
-  exptparams.TrialObject = ObjUpdate(exptparams.TrialObject);
+  if exist('iRep')==0
+    exptparams.TrialObject = ObjUpdate(exptparams.TrialObject);
+    TrialIndexLst = 1:(exptparams.TrialBlock*exptparams.Repetition);    % List of trial nb sent to <waveform>; modified during reinsertion
+     if (isfield(struct(exptparams.TrialObject),'TrialIndexLst') && isempty(get(exptparams.TrialObject,'TrialIndexLst'))); exptparams.TrialObject = set(exptparams.TrialObject,'TrialIndexLst',TrialIndexLst); end
+  elseif isfield(struct(exptparams.TrialObject),'TrialIndexLst')
+    TrialIndexLst = get(exptparams.TrialObject,'TrialIndexLst');
+    TrialIndexLst = [ TrialIndexLst , max(TrialIndexLst) + (1:(exptparams.TrialBlock*exptparams.Repetition)) ];    % List of trial nb sent to <waveform>; modified during reinsertion
+     exptparams.TrialObject = set(exptparams.TrialObject,'TrialIndexLst',TrialIndexLst);
+  end  
+ 
   iRep = 0;
-  TrialIndexLst = 1:(exptparams.TrialBlock*exptparams.Repetition);    % List of trial nb sent to <waveform>; modified during reinsertion
-  if (isfield(exptparams.TrialObject,'TrialIndexLst') && isempty(get(exptparams.TrialObject,'TrialIndexLst'))) ||...
-      ~isfield(exptparams.TrialObject,'TrialIndexLst'); exptparams.TrialObject = set(exptparams.TrialObject,'TrialIndexLst',TrialIndexLst); end
   while iRep < exptparams.Repetition; % REPETITION LOOP
     iRep = iRep+1;
     if ~ContinueExp, break; end
