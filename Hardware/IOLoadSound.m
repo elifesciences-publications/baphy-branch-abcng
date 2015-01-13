@@ -7,21 +7,24 @@ function HW = IOLoadSound(HW, stim)
 
 %% MAKE SURE THE STIMULUS IS VERTICAL
  if size(stim,1)<size(stim,2)  stim=stim'; end;
+ SpeakerNb = size(stim,2);
 
 %% CALIBRATE SPECTRUM AND VOLUME FOR SOME SETUPS
-if any(HW.params.HWSetup == [ 7,9,10,12 ] ) || ...
-    isfield(HW.params,'driver') && strcmpi(HW.params.driver,'NIDAQMX'),
-  if isfield(HW,'Calibration') && length(stim)>length(HW.Calibration.IIR)
-    % ADAPT SAMPLING RATE
-    cIIR = HW.Calibration.IIR; CalSR = HW.Calibration.SR;
-    TCal = [0:1/CalSR:(length(cIIR)-1)/CalSR];
-    TCurrent = [0:1/HW.params.fsAO:(length(cIIR)-1)/CalSR];
-    cIIR = interp1(TCal,cIIR,TCurrent,'spline');
-    % CONVOLVE WITH INVERSE IMPULSE RESPONSE OF SPEAKER
-    tstim = conv(stim(:,1),cIIR)*CalSR/HW.params.fsAO;
-    % UNDO SHIFT DUE TO CALIBRATION
-    cDelaySteps = round(HW.Calibration.Delay*HW.params.fsAO);
-    stim(:,1) = [tstim(cDelaySteps:end-length(cIIR)+1);zeros(cDelaySteps-1,1)];
+for SpeakerNum = 1:SpeakerNb
+  if any(HW.params.HWSetup == [ 7,9,10,12 ] ) || ...
+      isfield(HW.params,'driver') && strcmpi(HW.params.driver,'NIDAQMX'),
+    if isfield(HW,'Calibration') && size(stim,1)>length(HW.Calibration(SpeakerNum).IIR)
+      % ADAPT SAMPLING RATE
+      cIIR = HW.Calibration(SpeakerNum).IIR; CalSR = HW.Calibration(SpeakerNum).SR;
+      TCal = [0:1/CalSR:(length(cIIR)-1)/CalSR];
+      TCurrent = [0:1/HW.params.fsAO:(length(cIIR)-1)/CalSR];
+      cIIR = interp1(TCal,cIIR,TCurrent,'spline');
+      % CONVOLVE WITH INVERSE IMPULSE RESPONSE OF SPEAKER
+      tstim = conv(stim(:,SpeakerNum),cIIR)*CalSR/HW.params.fsAO;
+      % UNDO SHIFT DUE TO CALIBRATION
+      cDelaySteps = round(HW.Calibration(SpeakerNum).Delay*HW.params.fsAO);
+      stim(:,SpeakerNum) = [tstim(cDelaySteps:end-length(cIIR)+1);zeros(cDelaySteps-1,1)];
+    end
   end
 end
 
@@ -47,11 +50,13 @@ switch HW.params.HWSetup
     % the loudness itself, e.g. useful for ClickTrains
     global LoudnessAdjusted;
     if isempty(LoudnessAdjusted) || ~LoudnessAdjusted
-      switch HW.Calibration.Loudness.Method
-        case 'MaxLocalStd';
-          Duration = HW.Calibration.Loudness.Parameters.Duration;
-          Val = maxLocalStd(stim(:),HW.params.fsAO,Duration);
-          stim =  HW.Calibration.Loudness.Parameters.SignalMatlab80dB*stim/Val;
+      for SpeakerNum = 1:SpeakerNb
+        switch HW.Calibration(SpeakerNum).Loudness.Method
+          case 'MaxLocalStd';
+            Duration = HW.Calibration(SpeakerNum).Loudness.Parameters.Duration;
+            Val = maxLocalStd(stim(:,SpeakerNum),HW.params.fsAO,Duration);
+            stim(:,SpeakerNum) =  HW.Calibration(SpeakerNum).Loudness.Parameters.SignalMatlab80dB*stim(:,SpeakerNum)/Val;
+        end
       end
     end
     LoudnessAdjusted = 0;
@@ -97,6 +102,11 @@ switch HW.params.HWSetup
       % HW.params.fsAO
       HW=niSetAOSamplingRate(HW);
       
+      % dulicate sound on the 2 channels if no analog stim on the 2nd one
+      global SecondChannelAO;
+      if ~isempty(SecondChannelAO) & ~SecondChannelAO & SpeakerNb == 1
+        stim(:,2) = stim(:,1);
+      end
       % actually load the samples
       SamplesLoaded=niLoadAOData(HW.AO(1),stim);     
       case 'DAQTOOLBOX';

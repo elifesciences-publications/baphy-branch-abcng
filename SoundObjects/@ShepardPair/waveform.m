@@ -14,6 +14,7 @@ PreStimSilence = get(o,'PreStimSilence');
 PostStimSilence = get(o,'PostStimSilence');
 P = get(o,'Par');
 NPitchClasses = length(P.PitchClasses);
+Spatialization = str2num( get(o,'Spatialization') );
 
 % CORRECT PARAMETER WHITESPACE
 cPos = find(P.EnvStyle==' ',1,'first');
@@ -64,6 +65,20 @@ w = zeros(round(TotalDurations(Index)*SR),1);
 k=round(PreStimSilence*SR); ev = AddEvent(ev,['PreStimSilence'],[],0,PreStimSilence); 
 
 P.PitchClasses = 0; 
+
+% INITIAL SHAPING WITH SPATIALIZATION
+if Spatialization==0
+  TargetSideFactor = 0.5; NonTargetSideFactor = 1;
+  TargetChannel = 0.5; NonTargetChannel = 2;
+else % Coherent waveforms on both channels
+  TargetSideFactor = 10^(-6*(1-Spatialization)/20);
+  NonTargetSideFactor = 1-TargetSideFactor;
+  switch cDirection
+    case -1; TargetChannel = 1; NonTargetChannel = 2;
+    case 1; TargetChannel = 2; NonTargetChannel = 1;
+  end
+end
+
 if length(P.PairDurations)==1 P.PairDurations = [P.PairDurations,P.PairDurations]; end
 for i=1:2
   P.PitchClassShift = Pitches(i);
@@ -71,17 +86,26 @@ for i=1:2
   if P.Durations>0
   cBlock = buildShepardTone(P,SR);
   cBlock = addSinRamp(cBlock,0.002,SR,'<=>');
-  w(k+1:k+length(cBlock)) = cBlock; k = k+length(cBlock);
+  w(k+1:k+length(cBlock)) = cBlock;
+  k = k+length(cBlock);
   ev = AddEvent(ev,['STIM , ShepardTone ',num2str(Index),' - ',num2str(i)],...
     [ ],ev(end).StopTime,ev(end).StopTime+P.PairDurations(i));
   end
   if i==1
     cBlock = zeros(round(P.BetweenPairPause*SR),1);
-    w(k+1:k+length(cBlock)) = cBlock; k = k+length(cBlock);
+    w(k+1:k+length(cBlock)) = cBlock;
+    k = k+length(cBlock);
     ev = AddEvent(ev,['PAUSE , ShepardTone ',num2str(Index),' - ',num2str(i)],...
       [ ],ev(end).StopTime,ev(end).StopTime+P.BetweenPairPause);
   end
 end
+
+% ADJUST LOUDNESS
+global LoudnessAdjusted; LoudnessAdjusted  = 1; 
+NormFactor = maxLocalStd(w(find(w~=0)),SR,length(find(w~=0))/SR);
+OriginalW = w/NormFactor;                                         % Each channel will be 80dB loud
+w(:,TargetChannel) = OriginalW*TargetSideFactor;  % Attenuation according to the spatialization factor
+w(:,NonTargetChannel) = OriginalW*NonTargetSideFactor;
 
 [a,b,c]  = ParseStimEvent(ev(2),0);
 ev(1).Note = ['PreStimSilence ,' b ',' c];

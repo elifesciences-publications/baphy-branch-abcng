@@ -35,10 +35,10 @@ cP.SnoozeRateRecent = sum(strcmp({RecentPerf.Outcome},'SNOOZE'))/AverageSteps;
 cP.EarlyRateRecent = sum(strcmp({RecentPerf.Outcome},'EARLY'))/AverageSteps;
 cP.ErrorRateRecent = sum(strcmp({RecentPerf.Outcome},'ERROR'))/AverageSteps;
 
-%% TIMING
+%% TIMING  %14/12: JL/YB inversion  of OFF and ON
 switch cP.DetectType
-  case 'ON'; cP.LickTime = find(LickData(:,cP.LickSensorInd)>0.5,1,'first');
-  case 'OFF';  
+  case 'OFF'; cP.LickTime = find(LickData(:,cP.LickSensorInd)>0.5,1,'first');
+  case 'ON';  
     if ~isnan(cP.LickSensorNotInd)
       cP.LickTime = find(LickData(:,cP.LickSensorNotInd)<0.5,1,'first');
     else cP.LickTime = []; 

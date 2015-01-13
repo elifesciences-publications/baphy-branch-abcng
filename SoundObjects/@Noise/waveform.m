@@ -1,4 +1,4 @@
-function [w, event]=waveform(o,index,IsRef);
+function [w, event ,o]=waveform(o,index,IsRef);
 % function w=waveform(t);
 % this function is the waveform generator for object NoiseBurst
 %
@@ -15,7 +15,7 @@ PostStimSilence=get(o,'PostStimSilence');
 bp_f=get(o,'Filter');
 Names=get(o,'Names');
 
-TotalBins=SamplingRate.*(PreStimSilence+Duration+PostStimSilence);
+TotalBins=round(SamplingRate.*(PreStimSilence+Duration+PostStimSilence));
 
 if strcmpi(NoiseType,'white'),
    % even for white, always load if from file. (Jan-9-2008, Nima)

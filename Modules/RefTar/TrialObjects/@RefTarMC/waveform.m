@@ -28,7 +28,17 @@ for iCond=1:length(Conds)
       case 'Tar'; cNote = [' , Target '];
     end
     
-    TrialSound = [TrialSound ; cWaveform];
+    % REF OR TAR CONTAINS 2 AUDIO CHANNELS
+    if iCond>1 && size(TrialSound,2)~=size(cWaveform,2)  
+      switch size(TrialSound,2)
+        case 2
+          TrialSound = [TrialSound ; repmat(cWaveform,1,2)];
+        case 1
+          TrialSound = [repmat(TrialSound,1,2) ; cWaveform];
+      end
+    else
+      TrialSound = [TrialSound ; cWaveform];
+    end
 
     % ADD EVENTS
     for j = 1:length(cEvents)

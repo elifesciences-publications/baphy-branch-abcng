@@ -21,6 +21,7 @@ AllTargetPositions = exptparams.Performance(end).AllTargetPositions;
 AllTargetSensors = IOMatchPosition2Sensor(AllTargetPositions);
 for i=1:length(AllTargetSensors)
   RespInds(i) = find(strcmp(exptparams.RespSensors,AllTargetSensors{i})); 
+%   RespInds(i) = findstr(AllTargetSensors{i},exptparams.RespSensors{1});
 end
 [FIG,AH,PH,Conditions,PlotOutcomes,exptparams] = LF_prepareFigure(exptparams,DC);
 SRout = HW.params.fsAO;
@@ -42,8 +43,8 @@ set(PH.InfoText,'String',FigName);
 if ~isempty(ResponseData)
   %% PLOT SOUND WAVEFORM
   axes(AH.Sound); XLim = get(AH.Sound,'XLim');
-  TimeS = [0:1/SRout:(length(TrialSound)-1)/SRout];
-  set(PH.Sound.Wave,'XData',TimeS,'YData',TrialSound);
+  TimeS = [0:1/SRout:(length(TrialSound(:,1))-1)/SRout];
+  set(PH.Sound.Wave,'XData',TimeS,'YData',TrialSound(:,1));
   set(PH.Sound.CurrentStimulus,'String',Conditions{cTargetIndex});
   
   %% PLOT LICKS AT ALL SPOUTS

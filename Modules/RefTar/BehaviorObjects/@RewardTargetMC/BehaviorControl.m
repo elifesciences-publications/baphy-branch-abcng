@@ -33,7 +33,10 @@ tmp = get(exptparams.TrialObject,'TargetIndices'); TargetIndices = tmp{exptparam
 
 %% COMPUTE RESPONSE WINDOWS
 TarInd = find(~cellfun(@isempty,strfind({StimEvents.Note},'Target')));
-TargetStartTime = StimEvents(TarInd(1)).StartTime;
+% TargetStartTime = StimEvents(TarInd(1)).StartTime;
+% TarWindow(1) = TargetStartTime + get(O,'EarlyWindow');
+% TarWindow(2) = TarWindow(1) + get(O,'ResponseWindow');
+TargetStartTime = StimEvents(end).StopTime;
 TarWindow(1) = TargetStartTime + get(O,'EarlyWindow');
 TarWindow(2) = TarWindow(1) + get(O,'ResponseWindow');
 RefWindow = [0,TarWindow(1)];
@@ -50,8 +53,10 @@ TargetSensors = IOMatchPosition2Sensor(cPositions);
 PumpNames = IOMatchPosition2Pump(cPositions);
 PumpName = PumpNames{cRandInd};
 PumpIndex = IOMatchPump2Index(HW,PumpName);
-PrewardDuration = PrewardAmount/globalparams.PumpMlPerSec.(PumpName);
+% PrewardDuration = PrewardAmount/globalparams.PumpMlPerSec.(PumpName);
+PrewardDuration = PrewardAmount/globalparams.PumpMlPerSec.Pump;
 Prewarded = 0; 
+AutomaticReward = get(O,'AutomaticReward');
 
 % PREPARE FOR LATE CENTERING REWARD
 CenteringRewardDelay = get(O,'CenteringRewardDelay');
@@ -67,39 +72,70 @@ LightNames = IOMatchPosition2Light(HW,cPositions);
 LightName = LightNames{cRandInd}; % CUE SHOULD ALWAYS BE RANDOM
 
 %% WAIT FOR THE CLICK AND RECORD POSITION AND TIME
-SensorNames = HW.DIO.Line.LineName;
+% SensorNames = HW.DIO.Line.LineName;
+SensorNames = {HW.Didx.Name};
 SensorChannels(1)=find(strcmp(SensorNames,'TouchL'));
 SensorChannels(2)=find(strcmp(SensorNames,'TouchR'));
 AllLickSensorNames = SensorNames(~cellfun(@isempty,strfind(SensorNames,'Touch')));
+LightSensorChannels = find(strcmp(SensorNames,'Light'));
 
 % SYNCHRONIZE COMPUTER CLOCK WITH DAQ TIME
 tic; CurrentTime = IOGetTimeStamp(HW); InitialTime = CurrentTime;
 fprintf(['Running Trial [ <=',n2s(exptparams.LogDuration),'s ] ... ']);
 while CurrentTime < exptparams.LogDuration
 
-DetectType = 'OFF'; LickOccured = 0;
+DetectType = 'ON'; LickOccured = 0; BrokenLight = 0;
   %CurrentTime = IOGetTimeStamp(HW); % INACCURATE WITH DISCRETE STEPS
   CurrentTime = toc+InitialTime;
-  % READ LICKS FROM ALL SENSORS
-  if ~Simulick   cLick = IOLickRead(HW,SensorChannels);
-  else cLick = ones(size(SensorChannels)); 
-    if CurrentTime>= LickTime cLick(ceil(length(cLick)*rand)) = 0; end
+  
+  if CurrentTime<TarWindow(1)
+    % READ LIGHT SENSOR
+    if ~Simulick  
+        cVals = IOLickRead(HW,LightSensorChannels);
+        if ~cVals
+          BrokenLight = 1;
+         end
+    end
+  else
+    % READ LICKS FROM ALL SENSORS
+    if ~Simulick   cLick = IOLickRead(HW,SensorChannels);
+    else cLick = ones(size(SensorChannels));
+      if CurrentTime>= LickTime cLick(ceil(length(cLick)*rand)) = 0; end
+    end
+    switch DetectType
+      case 'ON'; if any(cLick) LickOccured = 1; end;
+      case 'OFF'; if any(~cLick) LickOccured = 1; end;
+    end
+    
+    if strcmp(AutomaticReward,'yes')
+      LickOccured = 1; 
+    end
   end
-  switch DetectType
-    case 'ON'; if any(cLick) LickOccured = 1; end;
-    case 'OFF'; if any(~cLick) LickOccured = 1; end;
+  
+  % PROCESS LIGHT BEAM
+  if BrokenLight
+    ResponseTime = CurrentTime;
+    Events=AddEvent(Events,'LIGHT',TrialIndex,ResponseTime,[]);
+    break;
   end
   
   % PROCESS LICK GENERALLY
   if LickOccured
-    ResponseTime = CurrentTime; 
-    cSensorChannels = SensorChannels(find(cLick,1,'first'));
-    if ~isempty(cSensorChannels)
-      cLickSensorInd = find(cLick,1,'first');
-      cLickSensor = SensorNames{SensorChannels(cLickSensorInd)}; % CORRECT FOR BOTH 'ON' AND 'OFF' RESULTS
+    if strcmp(AutomaticReward,'yes')
+      ResponseTime = TarWindow(2)-0.001;
+      cLickSensorInd = find( not( cellfun(@isempty , strfind({SensorNames{SensorChannels}},TargetSensors{1}) ) ) );
+      cLickSensor = SensorNames{SensorChannels(cLickSensorInd)};
       cLickSensorNot = setdiff(SensorNames(SensorChannels),cLickSensor);
     else
-      cLickSensor = 'None'; cLickSensorNot = 'None';
+      ResponseTime = CurrentTime;
+      cSensorChannels = SensorChannels(find(cLick,1,'first'));
+      if ~isempty(cSensorChannels)
+        cLickSensorInd = find(cLick,1,'first');
+        cLickSensor = SensorNames{SensorChannels(cLickSensorInd)}; % CORRECT FOR BOTH 'ON' AND 'OFF' RESULTS
+        cLickSensorNot = setdiff(SensorNames(SensorChannels),cLickSensor);
+      else
+        cLickSensor = 'None'; cLickSensorNot = 'None';
+      end
     end
    
     Events=AddEvent(Events,['LICK,',cLickSensor],TrialIndex,ResponseTime,[]);
@@ -142,14 +178,17 @@ DetectType = 'OFF'; LickOccured = 0;
     exptparams.Water = exptparams.Water + PrewardAmount;
     fprintf('\b ... '); Prewarded = 1;
   end
+  
 end
-% IF NO RESPONSE OCCUREE
-if ~LickOccured ResponseTime = inf; end
+% IF NO RESPONSE OCCURED
+if ~LickOccured
+    ResponseTime = inf;
+end
 
 if LickOccured
   fprintf(['\t Lick detected [ ',cLickSensor,', at ',n2s(ResponseTime,3),'s ] ... ']);
 else
-  fprintf(['\t No Lick detected ... ']); cLickSensor = ''; 
+  fprintf(['\t No Lick detected ... ']); if strcmp(AutomaticReward,'no'); cLickSensor = ''; end
 end
 
 %%  PROCESS LICK
@@ -184,15 +223,16 @@ switch Outcome
       IOStartSound(HW,randn(10000,1)); pause(0.25); IOStopSound(HW); 
     end
     TimeOut = get(O,'TimeOutError'); if ischar(TimeOut) TimeOut = str2num(TimeOut); end
-    LightEvents = LF_TimeOut(HW,roundn(TimeOut*(1+rand),-1),1,TrialIndex);
+    LightEvents = LF_TimeOut(HW,roundn(TimeOut*(1+rand),-1),0,TrialIndex);
     Events = AddEvent(Events, LightEvents, TrialIndex);
   
   case 'HIT'; % PROVIDE REWARD AT CORRECT SPOUT
+    StopEvent = IOStopSound(HW);
     PumpName = cell2mat(IOMatchSensor2Pump(cLickSensor));
     if length(RewardAmount)>1 % ASYMMETRIC REWARD SCHEDULE ACROSS SPOUTS
       RewardAmount = RewardAmount(cLickSensorInd);
     end
-    PumpDuration = RewardAmount/globalparams.PumpMlPerSec.(PumpName);
+    PumpDuration = RewardAmount/globalparams.PumpMlPerSec.Pump;
     pause(0.05); % PAUSE TO ALLOW FOR HEAD TURNING
     PumpEvent = IOControlPump(HW,'Start',PumpDuration,PumpName);
     Events = AddEvent(Events, PumpEvent, TrialIndex);
