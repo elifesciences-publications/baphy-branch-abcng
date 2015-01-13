@@ -102,11 +102,8 @@ for j = (RefNow+1) : (RefNow+index)
   MSeq       = maxLocalStd(wSeq(:),fs,length(wSeq(:))/fs);
   w          = [w ; wSeq(:)/MSeq ; gapSeq(:)];
   
-  ev = AddEvent(ev, ['ClickSequence ', num2str(TrialNum), 'Type: ' num2str(StimulusType) '; Seed: ' num2str(Seed)],...
-         [ ], ev(end).StopTime, ev(end).StopTime + length([wSeq(:) ; gapSeq(:)])/fs );
+  ev = AddEvent(ev,  ['ClickSequence',  num2str(TrialNum),  'Type: ' num2str(sP.stimtype) '; Seed: ' num2str(sP.seed)],  [ ] , ev(end).StopTime,  ev(end).StopTime + length([wSeq(:) ; gapSeq(:)])/fs );
   
-%   ev = AddEvent(ev, ['ReferenceSequence , ', num2str(j-RefNow), ' / ',num2str(index), ' - ', num2str(TrialNum) ],...
-%          [ ], ev(end).StopTime, ev(end).StopTime + length([wSeq(:) ; gapSeq(:)])/fs );
   
 end
 
