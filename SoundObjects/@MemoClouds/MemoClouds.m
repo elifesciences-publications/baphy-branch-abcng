@@ -28,9 +28,9 @@ switch nargin
     % Clicks
     o.RateRTCPercent         = 25;
     o.RateRefRTCPercent      = 25;
-    o.ToneCloudDur           = 1;
     o.SegDur                 = 0.5;
-    o.nreps                  = 2;
+    o.nreps                  = 3;
+        o.ToneCloudDur           = o.SegDur*o.nreps;
     o.tonespersecond         = 8; % 4, 8, 16, 32, 128, 512
     o.chperoctave            = 4;  % 2, 4,  8, 16,  64, 256
     o.density                = o.tonespersecond*o.chperoctave;
