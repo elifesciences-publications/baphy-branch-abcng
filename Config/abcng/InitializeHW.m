@@ -26,7 +26,7 @@ switch globalparams.HWSetup
     HW.AI = HW.AO;
     HW.DIO.Line.LineName = {'Touch','TouchL','TouchR'};
   case 1 % ALL RECORDING BOOTHS SHOULD REMAIN IDENTICAL AS LONG AS POSSIBLE
-    SetupNames = {'SB1'};
+    SetupNames = {'SB1','SB2','LB1'};
     HW.TwoSpeakers = 1;
     HW.TwoAFCsetup = 1;  % Indicates there are 2 spouts (not necessarly 2 speakers)
     HW.TwoAFCtask= 0;      % By default, the task is Go/NoGo
@@ -62,7 +62,7 @@ switch globalparams.HWSetup
       
     
   case {2,3} % ALL RECORDING BOOTHS SHOULD REMAIN IDENTICAL AS LONG AS POSSIBLE
-    SetupNames = {'SB2','LB1'};
+    SetupNames = {'SB1','SB2','LB1'};
     globalparams.HWSetupName = SetupNames{globalparams.HWSetup};
     
     DAQID = 'D0'; % NI BOARD ID WHICH CONTROLS STIMULUS & BEHAVIOR
