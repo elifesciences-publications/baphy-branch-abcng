@@ -12,18 +12,19 @@ function exptparams = BehaviorDisplay (O, HW, StimEvents, globalparams, exptpara
 % BE 2011/7
 
 %% SETUP
+HW.TwoAFCtask = 1;
 if ~TrialIndex return; end % IN CASE BREAK WITHOUT A SINGLE TRIAL
 DCtmp = HF_axesDivide(1,[1,0.5,1.5,1.2],[0.1,0.1,0.85,0.85],[],[0.1,0.7,0.7]);
 DCtmp2 = HF_axesDivide([1,1],1,DCtmp{end},0.4,[ ]);
 DC = [DCtmp(1:end-1);DCtmp2(:)];
 % SET UP ALL HANDLES, EVEN IF THE FIGURE HAS BEEN CLOSED IN BETWEEN
 AllTargetPositions = exptparams.Performance(end).AllTargetPositions;
-AllTargetSensors = IOMatchPosition2Sensor(AllTargetPositions);
+AllTargetSensors = IOMatchPosition2Sensor(AllTargetPositions,HW);
 for i=1:length(AllTargetSensors)
   RespInds(i) = find(strcmp(exptparams.RespSensors,AllTargetSensors{i})); 
 %   RespInds(i) = findstr(AllTargetSensors{i},exptparams.RespSensors{1});
 end
-[FIG,AH,PH,Conditions,PlotOutcomes,exptparams] = LF_prepareFigure(exptparams,DC);
+[FIG,AH,PH,Conditions,PlotOutcomes,exptparams] = LF_prepareFigure(exptparams,DC,HW);
 SRout = HW.params.fsAO;
 SRin = HW.params.fsAI;
 MaxIndex = get(get(exptparams.TrialObject,'TargetHandle'),'MaxIndex');
@@ -117,7 +118,7 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% HELPER FUNCTION FOR SETTING UP THE DISPLAY
-function [FIG,AH,PH,Conditions,PlotOutcomes,exptparams] = LF_prepareFigure(exptparams,DC)
+function [FIG,AH,PH,Conditions,PlotOutcomes,exptparams] = LF_prepareFigure(exptparams,DC,HW)
 
 if ~isfield(exptparams,'ResultsFigure') ...
   || isempty(exptparams.ResultsFigure) ...
@@ -133,7 +134,7 @@ if ~isempty(UD) % RETURN PREVIOUS HANDLES
 else % CREATE A NEW SET OF HANDLES
   %% SETUP
   AllTargetPositions = exptparams.Performance(end).AllTargetPositions;
-  AllTargetSensors = IOMatchPosition2Sensor(AllTargetPositions);
+  AllTargetSensors = IOMatchPosition2Sensor(AllTargetPositions,HW);
   
   AxisLabelOpt = {'FontSize',8};
   AxisOpt = {'FontSize',7};
@@ -192,7 +193,7 @@ else % CREATE A NEW SET OF HANDLES
   for i=1:MaxIndex
     [w,e,O] = waveform(O,i,0,'Simulation');
     cPos = get(O,'CurrentTargetPositions');
-    Sensors = IOMatchPosition2Sensor(cPos);
+    Sensors = IOMatchPosition2Sensor(cPos,HW);
     CurrentSensors(end+1:end+length(Sensors)) = Sensors(:);
     for j=1:length(Sensors)
       cT = find(strcmp(AllTargetSensors,Sensors{j}));

@@ -68,8 +68,8 @@ P.PitchClasses = 0;
 
 % INITIAL SHAPING WITH SPATIALIZATION
 if Spatialization==0
-  TargetSideFactor = 0.5; NonTargetSideFactor = 1;
-  TargetChannel = 0.5; NonTargetChannel = 2;
+  TargetSideFactor = 1; NonTargetSideFactor = 1;
+  TargetChannel = 1; NonTargetChannel = 2;
 else % Coherent waveforms on both channels
   TargetSideFactor = 10^(-6*(1-Spatialization)/20);
   NonTargetSideFactor = 1-TargetSideFactor;

@@ -7,7 +7,15 @@ function HW = IOLoadSound(HW, stim)
 
 %% MAKE SURE THE STIMULUS IS VERTICAL
  if size(stim,1)<size(stim,2)  stim=stim'; end;
- SpeakerNb = size(stim,2);
+ 
+ if isfield(HW,'TwoSpeakers') && HW.TwoSpeakers
+   SpeakerNb = 2;
+   if size(stim,2)==1
+     stim(:,2) = stim(:,1);
+   end
+ else
+   SpeakerNb = size(stim,2);
+ end
 
 %% CALIBRATE SPECTRUM AND VOLUME FOR SOME SETUPS
 for SpeakerNum = 1:SpeakerNb
@@ -50,11 +58,6 @@ switch HW.params.HWSetup
     % the loudness itself, e.g. useful for ClickTrains
     global LoudnessAdjusted;
     if isempty(LoudnessAdjusted) || ~LoudnessAdjusted
-      switch HW.Calibration.Loudness.Method
-        case 'MaxLocalStd';
-          Duration = HW.Calibration.Loudness.Parameters.Duration;
-          Val = maxLocalStd(stim(:),HW.params.fsAO,Duration);
-          stim =  HW.Calibration.Loudness.Parameters.SignalMatlab80dB*stim/Val;
       for SpeakerNum = 1:SpeakerNb
         switch HW.Calibration(SpeakerNum).Loudness.Method
           case 'MaxLocalStd';
@@ -78,6 +81,11 @@ switch HW.params.HWSetup
     end
     level_scale=10.^(-attend_db./20);
     stim(:,AudioChannels)=stim(:,AudioChannels).*level_scale;
+    
+    %% 2 SPEAKERS and Loudness are not been adjusted in the waveform of the SO
+    if isfield(HW,'TwoSpeakers') && HW.TwoSpeakers && (isempty(LoudnessAdjusted) || ~LoudnessAdjusted)
+      stim(:,1:SpeakerNb) = stim(:,1:SpeakerNb) * 0.5;
+    end
     
     %% ADD STIMULATION
     if isfield(HW,'AnalogStimulation') && HW.AnalogStimulation
@@ -108,10 +116,10 @@ switch HW.params.HWSetup
       
       % dulicate sound on the 2 channels if no analog stim on the 2nd one
       global SecondChannelAO;
-      if ~isempty(SecondChannelAO) & ~SecondChannelAO & SpeakerNb == 1
+      if ~isempty(SecondChannelAO) && ~SecondChannelAO && SpeakerNb == 1
         stim(:,2) = stim(:,1);
       % fill in empty AO channels with zeros %14/09-YB: from Steve' code
-      elseif  ~isempty(SecondChannelAO) & ~SecondChannelAO & size(stim,2)<HW.AO(1).NumChannels  
+      elseif  ~isempty(SecondChannelAO) && ~SecondChannelAO && size(stim,2)<HW.AO(1).NumChannels  
         stim=cat(2,stim,zeros(size(stim,1),HW.AO(1).NumChannels-size(stim,2)));
       end
       % actually load the samples

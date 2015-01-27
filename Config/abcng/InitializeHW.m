@@ -27,7 +27,9 @@ switch globalparams.HWSetup
     HW.DIO.Line.LineName = {'Touch','TouchL','TouchR'};
   case 1 % ALL RECORDING BOOTHS SHOULD REMAIN IDENTICAL AS LONG AS POSSIBLE
     SetupNames = {'SB1'};
-    
+    HW.TwoSpeakers = 1;
+    HW.TwoAFCsetup = 1;  % Indicates there are 2 spouts (not necessarly 2 speakers)
+    HW.TwoAFCtask= 0;      % By default, the task is Go/NoGo
     globalparams.HWSetupName = SetupNames{globalparams.HWSetup};
     
     DAQID = 'D0'; % NI BOARD ID WHICH CONTROLS STIMULUS & BEHAVIOR
@@ -43,7 +45,7 @@ switch globalparams.HWSetup
     HW=niCreateDI(HW,DAQID,'port0/line5','TouchL');
 %   HW=niCreateDI(HW,DAQID,'port0/line5','Touch');
     %% ANALOG INPUT
-    HW=niCreateAI(HW,DAQID,'ai0:2','TouchR,Microphone,TouchL',['/',DAQID,'/PFI0']);
+    HW=niCreateAI(HW,DAQID,'ai0:2','TouchL,Microphone,TouchR',['/',DAQID,'/PFI0']);
     
     %% ANALOG OUTPUT
     HW=niCreateAO(HW,DAQID,'ao0:1','SoundOutL,SoundOutR',['/',DAQID,'/PFI1']);

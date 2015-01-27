@@ -40,7 +40,7 @@ switch cP.DetectType
   case 'OFF'; cP.LickTime = find(LickData(:,cP.LickSensorInd)>0.5,1,'first');
   case 'ON';  
     if ~isnan(cP.LickSensorNotInd)
-      cP.LickTime = find(LickData(:,cP.LickSensorNotInd)<0.5,1,'first');
+      cP.LickTime = find(LickData(:,cP.LickSensorNotInd)>0.5,1,'first');
     else cP.LickTime = []; 
     end
 end

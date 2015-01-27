@@ -70,11 +70,11 @@ RewardSnooze = TrialObject.RewardSnooze;
 cPositions = {'center'};
 % IF MULTIPLE POSSIBLE : RANDOM REWARD or ALWAYS REWARD (comment out next line)
 cRandInd = 1; %randi(1,1,[1,length(cPositions)]);
-TargetSensors = IOMatchPosition2Sensor(cPositions);
-PumpNames = IOMatchPosition2Pump(cPositions);
+TargetSensors = IOMatchPosition2Sensor(cPositions,HW);
+PumpNames = IOMatchPosition2Pump(cPositions,HW);
 PumpName = PumpNames{cRandInd};
 PumpIndex = 1;%IOMatchPump2Index(HW,PumpName);
-PrewardDuration = PrewardAmount/globalparams.PumpMlPerSec.(PumpName);
+PrewardDuration = PrewardAmount/globalparams.PumpMlPerSec.Pump;
 Prewarded = 0; 
 
 %% PREPARE FOR LIGHT CUE
@@ -84,9 +84,11 @@ LightNames = IOMatchPosition2Light(HW,cPositions);
 LightName = LightNames{cRandInd}; % CUE SHOULD ALWAYS BE RANDOM
 
 %% WAIT FOR THE CLICK AND RECORD POSITION AND TIME
-SensorNames = {HW.Didx.Name};
-SensorChannels=find(strcmp(SensorNames,'Touch'));
-AllLickSensorNames = SensorNames(~cellfun(@isempty,strfind(SensorNames,'Touch')));
+SensorNames = {HW.Didx.Name}; 
+TouchType = IOMatchPosition2Sensor('center',HW); TouchType = TouchType{1};
+SensorChannels=find(strcmp(SensorNames,TouchType));
+
+AllLickSensorNames = SensorNames(~cellfun(@isempty,strfind(SensorNames,TouchType)));
 
 % SYNCHRONIZE COMPUTER CLOCK WITH DAQ TIME
 CountingLicks = [];
@@ -231,7 +233,7 @@ switch Outcome
       IOStartSound(HW,randn(10000,1)); pause(0.25); IOStopSound(HW); 
     end
     TimeOut = get(O,'TimeOutError'); if ischar(TimeOut) TimeOut = str2num(TimeOut); end
-    LightEvents = LF_TimeOut(HW,roundn(TimeOut*(1+rand),-1),1,TrialIndex);
+    LightEvents = LF_TimeOut(HW,roundn(TimeOut*(1+rand),-1),0,TrialIndex);
     Events = AddEvent(Events, LightEvents, TrialIndex);
   
   case 'HIT'; % STOP SOUND, PROVIDE REWARD AT CORRECT SPOUT
@@ -240,13 +242,13 @@ switch Outcome
     % Stop Dbis sound when <Duration2Play> is elapsed
     if ~CatchTrial; pause(max([0 , (TarWindow(1)+Duration2Play)-IOGetTimeStamp(HW) ])); end
     
-    PumpName = cell2mat(IOMatchSensor2Pump(cLickSensor));
+    PumpName = cell2mat(IOMatchSensor2Pump(cLickSensor,HW));
     if length(RewardAmount)>1 % ASYMMETRIC REWARD SCHEDULE ACROSS SPOUTS
       RewardAmount = RewardAmount(cLickSensorInd);
     end
     
-    if ~globalparams.PumpMlPerSec.(PumpName)
-      globalparams.PumpMlPerSec.(PumpName) = inf;
+    if ~globalparams.PumpMlPerSec.Pump
+      globalparams.PumpMlPerSec.Pump = inf;
     end
     if TrialIndex>1
       LastOutcomes = {exptparams.Performance((TrialIndex-1) :-1: max([1 (TrialIndex-MaxIncrementRewardNb)]) ).Outcome};
@@ -265,8 +267,9 @@ switch Outcome
       RewardAmount = MinRewardAmount + (RewardAmount-MinRewardAmount)*(MaxTimeBin-BadLickSum)/MaxTimeBin;
     end
     
-    PumpDuration = RewardAmount/globalparams.PumpMlPerSec.(PumpName);
+    PumpDuration = RewardAmount/globalparams.PumpMlPerSec.Pump;
     % pause(0.05); % PAUSE TO ALLOW FOR HEAD TURNING
+    PumpName = IOMatchPosition2Pump('center',HW); PumpName = PumpName{1};
     PumpEvent = IOControlPump(HW,'Start',PumpDuration,PumpName);
     Events = AddEvent(Events, PumpEvent, TrialIndex);
     exptparams.Water = exptparams.Water+RewardAmount;
@@ -295,9 +298,9 @@ switch Outcome
     if RewardSnooze
       pause(0.2);
       LEDposition = {'left'}; cLickSensor =TargetSensors;
-      PumpName = cell2mat(IOMatchSensor2Pump(cLickSensor));
+      PumpName = cell2mat(IOMatchSensor2Pump(cLickSensor,HW));
       RewardAmount = RewardAmount/3;
-      PumpDuration = RewardAmount/globalparams.PumpMlPerSec.(PumpName);
+      PumpDuration = RewardAmount/globalparams.PumpMlPerSec.Pump;
       % pause(0.05); % PAUSE TO ALLOW FOR HEAD TURNING
       PumpEvent = IOControlPump(HW,'Start',PumpDuration,PumpName);
       Events = AddEvent(Events, PumpEvent, TrialIndex);

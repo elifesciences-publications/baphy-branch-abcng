@@ -51,46 +51,105 @@ if strcmp(P.Electrodes,'all') P.Electrodes = [1:I.NumberOfChannels]; end
 global USECOMMONREFERENCE
 OLDREF = USECOMMONREFERENCE; USECOMMONREFERENCE = 0;
 
+
+%% LOAD AND PREPARE DATA
+Path = MD_getDir('Identifier',P.Identifier,'Kind','raw');
+GivenTrials = P.Trials;
+LFP = []
+if exist([Path, P.Identifier(1:end-3),'.xls'],'file') == 2 
+  %reloading everything for each file is a bit dirty, but well...
+  O = MD_dataFormat('Mode','Operator');
+  [Depths, Files] = xlsread([Path, P.Identifier(1:end-3),'.xls']);
+  for f=1:length(Files)
+    file=Files{f};
+    P = parsePairs({'Identifier',file}); global U;
+    checkField(P,'Identifier');
+    checkField(P,'Electrodes','all');
+    checkField(P,'Trials',inf)
+    checkField(P,'FilterStyle','butter');
+    checkField(P,'SR',1000);
+    checkField(P,'Method','standard');
+    checkField(P,'FIG',1);
+    checkField(P,'LFP',1);
+    checkField(P,'TimeSmooth',0.005); % in seconds
+    checkField(P,'DepthSmooth',0.000025); % in meters
+    P = MD_I2S2I(P); Sep = HF_getSep;
+    I = getRecInfo('Identifier',P.Identifier);
+    Identifier11 = O.S2I.FH(...
+      P.Animal,P.Penetration,P.Depth,P.Recording,I.Behavior(1),I.Runclass,1,1);
+    BaseName = [Path,P.Identifier,Sep,Identifier11,'.evp'];
+    R = struct('LFP',[],'LTrialidx',[]);
+    %P.Trials = GivenTrials(find(GivenTrials<=I.NTrials));
+    P.Trials = GivenTrials
+    for i=1:ceil(length(P.Trials)/20)
+      cTrials = P.Trials((i-1)*20+1:min([i*20,length(P.Trials)]));
+      tmp = evpread(BaseName,'lfpelecs',[1],'trials',cTrials,...
+        'filterstyle',P.FilterStyle,'spikechans',[],'SRlfp',P.SR);
+      R.LFP = [R.LFP ; tmp.LFP ];
+      if i>1
+        R.LTrialidx = [R.LTrialidx ; R.LTrialidx(end)+tmp.LTrialidx(2:end) ];
+      else
+        R.LTrialidx = tmp.LTrialidx;
+      end
+    end
+    R.Info = tmp.Info;
+   
+    % prepare LFP
+    preLFP = NaN*zeros(max(diff(R.LTrialidx)),1,length(R.LTrialidx)-1);
+    for i=1:length(R.LTrialidx)-1
+      preLFP(1:diff(R.LTrialidx(i:i+1)),:,i) = R.LFP(R.LTrialidx(i):R.LTrialidx(i+1)-1,:);
+    end
+    if length(LFP)>0 
+      len_rec = min(length(LFP),length(preLFP));
+      LFP = [LFP(:,1:len_rec) ; nanmean(preLFP(1:len_rec),3)];
+    else
+      LFP = [nanmean(preLFP,3)'];
+    end   
+  end
+
+  
+else
+  %% LOAD DATA
+  O = MD_dataFormat('Mode','Operator');
+  Identifier11 = O.S2I.FH(...
+    P.Animal,P.Penetration,P.Depth,P.Recording,I.Behavior(1),I.Runclass,1,1);
+  Path = MD_getDir('Identifier',P.Identifier,'Kind','raw');
+  BaseName = [Path,P.Identifier,Sep,Identifier11,'.evp'];
+  R = struct('LFP',[],'LTrialidx',[]);
+  P.Trials = P.Trials(find(P.Trials<=I.NTrials));
+  for i=1:ceil(length(P.Trials)/20)
+    cTrials = P.Trials((i-1)*20+1:min([i*20,length(P.Trials)]));
+    tmp = evpread(BaseName,'lfpelecs',P.Electrodes,'trials',cTrials,...
+      'filterstyle',P.FilterStyle,'spikechans',[],'SRlfp',P.SR);
+    R.LFP = [R.LFP ; tmp.LFP ];
+    if i>1
+      R.LTrialidx = [R.LTrialidx ; R.LTrialidx(end)+tmp.LTrialidx(2:end) ];
+    else
+      R.LTrialidx = tmp.LTrialidx;
+    end
+  end
+  R.Info = tmp.Info;
+  
+  %% PREPARE LFP
+  LFP = NaN*zeros(max(diff(R.LTrialidx)),length(P.Electrodes),length(R.LTrialidx)-1);
+  for i=1:length(R.LTrialidx)-1
+    LFP(1:diff(R.LTrialidx(i:i+1)),:,i) = R.LFP(R.LTrialidx(i):R.LTrialidx(i+1)-1,:);
+  end
+  LFP = nanmean(LFP,3)';
+  
+  %% COLLECT DEPTHS
+  Electrodes = [I.ElectrodesByChannel.Electrode];
+  [tmp,Inds] = intersect(Electrodes,P.Electrodes);
+  Positions = reshape([I.ElectrodesByChannel(Inds).ElecPos],3,length(Inds))';
+  Depths = Positions(:,3);
+end
+
 %% LOAD STIMULUS MFILE
 P.StimStart = I.exptparams.TrialObject.ReferenceHandle.PreStimSilence;
 P.StimStop = P.StimStart + I.exptparams.TrialObject.ReferenceHandle.Duration;
-P.TrialStop = P.StimStop + I.exptparams.TrialObject.ReferenceHandle.PostStimSilence;
+P.TrialStop = P.StimStop + I.exptparams.TrialObject.ReferenceHandle.PostStimSilence;  
 
-%% LOAD DATA
-O = MD_dataFormat('Mode','Operator');
-Identifier11 = O.S2I.FH(...
-  P.Animal,P.Penetration,P.Depth,P.Recording,I.Behavior(1),I.Runclass,1,1);
-Path = MD_getDir('Identifier',P.Identifier,'Kind','raw');
-BaseName = [Path,P.Identifier,Sep,Identifier11,'.evp'];
-R = struct('LFP',[],'LTrialidx',[]);
-P.Trials = P.Trials(find(P.Trials<=I.NTrials));
-for i=1:ceil(length(P.Trials)/20)
-  cTrials = P.Trials((i-1)*20+1:min([i*20,length(P.Trials)]));
-  tmp = evpread(BaseName,'lfpelecs',P.Electrodes,'trials',cTrials,...
-    'filterstyle',P.FilterStyle,'spikechans',[],'SRlfp',P.SR);
-  R.LFP = [R.LFP ; tmp.LFP ];
-  if i>1
-    R.LTrialidx = [R.LTrialidx ; R.LTrialidx(end)+tmp.LTrialidx(2:end) ];
-  else
-    R.LTrialidx = tmp.LTrialidx;
-  end
-end
-R.Info = tmp.Info;
-
-%% PREPARE LFP
-LFP = NaN*zeros(max(diff(R.LTrialidx)),length(P.Electrodes),length(R.LTrialidx)-1);
-for i=1:length(R.LTrialidx)-1
-  LFP(1:diff(R.LTrialidx(i:i+1)),:,i) = R.LFP(R.LTrialidx(i):R.LTrialidx(i+1)-1,:); 
-end
-LFP = nanmean(LFP,3)';
-
-%% COLLECT DEPTHS
-Electrodes = [I.ElectrodesByChannel.Electrode];
-[tmp,Inds] = intersect(Electrodes,P.Electrodes);
-Positions = reshape([I.ElectrodesByChannel(Inds).ElecPos],3,length(Inds))';
-Depths = Positions(:,3);
-
-%% CHECK FOR DIRECTION OF ELECTRODES 
+%% CHECK FOR DIRECTION OF ELECTRODES
 if Depths(2)<Depths(1) % incorrect direction
   Depths = Depths(end:-1:1); LFP = LFP(end:-1:1,:);
 end
@@ -133,7 +192,7 @@ switch lower(Method)
     
     % electrode parameters:
     Depths = Depths*1e-3; % mm -> m
-    AverageSeparation = mean(diff(Depths));
+    %AverageSeparation = mean(diff(Depths));
     cLFP = LFP;
     
     % compute standard CSD with vaknin el.
@@ -143,7 +202,8 @@ switch lower(Method)
       cLFP = LFP([1,1:end,end],:);
     end;
     
-    CSD = -Conductance*SecondDeriv(length(cLFP(:,1)),AverageSeparation)*cLFP;
+    CSD = -Conductance*SecondDeriv_irreg(Depths)*cLFP;
+    %CSD = -Conductance*SecondDeriv_irreg(length(cLFP(:,1)),AverageSeparation)*cLFP;
     
     if wNeighbor~=0 %filter iCSD (does not change size of CSD matrix)
       [n1,n2]=size(CSD);
@@ -157,7 +217,7 @@ switch lower(Method)
 end
 Time = [1:NSteps]/SR;
 
-%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function LF_plotPotential(Opt,AH,Time,Depth,Potential,P)
 colormap(HF_colormap({[1,0,0],[0,0,0],[0,0,1]},[-1,0,1],256));
 axes(AH); cla; hold on;
@@ -172,19 +232,22 @@ switch Opt
     Potential = Potential*1e6;
 end
 
-for i=1:size(Potential,1) Potential(i,:) = relaxc(Potential(i,:),P.TimeSmooth*P.SR); end
-for i=1:size(Potential,2) Potential(:,i) = relaxc(Potential(:,i),P.DepthSmooth/abs(Depth(2)-Depth(1))); end 
+%TODO change the smoothing, which does not take into account irregularity
+% for i=1:size(Potential,1) Potential(i,:) = relaxc(Potential(i,:),P.TimeSmooth*P.SR); end
+% for i=1:size(Potential,2) Potential(:,i) = relaxc(Potential(:,i),P.DepthSmooth/abs(Depth(2)-Depth(1))); end 
 clim=max(mat2vec(Potential(:,1:round(P.StimStop*P.SR))));
 Depth = Depth*1e6; DepthTick = 1:length(Depth);
 
-imagesc(Time,DepthTick,Potential);
+pcolor(Time,Depth,Potential);
+shading interp;
 set(gca,'YDir','reverse');
 caxis([-clim,clim]); colorbar; 
-plot3(repmat(P.StimStart,1,length(Depth)),DepthTick,repmat(1,1,length(Depth)),'-','Color',[0,1,0]);
-plot3(repmat(P.StimStop,1,length(Depth)),DepthTick,repmat(1,1,length(Depth)),'-','Color',[0,1,0]);
+plot3(repmat(P.StimStart,1,length(Depth)),Depth,repmat(1,1,length(Depth)),'-','Color',[0,1,0]);
+plot3(repmat(P.StimStop,1,length(Depth)),Depth,repmat(1,1,length(Depth)),'-','Color',[0,1,0]);
 
-set(gca,'YTick',DepthTick(1:2:end),'YTickLabel',Depth(1:2:end));
-axis([-0.01,P.TrialStop+0.01,0.3,DepthTick(end)+0.7]); box on;
+set(gca,'YTick',Depth(1:2:end),'YTickLabel',Depth(1:2:end));
+axis([-0.01,P.TrialStop+0.01,Depth(1),Depth(end)+0.7]); box on;
 if strcmp(Opt,'LFP') xlabel('Time [s]'); end
 ylabel('Depth [\mum]'); title([Opt,' [',UnitStr,']']);
+
     
