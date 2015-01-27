@@ -165,7 +165,7 @@ if get(O,'GradualResponse')
       DidItLicks(RefNum) = 1;
     end
   end
-  BadLickSum = sum(DidItLicks);
+  BadLickSum = sum(DidItLicks)
   if TrialIndex == 1
     exptparams.Performance.FaNb = BadLickSum;
     exptparams.DBfields.Performance = {'DiscriminationRate','HitRate','SnoozeRate','EarlyRate','ErrorRate','Trials'};
@@ -275,8 +275,9 @@ switch Outcome
     if get(O,'GradualResponse')
       % Linear: RewardAmount = MinRewardAmount + (RewardAmount-MinRewardAmount)*(Index-BadLickSum)/Index;
       RewardAmount = MinRewardAmount + (RewardAmount-MinRewardAmount)*exp(0.5*-BadLickSum).*(Index-BadLickSum)/Index;
-    end   
-    
+    end
+    % Reward is dependant on the Index
+    %RewardAmount = RewardAmount*min(1,round(Index*2/get(Objects.Tar,'MaxIndex')));
 
     PumpDuration = RewardAmount/globalparams.PumpMlPerSec.(PumpName);
     % pause(0.05); % PAUSE TO ALLOW FOR HEAD TURNING

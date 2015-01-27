@@ -25,13 +25,14 @@ cP.ErrorRate = sum(strcmp({AllPerf.Outcome},'ERROR'))/TrialIndex;  % no ERROR in
 % DISCRIMINATION
 if get(O,'GradualResponse')
   HitRate = cP.HitRate;
-  FaRate = sum([AllPerf.FaNb]) / ( sum( [AllPerf(1:TrialIndex).TargetIndices] - 1) + cP.FaNb );
+  FaRate = sum([AllPerf.FaNb]) / sum([AllPerf.TargetIndices]);
+%   FaRate = sum([AllPerf.FaNb]) / ( sum( [AllPerf(1:TrialIndex).TargetIndices] - 1) + cP.FaNb );
   if FaRate==0
     cP.DiscriminationRate = 0;
   elseif HitRate==0
     cP.DiscriminationRate = 0;
   else
-    cP.DiscriminationRate = norminv(HitRate)-norminv(FaRate);
+    cP.DiscriminationRate = erfinv(HitRate)-erfinv(FaRate);
   end
   cP.DiscriminationRate = (cP.DiscriminationRate/3) +0.5;
 else
