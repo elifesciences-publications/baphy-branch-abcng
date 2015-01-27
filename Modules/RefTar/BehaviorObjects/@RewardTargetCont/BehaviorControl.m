@@ -260,6 +260,8 @@ switch Outcome
     MinToC = str2double(get(get(exptparams.TrialObject,'TargetHandle'),'MinToC')); MaxToC = str2double(get(get(exptparams.TrialObject,'TargetHandle'),'MaxToC'));
     if CatchTrial
       if ~(RewardSnooze); RewardAmount = 0; else RewardAmount = RewardAmount/3; pause(0.2); end 
+    elseif MaxToC==MinToC
+      RewardAmount = RewardAmount + IncrementRewardAmount*NbContiguousLastHits;
     else
       RewardAmount = RewardAmount * (0.5 + (TarWindow(1)-MinToC)/(MaxToC-MinToC)) + IncrementRewardAmount*NbContiguousLastHits;
     end
