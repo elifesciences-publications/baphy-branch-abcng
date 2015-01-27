@@ -25,9 +25,44 @@ switch globalparams.HWSetup
     HW.AO = audioplayer(rand(4000,1), HW.params.fsAO);
     HW.AI = HW.AO;
     HW.DIO.Line.LineName = {'Touch','TouchL','TouchR'};
-  case {1,2,3} % ALL RECORDING BOOTHS SHOULD REMAIN IDENTICAL AS LONG AS POSSIBLE
-    SetupNames = {'SB1','SB2','LB1'};
+  case 1 % ALL RECORDING BOOTHS SHOULD REMAIN IDENTICAL AS LONG AS POSSIBLE
+    SetupNames = {'SB1'};
+    HW.TwoSpeakers = 1;
+    HW.TwoAFCsetup = 1;  % Indicates there are 2 spouts (not necessarly 2 speakers)
+    HW.TwoAFCtask= 0;      % By default, the task is Go/NoGo
+    globalparams.HWSetupName = SetupNames{globalparams.HWSetup};
     
+    DAQID = 'D0'; % NI BOARD ID WHICH CONTROLS STIMULUS & BEHAVIOR
+    niResetDevice(DAQID);
+    
+    %% DIGITAL IO
+    HW=niCreateDO(HW,DAQID,'port0/line0:1,port2/line0:1','TrigAI,TrigAO,TrigAIInv,TrigAOInv','InitState',[0 0 1 1]);
+    HW=niCreateDO(HW,DAQID,'port1/line4','PumpR','InitState',0);
+    HW=niCreateDO(HW,DAQID,'port1/line5','PumpL','InitState',0);
+    HW=niCreateDO(HW,DAQID,'port1/line7','Pump','InitState',0);
+    HW=niCreateDI(HW,DAQID,'port0/line6','Light');
+    HW=niCreateDI(HW,DAQID,'port0/line2','TouchR');
+    HW=niCreateDI(HW,DAQID,'port0/line5','TouchL');
+%   HW=niCreateDI(HW,DAQID,'port0/line5','Touch');
+    %% ANALOG INPUT
+    HW=niCreateAI(HW,DAQID,'ai0:2','TouchL,Microphone,TouchR',['/',DAQID,'/PFI0']);
+    
+    %% ANALOG OUTPUT
+    HW=niCreateAO(HW,DAQID,'ao0:1','SoundOutL,SoundOutR',['/',DAQID,'/PFI1']);
+    
+    %% SETUP SPEAKER CALIBRATION
+    HW.Calibration(1).Speaker = ['RSR',globalparams.HWSetupName];
+    HW.Calibration(1).Microphone = 'GRAS46BE';
+    HW.Calibration(2).Speaker = ['RSL',globalparams.HWSetupName];
+    HW.Calibration(2).Microphone = 'GRAS46BE';
+    HW.Calibration = IOLoadCalibration(HW.Calibration);
+       
+    %% COMMUNICATE WITH MANTA
+    if Physiology  [HW,globalparams] = IOConnectWithManta(HW,globalparams); end
+      
+    
+  case {2,3} % ALL RECORDING BOOTHS SHOULD REMAIN IDENTICAL AS LONG AS POSSIBLE
+    SetupNames = {'SB2','LB1'};
     globalparams.HWSetupName = SetupNames{globalparams.HWSetup};
     
     DAQID = 'D0'; % NI BOARD ID WHICH CONTROLS STIMULUS & BEHAVIOR
@@ -49,7 +84,7 @@ switch globalparams.HWSetup
     
     %% SETUP SPEAKER CALIBRATION
     switch globalparams.HWSetup
-        case {1,3}            
+        case 3            
             HW.Calibration.Speaker = ['SHIE800',globalparams.HWSetupName];
         case 2
             HW.Calibration.Speaker = ['RS',globalparams.HWSetupName];

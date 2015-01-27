@@ -38,8 +38,13 @@ end
 
 if ~get(O,'Simulick')
   % WAIT UNTIL CENTERED FOR LONG ENOUGH
-  SensorNames = HW.DIO.Line.LineName;
-  SensorChannels=find(~cellfun(@isempty,strfind(SensorNames,'Touch')));
+  % Old syntax
+%   SensorNames = HW.DIO.Line.LineName;
+%   SensorChannels=find(~cellfun(@isempty,strfind(SensorNames,'Light')));
+  
+  SensorNames = {HW.Didx.Name};
+  SensorChannels = find(strcmp(SensorNames,'Light'));
+
   LeftChannel=find(strcmp(SensorNames,'TouchL'));
   RightChannel=find(strcmp(SensorNames,'TouchR'));
   %CenterChannel=find(strcmp(SensorNames,'Touch'));
@@ -47,9 +52,21 @@ if ~get(O,'Simulick')
     % RESET TIMER IF LICK AT ANY SENSOR
     cVals = IOLickRead(HW,SensorChannels);
     %if cVals(SensorChannels == LeftChannel) || cVals(SensorChannels == RightChannel) || ~cVals(SensorChannels == CenterChannel)
-    if ~cVals(SensorChannels == LeftChannel) || ~cVals(SensorChannels == RightChannel)
-      LastTime = clock; end
+%     if cVals(SensorChannels == LeftChannel) || cVals(SensorChannels ==  RightChannel)  % Bernhard's version
+    if ~cVals
+      LastTime = clock;
+    end
     pause(0.05);
     drawnow;
   end
+   
+  % Taken from @RewardTargetCont
+  while etime(clock,LastTime)<NoResponseTime && ~StopExperiment
+    if IOLickRead(HW)
+      % if she licks, reset the timer
+      LastTime = clock;
+    end
+    drawnow;
+  end
+  
 end

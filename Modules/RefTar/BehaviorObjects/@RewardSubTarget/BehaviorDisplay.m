@@ -19,7 +19,7 @@ DC = [DCtmp(1:end-1);DCtmp2(:)];
 %cPositions = {'center'};
 % SET UP ALL HANDLES, EVEN IF THE FIGURE HAS BEEN CLOSED IN BETWEEN
 AllTargetPositions = exptparams.Performance(end).AllTargetPositions;
-AllTargetSensors = IOMatchPosition2Sensor(AllTargetPositions);
+AllTargetSensors = IOMatchPosition2Sensor(AllTargetPositions,HW);
 for i=1:length(AllTargetSensors)
   RespInds(i) = find(strcmp(exptparams.RespSensors,AllTargetSensors{i})); 
 end
@@ -200,7 +200,7 @@ if ~isempty(UD) % RETURN PREVIOUS HANDLES
 else % CREATE A NEW SET OF HANDLES
   %% SETUP
   AllTargetPositions = exptparams.Performance(end).AllTargetPositions;
-  AllTargetSensors = IOMatchPosition2Sensor(AllTargetPositions);
+  AllTargetSensors = IOMatchPosition2Sensor(AllTargetPositions,HW);
   
   AxisLabelOpt = {'FontSize',8};
   AxisOpt = {'FontSize',7};
