@@ -171,6 +171,7 @@ TrialDuration=TrialBins./TrialSamplingRate;
 %'LightPulseShift','edit',0,...
 %'LightEpoch','popupmenu','Sound|Sound Onset|Whole'};
 LightBand=zeros(TrialBins,1);
+LightPower = (get(o,'LEDpower'));
 if LightTrial
     disp('Light on trial');
     LightStepSize=TrialSamplingRate./par.LightPulseRate;
@@ -180,9 +181,9 @@ if LightTrial
             ii=round(par.LightPulseShift.*TrialSamplingRate);
             while ii<TrialBins,
                 if ii+LightOnBins>TrialBins,
-                    LightBand((ii+1):end)=5;
+                    LightBand((ii+1):end)=LightPower;
                 else
-                    LightBand(ii+(1:LightOnBins))=5;
+                    LightBand(ii+(1:LightOnBins))=LightPower;
                 end
                 ii=ii+LightStepSize;
             end
@@ -192,7 +193,7 @@ if LightTrial
                 StimStartTime=events(evidx).StartTime;
                 LightStartTime=StimStartTime+par.LightPulseShift;
                 LightStartBin=round(LightStartTime*TrialSamplingRate);
-                LightBand(LightStartBin+(1:LightOnBins))=5;
+                LightBand(LightStartBin+(1:LightOnBins))=LightPower;
             end
             
         case 'WholeSound',
@@ -202,7 +203,7 @@ if LightTrial
                 LightStartTime=StimStartTime+par.LightPulseShift;
                 while LightStartTime<StimStopTime,
                     LightStartBin=round(LightStartTime*TrialSamplingRate);
-                    LightBand(LightStartBin+(1:LightOnBins))=5;
+                    LightBand(LightStartBin+(1:LightOnBins))=LightPower;
                     LightStartTime=LightStartTime+1./par.LightPulseRate;
                 end
             end
@@ -215,7 +216,7 @@ if LightTrial
           LightStartTime=StimStartTime+par.LightPulseShift;
           while LightStartTime<StimStopTime,
             LightStartBin=round(LightStartTime*TrialSamplingRate);
-            LightBand(LightStartBin+(1:LightOnBins))=5;
+            LightBand(LightStartBin+(1:LightOnBins))=LightPower;
             LightStartTime=LightStartTime+1./par.LightPulseRate;
           end
         otherwise

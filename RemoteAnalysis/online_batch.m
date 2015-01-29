@@ -111,7 +111,6 @@ end
 if ~ReuseFigure
   % CREATE NEW AXES
   for ii=1:NElectrodes
-    Electrode = Electrodes(ii);
 %     DC{ii} = DCAll{end-round(ElectrodesXY(Electrode,2))+1,round(ElectrodesXY(Electrode,1))};
     DC{ii} = DCAll{end-round(ElectrodesXY(ii,2))+1,round(ElectrodesXY(ii,1))};
     figure(BATCH_FIGURE_HANDLE); % MAKE SURE TO PLOT INTO CORRECT FIGURE
@@ -131,12 +130,11 @@ drawnow;
 try clear global GPROPS; end
 for ii=1:NElectrodes
   cla(AH(ii));
+  Electrode=Electrodes(ii);
   % OPTION FOR SORTED DATA
   if ~options.usesorted
-    Electrode=Electrodes(ii);
     unit=options.unit(ii);
   else
-    Electrode=Electrodes(ii);
     SortedUnits = options.unit(ElectrodesUnits{ii});
     disp(['Sorted Units on Electrode ', num2str(Electrode), ': ',num2str(SortedUnits)]);
     if length(SortedUnits) > 1   unit = input('Choose a unit: ');
