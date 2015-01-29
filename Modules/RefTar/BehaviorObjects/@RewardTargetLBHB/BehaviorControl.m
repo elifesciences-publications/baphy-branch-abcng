@@ -59,6 +59,12 @@ fprintf('  BehaviorControl --- starting trial %d (%d for this rep)\n',...
 disp('------------------------------------------------------------------');
 disp('');
 
+% static variable to track 
+persistent HitsSinceLastReward
+if TrialIndex==1,
+    HitsSinceLastReward=100;
+end
+
 if NullTrial,
     RewardHits=0;
 else
@@ -254,14 +260,24 @@ while CurrentTime < exptparams.LogDuration  % while trial is not over
              WaterFraction = 1;
           end
           PumpDuration = get(o,'PumpDuration') * WaterFraction;
-          if PumpDuration > 0
-             ev = IOControlPump (HW,'start',PumpDuration);
-             LickEvents = AddEvent(LickEvents, ev, TrialIndex);
-             exptparams.Water = exptparams.Water+PumpDuration;
-             if strcmpi(get(exptparams.BehaveObject,'TurnOnLight'),'Reward')
+          
+          HitRewardProbability=get(o,'HitRewardProbability');
+          if PumpDuration > 0 && ...
+                (HitsSinceLastReward>2/HitRewardProbability || rand<HitRewardProbability),
+            HitsSinceLastReward=0;
+            ev = IOControlPump (HW,'start',PumpDuration);
+            LickEvents = AddEvent(LickEvents, ev, TrialIndex);
+            exptparams.Water = exptparams.Water+PumpDuration;
+            if strcmpi(get(exptparams.BehaveObject,'TurnOnLight'),'Reward')
                 [~,ev] = IOLightSwitch (HW, 1, get(o,'PumpDuration'),'Start',0,0);
                 LickEvents = AddEvent(LickEvents, ev, TrialIndex);
-             end
+            end
+          else
+              HitsSinceLastReward=HitsSinceLastReward+1;
+              fprintf('p>%.2f: not rewarding hit (Hits since last reward=%d)\n',...
+                  HitRewardProbability,HitsSinceLastReward);
+              ev = struct('Note','BEHAVIOR,NOPUMP','StartTime',IOGetTimeStamp(HW),'StopTime',[]);
+              LickEvents = AddEvent(LickEvents, ev, TrialIndex);
           end
           TarFlag = StimPos;
        end
