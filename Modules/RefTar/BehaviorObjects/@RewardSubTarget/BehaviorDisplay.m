@@ -19,11 +19,11 @@ DC = [DCtmp(1:end-1);DCtmp2(:)];
 %cPositions = {'center'};
 % SET UP ALL HANDLES, EVEN IF THE FIGURE HAS BEEN CLOSED IN BETWEEN
 AllTargetPositions = exptparams.Performance(end).AllTargetPositions;
-AllTargetSensors = IOMatchPosition2Sensor(AllTargetPositions);
+AllTargetSensors = IOMatchPosition2Sensor(AllTargetPositions,HW);
 for i=1:length(AllTargetSensors)
   RespInds(i) = find(strcmp(exptparams.RespSensors,AllTargetSensors{i})); 
 end
-[FIG,AH,PH,Conditions,PlotOutcomes,exptparams] = LF_prepareFigure(exptparams,DC,TrialIndex,StimEvents);
+[FIG,AH,PH,Conditions,PlotOutcomes,exptparams] = LF_prepareFigure(exptparams,DC,TrialIndex,StimEvents,HW);
 SRout = HW.params.fsAO;
 SRin = HW.params.fsAI;
 MaxIndex = get(get(exptparams.TrialObject,'TargetHandle'),'MaxIndex');
@@ -184,7 +184,7 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% HELPER FUNCTION FOR SETTING UP THE DISPLAY
-function [FIG,AH,PH,Conditions,PlotOutcomes,exptparams] = LF_prepareFigure(exptparams,DC,TrialIndex,StimEvents)
+function [FIG,AH,PH,Conditions,PlotOutcomes,exptparams] = LF_prepareFigure(exptparams,DC,TrialIndex,StimEvents,HW)
 
 if ~isfield(exptparams,'ResultsFigure') ...
   || isempty(exptparams.ResultsFigure) ...
@@ -200,7 +200,7 @@ if ~isempty(UD) % RETURN PREVIOUS HANDLES
 else % CREATE A NEW SET OF HANDLES
   %% SETUP
   AllTargetPositions = exptparams.Performance(end).AllTargetPositions;
-  AllTargetSensors = IOMatchPosition2Sensor(AllTargetPositions);
+  AllTargetSensors = IOMatchPosition2Sensor(AllTargetPositions,HW);
   
   AxisLabelOpt = {'FontSize',8};
   AxisOpt = {'FontSize',7};

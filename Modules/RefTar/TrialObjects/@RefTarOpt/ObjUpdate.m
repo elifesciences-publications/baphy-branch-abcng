@@ -29,6 +29,10 @@ else
     o = set(o,'TargetClass','None');
 end
 
+% Used in IOLoadSound for duplicating sound over 2nd channel if need be
+SecondChannelAO = 1;
+global SecondChannelAO
+
 % svd moved runclass functionality to a stand-alone command in the Config
 % directory so that different trial objects can call the same function.
 o = set(o,'RunClass', RunClassTable(ref,tar));
