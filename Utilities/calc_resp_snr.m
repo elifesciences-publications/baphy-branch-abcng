@@ -10,18 +10,26 @@ if 0,
     sql=['SELECT * FROM sCellFile',...
          ' WHERE runclassid=4',...
          ' AND not(cellid like "j0%")'];
+    sql=['SELECT * FROM sCellFile',...
+         ' WHERE runclassid=35',...
+         ' AND not(cellid like "j0%") AND not(cellid like "m0%")'];
+    dbopen;
     vocdata=mysql(sql);
+    FORCERELOAD=0;
     for ii=1:length(vocdata),
-        spkfile=[vocdata(ii).path vocdata(ii).respfile];
-        options=struct('channel',vocdata(ii).channum,...
-                       'unit',vocdata(ii).unit,...
-                       'rasterfs',25);
-        trialrange=eval(['[' vocdata(ii).goodtrials ']']);
-        if ~isempty(trialrange),
-            options.trialrange=trialrange;
+        fprintf('%d:\n',ii);
+        if vocdata(ii).respSNR==0 || FORCERELOAD,
+            spkfile=[vocdata(ii).path vocdata(ii).respfile];
+            options=struct('channel',vocdata(ii).channum,...
+                           'unit',vocdata(ii).unit,...
+                           'rasterfs',25);
+            trialrange=eval(['[' vocdata(ii).goodtrials ']']);
+            if ~isempty(trialrange),
+                options.trialrange=trialrange;
+            end
+            
+            [snr,z,tau,reps]=calc_resp_snr(spkfile,options);
         end
-        
-        [snr,z,tau,reps]=calc_resp_snr(spkfile,options);
     end
 end
 dbopen;
@@ -52,6 +60,10 @@ cellid=cfd(1).cellid;
 options.includeprestim=0;
 
 [r,tags,trialset]=loadspikeraster(spkfile,options);
+
+reps_per_stim=squeeze(sum(~isnan(r(1,:,:)),2));
+nonzeroreps=find(reps_per_stim>0);
+r=r(:,:,nonzeroreps);
 
 reps_per_stim=squeeze(sum(~isnan(r(1,:,:)),2));
 min_reps_per_stim=min(reps_per_stim);

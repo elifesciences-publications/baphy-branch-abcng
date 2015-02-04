@@ -275,7 +275,11 @@ switch lower(filtfmt),
   
     stimparam.ff=cfs;
   case 'ozgf',
-    % One Zero Gammatone-like Filter (Lyon et al)    
+    % One Zero Gammatone-like Filter (Lyon et al)
+    if fsin<40000,
+       wav=resample(wav,40000,fsin);
+       fsin=40000;
+    end
     [stim, cfs, Qs] = ozgf_filterbank(wav,200,20000,chancount, fsin, fsout, false);
     stimparam.ff = cfs;
     stimparam.Q_factors = Qs;    
