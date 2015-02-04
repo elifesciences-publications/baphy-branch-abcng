@@ -266,12 +266,18 @@ if par.ReminderTarget,
     LastEvent = ev(end).StopTime;
     events = [events ev];
 end    
-    
+
+%SVD Disabled trial-level sound normalization.  Now it's up to the sound
+%objects to do the normalization correctly.
 % normalize the sound, because the level control is always from attenuator.
 if ~isempty(TarTrialIndex)
-    TrialSound = 5 * TrialSound / max(abs(TrialSound0(:)));
+    %TrialSound = 5 * TrialSound / max(abs(TrialSound0(:)));
 else
-    TrialSound = 5 * TrialSound / max(abs(TrialSound(:)));
+    %TrialSound = 5 * TrialSound / max(abs(TrialSound(:)));
+end
+
+if max(abs(TrialSound(:)))>10,
+    error('TrialSound too loud');
 end
 
 if ~isempty(CatchTrialIndex)

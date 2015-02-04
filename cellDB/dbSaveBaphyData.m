@@ -1,8 +1,10 @@
 % function dbSaveBaphyData(globalparams,exptparams);
-% called by RefTarScript and/or by flush_data_to_server for any files where
+% formerly called by RefTarScript and/or by flush_data_to_server for any files where
 % baphy crashed before RefTarScript completed.
 %
 function dbSaveBaphyData(globalparams,exptparams)
+
+warning('dbSaveBaphyData: this function should be merged with the LF_writetoDB function built in to RefTarScript');
 
 global DB_USER
 
@@ -58,7 +60,7 @@ if globalparams.rawid>0 && dbopen,
       sql=['INSERT INTO gHealth (animal_id,animal,date,water,trained,schedule,addedby,info) VALUES'...
         '(',num2str(adata.id),',"',globalparams.Ferret,'",',...
         '"',datestr(now,29),'",'...
-        num2str(exptparams.volreward),',1,1,"',DB_USER,'","dms_run.m")'];
+        num2str(exptparams.Water),',1,1,"',DB_USER,'","dms_run.m")'];
     end
     mysql(sql);
   end

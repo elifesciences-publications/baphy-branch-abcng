@@ -59,6 +59,12 @@ fprintf('  BehaviorControl --- starting trial %d (%d for this rep)\n',...
 disp('------------------------------------------------------------------');
 disp('');
 
+% static variable to track 
+persistent HitsSinceLastReward
+if TrialIndex==1,
+    HitsSinceLastReward=100;
+end
+
 if NullTrial,
     RewardHits=0;
 else
@@ -254,28 +260,34 @@ while CurrentTime < exptparams.LogDuration  % while trial is not over
              WaterFraction = 1;
           end
           PumpDuration = get(o,'PumpDuration') * WaterFraction;
-          if PumpDuration > 0
-             ev = IOControlPump (HW,'start',PumpDuration);
-             LickEvents = AddEvent(LickEvents, ev, TrialIndex);
-             exptparams.Water = exptparams.Water+PumpDuration;
-             if strcmpi(get(exptparams.BehaveObject,'TurnOnLight'),'Reward')
+          
+          HitRewardProbability=get(o,'HitRewardProbability');
+          if PumpDuration > 0 && ...
+                (HitsSinceLastReward>2/HitRewardProbability || rand<HitRewardProbability),
+            HitsSinceLastReward=0;
+            ev = IOControlPump (HW,'start',PumpDuration);
+            LickEvents = AddEvent(LickEvents, ev, TrialIndex);
+            exptparams.Water = exptparams.Water+PumpDuration;
+            if strcmpi(get(exptparams.BehaveObject,'TurnOnLight'),'Reward')
                 [~,ev] = IOLightSwitch (HW, 1, get(o,'PumpDuration'),'Start',0,0);
                 LickEvents = AddEvent(LickEvents, ev, TrialIndex);
-             end
+            end
+          else
+              HitsSinceLastReward=HitsSinceLastReward+1;
+              fprintf('p>%.2f: not rewarding hit (Hits since last reward=%d)\n',...
+                  HitRewardProbability,HitsSinceLastReward);
+              ev = struct('Note','BEHAVIOR,NOPUMP','StartTime',IOGetTimeStamp(HW),'StopTime',[]);
+              LickEvents = AddEvent(LickEvents, ev, TrialIndex);
           end
           TarFlag = StimPos;
        end
     end
 
     % CHECK FOR Reminder Hit - Lick in reminder response window
-    if (Lick) && RemTrial && RemResponseWin(1)<CurrentTime && RemResponseWin(2)>=CurrentTime,
+    if (Lick) && RemTrial && ~RemHitThisTrial && RemResponseWin(1)<CurrentTime && RemResponseWin(2)>=CurrentTime,
       RemHitThisTrial = 1;
-      fprintf('Reminder Hit -- ');
-      if StopTargetFA<1
-         WaterFraction = 0.1;
-      else
-         WaterFraction = 1;
-      end
+      fprintf('Reminder Hit (20%% std reward) -- ');
+      WaterFraction = 0.2;
       PumpDuration = get(o,'PumpDuration') * WaterFraction;
       if PumpDuration > 0
          ev = IOControlPump (HW,'start',PumpDuration);
@@ -289,8 +301,9 @@ while CurrentTime < exptparams.LogDuration  % while trial is not over
     end
 
     % FIXED REWARD FOR TRAINING
-    if BehaviorParms.TrainingPumpDur>0 && ~TrainingRewardGiven && ...
-        CurrentTime>mean(TarResponseWin(1:2)) && ~HitThisTrial,
+    if BehaviorParms.TrainingPumpDur>0 && ~TrainingRewardGiven && ~HitThisTrial && ...
+        ((~RemTrial && CurrentTime>mean(TarResponseWin(1:2))) ||...
+         (RemTrial && CurrentTime>mean(RemResponseWin(1:2)))),
       disp('Giving training auto-reward in middle of target response window');
       PumpDuration = BehaviorParms.TrainingPumpDur;
       ev = IOControlPump(HW,'start',PumpDuration);
