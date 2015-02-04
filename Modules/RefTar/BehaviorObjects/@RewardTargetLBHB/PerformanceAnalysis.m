@@ -131,8 +131,8 @@ for cnt2 = 1:NumRef
 end
 %FalseAlarm = sum(RefFalseAlarm)/NumRef;
 if NullTrial,
-    RefFalseAlarm=sum(LickData)>0;
-    FalseAlarm=sum(LickData)>0;
+    RefFalseAlarm=sum(LickData(1:min(length(LickData),round(fs*RefResponseWin(end)))))>0;
+    FalseAlarm=sum(LickData(1:min(length(LickData),round(fs*RefResponseWin(end)))))>0;
     TarResponseLick=0;
     TarEarlyLick=0;
     TarFirstLick=nan;
@@ -337,6 +337,10 @@ if strcmpi(trialparms.descriptor,'MultiRefTar'),
         st=zeros(cRefCount,1);
         if ~isnan(ct(tt)) 
             st(find(PossibleRefTimes==perf(tt).FirstCatchTime))=1;
+        end
+        %debugging
+        if size(st,2)~= 1
+            keyboard
         end
         cstimtype=cat(1,cstimtype,st);
         %if ~isnan(ct(tt)) && perf(tt).FirstLickTime>perf(tt).FirstCatchTime,

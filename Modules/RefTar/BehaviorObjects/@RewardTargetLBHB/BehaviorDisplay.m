@@ -1,6 +1,6 @@
-function exptparams = BehaviorDisplay (o, HW, StimEvents, globalparams, exptparams, TrialIndex, ...
-    AIData, TrialSound)
-% BehaviorDisplay method of RewardTarget behavior
+function exptparams=BehaviorDisplay(o,HW,StimEvents,globalparams,exptparams,TrialIndex, ...
+                                    AIData,TrialSound)
+% BehaviorDisplay method of RewardTargetLBHB behavior (modified from RewardTarget)
 % Main duties of this method is to display a figure with:
 %  Title that has the info about ferret, ref, tar, date, time
 %  plot of Hit and False Alarm rate
@@ -181,6 +181,7 @@ subplot(4,4,9:10)
 hold off;
 BinSize = 0.04;
 MaxBinTime=nanmax([exptparams.FirstLick.Tar exptparams.FirstLick.Tar])+BinSize;
+PLOT_CUMLICK=1;
 if isfield(exptparams,'UniqueTargets') && length(exptparams.UniqueTargets)>1
   targetid={exptparams.Performance(1:TrialIndex).ThisTargetNote};
   
@@ -195,20 +196,23 @@ if isfield(exptparams,'UniqueTargets') && length(exptparams.UniqueTargets)>1
   colormtx=colormtx(round(linspace(1,64,length(exptparams.UniqueTargets))),:);
   for jj=1:UniqueCount,
     thistargetii=find(strcmp(targetid,exptparams.UniqueTargets{jj}));
-    h1=hist(exptparams.FirstLick.Tar(thistargetii),0:BinSize:MaxBinTime);
-    if ~isempty(h1)
-      h1=h1/sum(h1); % normalize by sum, so it becomes the probability of lick
-      h1=stairs(0:BinSize:MaxBinTime,h1,'color',colormtx(jj,:),'linewidth',2);
-      hold on;
-    end
     thisFAcount=sum(cat(1,exptparams.Performance(thistargetii).FalseAlarm));
-    
-    if TrialIndex>thisFAcount,
+    if TrialIndex > thisFAcount,
         HR(jj)=sum(cat(1,exptparams.Performance(thistargetii).Hit))./...
                (length(thistargetii)-thisFAcount);
     end
     RT(jj)=nanmean(exptparams.FirstLick.Tar(thistargetii));
     DI=exptparams.Performance(end).uDiscriminationIndex;
+    
+    h1=hist(exptparams.FirstLick.Tar(thistargetii),0:BinSize:MaxBinTime);
+    if ~isempty(h1)
+       % normalize so it becomes the probability of lick
+       h1=h1/sum(h1).*HR(jj); 
+       if PLOT_CUMLICK, h1=cumsum(h1); end
+       h1=stairs(0:BinSize:MaxBinTime,h1,'color',colormtx(jj,:),'linewidth',2);
+       hold on;
+    end
+    
     LegendLabels{jj}=sprintf('%s(HR:%.2f RT:%.2f DI:%d n:%d)',...
                              exptparams.UniqueTargets{jj},HR(jj),RT(jj),DI(jj),...
                              length(thistargetii)-thisFAcount);
@@ -218,6 +222,7 @@ else
   h1=hist(exptparams.FirstLick.Tar(1:TrialIndex),0:BinSize:MaxBinTime);
   if ~isempty(h1)
     h1=h1/sum(h1); % normalize by sum, so it becomes the probability of lick
+    if PLOT_CUMLICK, h1=cumsum(h1); end
     h1=stairs(0:BinSize:MaxBinTime,h1,'color',[1 .5 .5],'linewidth',2);
     hold on;
   end
@@ -227,10 +232,11 @@ ct=cat(1,exptparams.Performance(1:TrialIndex).FirstCatchTime);
 fct=find(~isnan(ct) & ct<cat(1,exptparams.Performance(1:TrialIndex).FirstLickTime));
 if ~isempty(fct),
     h1=hist(exptparams.FirstLick.Catch(fct),0:BinSize:MaxBinTime);
-
+    
     if ~isempty(h1)
         h1=h1/length(fct); % normalize to convert to probability
-        h1=stairs(0:BinSize:MaxBinTime,h1,'color',[.5 .5 .5],'linewidth',2);
+        if PLOT_CUMLICK, h1=cumsum(h1); end
+        stairs(0:BinSize:MaxBinTime,h1,'color',[.5 .5 .5],'linewidth',2);
         RT=nanmean(exptparams.FirstLick.Catch(fct));
         HR=sum(~isnan(exptparams.FirstLick.Catch(fct)))/length(fct);
         LegendLabels{end+1}=LegendLabels{end};
@@ -239,8 +245,9 @@ if ~isempty(fct),
     end
 end
 h1=hist(exptparams.FirstLick.Ref(1:TrialIndex),0:BinSize:MaxBinTime);
-if ~isempty(h1)
+if ~isempty(h1),
     h1=h1/length(exptparams.FirstLick.Ref); % normalize to convert to probability
+    if PLOT_CUMLICK, h1=cumsum(h1); end
     h1=stairs(0:BinSize:MaxBinTime,h1,'color',[.1 .5 .1],'linewidth',2);
     h=legend(LegendLabels);
     LegPos = get(h,'position');
@@ -251,8 +258,11 @@ if ~isempty(h1)
     LegPos(1:2) = [0.4 0.425]; % put the legend on the far left of the screen
     set(h,'position', LegPos);
 end
-
-title('First Lick Histogram');
+if PLOT_CUMLICK, 
+    title('Cumulative RT Histogram');
+else
+    title('RT Histogram');
+end
 xlabel('Time (seconds)');
 
 % and last, show the hit and false alarm for each trial length:

@@ -45,7 +45,7 @@ switch HW.params.HWSetup
     % INTRODUCE STEREO IF NOT RETURNED BY SOUND OBJECT
     % OVERWRITES THE SECOND AO CHANNEL (ASSUMES THAT LIGHT IS NOT CONNECTED)
     if ~strcmpi(IODriver(HW),'NIDAQMX') && size(stim,2)<length(HW.AO.Channel)  stim(:,2) = zeros(size(stim)); end
-    if strcmpi(IODriver(HW),'NIDAQMX') && size(stim,2)<HW.AO.NumChannels  stim(:,2) = zeros(size(stim)); end
+    if strcmpi(IODriver(HW),'NIDAQMX') && size(stim,2)<HW.AO.NumChannels  stim(:,2) = zeros(size(stim(:,1))); end
     
     %% Apply software attenuation if specified
     % Only change level of channels named "Sound*":

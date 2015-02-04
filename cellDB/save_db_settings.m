@@ -1,7 +1,7 @@
 function save_db_settings;
 
 global CELLDB_USER CELLDB_ANIMAL CELLDB_SITEID CELLDB_RUNCLASS
-global CELLDB_CHANNEL CELLDB_SIGMA CELLDB_GLOBAL_SIGMA CELLDB_PENID
+global CELLDB_CHANNEL CELLDB_SIGMA CELLDB_GLOBAL_SIGMA CELLDB_PENID CELLDB_ALLANIMALS
 global USECOMMONREFERENCE
 global BAPHYHOME
 
@@ -15,6 +15,8 @@ usersettings.channel=CELLDB_CHANNEL;
 usersettings.sigma=CELLDB_SIGMA;
 usersettings.global_sigma=CELLDB_GLOBAL_SIGMA;
 usersettings.common_reference=USECOMMONREFERENCE;
+usersettings.all_animals=CELLDB_ALLANIMALS;
+
 if isempty(CELLDB_PENID),
     usersettings.penid=CELLDB_SITEID(1:(end-1));
 else

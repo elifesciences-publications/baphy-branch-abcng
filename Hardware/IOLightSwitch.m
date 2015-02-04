@@ -52,7 +52,7 @@ switch HW.params.HWSetup
         lineidx=HW.Didx(lightidx).Line;
         v=niGetValue(HW.DIO(taskidx));
       else
-        warning(['light channel ',Lightname,' not found.  skipping IOLightSwitch']);
+        warning(['light channel ',LightName,' not found.  skipping IOLightSwitch']);
       end
     else
       lightidx=min(find(strcmp(HW.DIO.Line.LineName,LightName)));

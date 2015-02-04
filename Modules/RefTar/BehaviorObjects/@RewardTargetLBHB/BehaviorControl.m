@@ -16,6 +16,9 @@ BehaviorParms.TrainingPumpDur=ifstr2num(BehaviorParms.TrainingPumpDur);
 TarResponseWin=[];
 TarEarlyWin=[];
 TarOffTime=0;
+RemResponseWin=[];
+NullTrial=1;
+RemTrial=0;
 for cnt1 = 1:length(StimEvents);
     [Type, ~, StimRefOrTar] = ParseStimEvent(StimEvents(cnt1));
     if strcmpi(Type,'Stim')
@@ -34,13 +37,19 @@ for cnt1 = 1:length(StimEvents);
             % window.  no FAs allowed at all.
             RefResponseWin(2)=TarEarlyWin(1);
             TarOffTime=StimEvents(cnt1).StopTime;
+            NullTrial=0; % target occurs, not a null trial
+        elseif strcmpi(StimRefOrTar,'Reminder'),
+            RemResponseWin = [StimEvents(cnt1).StartTime + BehaviorParms.EarlyWindow ...
+                StimEvents(cnt1).StartTime + BehaviorParms.ResponseWindow + BehaviorParms.EarlyWindow];
+            RemEarlyWin = [StimEvents(cnt1).StartTime ...
+                StimEvents(cnt1).StartTime + BehaviorParms.EarlyWindow];
+            % force end of reference window to match begining of early
+            % window.  no FAs allowed at all.
+            RemOffTime=StimEvents(cnt1).StopTime;
+            RemStartTime=StimEvents(cnt1-1).StartTime;  % time to stop sound if hit
+            RemTrial=1;  % remember that reminder occurs
         end
     end
-end
-if isempty(TarResponseWin),
-    NullTrial=1;
-else
-    NullTrial=0;
 end
 
 disp('');
@@ -49,6 +58,12 @@ fprintf('  BehaviorControl --- starting trial %d (%d for this rep)\n',...
    exptparams.TotalTrials,exptparams.InRepTrials);
 disp('------------------------------------------------------------------');
 disp('');
+
+% static variable to track 
+persistent HitsSinceLastReward
+if TrialIndex==1,
+    HitsSinceLastReward=100;
+end
 
 if NullTrial,
     RewardHits=0;
@@ -81,9 +96,9 @@ if strcmp(TrialObjectParms.descriptor,'MultiRefTar'),
   end
 end
 if NullTrial && strcmpi(BehaviorParms.RewardNullTrials,'No'),
-    RewardFAs=0;
+    %RewardFAs=0;
     RewardHits=0;
-    disp('Null trial: Not rewarding this trial');
+    disp('Null trial: No target');
 end
 
 CommonTarget=1;
@@ -144,6 +159,7 @@ if ~isfield(exptparams,'Water'), exptparams.Water = 0; end
 % we monitor the lick until the end plus response time and postargetlick
 LastLick = 0;
 HitThisTrial=0;
+RemHitThisTrial=0;
 FAThisTrial=0;
 if BehaviorParms.TrainingPumpDur>0,
   TrainingRewardGiven=0;
@@ -162,6 +178,10 @@ if NullTrial
 else
     fprintf('Target window: %.1f-%.1f sec\n',TarResponseWin(1:2));
 end
+if RemTrial
+    fprintf('Reminder window: %.1f-%.1f sec\n',RemResponseWin(1:2));
+end
+
 while CurrentTime < exptparams.LogDuration  % while trial is not over
     
     % Find out if there was a new lick
@@ -209,7 +229,7 @@ while CurrentTime < exptparams.LogDuration  % while trial is not over
                 LickEvents = AddEvent(LickEvents, ev, TrialIndex);
             end
             if strcmpi(get(o,'TurnOffLight'),'FalseAlarm'),
-                if ismember(globalparams.HWSetup,[2 3]),
+                if ismember(globalparams.HWSetup,[1 2 3 8 9]),
                     ev = IOLightSwitch(HW,0,ifstr2num(get(o,'TimeOut')),'Start',0,0,'Light2');
                 else
                     ev = IOLightSwitch(HW,1,ifstr2num(get(o,'TimeOut')),'Start',0,0,'Light2');
@@ -240,26 +260,59 @@ while CurrentTime < exptparams.LogDuration  % while trial is not over
              WaterFraction = 1;
           end
           PumpDuration = get(o,'PumpDuration') * WaterFraction;
-          if PumpDuration > 0
-             ev = IOControlPump (HW,'start',PumpDuration);
-             LickEvents = AddEvent(LickEvents, ev, TrialIndex);
-             exptparams.Water = exptparams.Water+PumpDuration;
-             if strcmpi(get(exptparams.BehaveObject,'TurnOnLight'),'Reward')
+          
+          HitRewardProbability=get(o,'HitRewardProbability');
+          if PumpDuration > 0 && ...
+                (HitsSinceLastReward>2/HitRewardProbability || rand<HitRewardProbability),
+            HitsSinceLastReward=0;
+            ev = IOControlPump (HW,'start',PumpDuration);
+            LickEvents = AddEvent(LickEvents, ev, TrialIndex);
+            exptparams.Water = exptparams.Water+PumpDuration;
+            if strcmpi(get(exptparams.BehaveObject,'TurnOnLight'),'Reward')
                 [~,ev] = IOLightSwitch (HW, 1, get(o,'PumpDuration'),'Start',0,0);
                 LickEvents = AddEvent(LickEvents, ev, TrialIndex);
-             end
+            end
+          else
+              HitsSinceLastReward=HitsSinceLastReward+1;
+              fprintf('p>%.2f: not rewarding hit (Hits since last reward=%d)\n',...
+                  HitRewardProbability,HitsSinceLastReward);
+              ev = struct('Note','BEHAVIOR,NOPUMP','StartTime',IOGetTimeStamp(HW),'StopTime',[]);
+              LickEvents = AddEvent(LickEvents, ev, TrialIndex);
           end
           TarFlag = StimPos;
        end
     end
-    
+
+    % CHECK FOR Reminder Hit - Lick in reminder response window
+    if (Lick) && RemTrial && ~RemHitThisTrial && RemResponseWin(1)<CurrentTime && RemResponseWin(2)>=CurrentTime,
+      RemHitThisTrial = 1;
+      fprintf('Reminder Hit (20%% std reward) -- ');
+      WaterFraction = 0.2;
+      PumpDuration = get(o,'PumpDuration') * WaterFraction;
+      if PumpDuration > 0
+         ev = IOControlPump (HW,'start',PumpDuration);
+         LickEvents = AddEvent(LickEvents, ev, TrialIndex);
+         exptparams.Water = exptparams.Water+PumpDuration;
+         if strcmpi(get(exptparams.BehaveObject,'TurnOnLight'),'Reward')
+            [~,ev] = IOLightSwitch (HW, 1, get(o,'PumpDuration'),'Start',0,0);
+            LickEvents = AddEvent(LickEvents, ev, TrialIndex);
+         end
+      end
+    end
+
     % FIXED REWARD FOR TRAINING
-    if BehaviorParms.TrainingPumpDur>0 && ~TrainingRewardGiven && ...
-        CurrentTime>mean(TarResponseWin(1:2)) && ~HitThisTrial,
+    if BehaviorParms.TrainingPumpDur>0 && ~TrainingRewardGiven && ~HitThisTrial && ...
+        ((~RemTrial && CurrentTime>mean(TarResponseWin(1:2))) ||...
+         (RemTrial && CurrentTime>mean(RemResponseWin(1:2)))),
       disp('Giving training auto-reward in middle of target response window');
       PumpDuration = BehaviorParms.TrainingPumpDur;
       ev = IOControlPump(HW,'start',PumpDuration);
       TrainingRewardGiven=1;
+    end
+    
+    if RemTrial && HitThisTrial && CurrentTime>RemStartTime,
+      disp('Stopping sound before reminder plays');
+      break;
     end
     
     CurrentTime = IOGetTimeStamp(HW);
@@ -284,8 +337,14 @@ elseif HitThisTrial && ~RewardHits,
   
 elseif RewardHits,
   % TRUE MISS
-  PauseTime = ifstr2num(get(o,'TimeOut'));
+  PauseTime = ifstr2num(get(o,'MissTimeOut'));
   ev=[];
+  if RemHitThisTrial,
+      ev.Note='OUTCOME,REM';
+      ev.StartTime=IOGetTimeStamp(HW);
+      ev.StopTime=ev.StartTime;
+      LickEvents=AddEvent(LickEvents,ev,TrialIndex);
+  end
   ev.Note='OUTCOME,MISS';
   ev.StartTime=IOGetTimeStamp(HW);
   ev.StopTime=ev.StartTime;
@@ -294,6 +353,12 @@ elseif RewardHits,
   
 else
   PauseTime = ifstr2num(get(o,'CorrectITI'));
+  if RemHitThisTrial,
+      ev.Note='OUTCOME,REM';
+      ev.StartTime=IOGetTimeStamp(HW);
+      ev.StopTime=ev.StartTime;
+      LickEvents=AddEvent(LickEvents,ev,TrialIndex);
+  end
   fprintf('Correct reject/unrewarded trial -- pausing %.1f sec\n',PauseTime);
 end
 

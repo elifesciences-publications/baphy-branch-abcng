@@ -12,7 +12,7 @@ function [HW, globalparams] = InitializeHW (globalparams)
 
 global FORCESAMPLINGRATE
 
-if ~exist('globalparams','var')
+if ~exist('globalparams','var'),
     globalparams=struct();
 end
 if ~isfield(globalparams,'HWSetup'),
@@ -44,12 +44,19 @@ switch globalparams.HWSetup
     niResetDevice(DAQID);
     
     %% DIGITAL IO
-    HW=niCreateDO(HW,DAQID,'port0/line0:1','TrigAI,TrigAO','InitState',[0 0]);
-    HW=niCreateDO(HW,DAQID,'port0/line2','Light','InitState',0);
+    
+    % Copied from LB-1 (yes, the comment below says copied from SB-1, but
+    % that was an older version of this setup).
+    HW=niCreateDO(HW,DAQID,'port0/line0:2','TrigAI,TrigAO,TrigAIInv','InitState',[0 0 1]);
+    % port0/line2 reserved for inverse TrigAI
     HW=niCreateDO(HW,DAQID,'port0/line3','Pump','InitState',0);
-    HW=niCreateDO(HW,DAQID,'port0/line4','Shock','InitState',0);
-
-    HW=niCreateDI(HW,DAQID,'port0/line5','Touch');
+    HW=niCreateDI(HW,DAQID,'port0/line4','Touch');
+    HW=niCreateDO(HW,DAQID,'port0/line5','Light','InitState',0);
+    HW=niCreateDO(HW,DAQID,'port0/line6','Light2','InitState',1);
+    HW=niCreateDO(HW,DAQID,'port0/line7','Light3','InitState',0);
+    %HW=niCreateDO(HW,DAQID,'port0/line4','Shock','InitState',0);
+    
+    %HW=niCreateDI(HW,DAQID,'port0/line5','Touch');
     
     %% ANALOG INPUT
     HW=niCreateAI(HW,DAQID,'ai0:1','Touch,Microphone','/Dev1/PFI0');

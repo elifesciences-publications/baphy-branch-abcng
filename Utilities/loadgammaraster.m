@@ -6,9 +6,17 @@
 function [r,tags,trialset,exptevents]=loadgammaraster(mfile,channel,...
         rasterfs,includeprestim,tag_masks,psthonly,lof,hif,envelope,trialrange)
 
+global USECOMMONREFERENCE
+
+if isempty(USECOMMONREFERENCE) || ~USECOMMONREFERENCE,
+   commstr='.NOCOM';
+else
+   commstr='';
+end
+
 if ~isempty(findstr(mfile,'sorted')),
    mfile=strrep(mfile,'sorted/','');
-   mfile=strrep(mfile,'spk.mat','m')
+   mfile=strrep(mfile,'spk.mat','m');
 end
 
 if ~exist('psthonly','var'),
@@ -26,6 +34,34 @@ end
 if ~exist('envelope','var'),
    envelope=1;
 end
+if envelope,
+   envstr='.env';
+else
+   envstr='';
+end
+
+[pp,bb,ee]=fileparts(mfile);
+cachefile=[pp filesep 'tmp' filesep bb '.chan' ...
+   num2str(channel) '.fs' num2str(rasterfs) ...
+   '.bp' num2str(lof) '-' num2str(hif) envstr ...
+   commstr '.lfp.mat'];
+cachefile=strrep(cachefile,[filesep 'raw' filesep],filesep);
+
+fprintf('loadgammaraster: cache file=%s\n',cachefile);
+
+if exist(cachefile,'file'),
+   data=load(cachefile);
+   r=data.r;
+   tags=data.tags;
+   trialset=data.trialset;
+   exptevents=data.exptevents;
+   
+   return
+   
+end
+
+fprintf('not found. generating from evp...\n');
+
 
 if envelope,
    tfs=hif.*2;
@@ -96,3 +132,7 @@ else
    r=permute(r,[1 3 2]);
    r=reshape(r,size(r,1)*size(r,2),size(r,3));
 end
+
+fprintf('saving cache file for faster loading in the future...\n');
+save(cachefile,'r','tags','trialset','exptevents');
+
