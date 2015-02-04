@@ -148,10 +148,12 @@ switch field
               varargout{1}='L:\';  % Mapped to C:\Data\ on MOLE (ie, \\MOLE\Data)
           end
         case {4,5}
+            %varargout{1}='K:\';  % Mapped to C:\Data\ on badger (ie, \\MOLE\Data)
+            % svd temp disable write training to server
             if strcmpi(globalparams.Physiology,'No'),
-                varargout{1}='H:\daq\';  % for training, save direct to the server
+               varargout{1}='H:\daq\';  % for training, save direct to the server
             else
-                varargout{1}='K:\';  % Mapped to C:\Data\ on badger (ie, \\MOLE\Data)
+               varargout{1}='K:\';  % Mapped to C:\Data\ on badger (ie, \\MOLE\Data)
             end
     end
   case 'PumpMlPerSec',

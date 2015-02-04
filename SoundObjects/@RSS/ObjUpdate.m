@@ -8,6 +8,8 @@ if soundset>=10
     soundset=round(soundset/10); end
 if soundset==1  %default 400 RSS stimuli (1.25-33 kHz,1/8th oct)
     soundpath = [object_spec(1).path filesep 'sounds'];
+elseif soundset==2 %0 dB RSS stimuli
+    soundpath = [object_spec(1).path filesep 'sounds2'];
 else
     disp('Wrong subset!!'); 
     return; 
