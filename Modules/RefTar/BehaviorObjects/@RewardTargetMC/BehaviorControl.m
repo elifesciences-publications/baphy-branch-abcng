@@ -80,6 +80,8 @@ SensorChannels(2)=find(strcmp(SensorNames,'TouchR'));
 AllLickSensorNames = SensorNames(~cellfun(@isempty,strfind(SensorNames,'Touch')));
 LightSensorChannels = find(strcmp(SensorNames,'Light'));
 
+automatichit=0;
+
 % SYNCHRONIZE COMPUTER CLOCK WITH DAQ TIME
 tic; CurrentTime = IOGetTimeStamp(HW); InitialTime = CurrentTime;
 fprintf(['Running Trial [ <=',n2s(exptparams.LogDuration),'s ] ... ']);
@@ -131,6 +133,7 @@ while CurrentTime < exptparams.LogDuration
       if strcmp(AutomaticReward,'yes') && AutomaticLick==1
 %         pause(0.4)
         ResponseTime = TarWindow(2)-0.001;
+        automatichit=1;
         cLickSensorInd = find( not( cellfun(@isempty , strfind({SensorNames{SensorChannels}},TargetSensors{1}) ) ) );
         cLickSensor = SensorNames{SensorChannels(cLickSensorInd)};
         cLickSensorNot = setdiff(SensorNames(SensorChannels),cLickSensor);
@@ -239,6 +242,13 @@ while CurrentTime < exptparams.LogDuration
       PumpName = cell2mat(IOMatchSensor2Pump(cLickSensor,HW));
       if length(RewardAmount)>1 % ASYMMETRIC REWARD SCHEDULE ACROSS SPOUTS
         RewardAmount = RewardAmount(cLickSensorInd);
+      end
+      %different reward depending on either voluntary lick or automatic
+      %5/02/15 Jennifer
+      if  automatichit == 1
+        RewardAmount = RewardAmount/3;
+      else
+        RewardAmount = RewardAmount;
       end
       PumpDuration = RewardAmount/globalparams.PumpMlPerSec.Pump;
       pause(0.05); % PAUSE TO ALLOW FOR HEAD TURNING
