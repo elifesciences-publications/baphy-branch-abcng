@@ -9,7 +9,9 @@ switch computer
     [Check,Output] = system('which tar');
     if ~isempty(Output) && Output(1)=='/' % CYGWIN TAR AVAILABLE
       [Path,Filename,Ext] = fileparts(sourcefile); if ~isempty(Path) cd(Path); end
-      [w,s] = unix(['tar -czf ',tempfile,' ',Filename,Ext]);
+%       [w,s] = unix(['tar -czf ',tempfile,' ',Filename,Ext]);
+      tar(tempfile,[Filename,Ext]);
+      movefile([tempfile '.tar'],tempfile);
       [w,s] = unix(['copy ',tempfile,' ',destfile]);
       [w,s] = unix(['del ',tempfile]);
     else  % SLOW SOLUTION BUT EVENTUALLY AVAILABLE EVERYWHERE

@@ -108,6 +108,8 @@ elseif isempty(tar),
       runclass = 'TMG';
     case 'MEMOCLICKS';
       runclass = 'MMC';      
+    case 'MEMOCLOUDS'
+      runclass = 'MTC';
     otherwise
       runclass = '';
   end
@@ -213,7 +215,9 @@ else
     case 'TEXTUREMORPHING';
       runclass = 'TMG';
     case 'MEMOCLICKS';
-      runclass = 'MMC';       
+      runclass = 'MMC';  
+    case 'MEMOCLOUDS';
+      runclass = 'MTC';
     case 'RANDSEQTORC';
       runclass = 'RST';      
     case 'WHITENOISE'

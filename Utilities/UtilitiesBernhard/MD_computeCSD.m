@@ -203,7 +203,7 @@ switch lower(Method)
     end;
     
     CSD = -Conductance*SecondDeriv_irreg(Depths)*cLFP;
-    %CSD = -Conductance*SecondDeriv_irreg(length(cLFP(:,1)),AverageSeparation)*cLFP;
+    %CSD = -Conductance*SecondDeriv(length(cLFP(:,1)),AverageSeparation)*cLFP;
     
     if wNeighbor~=0 %filter iCSD (does not change size of CSD matrix)
       [n1,n2]=size(CSD);

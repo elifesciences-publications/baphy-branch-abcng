@@ -112,7 +112,7 @@ end
 TorcSequence = [];
 if PutTORC
   [wTarg, eTorc] = waveform(TorcObj, 1);    % so far, only 1 TORC pattern
-  TorcSequence   = [TorcSequence; wTarg(:); gapSeq(:)];
+  TorcSequence   =  [TorcSequence; wTarg(:); gapSeq(:)];
   MSeq           = maxLocalStd(TorcSequence(:),sP.fs,length(TorcSequence(:))/fs);
   TorcSequence   = [TorcSequence(:)/MSeq ; gapSeq(:)];
   w              = [w ; TorcSequence];
