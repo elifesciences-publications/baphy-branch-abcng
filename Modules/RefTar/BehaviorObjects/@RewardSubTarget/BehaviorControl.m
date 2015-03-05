@@ -166,7 +166,7 @@ if get(O,'GradualResponse')
       DidItLicks(RefNum) = 1;
     end
   end
-  BadLickSum = sum(DidItLicks)
+  BadLickSum = sum(DidItLicks);
   if TrialIndex == 1
     exptparams.Performance.FaNb = BadLickSum;
     exptparams.DBfields.Performance = {'DiscriminationRate','HitRate','SnoozeRate','EarlyRate','ErrorRate','Trials'};
@@ -288,9 +288,9 @@ switch Outcome
     % MAKE SURE PUMPS ARE OFF (BECOMES A PROBLEM WHEN TWO PUMP EVENTS TOO CLOSE)
     pause(PumpDuration/2);
     % Turn LED ON
-    LightNames = IOMatchPosition2Light(HW,LEDposition);
-    [State,LightEvent] = IOLightSwitch(HW,1,0,[],[],[],LightNames{1});
-    Events = AddEvent([],LightEvent,TrialIndex);
+%     LightNames = IOMatchPosition2Light(HW,LEDposition);
+%     [State,LightEvent] = IOLightSwitch(HW,1,0,[],[],[],LightNames{1});
+%     Events = AddEvent([],LightEvent,TrialIndex);
     
     pause(PumpDuration/2);
     PumpEvent = IOControlPump(HW,'stop',0,PumpName);
