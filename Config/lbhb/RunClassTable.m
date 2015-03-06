@@ -116,6 +116,8 @@ elseif isempty(tar),
             runclass = 'RST';
         case 'NATURALSOUNDS';
             runclass = 'NAT';
+        case 'SSA';
+            runclass = 'SSA';
         otherwise
             runclass = '';
     end
