@@ -239,11 +239,16 @@ if ~isempty(TarTrialIndex)
     LastEvent = ev(end).StopTime;
     events = [events ev];
     
-    % normalize the sound, because the level control is always from attenuator.
-    TrialSound = 5 * TrialSound / max(abs(TrialSound0(:)));
+    % svd disabling this normalization step.  Should be taken care of by
+    % sound objects
+    %TrialSound = 5 * TrialSound / max(abs(TrialSound0(:)));
 else
-    TrialSound = 5 * TrialSound / max(abs(TrialSound(:)));
+    %TrialSound = 5 * TrialSound / max(abs(TrialSound(:)));
 end
+
+% if max(abs(TrialSound(:)))>10,
+%     error('TrialSound too loud');
+% end
 
 if ~isempty(CatchTrialIndex)
     CatchChannel=par.TargetChannel;
