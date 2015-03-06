@@ -241,6 +241,10 @@ if perf(cnt2).FalseAlarm && perf(cnt2).EarlyTrial,
    disp('both FA and Early?');
    keyboard
 end
+if length(perf(cnt2).Hit)>1,
+   disp('Multibin hit???');
+   keyboard
+end
 
 perf(cnt2).ReferenceLickTrial = double((perf(cnt2).FalseAlarm>0));
 perf(cnt2).NullTrial = NullTrial;

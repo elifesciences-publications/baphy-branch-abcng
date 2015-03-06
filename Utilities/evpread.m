@@ -67,10 +67,6 @@ if ~isfield(P,'auxchans') P.auxchans = [ ]; end
 if ~isfield(P,'lfpchans') P.lfpchans = [ ]; end
 if ~isfield(P,'rawchans') P.rawchans = [ ]; end
 if ~isfield(P,'trials') || isempty(P.trials), P.trials = inf; end
-if ~isfield(P,'filterstyle') P.filterstyle = 'butter'; end
-if ~isfield(P,'wrap') P.wrap = 0; end
-if ~isfield(P,'SRlfp') P.SRlfp = 2000; end % downsample 
-if ~isfield(P,'dataformat') P.dataformat = 'linear'; end
 
 %% CHECK EVP VERSION
 
@@ -80,6 +76,17 @@ if isempty(P.spikechans) && exist(filename,'file'),
 else
     EVPVERSION=evpversion(filename);
 end
+
+if ~isfield(P,'filterstyle'),
+    if EVPVERSION==5,
+        P.filterstyle = 'butter';
+    else
+        P.filterstyle = 'none';
+    end
+end
+if ~isfield(P,'wrap') P.wrap = 0; end
+if ~isfield(P,'SRlfp') P.SRlfp = 2000; end % downsample 
+if ~isfield(P,'dataformat') P.dataformat = 'linear'; end
 
 % If loading spikes or only zipped file exists, make a local copy
 if ( ~isempty(P.spikechans) || ~exist(filename,'file')),
