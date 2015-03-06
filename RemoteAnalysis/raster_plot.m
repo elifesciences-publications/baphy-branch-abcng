@@ -322,22 +322,31 @@ elseif options.raster,
    data2=cat(3,data3,data2,data2);
    
    ff=find(newstim);
-   NStim = length(ff); for iC=1:NStim spc{iC} = hsv2rgb([0.1 + iC/(1.2*NStim),1,1]); ssc{iC} = HF_whiten(spc{iC},0.5); end
+   NStim = length(ff); 
+   if length(spc)<NStim,
+       for iC=1:NStim 
+           spc{iC} = hsv2rgb([0.1 + iC/(1.2*NStim),1,1]); 
+           ssc{iC} = HF_whiten(spc{iC},0.5); 
+       end
+   end
+   
    %ff=ff(2:end);
    blankstep=1;
    ff=ff+blankstep*(0:(length(ff)-1));
    
    for di=1:length(ff),
        if di>1,
-           data2=[data2(1:(ff(di)-blankstep-1),:,:); ones(blankstep,size(data2,2),size(data2,3));
-               data2((ff(di)-blankstep):end,:,:)];
+           data2=[data2(1:(ff(di)-blankstep-1),:,:); 
+                  ones(blankstep,size(data2,2),size(data2,3));
+                  data2((ff(di)-blankstep):end,:,:)];
        end
        if di<length(ff),
            muckrange=(ff(di)):(ff(di+1)-blankstep-1);
        else
            muckrange=(ff(di)):size(data2,1);
        end
-       timerange=round(PreStimSilence.*rasterfs./10+1):round(size(data2,2)-(PostStimSilence.*rasterfs./10));
+       timerange=round(PreStimSilence.*rasterfs./10+1):...
+                 round(size(data2,2)-(PostStimSilence.*rasterfs./10));
        
        for ggidx=1:3,
            td2=data2(muckrange,timerange,ggidx);

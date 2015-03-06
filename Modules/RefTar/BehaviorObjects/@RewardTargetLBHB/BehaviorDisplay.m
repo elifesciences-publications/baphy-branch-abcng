@@ -220,8 +220,9 @@ if isfield(exptparams,'UniqueTargets') && length(exptparams.UniqueTargets)>1
   LegendLabels{end+1}=sprintf('Ref(FAR:%.2f)',FAR);
 else
   h1=hist(exptparams.FirstLick.Tar(1:TrialIndex),0:BinSize:MaxBinTime);
+  WTcount=sum(cat(1,exptparams.Performance(1:TrialIndex).WarningTrial));
   if ~isempty(h1)
-    h1=h1/sum(h1); % normalize by sum, so it becomes the probability of lick
+    h1=h1/WTcount; % normalize to make h probability of lick
     if PLOT_CUMLICK, h1=cumsum(h1); end
     h1=stairs(0:BinSize:MaxBinTime,h1,'color',[1 .5 .5],'linewidth',2);
     hold on;
