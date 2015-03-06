@@ -191,8 +191,8 @@ if ~isempty(TarTrialIndex),
         
         if TarMatchContour && ~isempty(refenv),
             tarenv=refenv(TarStartBin-1+(1:size(w,1)),ThisTarIdx);
-            tarenv=tarenv.*0.75+0.25;
-            w=w.*tarenv;
+            %tarenv=tarenv.*0.75+0.25;
+            w(:,TargetChannel)=w(:,TargetChannel).*tarenv;
             TrialSound(TarStartBin-1+(1:size(w,1)),:)=...
                 TrialSound(TarStartBin-1+(1:size(w,1)),:)+w;
         else
