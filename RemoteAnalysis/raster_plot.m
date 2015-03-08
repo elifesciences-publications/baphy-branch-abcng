@@ -339,7 +339,7 @@ elseif options.raster && ~options.psth,
    [di,dj]=find(data>0);
    di=di./size(data,1);
    dj=dj./rasterfs-PreStimSilence;
-   if globalparams.NumberOfElectrodes>8 || length(dj)>500,
+   if globalparams.NumberOfElectrodes>=4 || length(dj)>500,
        plot(dj,di,'k.','markersize',4);
    else
        plot(dj,di,'k.','markersize',8);

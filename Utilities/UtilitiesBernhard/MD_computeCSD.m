@@ -52,20 +52,20 @@ global USECOMMONREFERENCE
 OLDREF = USECOMMONREFERENCE; USECOMMONREFERENCE = 0;
 
 
-%% LOAD AND PREPARE DATA
+%% LOAD AND PREPARE DATA FOR CLASSICAL ELECTRODES
 Path = MD_getDir('Identifier',P.Identifier,'Kind','raw');
 GivenTrials = P.Trials;
+GivenElectrode = P.Electrodes
 LFP = []
 if exist([Path, P.Identifier(1:end-3),'.xls'],'file') == 2 
-  %reloading everything for each file is a bit dirty, but well...
   O = MD_dataFormat('Mode','Operator');
   [Depths, Files] = xlsread([Path, P.Identifier(1:end-3),'.xls']);
   for f=1:length(Files)
     file=Files{f};
     P = parsePairs({'Identifier',file}); global U;
     checkField(P,'Identifier');
-    checkField(P,'Electrodes','all');
-    checkField(P,'Trials',inf)
+    checkField(P,'Electrodes',GivenElectrode);
+    checkField(P,'Trials',GivenTrials)
     checkField(P,'FilterStyle','butter');
     checkField(P,'SR',1000);
     checkField(P,'Method','standard');
@@ -80,12 +80,11 @@ if exist([Path, P.Identifier(1:end-3),'.xls'],'file') == 2
     BaseName = [Path,P.Identifier,Sep,Identifier11,'.evp'];
     R = struct('LFP',[],'LTrialidx',[]);
     %P.Trials = GivenTrials(find(GivenTrials<=I.NTrials));
-    P.Trials = GivenTrials
     for i=1:ceil(length(P.Trials)/20)
       cTrials = P.Trials((i-1)*20+1:min([i*20,length(P.Trials)]));
-      tmp = evpread(BaseName,'lfpelecs',[1],'trials',cTrials,...
+      tmp = evpread(BaseName,'lfpelecs',P.Electrodes,'trials',cTrials,...
         'filterstyle',P.FilterStyle,'spikechans',[],'SRlfp',P.SR);
-      R.LFP = [R.LFP ; tmp.LFP ];
+      R.LFP = [R.LFP ; tmp.LFP];
       if i>1
         R.LTrialidx = [R.LTrialidx ; R.LTrialidx(end)+tmp.LTrialidx(2:end) ];
       else
@@ -101,15 +100,17 @@ if exist([Path, P.Identifier(1:end-3),'.xls'],'file') == 2
     end
     if length(LFP)>0 
       len_rec = min(length(LFP),length(preLFP));
-      LFP = [LFP(:,1:len_rec) ; nanmean(preLFP(1:len_rec),3)];
+      tmp_meanLFP = nanmean(preLFP(1:len_rec),3);
+      LFP = [LFP(:,1:len_rec) ; tmp_meanLFP-nanmean(tmp_meanLFP(1:I.exptparams.TrialObject.ReferenceHandle.PreStimSilence*P.SR))];
     else
-      LFP = [nanmean(preLFP,3)'];
+      tmp_meanLFP = nanmean(preLFP,3)';
+      LFP = [tmp_meanLFP-nanmean(tmp_meanLFP(1:I.exptparams.TrialObject.ReferenceHandle.PreStimSilence*P.SR))];
     end   
   end
 
   
 else
-  %% LOAD DATA
+  %% LOAD DATA FOR LINEAR PROBE
   O = MD_dataFormat('Mode','Operator');
   Identifier11 = O.S2I.FH(...
     P.Animal,P.Penetration,P.Depth,P.Recording,I.Behavior(1),I.Runclass,1,1);

@@ -175,6 +175,7 @@ if isempty(LOCAL_DATA_ROOT),
     case 'avw2202f'; LOCAL_DATA_ROOT = ['W:\'];
     case 'dog'; LOCAL_DATA_ROOT = '/home/data/daq/';
     case 'blues'; LOCAL_DATA_ROOT = '/home/delgueda/Data/';
+    case{ 'chronic1','chronic1-pc','chronic2','chronic3'};   LOCAL_DATA_ROOT = 'D:\Data\';
     otherwise
       disp('Using default LOCAL_DATA_ROOT for this computer.');
       LOCAL_DATA_ROOT=[tempdir 'evpread' filesep];

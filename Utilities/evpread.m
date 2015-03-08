@@ -282,9 +282,9 @@ switch EVPVERSION
       rl = filter(bLow,aLow,rl);
       rl = filter(bHigh,aHigh,rl);
      
-      %bHumbug = [0.997995527211068  -5.987297083916456  14.967228743433322 -19.955854373444378  14.967228743433322  -5.987297083916456   0.997995527211068];
-      %aHumbug = [1.000000000000000  -5.995310048314492  14.977237236960848 -19.955846338529373  14.957216231994666  -5.979292154433458   0.995995072333299];
-     %rl = filter(bHumbug,aHumbug,rl);
+%       bHumbug = [0.997995527211068  -5.987297083916456  14.967228743433322 -19.955854373444378  14.967228743433322  -5.987297083916456   0.997995527211068];
+%       aHumbug = [1.000000000000000  -5.995310048314492  14.977237236960848 -19.955846338529373  14.957216231994666  -5.979292154433458   0.995995072333299];
+%      rl = filter(bHumbug,aHumbug,rl);
     end
 
   case 5; fprintf('EVP version 5 :   ');
@@ -424,6 +424,13 @@ switch EVPVERSION
       fHigh = 1; fLow = 0.3*Nyquist;
       [bLow,aLow] = butter(order,fLow/Nyquist,'low');
       [bHigh,aHigh] = butter(order,fHigh/Nyquist,'high');    
+                              bHumbug=[0.995386247699319  -5.972013278489225  14.929576915653460  -19.905899769726052  14.929576915653460  -5.972013278489225  0.995386247699319 ];
+        aHumbug = [ 1.000000000000000  -5.990446012819222  14.952579842917430  -19.905857198474035  14.906552701679249  -5.953623115411301  0.990793782108932  ];
+         LHumbug = length(bHumbug)-1;
+     Raw=double(rl)'; 
+% IVHumbug = zeros(LHumbug,size(Raw,2)); 
+      [Raw] = filter(bHumbug,aHumbug,Raw);
+      rl = Raw';
       if P.wrap
         tmp = single(NaN*zeros(round((max(diff(cstrialidx))-1)/SR*P.SRlfp),length(P.lfpchans),length(cstrialidx)-1));
         for i=1:length(cstrialidx)-1

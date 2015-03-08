@@ -27,7 +27,7 @@ checkField(P,'RespType','MUA');
 checkField(P,'Compact',1)
 checkField(P,'Channels',[1:32]);
 checkField(P,'Trials',[1:100]);
-checkFIeld(P,'FIG',1);
+checkField(P,'FIG',1);
 
 figure(P.FIG); AH =gca;
 

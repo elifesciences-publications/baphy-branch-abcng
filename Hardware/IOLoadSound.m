@@ -14,7 +14,7 @@ function HW = IOLoadSound(HW, stim)
      stim(:,2) = stim(:,1);
    end
  else
-   SpeakerNb = size(stim,2);
+   SpeakerNb = 1;%size(stim,2);
  end
 
 %% CALIBRATE SPECTRUM AND VOLUME FOR SOME SETUPS
