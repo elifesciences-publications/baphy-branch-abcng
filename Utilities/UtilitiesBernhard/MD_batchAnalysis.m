@@ -69,7 +69,7 @@ for iR=1:length(P.Recordings)
       FileName = [I.IdentifierFull,'_',P.Analysis];
   end
   
-  if P.Print printer('Path',['D:\Results\'],'FileName',FileName,'Format','pdf');  end
+ % if P.Print printer('Path',['D:\Results\'],'FileName',FileName,'Format','pdf');  end
   
   drawnow; 
 end
