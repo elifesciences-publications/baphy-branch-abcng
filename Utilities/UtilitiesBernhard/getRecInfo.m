@@ -107,7 +107,8 @@ if LOADMFILE
         mkdirAll(MANTAFileLocal);
         Command = ['tar -z --extract --file=',TGZFile,' -C ',Paths.LocalPath,' ',MANTAFileInternal];
         fprintf(['EXTRACTING ',MANTAFileInternal,' FROM ',TGZFile,' TO ',Paths.LocalPath,'\n']);
-        system(Command);
+%         system(Command);
+        untar(TGZFile,Paths.LocalPath)
       end
     end
     

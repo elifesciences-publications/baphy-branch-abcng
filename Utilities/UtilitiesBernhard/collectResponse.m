@@ -40,13 +40,20 @@ switch P.RespType
       case 'MUA'
         % ASSIGN PSEUDO-SINGLEIDS FOR THIS CASE, WHICH IDENTIFY THE
         % ANIMAL,RECORDINGDAY & ELECTRODE (VERY LONG INT).
+%         Base = int8(I.SiteName(1:3));
+%         Base  = num2str(Base);
+%         Base=Base(Base~=' ');
+%         Base = [Base,I.SiteName(4:6)];
+%         Base = 1000*int64(str2num(Base));
+        % YB-CB: fix when animal name is longer thqn 3 chqr
+        EndAniNameInd = find(~isletter(I.SiteName),1,'first')-1;
         Base = int8(I.SiteName(1:3));
         Base  = num2str(Base);
         Base=Base(Base~=' ');
-        Base = [Base,I.SiteName(4:6)];
+        Base = [Base,I.SiteName(EndAniNameInd+(1:3))];
         Base = 1000*int64(str2num(Base));
         for iE=1:I.NumberOfChannels
-          I.SingleIDsByElectrode{iE} = Base + int64(iE);
+          I.SingleIDsByElectrode{iE} = (Base) + (iE);
         end
     end
     
