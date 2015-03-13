@@ -91,6 +91,10 @@ elseif strcmp(filename((end-3):end),'.tgz'),
       if  strcmp(computer,'PCWIN') || strcmp(computer,'PCWIN64'),
          cmd=[MYSQL_BIN_PATH 'gzip -dck ' basename(filename) ' > ' ...
               LocalDir filesep bb '.tar'];
+      elseif strcmp(computer,'GLNXA64')   % UBUNTU
+         % removed "k" flag --what does it do in windows??
+         cmd=[MYSQL_BIN_PATH 'gzip -dc ' basename(filename) ' > ' ...
+              LocalDir filesep bb '.tar'];
       else
          % removed "k" flag --what does it do in windows??
          cmd=[MYSQL_BIN_PATH 'gzip -dc ' basename(filename) ' > ' ...
@@ -99,7 +103,12 @@ elseif strcmp(filename((end-3):end),'.tgz'),
       [w,s]=unix(cmd);
       
       cd(LocalDir);
-      cmd=[MYSQL_BIN_PATH 'tar -xf ' bb '.tar'];
+      
+      if strcmp(computer,'GLNXA64')   % UBUNTU
+          cmd=[MYSQL_BIN_PATH 'tar xf ' bb '.tar'];
+      else
+          cmd=[MYSQL_BIN_PATH 'tar -xf ' bb '.tar'];
+      end
       [w,s]=unix(cmd);
       [w,s]=unix(['chmod a+rx ',bb]);
       [w,s]=unix(['chmod u+w ',bb]);
