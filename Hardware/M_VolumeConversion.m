@@ -31,20 +31,21 @@ function out = M_VolumeConversion(in,direction,Microphone)
 %
 % This file is part of MANTA licensed under the GPL. See MANTA.m for details.
 
+if ~exist('Microphone','var') Microphone = 'none'; end
+
 switch Microphone
-  case 'Didier';
-    dBSPL0 = 94; V0 = 0.0404;
-  case 'Etymotic';
-    dBSPL0 = 94; V0 = 0.049;
-  case 'BK4944A'
-    dBSPL0 = 94; V0 = 0.0085; % Measurements in Volts
-  case 'PCB'
-    dBSPL0 = 114; V0 = 0.017; % SVD lab at OHSU
+  case 'Didier';          dBSPL0 = 94; V0 = 0.0404;
+  case 'Etymotic';      dBSPL0 = 94; V0 = 0.049;
+  case 'BK4944A';      dBSPL0 = 94; V0 = 0.0085; % Measurements in Volts
+  case 'GRAS46BE';   dBSPL0 = 94; V0 = 0.004; % Measurements in Volt  
+  case 'PCB';              dBSPL0 = 114; V0 = 0.017; % SVD lab at OHSU
+  case 'none';            dBSPL0 = 0; Pa0 = 20e-6; % Just for unit conversion Pa to dBSPL
   otherwise error('Microphone not tested yet.');
 end
-if strcmp(direction,'dB2V')
-  out = V0*10^((in-dBSPL0)/20);
-elseif strcmp(direction,'V2dB')
-  out = dBSPL0 + 20*log10(in/V0);  
-else error('Not a valid conversion!');  
+switch direction
+  case 'dB2V';        out = V0*10^((in-dBSPL0)/20);
+  case 'V2dB';    out = dBSPL0 + 20*log10(in/V0);
+  case 'dB2Pa'; out =  Pa0*10^((in-dBSPL0)/20);
+  case 'Pa2dB';  out =  dBSPL0 + 20*log10(in/Pa0);
+  otherwise error('Not a valid conversion!');
 end

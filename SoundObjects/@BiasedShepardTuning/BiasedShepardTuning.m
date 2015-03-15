@@ -38,7 +38,7 @@ switch nargin
       'EnvWidths','edit','4',...
       'Amplitudes','edit','70',...
       };
-    s = SoundObject ('BiasedShepardTuning', 40000, 0,0.4, 0.4, {''}, 1, Fields);
+    s = SoundObject ('BiasedShepardTuning', 100000, 0,0.4, 0.4, {''}, 1, Fields);
     for i=1:length(Fields)/3 o.(Fields{(i-1)*3+1}) = Fields{i*3}; end
     o.Fields = Fields;
     o.FieldNames = Fields(1:3:end-2); 

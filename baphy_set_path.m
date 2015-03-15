@@ -33,12 +33,13 @@ addpath(BAPHYHOME,...
     [BAPHYHOME filesep 'cellDB'],...
     [BAPHYHOME filesep 'RemoteAnalysis'],...
     [BAPHYHOME filesep 'Meska'],...
-    [BAPHYHOME filesep 'UtilitiesBernhard'],...
-    [BAPHYHOME filesep 'UtilitiesBernhard' filesep 'UNIT-tools'],...
+    genpath([BAPHYHOME filesep 'Utilities' filesep 'UtilitiesYves']),...    
+    [BAPHYHOME filesep 'Utilities' filesep 'UtilitiesBernhard'],...
+    [BAPHYHOME filesep 'Utilities' filesep 'UtilitiesBernhard' filesep 'UNIT-tools'],...
     [BAPHYHOME filesep 'QuickSort']);
 addpathWithoutVC([BAPHYHOME,filesep,'MANTA']);
 addpathWithoutVC([BAPHYHOME,filesep,'Hardware']);
-addpathWithoutVC([BAPHYHOME filesep 'UtilitiesBernhard']);
+addpathWithoutVC([BAPHYHOME filesep 'Utilities' filesep 'UtilitiesBernhard']);
 
 %% set lab-specific variables (use default values if not set in BaphyConfigPath)
 %% SVD added 2012-05-25
@@ -174,6 +175,7 @@ if isempty(LOCAL_DATA_ROOT),
     case 'avw2202f'; LOCAL_DATA_ROOT = ['W:\'];
     case 'dog'; LOCAL_DATA_ROOT = '/home/data/daq/';
     case 'blues'; LOCAL_DATA_ROOT = '/home/delgueda/Data/';
+    case{ 'chronic1','chronic1-pc','chronic2','chronic3'};   LOCAL_DATA_ROOT = 'D:\Data\';
     otherwise
       disp('Using default LOCAL_DATA_ROOT for this computer.');
       LOCAL_DATA_ROOT=[tempdir 'evpread' filesep];
@@ -203,7 +205,7 @@ end
 global USECOMMONREFERENCE
 
 if isempty(USECOMMONREFERENCE),
-  USECOMMONREFERENCE=1;
+  USECOMMONREFERENCE=0;
 end
 
 

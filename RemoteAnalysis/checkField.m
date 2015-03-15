@@ -1,5 +1,16 @@
 function checkField(P,Field,DefVal)
 
+persistent AllFields;
+
+if nargin==1 % CHECK FOR FIELDS THAT DO NOT EXIST (ARE NOT TESTED ABOVE)
+  WrongFields = setdiff(fieldnames(P),AllFields);
+  if ~isempty(WrongFields) error(['Field ',WrongFields{1},' does not exist!']); 
+  end
+  return;
+else
+  AllFields{end+1} = Field; AllFields = unique(AllFields);
+end
+
 if ~isempty(P) FN = fieldnames(P); else FN = {}; end
 ApproxMatch = strcmp(lower(FN),lower(Field));
 if  sum(ApproxMatch)% A POTENTIALLY INEXACT MATCH EXiSTS
