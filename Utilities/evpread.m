@@ -320,7 +320,12 @@ switch EVPVERSION
       for cc = 1:length(loadchans)
         spikeidx = loadchans(cc);
         cFilename=[fileroot,sprintf('.%03d.%d.evp',trialidx,spikeidx)];
-        [trs,Header]=evpread5(cFilename);
+        trs = []; AttemptCounter = 0;
+        while isempty(trs) && AttemptCounter<6  % 15/03-YB: Multiple attempts when lfp cannot be loaded
+            AttemptCounter = AttemptCounter+1;
+            [trs,Header]=evpread5(cFilename);
+            if isempty(trs); disp('evpread: trial empty! I try again.'); end
+        end
         if USECOMMONREFERENCE
           % COMPUTE COMMONE REFERENCE
           cFilename=[fileroot,sprintf('.%03d.%d.evp',trialidx,1)]; % COMMON REF INDEPENDENT OF EL.
