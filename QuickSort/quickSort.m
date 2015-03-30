@@ -78,7 +78,7 @@ FID = ['F',n2s(P.FIG)];
 % ADD RECORDING IFNO AND FID TO QG
 QG.(FID).P = P; QG.(FID).FIG = P.FIG;
 
-% Rreject amplitude artifacts
+% Reject amplitude artifacts
 LF_excludeLargeEvents(FID);
 
 % NORMALIZE DATA INTO SD UNITS
@@ -99,7 +99,8 @@ LF_assignParameters(FID)
 
 %% BUILD GUI
 % PREPARE FIGURE
-figure(P.FIG); clf; QG.(FID).GUI.SS = get(0,'ScreenSize');
+figure(P.FIG); set(gcf,'WindowStyle','normal'); clf; QG.(FID).GUI.SS = get(0,'ScreenSize');
+
 set(P.FIG,'MenuBar','none','Toolbar','figure',...
     'Position',[10,QG.(FID).GUI.SS(4)-850,1200,800],...
     'DeleteFcn',{@LF_closeFig,FID},'NumberTitle','off',...
@@ -492,10 +493,11 @@ LF_plotISIhist(FID);
 function LF_setClusterColors(FID)
 % ASSIGN COLORS
 global QG;
-
-QG.(FID).Colors = cell(QG.(FID).NVec,1);
+NVec = QG.(FID).NVec;
+extNVec = QG.(FID).extNVec;
+QG.(FID).Colors = cell(extNVec,1);
 rand('seed',0);
-for i=1:QG.(FID).NVec
+for i=1:extNVec
     %  QG.(FID).Colors{i} = hsv2rgb([1-eps-(i-1)/QG.(FID).NVec,1,1]);
     QG.(FID).Colors{i} = 0.8*hsv2rgb([rand,1,1]);
 end
@@ -746,10 +748,23 @@ switch button
         set(h,'Visible','off');
         set(QG.(FID).GUI.ClusterLabels,'BackgroundColor',QG.Colors.ColorOff);
         h = QG.(FID).GUI.hSet{Index};
-        set(h,'Visible','on');
-        set(obj,'BackgroundColor',[1,1,1]);
+        set(h,'Visible','on');set(obj,'BackgroundColor',[1,1,1]);
         LF_showSeparation(obj,event,FID,Index)
 end
+
+% Hide all merged ISIs
+NVec = QG.(FID).NVec;
+OtherInd = (NVec+1):QG.(FID).extNVec;
+h = cell2mat(QG.(FID).GUI.hISI(OtherInd)); set(h,'Visible','off');
+% Show ISI of all displayed clusters merged together
+ActiveClusterLst = find(QG.(FID).GUI.ShowState);
+ActiveClusterLst = [ActiveClusterLst ; zeros(NVec-length(ActiveClusterLst),1)];
+Cluster_extNVec_Table = QG.(FID).extNVec_Table;
+a = bsxfun(@eq,Cluster_extNVec_Table,ActiveClusterLst);
+b = sum(a);
+ActiveMergeLst = find(b==NVec);
+h = cell2mat(QG.(FID).GUI.hISI(ActiveMergeLst)); set(h,'Visible','on');
+
 
 function LF_CBF_changePermInd(obj,event,FID)
 global QG
@@ -788,7 +803,7 @@ switch button
         LF_plotPSTH(FID);
 end
 
-function LF_CBF_axisClick(obj,event,FID)
+function LF_CBF_axisClick(obj,extevent,FID)
 % SET THE THRESHOLD GRAPHICALLY
 global QG;
 
@@ -935,8 +950,11 @@ QG.(FID).Threshold = Threshold;
 function LF_CBF_setNVec(obj,event,FID)
 global QG
 NVec = str2num(get(obj,'String'));
+extNVec = NVec;
+for VecNum = 2:NVec; extNVec = extNVec + nchoosek(NVec,VecNum); end
 QG.(FID).NewSorting = 1;
 QG.(FID).NVec = NVec;
+QG.(FID).extNVec = extNVec;
 
 function LF_CBF_setLinkage(obj,event,FID)
 global QG
@@ -1342,46 +1360,82 @@ global QG U;
 
 cAxis = QG.(FID).GUI.ISI;
 NVec = QG.(FID).NVec;
+extNVec = QG.(FID).extNVec;
 SR = QG.(FID).P.SR;
 cMax = 0; Bins = [0:1:50];
+
+% Table of correspondance [selected clusters-extNVec]
+Cluster_extNVec_Table = zeros(NVec,extNVec); IndNow = 0;
+for VecNum = 1:NVec
+    Cluster_extNVec_Table(1:VecNum,(IndNow+1):(IndNow+nchoosek(NVec,VecNum))) = nchoosek(1:NVec,VecNum)';
+    IndNow = IndNow+nchoosek(NVec,VecNum);
+end
+QG.(FID).extNVec_Table = Cluster_extNVec_Table;
+
 if ~isfield(QG.(FID).GUI,'hISI') NewPlot = 1;
-    QG.(FID).GUI.hISI = cell(NVec,1);
+    QG.(FID).GUI.hISI = cell(extNVec,1);
     set(cAxis,'NextPlot','add');
     title(cAxis,['ISI Hist']);
     xlabel(cAxis,'Time [ms] ');
     set(cAxis,'xtick',[Bins(1):10:Bins(end)]);
-    axis(cAxis,[0,50,0,1.1]);
+    axis(cAxis,[0,15,0,1.1]);   %15/03-YB: was 50 before
     grid(cAxis,'on');
     box on;
 else
     NewPlot = 0;
-    if NVec < length(QG.(FID).GUI.hISI)
-        delete([QG.(FID).GUI.hISI{NVec+1:end}]);
-        QG.(FID).GUI.hISI = QG.(FID).GUI.hISI(1:NVec);
+    if extNVec < length(QG.(FID).GUI.hISI)
+        delete([QG.(FID).GUI.hISI{extNVec+1:end}]);
+        QG.(FID).GUI.hISI = QG.(FID).GUI.hISI(1:extNVec);
     end
 end
 
-H = cell(NVec,1);
-for i=1:NVec
-    if length(QG.(FID).STs{i}) > 1
-        H{i} = vertical(histc(diff(QG.(FID).STs{i}/SR/U.ms),Bins));
-        if ~isempty(H{i})  H{i} = H{i}(1:end-1);
-            if max(H{i}) H{i} = H{i}/max(H{i}); end
+% Old version with single clusters
+% H = cell(NVec,1);
+% for i=1:NVec
+%     if length(QG.(FID).STs{i}) > 1
+%         ISIhist = vertical(histc(diff(QG.(FID).STs{i}/SR/U.ms),Bins));
+%         if ~isempty(ISIhist)  ISIhist = ISIhist(1:end-1);
+%             if max(ISIhist) ISIhist = ISIhist/max(ISIhist); end
+%             H{i} = ISIhist;
+%         else H{i} = [];
+%         end
+%     else H{i} = [];
+%     end
+% end
+
+% ISI FOR JOINT CLUSTERS
+for i=1:extNVec
+    RowN = find(Cluster_extNVec_Table(:,i)~=0);
+    SpkMegaCluster = [];
+    for j = RowN'
+        ClusterNum = Cluster_extNVec_Table(j,i);
+        SpkMegaCluster = [SpkMegaCluster ; QG.(FID).STs{ClusterNum}];
+    end
+    if length(SpkMegaCluster) > 1
+        ISIhist = vertical(histc(diff(sort(SpkMegaCluster)/SR/U.ms),Bins));
+        if ~isempty(ISIhist)  ISIhist = ISIhist(1:end-1);
+            if max(ISIhist) ISIhist = ISIhist/max(ISIhist); end
+            H{i} = ISIhist;
+        else H{i} = [];
         end
+    else H{i} = [];
     end
 end
 
-for i=1:NVec
-    if QG.(FID).GUI.ShowState(i) State='on'; else State='off'; end
+for i=1:extNVec
+    if i<=NVec && QG.(FID).GUI.ShowState(i); State='on'; else State='off'; end
     if isempty(H{i}) H{i} = zeros(length(Bins)-1,1); end
     if NewPlot || i>length(QG.(FID).GUI.hISI)
         QG.(FID).GUI.hISI{i} = plot(cAxis,1,1,'HitTest','off');
     end
+    if i<=NVec; LW = 1; else LW = 3; end
     set(QG.(FID).GUI.hISI{i},...
         'XData',Bins(1:end-1),...
         'YData',H{i},...
+        'linewidth',LW,...
         'Color',QG.(FID).Colors{i},'Visible',State);
 end
+
 
 function LF_collectHandles(FID)
 global QG

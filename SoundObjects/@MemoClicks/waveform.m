@@ -32,6 +32,7 @@ sP.noiseSNR   = get(o,'SNR'); % add lowpass noise with given SNR. Cutoff is = hi
 sP.clickdur   = 0.00005;
 sP.maxgap     = get(o,'maxgap');
 sP.mingap     = get(o,'mingap');
+sP.clicktimes = get(o,'ClickTimes');
 
 %% Create an instance of TORC object:
 
@@ -98,7 +99,13 @@ for j = (RefNow+1) : (RefNow+index)
   Seed = get(o,'Seeds');
   o      = set(o,'Seeds',[Seed sP.seed]);
   
+  ReSeed = get(o,'ReSeed');
+  o      = set(o,'ReSeed',ReSeed);
+  
   [wSeq, sP] = genmemoclicks(sP);
+  ClickTimes = get(o,'ClickTimes');
+  o               = set(o,'ClickTimes',[ClickTimes sP.clicktimes]);
+  
   MSeq       = maxLocalStd(wSeq(:),fs,length(wSeq(:))/fs);
   w          = [w ; wSeq(:)/MSeq ; gapSeq(:)];
   

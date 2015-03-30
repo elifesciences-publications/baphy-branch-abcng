@@ -226,10 +226,19 @@ if isempty(strfind(upper(datause),'LICK')) && ...
     r=r(:,:,index);
 end
 
-% Light/NoLight conditions
+% Light/NoLight conditions / Reference Only
 % Pure tone: r = time x repeat per condition x condition number || sorted in loadevpratser.m from alphabetical tags
-% Random tones: r = time x 1 x trial number || sorted just above with numeric  tags
-if size(r,2)==2
+% Random tones: idem   || sorted just above with numeric tags; some conditions may not be repeated
+% Light/NoLight conditions / Collapse reference
+% r = idem, but with only 2 conditions
+
+% Normal conditions / Reference Only
+% Pure tone: r = time x repeat per condition x condition number || sorted in loadevpratser.m from alphabetical tags
+% Random tones: r = time x 1 x trial number   || sorted just above with numeric tags
+% Normal conditions / Collapse reference
+% r = time x condition number
+
+if size(r,2)>1
 for cnt1=1:length(tags),
   if  ~isempty( findstr('Light',Note{cnt1}) )
     if  ~isempty( findstr('+Light',Note{cnt1}) )
@@ -339,7 +348,7 @@ elseif options.raster && ~options.psth,
    [di,dj]=find(data>0);
    di=di./size(data,1);
    dj=dj./rasterfs-PreStimSilence;
-   if globalparams.NumberOfElectrodes>8 || length(dj)>500,
+   if globalparams.NumberOfElectrodes>=4 || length(dj)>500,
        plot(dj,di,'k.','markersize',4);
    else
        plot(dj,di,'k.','markersize',8);

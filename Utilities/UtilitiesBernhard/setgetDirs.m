@@ -24,6 +24,7 @@ switch lower(Hostname)
   otherwise
     DDirs.Ferrets = LF_sysPath('project','Records','Ferrets');
     DDirs.Dropbox = LF_sysPath('Dropbox');
+    DDirs.gdrive = LF_sysPath('gdrive');
 end
 DDirs.Speaker= LF_sysPath('project','Speakers');
 DDirs.G = LF_sysPath('project','Records','G');
@@ -70,6 +71,7 @@ DDirs.StimSpace = LF_sysPath('Dropbox','Projects','ART_StimSpace');
 DDirs.ART_MANTA = LF_sysPath('Dropbox','Projects','ART_MANTA');
 DDirs.Interneuron = LF_sysPath('Dropbox','Projects','IrregularInterneuron');
 DDirs.ISH2012 = LF_sysPath('Dropbox','Wissen','Publications','Conferences','ISH','2012','Submission');
+DDirs.Texture = LF_sysPath('gdrive','Boulot','Code','ART_TextureDetection');
 DDirNames = fieldnames(DDirs);
 DDirString = DDirNames{1};
 for i=2:length(DDirNames) DDirString = [DDirString,' | ',DDirNames{i}]; end 

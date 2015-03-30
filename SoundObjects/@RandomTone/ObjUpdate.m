@@ -12,9 +12,11 @@ LowFrequency = (BaseFrequency / 2^OctaveBelow);
 Frequencies = LowFrequency * 2.^(0:1/TonesPerOctave:OctaveBelow+OctaveAbove);
 %
 Names=[];
-for cnt1 = 1:length(Frequencies)-1
-    RandomFrequency = ceil(Frequencies(cnt1) + rand(1) * (Frequencies(cnt1+1)-Frequencies(cnt1)));
-    Names{cnt1} = num2str(RandomFrequency);
+for cnt1 = 1:length(Frequencies)
+  %15/03-YB: I removed random frequencies
+%     RandomFrequency = ceil(Frequencies(cnt1) + rand(1) * (Frequencies(cnt1+1)-Frequencies(cnt1)));
+%     Names{cnt1} = num2str(RandomFrequency);
+Names{cnt1} = num2str(ceil( Frequencies(cnt1) ));
 end
 if isempty(Names)
     % I think this happens when only one frequency exists:

@@ -101,6 +101,9 @@ for j = (RefNow+1) : (RefNow+index)
     
     Seed   = get(o,'Seeds');
     o      = set(o,'Seeds',[Seed sP.seed]);
+   
+    ReSeed = get(o,'ReSeed');
+    o      = set(o,'ReSeed',ReSeed);
     
     [wSeq, sP] = gentonecloud22(sP);
     MSeq       = maxLocalStd(wSeq(:),fs,length(wSeq(:))/fs);

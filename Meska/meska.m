@@ -67,12 +67,14 @@ if ~GUIINIT,
     REGORDER2 = 0;
     
     
-    spkfig = figure
+    spkfig = figure;
+    set(gcf,'WindowStyle','normal')
     set(gcf,'pos',[70 350 1150 500],'name','MESKA? Multi Electrode Spike Sorter','NumberTitle','off')
-    hpos(1:3,1:4) =[.125, .11, .335, .78;.125, .50, .335, .39;.125, .07, .335, .39]  
+    hpos(1:3,1:4) = [.125, .11, .335, .78;.125, .50, .335, .39;.125, .07, .335, .39];
     
     %%%%%%%%%% "Open" Window %%%%%%%%%%%%
     opnfig = figure;
+    set(gcf,'WindowStyle','normal');
     set(opnfig,'pos',[400 325 350 300],'name','meska - Open','NumberTitle','off','visible','off')
     
     to1 = uicontrol(opnfig,'style','text','units','norm','pos',[.029 .850 .214 .100],'string',{'1st EVP File'; 'eg. 20b14.a1-'});
@@ -320,6 +322,7 @@ if ~GUIINIT,
     else
         svp =svp2;svl=svlm(5:11,1:4); sve =svem(5:11,1:4);svb =svbm(5:12,1:4);
     end
+    set(savfig,'WindowStyle','normal')
     set(savfig,'pos',[svp(1,1) svp(1,2) svp(1,3) svp(1,4)],'name','MESKA - Save','NumberTitle','off','visible','off');
     
     sl1= uicontrol(savfig,'style','text','units','norm','pos',[svl(1,1) svl(1,2) svl(1,3) svl(1,4)],'string',{'Sorter Name:'});
@@ -484,6 +487,7 @@ if ~DATAFLAG,
             pbase = strrep(testfile,'.m','.par');
         end
         fprintf('guessing parmfile: %s\n',pbase);
+        BaphyConfigPath; % for cellDB
         [spkraw, extras]=loadevp(fullfile(path,direc,pbase),fullfile(path,direc,fname),chanNum);
         
         torcList=extras.torcList;
@@ -560,8 +564,8 @@ if ~DATAFLAG,
         
         xaxis = xaxisdef;
         
-        if exist('e4'), if ishandle(e4), delete(e4), end, clear e4, end
-        if exist('e5'), if ishandle(e5), delete(e5), end, clear e5, end
+        if exist('e4','var'), if ishandle(e4), delete(e4), end, clear e4, end
+        if exist('e5','var'), if ishandle(e5), delete(e5), end, clear e5, end
         e4 = uicontrol(spkfig,'style','edit','units','norm','pos',[.045 .484 .070 .040],'backgroundcolor',[1 1 1],...
             'string',['[',num2str(round(yaxis(1))),',',num2str(round(yaxis(2))),']'],'callback',...
             ['yaxis = str2num(get(e4,''string''));','spikeselect,','classrefresh']);

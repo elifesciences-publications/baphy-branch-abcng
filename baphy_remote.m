@@ -45,6 +45,7 @@ if nargout
 else
   gui_mainfcn(gui_State, varargin{:});
 end
+set(gcf,'WindowStyle','normal');
 % End initialization code - DO NOT EDIT
 
 
@@ -343,7 +344,9 @@ elseif ~isempty(mfile),
     else
        switch globalparams.HWparams.DAQSystem
          case 'MANTA';
-           set(handles.editSigThreshold,'String','0');
+           %roughly modified by CB 13/02
+           %set(handles.editSigThreshold,'String','0');
+           set(handles.editSigThreshold,'String','-4.0');
          otherwise,
            set(handles.editSigThreshold,'String','4');
        end

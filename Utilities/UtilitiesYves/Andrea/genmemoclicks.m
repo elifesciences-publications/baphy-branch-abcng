@@ -1,5 +1,6 @@
 function [x,sP] = genmemoclicks(sP,sigint);
 % 14/05-T/Y: We commented all the parts that regenerated seeds
+% 15.02.15 - added sP.clicktimes to get time of individual clicks in a sequence. ST
 
 if nargin == 0
     sP.mingap = 0.01; % minimum gap duration in seconds
@@ -13,6 +14,8 @@ if nargin == 0
     sP.noiseSNR = 12; % add lowpass noise with given SNR. Cutoff is = highpass, noise is pink. Positive values means softer noise.
     sP.clickdur = 0.00005;
     sP.fs = 44100; % sampling rate
+    sP.clicksamples = [];
+    sP.clicktimes = [];
 end
 
 noise_lowcut = 50;
@@ -32,9 +35,6 @@ if sP.mingap > sP.maxgap/2 % check the actual value!
     error('Min and max gap seem too close!')
 end
 
-
-
-
 %% number of samples for a click
 nclicksamp = floor(sP.clickdur*sP.fs);
 
@@ -45,6 +45,7 @@ end
 
 %% main loop
 x = [];
+sP.clicktimes = [];
 
 for irep = 1:1:sP.nreps
     
@@ -66,9 +67,9 @@ for irep = 1:1:sP.nreps
             end
         end
         % convert to samples
-        clicksamples = ceil(clicktimes*sP.fs);
+        sP.clicksamples = ceil(clicktimes*sP.fs);
         for iclicksamp = 1:1:nclicksamp
-          xseg(clicksamples+iclicksamp-1) = 1;
+          xseg(sP.clicksamples+iclicksamp-1) = 1;
         end
         if sP.highpass ~= 0
           xseg = filter(B,A,xseg);
@@ -76,6 +77,7 @@ for irep = 1:1:sP.nreps
     end
     
     x = [x xseg];
+    sP.clicktimes = [sP.clicktimes ((irep-1)*sP.replength + sP.clicksamples./sP.fs)];
 
 end
 

@@ -230,6 +230,7 @@ end
 %     TrialSound=cat(2,TrialSound,zeros(size(TrialSound)),LightBand);
 % else
     TrialSound=cat(2,TrialSound,LightBand);
+    TrialSound(1:100,:) = 0;
 % end
 
 
