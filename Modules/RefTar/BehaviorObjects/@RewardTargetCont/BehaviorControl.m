@@ -39,6 +39,7 @@ tmp = get(exptparams.TrialObject,'TargetIndices'); TargetIndices = tmp{exptparam
 str1ind = strfind(StimEvents(end).Note,' '); str2ind = strfind(StimEvents(end).Note,'-')-1;
 Index = str2num(StimEvents(end).Note(str1ind(3):str2ind(1)));
 DistributionTypeByInd = get(get(exptparams.TrialObject,'TargetHandle'),'DistributionTypeByInd');
+PreSoundSilence = get(get(exptparams.TrialObject,'ReferenceHandle'),'PreStimSilence') + get(get(exptparams.TrialObject,'ReferenceHandle'),'Duration') + get(get(exptparams.TrialObject,'ReferenceHandle'),'PostStimSilence') + get(get(exptparams.TrialObject,'TargetHandle'),'PreStimSilence');
 DistributionTypeNow = DistributionTypeByInd(Index); 
 DifficultyLvl = str2num(get(get(exptparams.TrialObject,'TargetHandle'),['DifficultyLvl_D' num2str(DistributionTypeNow)]));
 DifficultyLvlByInd = get(get(exptparams.TrialObject,'TargetHandle'),'DifficultyLvlByInd');
@@ -131,8 +132,10 @@ DetectType = 'ON'; LickOccured = 0;
     end
    
     Events = AddEvent(Events,['LICK,',cLickSensor],TrialIndex,ResponseTime,[]);
-    if ~get(O,'GradualResponse')%&& ResponseTime >  StimEvents(1).StopTime + SeqLen/2;
+    if ~get(O,'GradualResponse') && ResponseTime >  PreSoundSilence;
       break
+    elseif  ~get(O,'GradualResponse') && ResponseTime <= PreSoundSilence;
+      LickOccured = 0;
     elseif get(O,'GradualResponse') && ResponseTime > (TarWindow(1) + MinimalDelayResponse) && ResponseTime<TarWindow(2)
       break
     elseif  get(O,'GradualResponse')

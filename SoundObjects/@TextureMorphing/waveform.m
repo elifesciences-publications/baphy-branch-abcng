@@ -132,6 +132,7 @@ if Par.AttenuationD0~=0
   NormFactor = maxLocalStd(w,sF,floor(length(w)/sF));
   RatioToDesireddB = 10^(Par.AttenuationD0/20);   % dB to ratio in SPL
   FirstPart = FirstPart*RatioToDesireddB;
+  if DiffLvl==0;  SecondPart = SecondPart*RatioToDesireddB; end
   w = [FirstPart' ; SecondPart']/NormFactor;
 end
 w = [zeros((PreStimSilence*sF),size(w,2)) ; w ; zeros((PostStimSilence*sF),size(w,2))];
