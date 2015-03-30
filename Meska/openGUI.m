@@ -64,7 +64,7 @@ handles.output = hObject;
 
 % Update handles structure
 guidata(hObject, handles);
-
+set(handles.figure1,'WindowStyle','normal')
 % UIWAIT makes openGUI wait for user response (see UIRESUME)
 uiwait(handles.figure1);
 
