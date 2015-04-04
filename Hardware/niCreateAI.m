@@ -32,10 +32,14 @@ HW.AI(id).Channels=Channels;
 HW.AI(id).Names=Names;
 
 % Create a task
-TaskPtr = libpointer('uint32Ptr',false); % for 32 bit
+TaskPtr = libpointer(HW.params.ptrType,false); % for 32 bit
 S = DAQmxCreateTask(HW.AI(id).TaskName,TaskPtr);
 if S NI_MSG(S); end
-HW.AI(id).Ptr = get(TaskPtr,'Value');
+switch computer
+  case 'PCWIN'; HW.AI(id).Ptr = get(TaskPtr,'value');
+  case 'PCWIN64'; HW.AI(id).Ptr = TaskPtr;
+  otherwise error('Computertype not supported for NIDAQ');
+end
 NI_MASTER_TASK_LIST=cat(2,NI_MASTER_TASK_LIST,HW.AI(id).Ptr);
 
 % ADD ANALOG INPUT CHANNELS

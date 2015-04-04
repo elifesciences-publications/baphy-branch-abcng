@@ -191,8 +191,8 @@ if ~isempty(TarTrialIndex),
         
         if TarMatchContour && ~isempty(refenv),
             tarenv=refenv(TarStartBin-1+(1:size(w,1)),ThisTarIdx);
-            tarenv=tarenv.*0.75+0.25;
-            w=w.*tarenv;
+            %tarenv=tarenv.*0.75+0.25;
+            w(:,TargetChannel)=w(:,TargetChannel).*tarenv;
             TrialSound(TarStartBin-1+(1:size(w,1)),:)=...
                 TrialSound(TarStartBin-1+(1:size(w,1)),:)+w;
         else
@@ -266,12 +266,18 @@ if par.ReminderTarget,
     LastEvent = ev(end).StopTime;
     events = [events ev];
 end    
-    
+
+%SVD Disabled trial-level sound normalization.  Now it's up to the sound
+%objects to do the normalization correctly.
 % normalize the sound, because the level control is always from attenuator.
 if ~isempty(TarTrialIndex)
-    TrialSound = 5 * TrialSound / max(abs(TrialSound0(:)));
+    %TrialSound = 5 * TrialSound / max(abs(TrialSound0(:)));
 else
-    TrialSound = 5 * TrialSound / max(abs(TrialSound(:)));
+    %TrialSound = 5 * TrialSound / max(abs(TrialSound(:)));
+end
+
+if max(abs(TrialSound(:)))>10,
+    error('TrialSound too loud');
 end
 
 if ~isempty(CatchTrialIndex)

@@ -62,6 +62,10 @@ end
 if isfield(HW,'AO')
   for ii=1:length(HW.AO),
     S = DAQmxStopTask(HW.AO(ii).Ptr);
+    
+    
+    
+    
     if NI_SHOW_ERR_WARN && S<0, NI_MSG(S); end
   end
 end

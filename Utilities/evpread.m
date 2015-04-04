@@ -41,7 +41,7 @@ global C_r C_raw C_lfp C_mfilename C_evpfilename C_ENABLE_CACHING USECOMMONREFER
 
 if isempty(C_ENABLE_CACHING) C_ENABLE_CACHING=1; end
 ENABLE_MAP_READ=1;
-if isempty(USECOMMONREFERENCE) USECOMMONREFERENCE = 1; end
+if isempty(USECOMMONREFERENCE) USECOMMONREFERENCE = 0; end
 Info = [];
 
 %% PARSE ARGUMENTS
@@ -67,10 +67,6 @@ if ~isfield(P,'auxchans') P.auxchans = [ ]; end
 if ~isfield(P,'lfpchans') P.lfpchans = [ ]; end
 if ~isfield(P,'rawchans') P.rawchans = [ ]; end
 if ~isfield(P,'trials') || isempty(P.trials), P.trials = inf; end
-if ~isfield(P,'filterstyle') P.filterstyle = 'butter'; end
-if ~isfield(P,'wrap') P.wrap = 0; end
-if ~isfield(P,'SRlfp') P.SRlfp = 2000; end % downsample 
-if ~isfield(P,'dataformat') P.dataformat = 'linear'; end
 
 %% CHECK EVP VERSION
 
@@ -80,6 +76,17 @@ if isempty(P.spikechans) && exist(filename,'file'),
 else
     EVPVERSION=evpversion(filename);
 end
+
+if ~isfield(P,'filterstyle'),
+    if EVPVERSION==5,
+        P.filterstyle = 'butter';
+    else
+        P.filterstyle = 'none';
+    end
+end
+if ~isfield(P,'wrap') P.wrap = 0; end
+if ~isfield(P,'SRlfp') P.SRlfp = 2000; end % downsample 
+if ~isfield(P,'dataformat') P.dataformat = 'linear'; end
 
 % If loading spikes or only zipped file exists, make a local copy
 if ( ~isempty(P.spikechans) || ~exist(filename,'file')),
@@ -292,7 +299,6 @@ switch EVPVERSION
      %rl = filter(bHumbug,aHumbug,rl);
     elseif ~isempty(P.lfpchans)
         %rl = single(resample(double(rl),P.SRlfp,lfpfs));
-
     end
 
   case 5; fprintf('EVP version 5 :   ');
@@ -328,7 +334,12 @@ switch EVPVERSION
       for cc = 1:length(loadchans)
         spikeidx = loadchans(cc);
         cFilename=[fileroot,sprintf('.%03d.%d.evp',trialidx,spikeidx)];
-        [trs,Header]=evpread5(cFilename);
+        trs = []; AttemptCounter = 0;
+        while isempty(trs) && AttemptCounter<6  % 15/03-YB: Multiple attempts when lfp cannot be loaded
+            AttemptCounter = AttemptCounter+1;
+            [trs,Header]=evpread5(cFilename);
+            if isempty(trs); disp('evpread: trial empty! I try again.'); end
+        end
         if USECOMMONREFERENCE
           % COMPUTE COMMONE REFERENCE
           cFilename=[fileroot,sprintf('.%03d.%d.evp',trialidx,1)]; % COMMON REF INDEPENDENT OF EL.
@@ -432,6 +443,13 @@ switch EVPVERSION
       fHigh = 1; fLow = 0.3*Nyquist;
       [bLow,aLow] = butter(order,fLow/Nyquist,'low');
       [bHigh,aHigh] = butter(order,fHigh/Nyquist,'high');    
+                              bHumbug=[0.995386247699319  -5.972013278489225  14.929576915653460  -19.905899769726052  14.929576915653460  -5.972013278489225  0.995386247699319 ];
+        aHumbug = [ 1.000000000000000  -5.990446012819222  14.952579842917430  -19.905857198474035  14.906552701679249  -5.953623115411301  0.990793782108932  ];
+         LHumbug = length(bHumbug)-1;
+     Raw=double(rl)'; 
+% IVHumbug = zeros(LHumbug,size(Raw,2)); 
+      [Raw] = filter(bHumbug,aHumbug,Raw);
+      rl = Raw';
       if P.wrap
         tmp = single(NaN*zeros(round((max(diff(cstrialidx))-1)/SR*P.SRlfp),length(P.lfpchans),length(cstrialidx)-1));
         for i=1:length(cstrialidx)-1

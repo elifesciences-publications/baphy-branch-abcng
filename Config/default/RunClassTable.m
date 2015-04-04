@@ -225,6 +225,8 @@ else
             runclass = 'ATS';
       case 'PSYCHOLINGUISTICSTIMULI';
         runclass = 'PLS';
+        case 'RANDSEQTORC';
+        runclass = 'RST';
         otherwise
             error('Enter a runclass into RunClassTable.m to avoid later confusion!');
     end

@@ -40,7 +40,12 @@ fprintf(fid,'MFileDone=1;\n');
 fclose(fid);
 % now move it:
 if ~strcmp(globalparams.tempMfile, globalparams.mfilename),
-   movefile(globalparams.tempMfile, globalparams.mfilename);
+  try
+    movefile(globalparams.tempMfile, globalparams.mfilename);
+  catch   % added by Yves because fid was not closed correctly before this point; 2013/10
+    fclose('all')
+    movefile(globalparams.tempMfile, globalparams.mfilename);
+  end   
 end
 
 % Check if .mat file exists, if so, delete it

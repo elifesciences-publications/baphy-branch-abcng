@@ -39,7 +39,14 @@ for lidx=1:length(lfpchans),
    if exist(cachefile,'file'),
       data=load(cachefile);
       trialcount=data.trialcount;
-      if trialcount==max(trials),
+      if trialcount>=max(trials),
+%                       bHumbug=[0.995386247699319  -5.972013278489225  14.929576915653460  -19.905899769726052  14.929576915653460  -5.972013278489225  0.995386247699319 ];
+%         aHumbug = [ 1.000000000000000  -5.990446012819222  14.952579842917430  -19.905857198474035  14.906552701679249  -5.953623115411301  0.990793782108932  ];
+%          LHumbug = length(bHumbug)-1;
+%      Raw=double(data.rl)'; 
+% % IVHumbug = zeros(LHumbug,size(Raw,2)); 
+%         [Raw] = filter(bHumbug,aHumbug,Raw);
+%         lfpout(:,lidx)=Raw;
           lfpout(:,lidx)=data.rl;
           ltrialidx=data.ltrialidx;
           lfpfs=data.lfpfs;

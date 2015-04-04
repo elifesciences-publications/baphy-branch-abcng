@@ -24,6 +24,7 @@ LickData(LickData>=0.5)=1;
 
 global StopExperiment;
 fs = HW.params.fsAI;
+trialparms=get(exptparams.TrialObject);
 
 % Recalculate response windows to permit offline analysis
 NumRef = 0;
@@ -112,14 +113,39 @@ else
     NullTrial=0;
 end
 
-LickData = max(0,diff(LickData));
-% what we need to procude here are:
-%  1) histogram of first lick for each reference and target
-%  2) false alarm for each reference, and hit for target at different
-%       positions
 %
+% analyze lick vector to find out when animal licked with respect to target
+% window and false alarm window -- defined as the periods of time before
+% the target where the target might have occurred.
+if strcmpi(trialparms.descriptor,'MultiRefTar') || ...
+      strcmpi(trialparms.descriptor,'RSSToneMono'),
+   % "strict" - FA is response to any possible target slot preceeding the target
+   TarPreStimSilence=get(trialparms.TargetHandle,'PreStimSilence');
+   if trialparms.SingleRefSegmentLen>0,
+      PossibleTarTimes=(find(trialparms.ReferenceCountFreq(:))-1).*...
+         trialparms.SingleRefSegmentLen+FirstRefTime;
+   else
+      RefSegLen=get(trialparms.ReferenceHandle,'PreStimSilence')+...
+         get(trialparms.ReferenceHandle,'Duration')+...
+         get(trialparms.ReferenceHandle,'PostStimSilence');
+      PossibleTarTimes=(find(trialparms.ReferenceCountFreq(:))-1).*...
+         RefSegLen;
+   end
+   FAStartTime=min(PossibleTarTimes);
+else
+   FAStartTime=get(trialparms.ReferenceHandle,'PreStimSilence');
+end
+
 % first, extract the lick data surrounding the onset of each stimulus
 % (reference or target)
+LickData = max(0,diff(LickData));
+
+% svd 2015-01-21  :  only care about first lick time now?!??!
+ff=min(find(LickData));
+if ~isempty(ff),
+   LickData((ff+1):end)=0;
+end
+
 RefFalseAlarm = 0;RefFirstLick = NaN;
 for cnt2 = 1:NumRef
     cnt1 = (cnt2-1)*2+1;
@@ -130,18 +156,29 @@ for cnt2 = 1:NumRef
     RefFalseAlarm(cnt2) = double(~isempty([find(RefEarlyLicks{cnt2});find(RefResponseLicks{cnt2})]));
 end
 %FalseAlarm = sum(RefFalseAlarm)/NumRef;
+FAStartBin=min(round(fs*FAStartTime+1),length(LickData));
+EarlyTrial=double(sum(LickData(1:FAStartBin))>0);
 if NullTrial,
-    RefFalseAlarm=sum(LickData(1:min(length(LickData),round(fs*RefResponseWin(end)))))>0;
-    FalseAlarm=sum(LickData(1:min(length(LickData),round(fs*RefResponseWin(end)))))>0;
+    RefFalseAlarm=~EarlyTrial & sum(LickData(FAStartBin:min(length(LickData),round(fs*RefResponseWin(end)))))>0;
+    FalseAlarm=~EarlyTrial & sum(LickData(FAStartBin:min(length(LickData),round(fs*RefResponseWin(end)))))>0;
     TarResponseLick=0;
     TarEarlyLick=0;
     TarFirstLick=nan;
 else
-    TarResponseBin=round(fs*TarResponseWin);
-    RefFalseAlarm=(sum(LickData(1:min(length(LickData),TarResponseBin(1))))>0);
-    FalseAlarm=(sum(LickData(1:min(length(LickData),TarResponseBin(1))))>0);
-    TarResponseLick = LickData(max(1,TarResponseBin(1)):min(length(LickData),TarResponseBin(2)));
-    TarEarlyLick = LickData(round(fs*max(1,TarEarlyWin(1))):round(min(length(LickData),fs*TarEarlyWin(2))));
+    % svd modified 2015-01-23 -- FA only if in window when target could
+    % have occurred.  Responses before that time are not "real" FAs
+    TarResponseBin=min(length(LickData),round(fs*TarResponseWin));
+    RefFalseAlarm=(~EarlyTrial & sum(LickData(FAStartBin:TarResponseBin(1)))>0);
+    if RefFalseAlarm,
+       RefFirstLick=(min(find(LickData(FAStartBin:TarResponseBin(1))>0))+FAStartBin-1)./fs;
+    else
+       RefFirstLick=nan;
+    end
+    FalseAlarm=(~EarlyTrial & sum(LickData(FAStartBin:TarResponseBin(1)))>0);
+    %RefFalseAlarm=(sum(LickData(1:min(length(LickData),TarResponseBin(1))))>0);
+    %FalseAlarm=(sum(LickData(1:min(length(LickData),TarResponseBin(1))))>0);
+    TarResponseLick = LickData((TarResponseBin(1)+1):TarResponseBin(2));
+    TarEarlyLick = LickData(round(fs*(TarEarlyWin(1)+1)):round(min(length(LickData),fs*TarEarlyWin(2))));
     if (FalseAlarm>=StopTargetFA)  % in ineffective
         TarResponseLick = zeros(size(TarResponseLick));
         TarEarlyLick    = zeros(size(TarEarlyLick));
@@ -183,6 +220,8 @@ else
     cnt2 = 1;
 end
 perf(cnt2).ThisTrial    = '??';
+
+
 if NumRef
     % sum of false alarms divided by num of ref
     perf(cnt2).FalseAlarm = double(RefFalseAlarm | ~isempty(find(TarEarlyLick,1)));
@@ -190,12 +229,23 @@ else
     perf(cnt2).FalseAlarm = NaN;
 end
 %perf(cnt2).Ineffective  = double(perf(cnt2).FalseAlarm >= StopTargetFA);
-Ineffective  = double(perf(cnt2).FalseAlarm >= StopTargetFA);
+Ineffective  = double(perf(cnt2).FalseAlarm | EarlyTrial);
 perf(cnt2).WarningTrial = double(~Ineffective);
 %perf(cnt2).EarlyTrial   = double(perf(cnt2).WarningTrial && ~isempty(find(TarEarlyLick,1)));
-%
+
+perf(cnt2).EarlyTrial = EarlyTrial; % lick before target could have occurred.
 perf(cnt2).Hit          = double(perf(cnt2).WarningTrial && ~perf(cnt2).FalseAlarm && ~isempty(find(TarResponseLick,1))); % if there is a lick in target response window, its a hit
 perf(cnt2).Miss         = double(perf(cnt2).WarningTrial && ~perf(cnt2).FalseAlarm && ~perf(cnt2).Hit);
+
+if perf(cnt2).FalseAlarm && perf(cnt2).EarlyTrial,
+   disp('both FA and Early?');
+   keyboard
+end
+if length(perf(cnt2).Hit)>1,
+   disp('Multibin hit???');
+   keyboard
+end
+
 perf(cnt2).ReferenceLickTrial = double((perf(cnt2).FalseAlarm>0));
 perf(cnt2).NullTrial = NullTrial;
 perf(cnt2).LickRate = length(find(LickData)) / length(LickData);
@@ -227,6 +277,11 @@ perf(cnt2).RecentHitRate         = sum(cat(1,perf(RecentIndex).Hit) & ~NullTrial
 perf(cnt2).RecentDiscriminationRate = perf(cnt2).RecentHitRate * (1-perf(cnt2).RecentFalseAlarmRate);
 
 perf(cnt2).TarResponseWinStart=TarResponseWin(1);
+if exist('CatchResponseWin','var'),
+    perf(cnt2).CatResponseWinStart=CatchResponseWin(1);
+else
+    perf(cnt2).CatResponseWinStart=nan;
+end
 
 % target-specific HR / RT
 perf(cnt2).ThisTargetNote=ThisTargetNote;
@@ -258,12 +313,23 @@ perf(cnt2).uHitRate = nanmean(cat(1,perf.uHit),1);
 IsCatchTrial=~isnan(cat(1,perf.FirstCatchTime));
 CatchIdx=find(IsCatchTrial);
 if isfield(perf(cnt2),'FirstCatchTime') && ~isempty(CatchIdx),
-    crt=exptparams.FirstLick.Catch(CatchIdx);
-    cHit=crt>parms.EarlyWindow & crt<parms.EarlyWindow+parms.ResponseWindow;
-    perf(cnt2).cHitRate=mean(cHit);
+   cEarly=cat(2,perf(CatchIdx).EarlyTrial);
+   crt=exptparams.FirstLick.Catch(CatchIdx);
+   cHit=crt>parms.EarlyWindow & crt<parms.EarlyWindow+parms.ResponseWindow;
+   rrt=exptparams.FirstLick.Ref(CatchIdx);
+   cFA=rrt>FAStartTime & rrt<=cat(2,perf(CatchIdx).FirstCatchTime)+parms.EarlyWindow;
+   perf(cnt2).cHitRate=mean(cHit(~cEarly & ~cFA));
+   
+   cTarTimes=min(cat(2,perf.FirstTarTime),max(cat(2,perf(CatchIdx).FirstCatchTime)));
+   cEarly=cat(2,perf.EarlyTrial);
+   cFAidx=find(~cEarly);
+   rrt=exptparams.FirstLick.Ref(cFAidx);
+   cFA=rrt>FAStartTime & rrt<=cTarTimes(cFAidx)+parms.EarlyWindow;
+   perf(cnt2).cFARate=mean(cFA);
 else
-    % no catch stim yet (or at all)
-    perf(cnt2).cHitRate=nan;
+   % no catch stim yet (or at all)
+   perf(cnt2).cFARate=nan;
+   perf(cnt2).cHitRate=nan;
 end
 
 % save RT data
@@ -277,7 +343,7 @@ if isfield(perf(cnt2),'FirstCatchTime') && ~isnan(perf(cnt2).FirstCatchTime),
 else
     perf(cnt2).cReactionTime=nan;
 end
-   
+
 
 % now determine what this trial outcome is:
 if perf(cnt2).Hit, perf(cnt2).ThisTrial = 'Hit';end
@@ -287,7 +353,6 @@ if perf(cnt2).Miss && perf(cnt2).NullTrial, perf(cnt2).ThisTrial = 'Corr.Rej.';e
 %if perf(cnt2).Ineffective, perf(cnt2).ThisTrial = 'Ineffective';end
 
 % compute DI based on FAR, HR and RT
-trialparms=get(exptparams.TrialObject);
 cresptime=[];
 cstimtype=[];
 cstimtime=[];
@@ -453,6 +518,7 @@ for cnt1 = 1:length(PerfFields)
 end
 
 %perfPer.Ineffective(2)  = TrialIndex;
+perfPer.EarlyTrial(2) = TrialIndex;
 perfPer.WarningTrial(2) = TrialIndex;
 perfPer.ReferenceLickTrial = TrialIndex;
 perfPer.FalseAlarm(2) = TrialIndex;

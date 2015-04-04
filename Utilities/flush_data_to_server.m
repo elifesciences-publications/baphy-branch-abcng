@@ -12,7 +12,7 @@ function flush_data_to_server(sFrom,sTo,Verbose,NotificationEmail)
 if ~exist('sFrom','var') || isempty(sFrom) sFrom = MD_getDir('Kind','archive','DB',0); end
 if ~exist('sTo','var') || isempty(sTo) sTo = MD_getDir('Kind','archive','DB',1); end
 if ~exist('Verbose','var') Verbose = 0; end
-if ~exist('NotificationEmail','var') NotificationEmail = 'benglitz@gmail.com'; end
+if ~exist('NotificationEmail','var') NotificationEmail = 'boubenec@ens.fr'; end
 
 global VERBOSE; VERBOSE = Verbose;
 global BAPHY_LAB

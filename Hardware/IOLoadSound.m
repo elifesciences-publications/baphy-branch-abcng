@@ -6,22 +6,33 @@ function HW = IOLoadSound(HW, stim)
 %
 
 %% MAKE SURE THE STIMULUS IS VERTICAL
-if size(stim,1)<size(stim,2)  stim=stim'; end;
+ if size(stim,1)<size(stim,2)  stim=stim'; end;
+ 
+ if isfield(HW,'TwoSpeakers') && HW.TwoSpeakers
+   SpeakerNb = 2;
+   if size(stim,2)==1
+     stim(:,2) = stim(:,1);
+   end
+ else
+   SpeakerNb = 1;%size(stim,2);
+ end
 
 %% CALIBRATE SPECTRUM AND VOLUME FOR SOME SETUPS
-if any(HW.params.HWSetup == [ 7,9,10,12 ] ) || ...
-    isfield(HW.params,'driver') && strcmpi(HW.params.driver,'NIDAQMX'),
-  if isfield(HW,'Calibration') && length(stim)>length(HW.Calibration.IIR)
-    % ADAPT SAMPLING RATE
-    cIIR = HW.Calibration.IIR; CalSR = HW.Calibration.SR;
-    TCal = [0:1/CalSR:(length(cIIR)-1)/CalSR];
-    TCurrent = [0:1/HW.params.fsAO:(length(cIIR)-1)/CalSR];
-    cIIR = interp1(TCal,cIIR,TCurrent,'spline');
-    % CONVOLVE WITH INVERSE IMPULSE RESPONSE OF SPEAKER
-    tstim = conv(stim(:,1),cIIR)*CalSR/HW.params.fsAO;
-    % UNDO SHIFT DUE TO CALIBRATION
-    cDelaySteps = round(HW.Calibration.Delay*HW.params.fsAO);
-    stim(:,1) = [tstim(cDelaySteps:end-length(cIIR)+1);zeros(cDelaySteps-1,1)];
+for SpeakerNum = 1:SpeakerNb
+  if any(HW.params.HWSetup == [ 7,9,10,12 ] ) || ...
+      isfield(HW.params,'driver') && strcmpi(HW.params.driver,'NIDAQMX'),
+    if isfield(HW,'Calibration') && size(stim,1)>length(HW.Calibration(SpeakerNum).IIR)
+      % ADAPT SAMPLING RATE
+      cIIR = HW.Calibration(SpeakerNum).IIR; CalSR = HW.Calibration(SpeakerNum).SR;
+      TCal = [0:1/CalSR:(length(cIIR)-1)/CalSR];
+      TCurrent = [0:1/HW.params.fsAO:(length(cIIR)-1)/CalSR];
+      cIIR = interp1(TCal,cIIR,TCurrent,'spline');
+      % CONVOLVE WITH INVERSE IMPULSE RESPONSE OF SPEAKER
+      tstim = conv(stim(:,SpeakerNum),cIIR)*CalSR/HW.params.fsAO;
+      % UNDO SHIFT DUE TO CALIBRATION
+      cDelaySteps = round(HW.Calibration(SpeakerNum).Delay*HW.params.fsAO);
+      stim(:,SpeakerNum) = [tstim(cDelaySteps:end-length(cIIR)+1);zeros(cDelaySteps-1,1)];
+    end
   end
 end
 
@@ -47,19 +58,38 @@ switch HW.params.HWSetup
     if ~strcmpi(IODriver(HW),'NIDAQMX') && size(stim,2)<length(HW.AO.Channel)  stim(:,2) = zeros(size(stim)); end
     if strcmpi(IODriver(HW),'NIDAQMX') && size(stim,2)<HW.AO.NumChannels  stim(:,2) = zeros(size(stim(:,1))); end
     
+    % IN ORDER TO USE THE NEW LOUDNESS DETERMINATION METHOD
+    % LOUDNESS_ADJUSTED can be set in a sound object, if it wants to adjust
+    % the loudness itself, e.g. useful for ClickTrains
+    global LoudnessAdjusted;
+    if isempty(LoudnessAdjusted) || ~LoudnessAdjusted
+      for SpeakerNum = 1:SpeakerNb
+        switch HW.Calibration(SpeakerNum).Loudness.Method
+          case 'MaxLocalStd';
+            Duration = HW.Calibration(SpeakerNum).Loudness.Parameters.Duration;
+            Val = maxLocalStd(stim(:,SpeakerNum),HW.params.fsAO,Duration);
+            stim(:,SpeakerNum) =  HW.Calibration(SpeakerNum).Loudness.Parameters.SignalMatlab80dB*stim(:,SpeakerNum)/Val;
+        end
+      end
+    end
+    LoudnessAdjusted = 0;
+    
     %% Apply software attenuation if specified
     % Only change level of channels named "Sound*":
     AudioChannels=IOGetAudioChannels(HW);
     if isfield(HW,'SoftwareAttendB')
       attend_db=HW.SoftwareAttendB;
-      %fprintf('Applying software attenuation %d\n',atten_db);
-      level_scale=10.^(-attend_db./20);
-      stim(:,AudioChannels)=stim(:,AudioChannels).*level_scale;
-    end
-    if isfield(HW.params,'SoftwareEqz') && any(HW.params.SoftwareEqz),
+    elseif isfield(HW.params,'SoftwareEqz') && any(HW.params.SoftwareEqz),
       atten_db=HW.params.SoftwareEqz(1);
-      level_scale=10.^(-atten_db./20);
-      stim(:,AudioChannels)=stim(:,AudioChannels).*level_scale;
+    else
+      atten_db = 0;
+    end
+    level_scale=10.^(-attend_db./20);
+    stim(:,AudioChannels)=stim(:,AudioChannels).*level_scale;
+    
+    %% 2 SPEAKERS and Loudness are not been adjusted in the waveform of the SO
+    if isfield(HW,'TwoSpeakers') && HW.TwoSpeakers && (isempty(LoudnessAdjusted) || ~LoudnessAdjusted)
+      stim(:,1:SpeakerNb) = stim(:,1:SpeakerNb) * 0.5;
     end
     
     %% ADD STIMULATION
@@ -78,7 +108,6 @@ switch HW.params.HWSetup
     
     switch IODriver(HW)
       case 'NIDAQMX';
-        
         % fill in empty AO channels with zeros
         if size(stim,2)<HW.AO(1).NumChannels,
             stim=cat(2,stim,zeros(size(stim,1),HW.AO(1).NumChannels-size(stim,2)));
@@ -96,6 +125,14 @@ switch HW.params.HWSetup
       % HW.params.fsAO
       HW=niSetAOSamplingRate(HW);
       
+      % dulicate sound on the 2 channels if no analog stim on the 2nd one
+      global SecondChannelAO;
+      if ~isempty(SecondChannelAO) && ~SecondChannelAO && SpeakerNb == 1
+        stim(:,2) = stim(:,1);
+      % fill in empty AO channels with zeros %14/09-YB: from Steve' code
+      elseif  ~isempty(SecondChannelAO) && ~SecondChannelAO && size(stim,2)<HW.AO(1).NumChannels  
+        stim=cat(2,stim,zeros(size(stim,1),HW.AO(1).NumChannels-size(stim,2)));
+      end
       % actually load the samples
       SamplesLoaded=niLoadAOData(HW.AO(1),stim);     
       case 'DAQTOOLBOX';

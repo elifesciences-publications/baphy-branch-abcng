@@ -112,8 +112,12 @@ elseif isempty(tar),
             runclass = 'PPS';
         case 'RSS';
             runclass = 'RSS';
+        case 'TONERSS'
+            runclass = 'RST';
         case 'NATURALSOUNDS';
             runclass = 'NAT';
+        case 'SSA';
+            runclass = 'SSA';
         otherwise
             runclass = '';
     end
@@ -123,7 +127,7 @@ else
             runclass = 'CLK';
         case {'AMNOISE','AMNOISE2'}
             runclass='AVT';
-        case {'TONE','JITTERTONE','IRN'},
+        case {'TONE','JITTERTONE','IRN','TONERSS'},
             if strcmpi(get(ref,'descriptor'),'NOISEBURST'),
                 runclass = 'BVT';
             elseif strcmpi(get(ref,'descriptor'),'SPNOISE'),
