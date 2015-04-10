@@ -139,7 +139,9 @@ xlabel('Trial Number','FontWeight','bold');
 
 %% display the lick signal and the boundaries for last trial
 h = subplot(4,4,5:8);plot(AIData);
-axis ([0 length(AIData) 0 1.5]);
+if ~isempty(AIData),
+    axis ([0 length(AIData) 0 1.5]);
+end
 set(h,'XTickLabel',get(h,'Xtick')/fs); % convert to seconds
 xlabel('Time (seconds)','FontWeight','bold');
 % First, draw the boundries of Reference and Target

@@ -21,7 +21,8 @@ function HW = IOLoadSound(HW, stim)
 for SpeakerNum = 1:SpeakerNb
   if any(HW.params.HWSetup == [ 7,9,10,12 ] ) || ...
       isfield(HW.params,'driver') && strcmpi(HW.params.driver,'NIDAQMX'),
-    if isfield(HW,'Calibration') && size(stim,1)>length(HW.Calibration(SpeakerNum).IIR)
+    if isfield(HW,'Calibration') && isfield(HW.Calibration,'IIR') && ...
+            size(stim,1)>length(HW.Calibration(SpeakerNum).IIR)
       % ADAPT SAMPLING RATE
       cIIR = HW.Calibration(SpeakerNum).IIR; CalSR = HW.Calibration(SpeakerNum).SR;
       TCal = [0:1/CalSR:(length(cIIR)-1)/CalSR];
@@ -62,7 +63,8 @@ switch HW.params.HWSetup
     % LOUDNESS_ADJUSTED can be set in a sound object, if it wants to adjust
     % the loudness itself, e.g. useful for ClickTrains
     global LoudnessAdjusted;
-    if isempty(LoudnessAdjusted) || ~LoudnessAdjusted
+    if isfield(HW,'Calibration') && isfield(HW.Calibration,'Loudness') && ...
+            (isempty(LoudnessAdjusted) || ~LoudnessAdjusted)
       for SpeakerNum = 1:SpeakerNb
         switch HW.Calibration(SpeakerNum).Loudness.Method
           case 'MaxLocalStd';
