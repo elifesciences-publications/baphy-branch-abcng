@@ -105,7 +105,7 @@ elseif strcmp(filename((end-3):end),'.tgz'),
       cd(LocalDir);
       
       if strcmp(computer,'GLNXA64')   % UBUNTU
-          cmd=[MYSQL_BIN_PATH 'tar xf ' bb '.tar'];
+          cmd=[MYSQL_BIN_PATH 'tar xf ' bb '.tar'];  %          cmd=[MYSQL_BIN_PATH 'tar mxf ' bb '.tar']; if pb of ownership on server
       else
           cmd=[MYSQL_BIN_PATH 'tar -xf ' bb '.tar'];
       end

@@ -1,5 +1,5 @@
-set(0,'defaultAxesFontName', 'Times')
-set(0,'defaultTextFontName', 'Times')
+set(0,'defaultAxesFontName', 'Arial')
+set(0,'defaultTextFontName', 'Arial')
 
 set(0,'defaultAxesFontSize', FontSize)
 set(0,'defaultTextFontSize', FontSize)

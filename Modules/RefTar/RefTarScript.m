@@ -97,7 +97,7 @@ while ContinueExp == 1
       % MATCH SOUND AND ACQUISITION DURATION
       TrialSound(floor(exptparams.LogDuration.*HW.params.fsAO),end) = 0;
       
-      exptparams = GUIUpdateStatus (globalparams, exptparams, TrialIndex, iTrial); drawnow;
+      exptparams = GUIUpdateStatus(globalparams, exptparams, TrialIndex, iTrial); drawnow;
       
       % CHECK WHETHER TRIAL CAN BE STARTED
       BehaviorEvents = 1; % Just initialize
@@ -106,7 +106,8 @@ while ContinueExp == 1
           CanStart(BehaveObject, HW, StimEvents, globalparams, exptparams, TrialIndex);
         if StopExperiment ContinueExp = ContinueOrNot; end; % USER PRESSED STOP
         if ~ContinueExp break; end
-      end; if ~ContinueExp, TrialIndex = TrialIndex - 1; break; end
+      end;
+      if ~ContinueExp, TrialIndex = TrialIndex - 1; break; end
       
       % svd 2012-10-27: moved IOLoadSound after CanStart to allow sounds to
       % be played during CanStart prior to beginning of the aquisition
@@ -119,7 +120,7 @@ while ContinueExp == 1
           HW = IOLoadSound(HW, TrialSound(:,[1 1]));
         end      
       elseif strcmp( class(BehaveObject) , 'RewardTargetContinuous' )
-        
+          exptparams.wAccu = TrialSound;
       else
         HW = IOLoadSound(HW, TrialSound);
       end
@@ -135,6 +136,8 @@ while ContinueExp == 1
       %% MAIN ACQUISITION SECTION
       if ~strcmp( class(BehaveObject) , 'RewardTargetContinuous' )  % Acquisition starts within BehaviorControl.m
         [StartEvent,HW] = IOStartAcquisition(HW);
+      else
+        StartEvent.Note = 'TRIALSTART'; StartEvent.StartTime = 0; StartEvent.StopTime = 0;
       end
       
       % HAND CONTROL TO LICK MONITOR TO CONTROL REWARD/SHOCK

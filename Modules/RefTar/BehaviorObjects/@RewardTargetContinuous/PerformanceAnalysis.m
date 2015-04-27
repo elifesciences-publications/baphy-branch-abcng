@@ -19,6 +19,10 @@ cP.HitRate = sum(cHitInd)/TrialIndex;
 cP.SnoozeRate = sum(strcmp({AllPerf.Outcome},'SNOOZE'))/TrialIndex;
 cP.EarlyRate = sum(strcmp({AllPerf.Outcome},'EARLY'))/TrialIndex;
 cP.ErrorRate = sum(strcmp({AllPerf.Outcome},'ERROR'))/TrialIndex;  % no ERROR in the detection change task
+% ToC = StimEvents(end-1).StartTime;        % include Ref-Silence, PreStimSilence until ToC (without response window)
+ToC = exptparams.Performance(end).ToC;
+% ToC = actual ToC of the initial TrialSound
+% cP.TarWindow = ToC which includes all added Ref
 
 % cluster by difficulty for plot purpoises
 TO = exptparams.TrialObject;
@@ -60,7 +64,8 @@ for i=1:length(cP.AllTargetPositions)
   for j=1:TrialIndex cTargetsInd(j) = any(strcmp(AllPerf(j).CurrentTargetPositions,cP.AllTargetPositions{i})); end
   cP.HitRates(i) = sum(cTargetsInd.*cHitInd)/sum(cTargetsInd);
 end
-cP.DiscriminationRate = prod(cP.HitRates);
+% cP.DiscriminationRate = prod(cP.HitRates);
+cP.DiscriminationRate = ( sum([AllPerf.RefSliceCounter])-TrialIndex )/(TrialIndex*10);
 if isnan(cP.DiscriminationRate) cP.DiscriminationRate = 0; end
 cP.Trials = TrialIndex;
 
@@ -73,18 +78,49 @@ cP.EarlyRateRecent = sum(strcmp({RecentPerf.Outcome},'EARLY'))/AverageSteps;
 cP.ErrorRateRecent = sum(strcmp({RecentPerf.Outcome},'ERROR'))/AverageSteps;
 
 %% TIMING  % so far, LICKS before the ToC are not seen in LickTargetOnly MODE
+% switch cP.DetectType
+%   case 'ON';   % Corrected by Yves / 2013/10
+%     if ~isnan(cP.LickSensorInd)
+%       if ~get(TO,'LickTargetOnly')
+%         cP.LickTime = find(LickData(:,cP.LickSensorInd)>0.5,1,'first');
+%       else
+%         MinimalInterval = 0.250*HW.params.fsAI;     % samples  
+%         LickTimings = find( diff( LickData(:,cP.LickSensorInd) ) >0)';
+%         FarLickTimingsIndex = unique( [1 find(diff(LickTimings)>MinimalInterval)+1] );
+%         cP.LickTime = LickTimings(FarLickTimingsIndex);
+%       end
+%     else cP.LickTime = []; 
+%     end
+%   case 'OFF';
+%     if ~isnan(cP.LickSensorNotInd)
+%       cP.LickTime = find(LickData(:,cP.LickSensorNotInd)<0.5,1,'first');
+%     else cP.LickTime = []; 
+%     end
+% end
 switch cP.DetectType
-  case 'ON';   % Corrected by Yves / 2013/10
+  case 'ON';   % 2015/04-YB: modified for RewardTargetContinuous for displaying only the first lick
     if ~isnan(cP.LickSensorInd)
-      if ~get(TO,'LickTargetOnly')
-        cP.LickTime = find(LickData(:,cP.LickSensorInd)>0.5,1,'first');
+      if strcmp(AllPerf(end).Outcome,'HIT')
+        LD = find(LickData(:,cP.LickSensorInd));
+        cP.LickTime = LD(LD>(cP.TarWindow(1)*HW.params.fsAI));
+        if ~isempty(cP.LickTime); cP.LickTime = cP.LickTime(1); end
+      elseif strcmp(AllPerf(end).Outcome,'EARLY') && ~CatchTrial
+        LD = find(LickData(:,cP.LickSensorInd));
+        cP.LickTime = LD(LD>((cP.TarWindow(1)-ToC)*HW.params.fsAI));
+        if ~isempty(cP.LickTime); cP.LickTime = cP.LickTime(1); end
+      elseif strcmp(AllPerf(end).Outcome,'EARLY') && CatchTrial
+        RespWinDur = get(O,'ResponseWindow');
+        LD = find(LickData(:,cP.LickSensorInd));
+        cP.LickTime = LD(LD>((cP.TarWindow(1)-ToC-RespWinDur)*HW.params.fsAI));
+        if ~isempty(cP.LickTime); cP.LickTime = cP.LickTime(1)+RespWinDur; end% to shift to the virtual change location
       else
-        MinimalInterval = 0.250*HW.params.fsAI;     % samples  
+        MinimalInterval = 0.250*HW.params.fsAI;     % samples
         LickTimings = find( diff( LickData(:,cP.LickSensorInd) ) >0)';
         FarLickTimingsIndex = unique( [1 find(diff(LickTimings)>MinimalInterval)+1] );
         cP.LickTime = LickTimings(FarLickTimingsIndex);
       end
-    else cP.LickTime = []; 
+    else
+      cP.LickTime = [];
     end
   case 'OFF';
     if ~isnan(cP.LickSensorNotInd)
@@ -92,7 +128,8 @@ switch cP.DetectType
     else cP.LickTime = []; 
     end
 end
-if isempty(cP.LickTime) || CatchTrial; cP.LickTime = NaN; cP.LickSensorInd = NaN; end  % pump after catch induces fake licks
+
+if isempty(cP.LickTime); cP.LickTime = NaN; cP.LickSensorInd = NaN; end  % pump after catch induces fake licks
 cP.LickTime = cP.LickTime/HW.params.fsAI;
 cP.FirstLickRelTarget = cP.LickTime - cP.TarWindow(1);
 cP.FirstLickRelReference = cP.LickTime - cP.RefWindow(1);

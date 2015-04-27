@@ -89,4 +89,5 @@ if ~exist(P.LocalPath,'dir') & P.DB == 0;
   P.DB = 1; 
   %fprintf(['Switching to DBPath [ ',escapeMasker(DBPath),' ]\n']); 
 end
-if P.DB  Path = P.DBPath; else Path = P.LocalPath; end
+% if P.DB  Path = P.DBPath; else Path = P.LocalPath; end
+Path = P.LocalPath;

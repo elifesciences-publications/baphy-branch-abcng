@@ -104,7 +104,7 @@ if RampProbability>0
   DescRampPosition = setdiff(RampPosition,AscRampPosition);                   % Half descending
 else RampPosition = []; AscRampPosition = []; DescRampPosition = []; end
 for j = (RefNow+1) : (RefNow+index-1)  % index-1 is the number of Ref  
-  LocalSeq = SeqFrequency(RandSequence(j),:);  % Select the right permutation
+%   LocalSeq = SeqFrequency(RandSequence(j),:);  % Select the right permutation
   % TORC
   if strcmp(TORC,'yes')
     [wTorc, eTorc] = waveform(TorcObj, RandTORC(j));

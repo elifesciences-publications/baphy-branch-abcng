@@ -80,6 +80,9 @@ elseif ~isempty(tag_masks) && length(tag_masks{1})>=16 && strcmp(tag_masks{1}(1:
         switch tm{3},
             case 'REFERENCE',
                 tags={'Reference,Reference'};
+                if any(cell2mat( cellfun( @strfind,{exptevents.Note},repmat({'Light'},1,length({exptevents.Note})),'UniformOutput',false) ))
+                    tags={'Reference,Light','Reference,NoLight'};
+                end
             case 'TARGET',
                 tags={'Target,Target'};
             case 'ORDER',
@@ -220,7 +223,13 @@ elseif ~isempty(tag_masks) && length(tag_masks{1})>=16 && strcmp(tag_masks{1}(1:
                     repcounter=repcounter+1;
                 end
             else
-                Note{ii}='Reference,Reference';
+                if ~isempty(findstr(Note{ii},'NoLight'))
+                    Note{ii}='Reference,NoLight';
+                elseif ~isempty(findstr(Note{ii},'Light'))
+                    Note{ii}='Reference,Light';
+                else
+                    Note{ii}='Reference,Reference';
+                end
                 repcounter=repcounter+1;
             end
         end

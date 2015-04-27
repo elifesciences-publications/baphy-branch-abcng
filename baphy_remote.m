@@ -45,6 +45,7 @@ if nargout
 else
   gui_mainfcn(gui_State, varargin{:});
 end
+set(gcf,'WindowStyle','normal');
 % End initialization code - DO NOT EDIT
 
 
