@@ -118,18 +118,18 @@ fprintf(['Loading Cells from ']);
 for i=1:length(M)
     Info{i} = getRecInfo('Identifier',M(i).parmfile(1:end-8),'Quick',1);
     if exist(Info{i}.SpikeFile,'file')
-        fprintf([M(i).parmfile(1:end-8),' ']);
-        cSortInfo = load(Info{i}.SpikeFile);
-        % LOAD SORTINFO IF AVAILABLE
-        C  = mysql(['SELECT * FROM sCellFile WHERE rawid=',n2s(Info{i}.ID)]);
+      fprintf([M(i).parmfile(1:end-8),' ']);
+      cSortInfo = load(Info{i}.SpikeFile);
+      C  = mysql(['SELECT * FROM sCellFile WHERE rawid=',n2s(Info{i}.ID)]);
+      % LOAD SORTINFO IF AVAILABLE
+      if ~length(C)==0 % 15/03-YB: in case a sorting has been deleted
         Inds = find([C.channum]==P.Electrode);
         cUnits{i} = sort([C(Inds).unit],'ascend');
         for iU = 1:length(cUnits{i})
-%             if length(mWavesC)<cUnits{i}(iU) mWavesC{cUnits{i}(iU)} = []; end
-%             mWavesC{cUnits{i}(iU)}(:,end+1) = cSortInfo.sortinfo{P.Electrode}{1}(iU).Template(:,iU);
-            if length(mWavesC)<cUnits{i}(iU) mWavesC{iU} = []; end
-            mWavesC{iU}(:,end+1) = cSortInfo.sortinfo{P.Electrode}{1}(iU).Template(:,iU);
+          if length(mWavesC)<cUnits{i}(iU) mWavesC{cUnits{i}(iU)} = []; end
+          mWavesC{cUnits{i}(iU)}(:,end+1) = cSortInfo.sortinfo{P.Electrode}{1}(iU).Template(:,iU);
         end
+      end
     end
 end
 for iS = 1:length(mWavesC)

@@ -52,10 +52,12 @@ if DifficultyNow~=0 % not a catch trial
   CatchTrial = 0;
   TarWindow(1) = TargetStartTime + EarlyWindow;
   TarWindow(2) = TarWindow(1) + get(O,'ResponseWindow');
+  CatchStr = '';
 else
   CatchTrial = 1;
   TarWindow(1) = TargetStartTime + EarlyWindow  + get(O,'ResponseWindow');
   TarWindow(2) = TarWindow(1);
+  CatchStr = 'Catch ';
 end
 TimeBin = 3; MaxTimeBin = floor(TarWindow(1)/TimeBin);
 RefWindow = [0,TarWindow(1)];
@@ -94,7 +96,7 @@ AllLickSensorNames = SensorNames(~cellfun(@isempty,strfind(SensorNames,TouchType
 % SYNCHRONIZE COMPUTER CLOCK WITH DAQ TIME
 CountingLicks = [];
 tic; CurrentTime = IOGetTimeStamp(HW); InitialTime = CurrentTime;
-fprintf(['Running Trial [ <=',n2s(exptparams.LogDuration),'s ] ... ']);
+fprintf(['Running Trial [' CatchStr 'ToC=' num2str(TarWindow(1)) 's] [ <=',n2s(exptparams.LogDuration),'s ] ... ']);
 while CurrentTime < exptparams.LogDuration
 
 DetectType = 'ON'; LickOccured = 0;
