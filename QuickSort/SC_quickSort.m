@@ -11,7 +11,7 @@ checkField(P,'Recordings',[]);
 checkField(P,'Electrode');
 checkField(P,'Sorter','personne');
 checkField(P,'FilterStyle','butter');
-checkField(P,'Threshold',-3.5);
+checkField(P,'Threshold',4);
 checkField(P,'LargeThreshold',100);
 checkField(P,'TimeIndex',0);
 checkField(P,'SaveSorter',0);
@@ -125,10 +125,8 @@ for i=1:length(M)
         Inds = find([C.channum]==P.Electrode);
         cUnits{i} = sort([C(Inds).unit],'ascend');
         for iU = 1:length(cUnits{i})
-%             if length(mWavesC)<cUnits{i}(iU) mWavesC{cUnits{i}(iU)} = []; end
-%             mWavesC{cUnits{i}(iU)}(:,end+1) = cSortInfo.sortinfo{P.Electrode}{1}(iU).Template(:,iU);
-            if length(mWavesC)<cUnits{i}(iU) mWavesC{iU} = []; end
-            mWavesC{iU}(:,end+1) = cSortInfo.sortinfo{P.Electrode}{1}(iU).Template(:,iU);
+            if length(mWavesC)<cUnits{i}(iU) mWavesC{cUnits{i}(iU)} = []; end
+            mWavesC{cUnits{i}(iU)}(:,end+1) = cSortInfo.sortinfo{P.Electrode}{1}(iU).Template(:,iU);
         end
     end
 end
