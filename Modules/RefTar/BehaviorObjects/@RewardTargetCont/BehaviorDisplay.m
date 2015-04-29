@@ -57,7 +57,7 @@ if ~isempty(ResponseData)
   set(PH.Licks.Image,'XData',TimeR,'YData',1:length(RespInds),'CData',ResponseData(:,RespInds)');
 else TimeR = 0;  
 end
-set([AH.Licks,AH.Sound],'XLim',[0,max([Tmax,TimeS(end),TimeR(end)])]);
+set([AH.Licks,AH.Sound],'XLim',[0,max([TimeS(end),TimeR(end)])]);
 
 %% PLOT RECENT AND OVERALL HITRATE / FALSEALARMRATE / MISSRATE / DISCRIMINATION
 axes(AH.Performance); Performance = exptparams.Performance;

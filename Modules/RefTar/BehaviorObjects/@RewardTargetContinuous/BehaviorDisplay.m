@@ -41,6 +41,8 @@ set(PH.InfoText,'String',FigName);
 
   %% PLOT SOUND WAVEFORM
   axes(AH.Sound); XLim = get(AH.Sound,'XLim');
+  TrialSound = exptparams.wAccu; TrialSound = TrialSound*5/max(TrialSound);
+  exptparams.wAccu = [];
   TimeS = [0:1/SRout:(length(TrialSound)-1)/SRout];
   set(PH.Sound.Wave,'XData',TimeS,'YData',TrialSound);
   set(PH.Sound.CurrentStimulus,'String',Conditions{cTargetIndex});
@@ -57,7 +59,9 @@ if ~isempty(ResponseData)
   set(PH.Licks.Image,'XData',TimeR,'YData',1:length(RespInds),'CData',ResponseData(:,RespInds)');
 else TimeR = 0;  
 end
-set([AH.Licks,AH.Sound],'XLim',[0,max([Tmax,TimeS(end),TimeR(end)])]);
+if ~isempty(TimeS)
+  set([AH.Licks,AH.Sound],'XLim',[0,max([TimeS(end),TimeR(end)])]);
+end
 
 %% PLOT RECENT AND OVERALL HITRATE / FALSEALARMRATE / MISSRATE / DISCRIMINATION
 axes(AH.Performance); Performance = exptparams.Performance;

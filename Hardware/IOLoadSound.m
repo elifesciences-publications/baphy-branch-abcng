@@ -113,7 +113,7 @@ switch HW.params.HWSetup
       % make sure that the AO objects have sampling rates specified in
       % HW.params.fsAO
       HW=niSetAOSamplingRate(HW);
-      
+     
       % dulicate sound on the 2 channels if no analog stim on the 2nd one
       global SecondChannelAO;
       if ~isempty(SecondChannelAO) && ~SecondChannelAO && SpeakerNb == 1
@@ -123,7 +123,7 @@ switch HW.params.HWSetup
         stim=cat(2,stim,zeros(size(stim,1),HW.AO(1).NumChannels-size(stim,2)));
       end
       % actually load the samples
-      SamplesLoaded=niLoadAOData(HW.AO(1),stim);     
+      SamplesLoaded=niLoadAOData(HW.AO(1),stim);
       case 'DAQTOOLBOX';
     
        %% RESET TRIGGER LINE

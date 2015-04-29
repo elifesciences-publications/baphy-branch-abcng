@@ -39,6 +39,7 @@ tmp = get(exptparams.TrialObject,'TargetIndices'); TargetIndices = tmp{exptparam
 str1ind = strfind(StimEvents(end).Note,' '); str2ind = strfind(StimEvents(end).Note,'-')-1;
 Index = str2num(StimEvents(end).Note(str1ind(3):str2ind(1)));
 DistributionTypeByInd = get(get(exptparams.TrialObject,'TargetHandle'),'DistributionTypeByInd');
+PreSoundSilence = get(get(exptparams.TrialObject,'ReferenceHandle'),'PreStimSilence') + get(get(exptparams.TrialObject,'ReferenceHandle'),'Duration') + get(get(exptparams.TrialObject,'ReferenceHandle'),'PostStimSilence') + get(get(exptparams.TrialObject,'TargetHandle'),'PreStimSilence');
 DistributionTypeNow = DistributionTypeByInd(Index); 
 DifficultyLvl = str2num(get(get(exptparams.TrialObject,'TargetHandle'),['DifficultyLvl_D' num2str(DistributionTypeNow)]));
 DifficultyLvlByInd = get(get(exptparams.TrialObject,'TargetHandle'),'DifficultyLvlByInd');
@@ -51,10 +52,12 @@ if DifficultyNow~=0 % not a catch trial
   CatchTrial = 0;
   TarWindow(1) = TargetStartTime + EarlyWindow;
   TarWindow(2) = TarWindow(1) + get(O,'ResponseWindow');
+  CatchStr = '';
 else
   CatchTrial = 1;
   TarWindow(1) = TargetStartTime + EarlyWindow  + get(O,'ResponseWindow');
   TarWindow(2) = TarWindow(1);
+  CatchStr = 'Catch ';
 end
 TimeBin = 3; MaxTimeBin = floor(TarWindow(1)/TimeBin);
 RefWindow = [0,TarWindow(1)];
@@ -93,7 +96,7 @@ AllLickSensorNames = SensorNames(~cellfun(@isempty,strfind(SensorNames,TouchType
 % SYNCHRONIZE COMPUTER CLOCK WITH DAQ TIME
 CountingLicks = [];
 tic; CurrentTime = IOGetTimeStamp(HW); InitialTime = CurrentTime;
-fprintf(['Running Trial [ <=',n2s(exptparams.LogDuration),'s ] ... ']);
+fprintf(['Running Trial [' CatchStr 'ToC=' num2str(TarWindow(1)) 's] [ <=',n2s(exptparams.LogDuration),'s ] ... ']);
 while CurrentTime < exptparams.LogDuration
 
 DetectType = 'ON'; LickOccured = 0;
@@ -131,8 +134,10 @@ DetectType = 'ON'; LickOccured = 0;
     end
    
     Events = AddEvent(Events,['LICK,',cLickSensor],TrialIndex,ResponseTime,[]);
-    if ~get(O,'GradualResponse')%&& ResponseTime >  StimEvents(1).StopTime + SeqLen/2;
+    if ~get(O,'GradualResponse') && ResponseTime >  PreSoundSilence;
       break
+    elseif  ~get(O,'GradualResponse') && ResponseTime <= PreSoundSilence;
+      LickOccured = 0;
     elseif get(O,'GradualResponse') && ResponseTime > (TarWindow(1) + MinimalDelayResponse) && ResponseTime<TarWindow(2)
       break
     elseif  get(O,'GradualResponse')

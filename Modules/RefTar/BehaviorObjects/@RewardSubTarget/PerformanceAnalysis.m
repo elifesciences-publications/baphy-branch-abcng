@@ -34,7 +34,7 @@ if get(O,'GradualResponse')
   else
     cP.DiscriminationRate = erfinv(HitRate)-erfinv(FaRate);
   end
-  cP.DiscriminationRate = (cP.DiscriminationRate/3) +0.5;
+%   cP.DiscriminationRate = (cP.DiscriminationRate/3) +0.5;
 else
   cP.DiscriminationRate = prod(cP.HitRate);
   if isnan(cP.DiscriminationRate) cP.DiscriminationRate = 0; end
