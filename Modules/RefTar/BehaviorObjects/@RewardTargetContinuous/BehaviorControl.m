@@ -225,6 +225,11 @@ while CurrentTime < (TimingLastChange+RespWinDur)
   end
 %   if ~AddTar
   NewSlice = stim(1:round(SliceDuration*SF));
+  if RefSliceCounter==1
+    NormFactor = maxLocalStd(NewSlice,SF,floor(length(NewSlice)/SF));
+  end
+  global LoudnessAdjusted; LoudnessAdjusted  = 1;
+  NewSlice = NewSlice/NormFactor;
   wAccu = [wAccu ; NewSlice];
 %   else
 %     NewSlice = stim(1:end);
