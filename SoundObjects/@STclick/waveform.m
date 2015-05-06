@@ -107,4 +107,5 @@ if max(abs(w))>0
     w = 5 * w/max(abs(w));
 end
 
-save(['stclicktimes_' num2str(randi(1000))],'w')
+savepath = 'D:\Data\Maroille\';
+save([savepath 'stclicktimes_' num2str(randi(1000))],'w')
