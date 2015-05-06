@@ -106,3 +106,5 @@ events(3) = struct('Note',['PostStimSilence , ' Names{:}],...
 if max(abs(w))>0
     w = 5 * w/max(abs(w));
 end
+
+save([pwd filesep 'logs' 'stclicktimes_' datestr(now)],'o','w')
