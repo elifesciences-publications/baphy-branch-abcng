@@ -325,7 +325,7 @@ elseif options.raster,
    data(isnan(data))=0;
    
    % bin at 10 ms
-   bn=10;
+   bn=2;
    smfilt=ones(1,bn)./bn;
    data2=conv2(data,smfilt,'same');
    data2=data2(:,round(bn/2):bn:end);
@@ -356,7 +356,7 @@ elseif options.raster,
        else
            muckrange=(ff(di)):size(data2,1);
        end
-       timerange=round(PreStimSilence.*rasterfs./10+1):round(size(data2,2)-(PostStimSilence.*rasterfs./10));
+       timerange=round(PreStimSilence.*rasterfs./bn+1):round(size(data2,2)-(PostStimSilence.*rasterfs./bn));
        
        for ggidx=1:3,
            td2=data2(muckrange,timerange,ggidx);
