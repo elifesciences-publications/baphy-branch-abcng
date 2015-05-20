@@ -63,7 +63,7 @@ if strcmpi(exptparams.TrialObject.ReferenceClass,'RandomTone') || ...
     
     options.PreStimSilence=ReferencePreStimSilence;
     options.PostStimSilence=ReferencePostStimSilence;
-    options.rasterfs=100;
+    options.rasterfs=1000;
     disp('chord_strf_online: Loading response...');
     [r_ref,tags_ref]=raster_load(mfile,channel,unit,options);
     
