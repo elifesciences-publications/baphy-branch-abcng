@@ -7,7 +7,7 @@
 %    .sigthreshold [=4]
 %    .datause [='Both'] % ie, all data, targets and references
 %
-function [ssafrac,ssarespz]=ssa_psth(mfile,options,h)
+function [ssafrac,ssarespz,r0,adpfrac]=ssa_psth(mfile,options,h)
 
 if ~exist('h','var'),
     h=figure;
@@ -66,6 +66,7 @@ er0=nanstd(r(:,:),0,2)./sqrt(sum(isnan(r(1,:))));
 
 mrmax=nanmax(mr(:));
 ssafrac=zeros(1,length(ufreq));
+adpfrac=zeros(1,length(ufreq));
 ssarespz=zeros(1,length(ufreq));
 
 tt=(1:size(r,1))./options.rasterfs-prepip;
@@ -99,6 +100,7 @@ for uu=1:length(ufreq)
     %rcommon=mean(mr(rstart:rstop,ff(3)))-r0;
     
     ssafrac(uu)=(rrare-rcommon)./(rrare+rcommon);
+    adpfrac(uu)=(ron-rrare)./(ron+rrare);
     sinfo={num2str(ufreq(uu)),sprintf('%.3f',ssafrac(uu))};
     text(0,(uu-1+0.25)*mrmax,sinfo,'HorizontalAlign','Left');
     
