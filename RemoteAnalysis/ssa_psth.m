@@ -55,12 +55,19 @@ end
 ufreq=unique(freq);
 ucontext=unique(context);
 concolors=[0.8 0.8 0.8; 0.8 0.2 0.2; 0.2 0.2 0.8];
+
+prepip=exptparams.TrialObject.ReferenceHandle.PipInterval./2;
+% baseline (pre-stimulus) activity
+r0=nanmean(nanmean(r(1:round(prepip.*options.rasterfs),:)));
+
 mr=nanmean(r,2).*options.rasterfs;
+mr0=nanmean(r(:,:),2);
+er0=nanstd(r(:,:),0,2)./sqrt(sum(isnan(r(1,:))));
+
 mrmax=nanmax(mr(:));
 ssafrac=zeros(1,length(ufreq));
 ssarespz=zeros(1,length(ufreq));
 
-prepip=exptparams.TrialObject.ReferenceHandle.PipInterval./2;
 tt=(1:size(r,1))./options.rasterfs-prepip;
 for uu=1:length(ufreq)
     ff=find(freq==ufreq(uu));
@@ -78,10 +85,19 @@ for uu=1:length(ufreq)
     end
 
     rstart=round((prepip+0.01)*options.rasterfs+1);
-    rstop=round((prepip+0.08).*options.rasterfs);
+    rstop=round((prepip+0.12).*options.rasterfs);
+    %mr0(1:round((prepip+0.01)*options.rasterfs))=0;
+    %rstart=min(find((mr0-r0)./er0>2));
+    %rstop=max(find((mr0-r0)./er0>2));
+    fprintf('rstart-rstop= %d - %d\n',rstart,rstop);
+    
     ron=mean(mr(rstart:rstop,ff(1)));
     rrare=mean(mr(rstart:rstop,ff(2)));
     rcommon=mean(mr(rstart:rstop,ff(3)));
+    %ron=mean(mr(rstart:rstop,ff(1)))-r0;
+    %rrare=mean(mr(rstart:rstop,ff(2)))-r0;
+    %rcommon=mean(mr(rstart:rstop,ff(3)))-r0;
+    
     ssafrac(uu)=(rrare-rcommon)./(rrare+rcommon);
     sinfo={num2str(ufreq(uu)),sprintf('%.3f',ssafrac(uu))};
     text(0,(uu-1+0.25)*mrmax,sinfo,'HorizontalAlign','Left');
