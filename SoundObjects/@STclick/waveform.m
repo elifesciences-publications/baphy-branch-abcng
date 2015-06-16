@@ -35,6 +35,8 @@ end
 
 %% create stimulus
 
+clickonset = [];
+
 % regular click train; original click code
 if jitterflag == 0
     for cnt1    = 1:length(Cindex)
@@ -42,11 +44,15 @@ if jitterflag == 0
             flag =-1;
         else flag = 1;
         end
-        w( ceil(max(1,Cindex(cnt1)-OnSamples) : min(Cindex(cnt1)+OnSamples,length(w))) )=flag;
+        
+        clicktimes = ceil(max(1,Cindex(cnt1)-OnSamples) : min(Cindex(cnt1)+OnSamples,length(w)));
+        w(clicktimes)=flag;
+        clickonset = [clickonset clicktimes(1)];
     end
     
     
     % irregular click train
+    
 elseif jitterflag == 1
     
     % entire click train is irregular
@@ -59,7 +65,9 @@ elseif jitterflag == 1
             
             jit = ((jitter - jitrange/2) + (jitrange).*rand(100,1))/100;
             tmp = Cindex(cnt1) + sign(rand(1)-0.5)*Cindex(cnt1)*jit(randi(100));
-            w( ceil(max(1,tmp-OnSamples) : min(tmp+OnSamples,length(w))) )=flag;
+            clicktimes = ceil(max(1,tmp-OnSamples) : min(tmp+OnSamples,length(w)));
+            w(clicktimes)=flag;
+            clickonset = [clickonset clicktimes(1)];
         end
         
         % click train starts as regular and then becomes irregular at jitterpos
@@ -73,23 +81,34 @@ elseif jitterflag == 1
             end
             
             if cnt1 <= jitlimit % regular bit
-                w( ceil(max(1,Cindex(cnt1)-OnSamples) : min(Cindex(cnt1)+OnSamples,length(w))) )=flag;
+              clicktimes = ceil(max(1,Cindex(cnt1)-OnSamples) : min(Cindex(cnt1)+OnSamples,length(w)));  
+              w(clicktimes)=flag;
+              clickonset = [clickonset clicktimes(1)];
                 
             elseif cnt1 == jitlimit+1 % first click after transition -
                 jit = ((jitter - jitrange/2) + (jitrange).*rand(100,1))/100;
                 % make sign positive so next click does not precede last click of regular bit
-                tmp = Cindex(cnt1) + Cindex(cnt1)*jit(randi(100));                 
-                w( ceil(max(1,tmp-OnSamples) : min(tmp+OnSamples,length(w))) )=flag;
+                tmp = Cindex(cnt1) + Cindex(cnt1)*jit(randi(100));       
+                clicktimes = ceil(max(1,tmp-OnSamples) : min(tmp+OnSamples,length(w)));
+                w(clicktimes)=flag;
+                clickonset = [clickonset clicktimes(1)];
                 
             elseif cnt1 > jitlimit + 1 % irregular bit
                 jit = ((jitter - jitrange/2) + (jitrange).*rand(100,1))/100;
-                tmp = Cindex(cnt1) + sign(rand(1)-0.5)*Cindex(cnt1)*jit(randi(100));
-                w( ceil(max(1,tmp-OnSamples) : min(tmp+OnSamples,length(w))) )=flag;
+                tmp = Cindex(cnt1) + sign(rand(1)-0.5)*Cindex(cnt1)*jit(randi(100));                
+                clicktimes =  ceil(max(1,tmp-OnSamples) : min(tmp+OnSamples,length(w)));
+                w(clicktimes)=flag;
+                clickonset = [clickonset clicktimes(1)];
             end
             
         end
     end
 end
+
+% Save click timings
+
+savepath = 'D:\Data\Maroille\#STClickTimes\';
+save([savepath 'STClickTimes_Jitter_' num2str(jitter) '_pos_' num2str(jitterpos) '_' datestr(now)],'clickonset','SamplingRate');
 
 
 % Now, put it in the silence:
@@ -107,5 +126,4 @@ if max(abs(w))>0
     w = 5 * w/max(abs(w));
 end
 
-% savepath = 'D:\Data\Maroille\';
-% save([savepath 'stclicktimes_' num2str(randi(1000))],'w')
+
