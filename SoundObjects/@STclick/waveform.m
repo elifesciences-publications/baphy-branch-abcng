@@ -108,7 +108,7 @@ end
 % Save click timings
 
 savepath = 'D:\Data\Maroille\#STClickTimes\';
-save([savepath 'STClickTimes_Jitter_' num2str(jitter) '_pos_' num2str(jitterpos) '_' datestr(now)],'clickonset','SamplingRate');
+save(['STClickTimes_Jitter_' num2str(jitter) '_pos_' num2str(jitterpos) '_' datestr(now)],'clickonset','SamplingRate');
 
 
 % Now, put it in the silence:
