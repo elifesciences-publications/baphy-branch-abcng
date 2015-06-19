@@ -107,7 +107,7 @@ switch EVPVERSION
     auxchancount=header(3);
     trialcount=header(6);
     lfpchancount=header(7);
-    lfpfs=header(8);
+    lfpfs=header(5);  % 15/03-YB/CB: was 8 before
     if isinf(P.spikechans) P.spikechans=1:spikechancount; end
     if isinf(P.trials)  P.trials=1:header(6); end
     
@@ -321,10 +321,10 @@ switch EVPVERSION
         spikeidx = loadchans(cc);
         cFilename=[fileroot,sprintf('.%03d.%d.evp',trialidx,spikeidx)];
         trs = []; AttemptCounter = 0;
-        while isempty(trs) && AttemptCounter<6  % 15/03-YB: Multiple attempts when lfp cannot be loaded
+        while isempty(trs) && AttemptCounter<20  % 15/03-YB: Multiple attempts when lfp cannot be loaded
             AttemptCounter = AttemptCounter+1;
             [trs,Header]=evpread5(cFilename);
-            if isempty(trs); disp('evpread: trial empty! I try again.'); end
+            if isempty(trs); disp('evpread: trial empty! I try again.'); pause(0.5); end
         end
         if USECOMMONREFERENCE
           % COMPUTE COMMONE REFERENCE

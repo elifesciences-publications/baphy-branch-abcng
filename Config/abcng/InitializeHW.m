@@ -73,7 +73,7 @@ switch globalparams.HWSetup
     HW=niCreateDO(HW,DAQID,'port0/line2','Light','InitState',0);
     HW=niCreateDO(HW,DAQID,'port0/line3','LightR','InitState',0);
     HW=niCreateDO(HW,DAQID,'port0/line4','LightL','InitState',0);
-    HW=niCreateDO(HW,DAQID,'port1/line5','Pump','InitState',0);    
+    HW=niCreateDO(HW,DAQID,'port1/line5','Pump','InitState',0);
     HW=niCreateDI(HW,DAQID,'port0/line5','Touch');
     
     %% ANALOG INPUT

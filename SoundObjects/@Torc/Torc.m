@@ -18,7 +18,7 @@ switch nargin
     case 0
         % if no input arguments, create a default object
         % First create an instance of SoundObject with appropriate fields:
-        s = SoundObject ('Torc', 40000, 0, 0.4, 0.8, {}, 1, {'Rates','popupmenu','1:1:8|4:4:24|4:4:48|8:8:48|8:8:96',...
+        s = SoundObject ('Torc', 100000, 0, 0.4, 0.8, {}, 1, {'Rates','popupmenu','1:1:8|4:4:24|4:4:48|8:8:48|8:8:96',...
             'FrequencyRange','popupmenu','L:125-4000 Hz|H:250-8000 Hz|V:500-16000 Hz|U:1000-32000 Hz|W:2000-64000 Hz|Y:1000-32000 Hz|Z:150-38400 Hz','Duration','edit',3});
         o.Duration = 3;
         o.FrequencyRange = 'L:125-4000 Hz';

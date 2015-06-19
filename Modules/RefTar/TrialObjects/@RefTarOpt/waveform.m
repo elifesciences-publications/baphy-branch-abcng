@@ -201,7 +201,7 @@ if LightTrial
                 StimStartTime=events(evidx).StartTime;
                 StimStopTime=events(evidx).StopTime;
                 LightStartTime=StimStartTime+par.LightPulseShift;
-                while LightStartTime<StimStopTime,
+                while (LightStartTime+1/TrialSamplingRate)<StimStopTime,
                     LightStartBin=round(LightStartTime*TrialSamplingRate);
                     LightBand(LightStartBin+(1:LightOnBins))=LightPower;
                     LightStartTime=LightStartTime+1./par.LightPulseRate;
@@ -229,11 +229,12 @@ if LightTrial
           StimStartTime=ev(IndStimSil).StartTime;
           StimStopTime=ev(IndStimSil).StopTime;
           LightStartTime=StimStartTime+par.LightPulseShift;
-          while LightStartTime<StimStopTime,
+          while (LightStartTime+1/TrialSamplingRate)<StimStopTime,
             LightStartBin=round(LightStartTime*TrialSamplingRate);
             LightBand(LightStartBin+(1:LightOnBins))=LightPower;
             LightStartTime=LightStartTime+1./par.LightPulseRate;
           end
+
         otherwise
             error([par.LightEpoch, ' LightEpoch not supported yet']);
     end
