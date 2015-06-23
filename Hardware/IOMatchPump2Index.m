@@ -8,7 +8,8 @@ switch HW.params.HWSetup
   case 0
     IndicesOrdered = 1:length(PumpNames);
   otherwise
-    LineNames = HW.DIO.Line.LineName;
+%     LineNames = HW.DIO.Line.LineName;
+    LineNames = {HW.DIO.Names};
     for i=1:length(PumpNames)
       LineIndices(i)=find(strcmp(LineNames,PumpNames{i}));
     end

@@ -50,168 +50,249 @@ if RepIndex==1 && RepOrTrial,
         TrialMult=1;
     end
     Sequences=cell(TrialCount*TrialMult,1);
-    SequenceCategories=zeros(1,TrialMult);
-    ReferenceCount=zeros(1,TrialMult);
+    SequenceCategories=zeros(TrialCount,TrialMult);
+    ReferenceCount=zeros(TrialCount,TrialMult);
     
-    for TrialIdx=1:(TrialCount*TrialMult)
-        refcount=find(rand>[0 cumsum(ReferenceCountFreq)], 1, 'last' )-1;
-        switch par.Mode,
-            case {'RepDetect','RdtWithSingle'},
+    if strcmpi(par.Mode,'RepRanWithSingle'),
+       ConditionCount=3*length(TargetIdx);
+       TrialsPerCond=ceil(TrialCount./ConditionCount);
+       fprintf('%d targets, 3 conditions, %d trials= %.0f trials/condition\n',...
+          length(TargetIdx),TrialCount,TrialsPerCond);
+       TrialCounter=0;
+       for taridx=1:length(TargetIdx),
+          RefPool=[];
+          RefPoolTarPaired=[];
+          ThisTar=TargetIdx(taridx);
+          tidx=0;
+          while TrialCounter<taridx*(TrialsPerCond*3)
+             tidx=tidx+1;
+             refcount=find(rand>[0 cumsum(ReferenceCountFreq)], 1, 'last' )-1;
+             
+             if length(RefPool)<refcount*2,
+                RefPool=[RefPool shuffle(1:par.ReferenceMaxIndex)];
+             end
+             if length(RefDuringTarPool)<par.TargetRepCount,
+                RefDuringTarPool=[RefDuringTarPool...
+                   shuffle(setdiff(1:par.ReferenceMaxIndex,ThisTar))];
+             end
+             ThisSequence=[RefPool(1:refcount)' RefPool(refcount+(1:refcount))'];
+             RefPool=RefPool((refcount*2+1):end);
+             done=0;
+             while ~done,
+                done=1;
+                ii=min(find(ThisSequence(2:end,1)==ThisSequence(1:(end-1),1) |...
+                   ThisSequence(2:end,1)==ThisSequence(1:(end-1),2))+1);
+                if ~isempty(ii),
+                   jj=ThisSequence(ii,1);
+                   ThisSequence(ii,1)=RefPool(1);
+                   RefPool=[RefPool(2:end) jj];
+                   done=0;
+                end
+                ii=min(find(ThisSequence(2:end,2)==ThisSequence(1:(end-1),1) |...
+                   ThisSequence(2:end,2)==ThisSequence(1:(end-1),2))+1);
+                if ~isempty(ii),
+                   jj=ThisSequence(ii,2);
+                   ThisSequence(ii,2)=RefPool(1);
+                   RefPool=[RefPool(2:end) jj];
+                   done=0;
+                end
+                if ThisSequence(end,1)==ThisTar,
+                   ThisSequence((end-1):end,1)=flipud(ThisSequence((end-1):end,1));
+                   done=0;
+                end
+                if ThisSequence(end,2)==ThisTar,
+                   ThisSequence((end-1):end,2)=flipud(ThisSequence((end-1):end,2));
+                   done=0;
+                end
+             end
+             ThisSequence=cat(1,ThisSequence,...
+                [ThisTar*ones(par.TargetRepCount,1) ...
+                RefDuringTarPool(1:par.TargetRepCount)']);
+             RefDuringTarPool=RefDuringTarPool((par.TargetRepCount+1):end);
+             TarOnlySequence=ThisSequence;
+             TarOnlySequence(:,2)=-1;
+             RefOnlySequence=fliplr(ThisSequence);
+             RefOnlySequence(:,2)=-1;
+             
+             if tidx<=par.RepIdx,
+                repcount=par.RepIdx(2);
+             else
+                repcount=1;
+             end
+             for rr=1:repcount,
+                Sequences{TrialCounter+1}=ThisSequence;
+                ReferenceCount(TrialCounter+1)=refcount;
+                SequenceCategories(TrialCounter+1)=0;
+                Sequences{TrialCounter+2}=TarOnlySequence;
+                ReferenceCount(TrialCounter+2)=refcount;
+                SequenceCategories(TrialCounter+2)=1;
+                Sequences{TrialCounter+3}=RefOnlySequence;
+                ReferenceCount(TrialCounter+3)=refcount;
+                SequenceCategories(TrialCounter+3)=2;
+                TrialCounter=TrialCounter+3;
+             end
+          end
+       end      
+    else
+       for TrialIdx=1:(TrialCount*TrialMult)
+          switch par.Mode,
+             case {'RepDetect','RdtWithSingle'},
                 if TrialIdx>TrialCount,
-                    refcount=refcount+round(par.TargetRepCount./2);
-                    tarcount=0;
-                    SequenceCategory=1;
+                   refcount=refcount+round(par.TargetRepCount./2);
+                   tarcount=0;
+                   SequenceCategory=1;
                 else
-                    tarcount=par.TargetRepCount;
-                    SequenceCategory=0;
+                   tarcount=par.TargetRepCount;
+                   SequenceCategory=0;
                 end
                 if TrialIdx<=TrialCount/2 && strcmpi(par.Mode,'RdtWithSingle'),
-                    RefPerSample=1;
+                   RefPerSample=1;
                 else
-                    RefPerSample=2;
+                   RefPerSample=2;
                 end
                 ThisSequence=-ones(refcount+tarcount,2);
                 for rr=1:refcount,
-                    if length(RefPool)<3,
-                        RefPool=[RefPool shuffle(1:par.ReferenceMaxIndex)];
-                    end
-                    if isempty(RefPoolTarPaired),
-                       RefPoolTarPaired=shuffle(...
-                          setdiff(1:par.ReferenceMaxIndex,TargetIdx));
-                    end
-                    if rr>1,
-                        cc=0;
-                        while cc<10 && any(RefPool(1)==ThisSequence(rr-1,:)),
-                            % move repeating sample to end of RefPool;
-                            RefPool=[RefPool(2:end) RefPool(1)];
-                            cc=cc+1;
-                        end
-                        cc=0;
-                        while cc<10 && any(RefPool(2)==ThisSequence(rr-1,:)),
-                            % move repeating sample to end of RefPool;
-                            RefPool=[RefPool(1) RefPool(3:end) RefPool(2)];
-                            cc=cc+1;
-                        end
-                        if any(RefPoolTarPaired(1)==ThisSequence(rr-1,:)),
-                           RefPoolTarPaired=...
-                              [RefPoolTarPaired(2:end) RefPoolTarPaired(1)];
-                        end
-                    end
-                    
-                    ThisSequence(rr,1:RefPerSample)=RefPool(1:RefPerSample);
-                    if ismember(ThisSequence(rr,2),TargetIdx),
-                        ThisSequence(rr,1:2)=ThisSequence(rr,[2 1]);
-                    end
-                    if ismember(ThisSequence(rr,1),TargetIdx) && ...
-                          ThisSequence(rr,2)>0,
-                       % make sure there's a special even distribution of
-                       % random samples paired with occurances of target
-                       % samples in the reference period
-                       ThisSequence(rr,2)=RefPoolTarPaired(1);
-                       RefPoolTarPaired=RefPoolTarPaired(2:end);
-                       RefPool=RefPool(2:end);
-                    else
-                       RefPool=RefPool((1+RefPerSample):end);
-                    end
+                   if length(RefPool)<3,
+                      RefPool=[RefPool shuffle(1:par.ReferenceMaxIndex)];
+                   end
+                   if isempty(RefPoolTarPaired),
+                      RefPoolTarPaired=shuffle(...
+                         setdiff(1:par.ReferenceMaxIndex,TargetIdx));
+                   end
+                   if rr>1,
+                      cc=0;
+                      while cc<10 && any(RefPool(1)==ThisSequence(rr-1,:)),
+                         % move repeating sample to end of RefPool;
+                         RefPool=[RefPool(2:end) RefPool(1)];
+                         cc=cc+1;
+                      end
+                      cc=0;
+                      while cc<10 && any(RefPool(2)==ThisSequence(rr-1,:)),
+                         % move repeating sample to end of RefPool;
+                         RefPool=[RefPool(1) RefPool(3:end) RefPool(2)];
+                         cc=cc+1;
+                      end
+                      if any(RefPoolTarPaired(1)==ThisSequence(rr-1,:)),
+                         RefPoolTarPaired=...
+                            [RefPoolTarPaired(2:end) RefPoolTarPaired(1)];
+                      end
+                   end
+                   
+                   ThisSequence(rr,1:RefPerSample)=RefPool(1:RefPerSample);
+                   if ismember(ThisSequence(rr,2),TargetIdx),
+                      ThisSequence(rr,1:2)=ThisSequence(rr,[2 1]);
+                   end
+                   if ismember(ThisSequence(rr,1),TargetIdx) && ...
+                         ThisSequence(rr,2)>0,
+                      % make sure there's a special even distribution of
+                      % random samples paired with occurances of target
+                      % samples in the reference period
+                      ThisSequence(rr,2)=RefPoolTarPaired(1);
+                      RefPoolTarPaired=RefPoolTarPaired(2:end);
+                      RefPool=RefPool(2:end);
+                   else
+                      RefPool=RefPool((1+RefPerSample):end);
+                   end
                 end
                 for tt=1:tarcount,
-                    if RefPerSample==2,
-                        if isempty(RefDuringTarPool)
-                            RefDuringTarPool=shuffle(1:par.ReferenceMaxIndex);
-                        end
-                        ThisSequence(refcount+tt,:)=...
-                            [TarIdxSet(TrialIdx) RefDuringTarPool(1)];
-                        RefDuringTarPool=RefDuringTarPool(2:end);
-                    else
-                        ThisSequence(refcount+tt,1)=TarIdxSet(TrialIdx);
-                    end
+                   if RefPerSample==2,
+                      if isempty(RefDuringTarPool)
+                         RefDuringTarPool=shuffle(1:par.ReferenceMaxIndex);
+                      end
+                      ThisSequence(refcount+tt,:)=...
+                         [TarIdxSet(TrialIdx) RefDuringTarPool(1)];
+                      RefDuringTarPool=RefDuringTarPool(2:end);
+                   else
+                      ThisSequence(refcount+tt,1)=TarIdxSet(TrialIdx);
+                   end
                 end
                 
-            case {'RandOnly','RandSingle'},
+             case {'RandOnly','RandSingle'},
                 refcount=refcount+par.TargetRepCount;
                 ThisSequence=-ones(refcount,2);
                 if strcmpi(par.Mode,'RandOnly') && TrialIdx<=TrialCount./2,
-                    SequenceCategory=1;
-                    RefPerSample=2;
+                   SequenceCategory=1;
+                   RefPerSample=2;
                 else
-                    % RandSingle always just one Reference
-                    SequenceCategory=2;
-                    RefPerSample=1;
+                   % RandSingle always just one Reference
+                   SequenceCategory=2;
+                   RefPerSample=1;
                 end
                 for rr=1:refcount,
-                    if length(RefPool)<RefPerSample,
-                        RefPool=[RefPool shuffle(1:par.ReferenceMaxIndex)];
-                    end
-                    ThisSequence(rr,1:RefPerSample)=RefPool(1:RefPerSample);
-                    RefPool=RefPool((1+RefPerSample):end);
-                    if ismember(ThisSequence(rr,2),TargetIdx),
-                        ThisSequence(rr,1:2)=ThisSequence(rr,[2 1]);
-                    end
+                   if length(RefPool)<RefPerSample,
+                      RefPool=[RefPool shuffle(1:par.ReferenceMaxIndex)];
+                   end
+                   ThisSequence(rr,1:RefPerSample)=RefPool(1:RefPerSample);
+                   RefPool=RefPool((1+RefPerSample):end);
+                   if ismember(ThisSequence(rr,2),TargetIdx),
+                      ThisSequence(rr,1:2)=ThisSequence(rr,[2 1]);
+                   end
                 end
-            case 'RandAndRep',
+             case 'RandAndRep',
                 refcount=refcount+par.TargetRepCount;
                 ThisSequence=-ones(refcount,2);
                 if TrialIdx<=TrialCount./4,
-                    SequenceCategory=1;
-                    RefPerSample=2;
-                    TarPerSample=0;
+                   SequenceCategory=1;
+                   RefPerSample=2;
+                   TarPerSample=0;
                 elseif TrialIdx<=TrialCount./2,
-                    SequenceCategory=2;
-                    RefPerSample=1;
-                    TarPerSample=0;
+                   SequenceCategory=2;
+                   RefPerSample=1;
+                   TarPerSample=0;
                 elseif TrialIdx<=TrialCount.*3/4,
-                    SequenceCategory=3;
-                    RefPerSample=1;
-                    TarPerSample=1;
+                   SequenceCategory=3;
+                   RefPerSample=1;
+                   TarPerSample=1;
                 else
-                    SequenceCategory=4;
-                    RefPerSample=0;
-                    TarPerSample=1;
+                   SequenceCategory=4;
+                   RefPerSample=0;
+                   TarPerSample=1;
                 end
                 for rr=1:refcount,
-                    if TarPerSample,
-                        ThisSequence(rr,1)=TarIdxSet(TrialIdx);
-                    end
-                    if length(RefPool)<RefPerSample,
-                        RefPool=[RefPool shuffle(1:par.ReferenceMaxIndex)];
-                    end
-                    ThisSequence(rr,TarPerSample+(1:RefPerSample))=...
-                        RefPool(1:RefPerSample);
-                    RefPool=RefPool((1+RefPerSample):end);
-                    if ~TarPerSample && ismember(ThisSequence(rr,2),TargetIdx),
-                        ThisSequence(rr,1:2)=ThisSequence(rr,[2 1]);
-                    end
+                   if TarPerSample,
+                      ThisSequence(rr,1)=TarIdxSet(TrialIdx);
+                   end
+                   if length(RefPool)<RefPerSample,
+                      RefPool=[RefPool shuffle(1:par.ReferenceMaxIndex)];
+                   end
+                   ThisSequence(rr,TarPerSample+(1:RefPerSample))=...
+                      RefPool(1:RefPerSample);
+                   RefPool=RefPool((1+RefPerSample):end);
+                   if ~TarPerSample && ismember(ThisSequence(rr,2),TargetIdx),
+                      ThisSequence(rr,1:2)=ThisSequence(rr,[2 1]);
+                   end
                 end
                 if TarPerSample,
-                    refcount=0;
+                   refcount=0;
                 end
                 % no more Modes
-        end
-        Sequences{TrialIdx}=ThisSequence;
-        ReferenceCount(TrialIdx)=refcount;
-        SequenceCategories(TrialIdx)=SequenceCategory;
+          end
+          Sequences{TrialIdx}=ThisSequence;
+          ReferenceCount(TrialIdx)=refcount;
+          SequenceCategories(TrialIdx)=SequenceCategory;
+       end
     end
-
+    
     disp('RepDetect: generating background noise samples');
     ReferenceDuration=get(par.ReferenceHandle,'Duration');
     fs=get(par.ReferenceHandle,'SamplingRate');
     LowFreq=get(par.ReferenceHandle,'LowFreq');
     HighFreq=get(par.ReferenceHandle','HighFreq');
     REPDETECT_NOISE_SAMPLES=zeros(round(ReferenceDuration.*fs),...
-        par.ReferenceMaxIndex);
+       par.ReferenceMaxIndex);
     saverandstate=rand('state');
     rand('state',2);
     saverandnstate=randn('state');
     randn('state',3);
     for sampleidx=1:par.ReferenceMaxIndex,
-        % gnoise(duration_ms,l_co[Hz],h_co[Hz],[Level(dB)],[circular(0/1)],[SAMPLERATE])
-        tw=gnoise(ReferenceDuration*1000,LowFreq,HighFreq,-25,0,fs);
-        REPDETECT_NOISE_SAMPLES(:,sampleidx)=tw./max(abs(tw));
+       % gnoise(duration_ms,l_co[Hz],h_co[Hz],[Level(dB)],[circular(0/1)],[SAMPLERATE])
+       tw=gnoise(ReferenceDuration*1000,LowFreq,HighFreq,-25,0,fs);
+       REPDETECT_NOISE_SAMPLES(:,sampleidx)=tw./max(abs(tw));
     end
     
-   % restore random number generator to previous state
-   rand('state',saverandstate);
-   randn('state',saverandnstate);
+    % restore random number generator to previous state
+    rand('state',saverandstate);
+    randn('state',saverandnstate);
     
     o=set(o,'Sequences',Sequences);
     o=set(o,'ReferenceCount',ReferenceCount);

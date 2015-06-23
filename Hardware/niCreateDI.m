@@ -31,7 +31,11 @@ HW.DIO(id).Direction='In';
 TaskPtr = libpointer(HW.params.ptrType,false); % for 32 bit
 S = DAQmxCreateTask(HW.DIO(id).TaskName,TaskPtr);
 if S NI_MSG(S); end
-HW.DIO(id).Ptr = get(TaskPtr,'Value');
+switch computer
+  case 'PCWIN'; HW.DIO(id).Ptr = get(TaskPtr,'value');
+  case 'PCWIN64'; HW.DIO(id).Ptr = TaskPtr;
+  otherwise error('Computertype not supported for NIDAQ');
+end
 NI_MASTER_TASK_LIST=cat(2,NI_MASTER_TASK_LIST,HW.DIO(id).Ptr);
 
 % assign channels to this task

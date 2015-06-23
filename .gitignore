@@ -1,5 +1,6 @@
 *.m~
 *.txt~
+.DS_Store
 LastSettings.mat
 LastValues.mat
 BaphyHWSetup.mat
@@ -15,3 +16,4 @@ save_comp_phs.mat
 Config/BaphyConfigPath.m
 Config/lbhb/SoundObjects/@NoiseSample/cache/*.wav
 Config/lbhb/SoundObjects/@NoiseSample/cache/*.mat
+/Config/HWSetupParams.mat

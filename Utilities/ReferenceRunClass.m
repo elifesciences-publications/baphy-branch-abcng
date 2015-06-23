@@ -77,6 +77,8 @@ switch upper(descriptor),
     runclass = 'DIG';
   case 'BIASEDSHEPARDPAIR'
     runclass = 'BSP';
+  case 'TEXTUREMORPHING'
+    runclass = 'TMG';    
   otherwise
     runclass = '';
 end

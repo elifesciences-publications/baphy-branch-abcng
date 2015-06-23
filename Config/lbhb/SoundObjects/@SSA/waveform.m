@@ -14,12 +14,17 @@ w=zeros(size(timesamples));
 ToneSamples=round(par.PipDuration.*par.SamplingRate);
 Pips=cell(length(par.Frequencies),1);
 PipNames=cell(length(par.Frequencies),1);
+rampon=linspace(0,1,round(par.SamplingRate.*0.005))';
+rampoff=linspace(1,0,round(par.SamplingRate.*0.005))';
 for ff=1:length(par.Frequencies),
     f0=par.Frequencies(ff);
     if par.Bandwidth>0,
         lf=round(2.^(log2(f0)-par.Bandwidth./2));
         hf=round(2.^(log2(f0)+par.Bandwidth./2));
         Pips{ff}=BandpassNoise(lf,hf,par.PipDuration,par.SamplingRate);
+        Pips{ff)(1:length(rampon))=Pips{ff)(1:length(rampon)).*rampon;
+        Pips{ff)((end-length(rampoff)+1):end)=...
+            Pips{ff)((end-length(rampoff)+1):end).*rampoff;
     else
         ToneSamples=round(par.PipDuration.*par.SamplingRate);
         tt=(0:(ToneSamples-1))./par.SamplingRate;

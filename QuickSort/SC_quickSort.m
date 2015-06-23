@@ -57,7 +57,7 @@ for iRec = 1:length(P.Recordings)
     
     % LOOP OVER THESE INDEXES TO CONCATENATE OVER RECORDINGS
     T.SortInd = [T.SortInd,Ttmp.SortInd+length(T.SortInd)];
-    T.Indices = [T.Indices,iRec+Ttmp.Indices/1000];
+    T.Indices = [T.Indices,iRec+cell2mat(Ttmp.Indices)/1000];
     
     % LOAD DATA
     Path = MD_getDir('Identifier',P.Identifier,'Kind','recording','EVPVersion',I.EVPVersion);

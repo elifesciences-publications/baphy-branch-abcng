@@ -19,11 +19,12 @@ switch nargin
       'PipDuration','edit',0.01,... % in seconds
       'PipRate','edit',20,...  %pips per second
       'PipsEachPerRep','edit',30,...
+      'UserRandSeed','edit',0,...
       'NoiseBand','edit',0,...
       'SimultaneousCount','edit',1,...  %pips per event
       'AttenuationLevels','edit',0,...
       });
-    o.Duration = 3;  %  how long each Sequence is (presumably this will be 1.0 if you slot it into behavior)
+    o.Duration = 20;  %  how long each Sequence is (presumably this will be 1.0 if you slot it into behavior)
     o.LowFrequency=500;
     o.HighFrequency=20000;
     o.BandCount=20;   % number of distinct tones
@@ -31,6 +32,7 @@ switch nargin
     o.PipRate=20;   % pips per second
     o.PipsEachPerRep=90;   % how many times each pip needs to play to complete a rep.  
                            % 90 * 20 bands / 20 pips/sec /3 sec/waveform = 30 stim per rep 
+    o.UserRandSeed=0;  % if >0, use this as rand seed
     o.NoiseBand=0;  % if 1, use bandpass noise rather than pure tones
     o.SimultaneousCount=1;    % if 2, always play two random tones together
     % AttenuationLevels: if you enter two numbers here, half the tones will

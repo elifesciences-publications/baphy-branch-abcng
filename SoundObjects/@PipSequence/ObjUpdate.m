@@ -11,7 +11,7 @@ end
 par.AttenuationLevels=par.AttenuationLevels(:);
 
 Frequencies=round(2.^linspace(log2(par.LowFrequency),log2(par.HighFrequency),par.BandCount));
-
+%MaxIndex=1000;
 Names=cell(MaxIndex,1);
 for ii=1:MaxIndex
    Names{ii}=sprintf('Pips-%.0f-%.0f-%d-%d-%03d',...
@@ -20,7 +20,11 @@ end
 
 % each row contains: [Index Time Pip#]
 saveseed=rand('seed');
-rand('seed',mod(par.LowFrequency*par.HighFrequency*par.MaxIndex,5550));
+if par.UserRandSeed>0,
+   rand('seed',par.UserRandSeed);
+else
+   rand('seed',mod(par.LowFrequency*par.HighFrequency*par.MaxIndex,5550));
+end
 
 AdjustedTotalDuration=TotalDuration-MaxIndex.*par.PipDuration;
 if par.SimultaneousCount<=1,

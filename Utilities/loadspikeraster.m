@@ -65,6 +65,7 @@ elseif isstruct(channel),
    psthonly=getparm(options,'psthonly',-1);
    sorter=getparm(options,'sorter','');
    includeincorrect=getparm(options,'includeincorrect',0);
+   analoglicktrace=getparm(options,'analoglicktrace',0);
    mua=getparm(options,'mua',0);
    lfpclean=getparm(options,'lfpclean',0);
    stimidx=getparm(options,'stimidx',[]);
@@ -242,11 +243,20 @@ r=nan*zeros(1,1,referencecount);
 [shockstart,shocktrials,sn,shockstop]=evtimes(exptevents,'BEHAVIOR,SHOCKON');
 
 trialcount=max(starttrials);
-
-[~,hittrials]=evtimes(exptevents,'OUTCOME,MATCH');
-if isempty(hittrials),
-    [~,hittrials]=evtimes(exptevents,'BEHAVIOR,PUMPON*');
+if analoglicktrace,
+    % generate parameter filename;
+    parmfile=strrep(spkfile,'/sorted/','/');
+    parmfile=strrep(parmfile,'spk.mat','m');
+    LoadMFile(parmfile);
+    outcomes={exptparams.Performance(1:(end-1)).ThisTrial};
+    hittrials=find(strcmp(outcomes,'Hit'))';
+else
+    [~,hittrials]=evtimes(exptevents,'OUTCOME,MATCH');
+    if isempty(hittrials),
+        [~,hittrials]=evtimes(exptevents,'BEHAVIOR,PUMPON*');
+    end
 end
+
 
 if isfield(options,'trialfrac'),
    if length(options.trialfrac)==2,

@@ -57,6 +57,7 @@ if isempty(options.ElectrodeMatrix) % IF USER HAS NOT SPECIFIED A DIFFERENT GRID
      ChannelsXY=[1 1; 1 2; 2 1; 2 2];
      ElectrodesXY=[1 1; 1 2; 2 1; 2 2];
   end
+  NElectrodes = size(ElectrodesXY,1);
 else % ELECTRODE MATRIX HAS BEEN SPECIFIED AS GRID
   EM = flipud(options.ElectrodeMatrix);
   for i=1:length(Electrodes)
@@ -111,12 +112,16 @@ end
 if ~ReuseFigure
   % CREATE NEW AXES
   for ii=1:NElectrodes
-    Electrode = Electrodes(ii);
-    DC{ii} = DCAll{end-round(ElectrodesXY(Electrode,2))+1,round(ElectrodesXY(Electrode,1))};
+%     Electrode = Electrodes(ii);
+%     DC{ii} = DCAll{end-round(ElectrodesXY(Electrode,2))+1,round(ElectrodesXY(Electrode,1))};
+    DC{ii} = DCAll{end-round(ElectrodesXY(ii,2))+1,round(ElectrodesXY(ii,1))};
     figure(BATCH_FIGURE_HANDLE); % MAKE SURE TO PLOT INTO CORRECT FIGURE
     AH(ii) = axes('Position',DC{ii},'FontSize',6);
   end
 else % REUSE AXES
+  for ii=1:NElectrodes % Recreate DC for opto (division of AH for Light/NoLight)
+    DC{ii} = DCAll{end-round(ElectrodesXY(ii,2))+1,round(ElectrodesXY(ii,1))};
+  end
   AH = get(BATCH_FIGURE_HANDLE,'Children');
   Types = get(AH,'Type'); Ind = strcmp(Types,'axes');
   AH = sort(AH(Ind));
@@ -153,6 +158,14 @@ for ii=1:NElectrodes
         % BIASED SHEPARD PAIR
       elseif strcmpi(options.runclass,'BSP'),
         MD_computeShepardTuning('MFile',mfile,'Electrode',Electrode,'Unit',unit,...
+          'Axis',AH(ii),'SigmaThreshold',options.sigthreshold);
+        
+        % TONE CLOUD
+      elseif strcmpi(options.runclass,'TMG'),
+        % 14/04-YB: so far, plot a raster w/ trials sorted by FrozenPattern nb
+        %         TMG_ComputeSTRF('MFile',mfile,'Electrode',Electrode,'Unit',unit,...
+        %           'Axis',AH(ii),'SigmaThreshold',options.sigthreshold);
+        TMG_RasterPlot('MFile',mfile,'Electrode',Electrode,'Unit',unit,...
           'Axis',AH(ii),'SigmaThreshold',options.sigthreshold);
         
       elseif strcmpi(options.runclass,'AMT'),
@@ -203,7 +216,7 @@ for ii=1:NElectrodes
           % standard TORC strf
           options.usefirstcycle=0;
           options.tfrac = 1;
-          [strf,snr(ii)]=strf_online(mfile,Electrode,AH(ii),options);
+          [strf,snr(ii)]=strf_online(mfile,Electrode,AH(ii),options,DC{ii});
         else
           mfilename = [mfile,'.m'];
           spkpath = mfile(1:strfind(mfile,filename)-1);
