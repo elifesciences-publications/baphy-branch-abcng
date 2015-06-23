@@ -282,6 +282,7 @@ if verbose fprintf('%s tags sorted: %.1f sec\n',mfilename,toc); end
 % define output raster matrix
 referencecount=length(tags);
 r=nan*zeros(1,1,referencecount);
+trialset=zeros(1,referencecount);
 
 repcounter=zeros(referencecount,1);
 big_rs=[];
@@ -315,7 +316,6 @@ if exclude_error_trials,
   trialrange=setdiff(trialrange,shocktrials);
 end
 
-trialset=[];
 for trialidx=trialrange,
   starttime=starttimes(starttrials==trialidx);
   stoptime=stoptimes(stoptrials==trialidx);
@@ -636,7 +636,20 @@ if (isempty(tag_masks) || length(tag_masks{1})<8 || ...
       %disp('loadspikeraster.m: stimtagnames/tags mismatch! tacking on end');
     end
   end
-  
+
+  % from loadspikeraster--- should be subbed in??
+%    if 1,
+%        newr=nan*ones(size(r,1),size(r,2),extraidx);
+%        newtags=cell(1,extraidx);
+%        newtrialset=zeros(size(trialset,1),extraidx);
+%        for ttt=1:length(maptoidx),
+%            newr(:,:,maptoidx(ttt))=r(:,:,ttt);
+%            newtags{maptoidx(ttt)}=tags{ttt};
+%            newtrialset(:,maptoidx(ttt))=trialset(:,ttt);
+%        end
+%        r=newr;
+%        tags=newtags;
+%        trialset=newtrialset;
   if length(maptoidx)>max(maptoidx),
     % multiple tags map to a single one.
     repcount=squeeze(sum(sum(~isnan(r))>0,2));
@@ -662,12 +675,12 @@ if (isempty(tag_masks) || length(tag_masks{1})<8 || ...
     tags=newtags;
     
   else
-    [ttt,mapidx]=sort(maptoidx);
+    [~,mapidx]=sort(maptoidx);
     
     r=r(:,:,mapidx);
     % why was this next line commented out????? very confusing! and incorrect.
     % You have to sort the tags to match the order of stimuli in the raster!
-    tags={tags{mapidx}};
+    tags=tags(mapidx);
     trialset=trialset(:,mapidx);
   end
 end

@@ -2,6 +2,8 @@
 %
 function [di,rawid,dayN,s2]=di_plot(animal,runclass,stat2,training_flag)
     
+    maxdays=30;
+    
     if ~exist('stat2','var'),
         stat2=[];
     end
@@ -58,12 +60,17 @@ function [di,rawid,dayN,s2]=di_plot(animal,runclass,stat2,training_flag)
     s2_day=zeros(size(umasterid));
     for ii=1:length(umasterid);
         ff=find(masterid==umasterid(ii));
-        di_day(ii)=nanmean(di(ff));
+        di_day(ii)=nanmax(di(ff));
         s2_day(ii)=nanmean(s2(ff));
         dayN(ff)=ii;
     end
     
     physSessions=find(~cat(1,didata.training));
+    
+    if length(di_day)>maxdays,
+        di_day=di_day(1:maxdays);
+        s2_day=s2_day(1:maxdays);
+    end
     
     figure;
     if isempty(stat2),
@@ -101,6 +108,8 @@ function [di,rawid,dayN,s2]=di_plot(animal,runclass,stat2,training_flag)
         plot([0 length(di_day)],[50 50],'k--');
         hold off
         xlabel('day');
+        aa=axis;
+        axis([0 maxdays+1 aa(3:4)]);
     end
     
     return
