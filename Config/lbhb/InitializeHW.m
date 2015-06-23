@@ -111,7 +111,7 @@ switch globalparams.HWSetup
     % no filter, so use higher AO sampling rate in some sound objects:
     FORCESAMPLINGRATE=[];
     
-    HW.params.SoftwareEqz(:)=1.5;
+    HW.params.SoftwareEqz(:)=2;
     
     %% COMMUNICATE WITH MANTA
     if doingphysiology  [HW,globalparams] = IOConnectWithManta(HW,globalparams); end

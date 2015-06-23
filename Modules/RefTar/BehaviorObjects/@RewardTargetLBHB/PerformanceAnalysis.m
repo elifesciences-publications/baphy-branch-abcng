@@ -132,6 +132,10 @@ if strcmpi(trialparms.descriptor,'MultiRefTar') || ...
          RefSegLen;
    end
    FAStartTime=min(PossibleTarTimes);
+   if FAStartTime>TarEarlyWin,
+       warning('Kludge Alert!  Shifting FA start time to handle last trial in block that is too short!');
+       FAStartTime=TarEarlyWin;
+   end
 else
    FAStartTime=get(trialparms.ReferenceHandle,'PreStimSilence');
 end

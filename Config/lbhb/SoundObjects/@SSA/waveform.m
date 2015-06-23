@@ -28,21 +28,23 @@ for ff=1:length(par.Frequencies),
     PipNames{ff}=num2str(f0);
 end
 
+SeqPerRate=ceil(par.MaxIndex./length(par.F1Rates));
 Sequence=par.Sequences(:,index);
-currentoffset=0;
+SeqNum=ceil(index/SeqPerRate);
 PrePipSilence=par.PipInterval./2;
 PostPipSilence=par.PipInterval./2;
+currentoffset=0;
 PipsPerTrial=floor(par.Duration./(par.PipDuration+par.PipInterval));
-SeqPerRate=ceil(par.MaxIndex./length(par.F1Rates));
 for ii=1:length(Sequence),
-    w(currentoffset+(1:ToneSamples))=Pips{Sequence(ii)};
-    currenttime=currentoffset./par.SamplingRate;
-    SeqNum=ceil(ii/SeqPerRate);
+    w(currentoffset+round(PrePipSilence.*par.SamplingRate)+(1:ToneSamples))=Pips{Sequence(ii)};
+    currenttime=par.PreStimSilence+currentoffset./par.SamplingRate;
     
     if ii==1,
         nn=sprintf('%s+ONSET',PipNames{Sequence(ii)});
-    else
+    elseif Sequence(ii)==1,
         nn=sprintf('%s+%.2f',PipNames{Sequence(ii)},par.F1Rates(SeqNum));
+    elseif Sequence(ii)==2,
+        nn=sprintf('%s+%.2f',PipNames{Sequence(ii)},par.F1Rates(3-SeqNum));
     end
     
     % and generate the event structure:

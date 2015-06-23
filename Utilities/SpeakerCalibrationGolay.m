@@ -2,7 +2,7 @@ function [data] = SpeakerCalibrationGolay (inputstim)
 
 if ~exist('globalparams','var'),
     globalparams=[];
-    globalparams.HWSetup=5;
+    globalparams.HWSetup=2;
 end
 globalparams.Physiology = 'No';
 HW = InitializeHW(globalparams);
@@ -12,8 +12,8 @@ voltage      = 10.0;   %This is the peak-to-peak of the output from computer.
 
 if ~exist('inputstim','var'),
     load GolayStims
-    disp('need to convert StimA/StimB into format expected by this function');
-    keyboard
+    disp('StimA and StimB loaded into main workspace');
+    return
 end
 
 samplingfreq = 100000;%actfreq*mult_fact;
