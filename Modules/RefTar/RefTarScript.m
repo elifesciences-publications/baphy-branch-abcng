@@ -15,7 +15,7 @@ function varargout = RefTarScript (globalparams, exptparams, HW)
 
 global StopExperiment; StopExperiment = 0; % Corresponds to User button
 global exptparams_Copy; exptparams_Copy = exptparams; % some code needs exptparams
-global BAPHY_LAB
+global BAPHY_LAB LoudnessAdjusted
 
 BehaveObject = exptparams.BehaveObject;
 
@@ -38,7 +38,16 @@ exptparams.comment = [...
 
 %% MAIN LOOP
 while ContinueExp == 1
-  exptparams.TrialObject = ObjUpdate(exptparams.TrialObject);
+  if exist('iRep')==0
+    exptparams.TrialObject = ObjUpdate(exptparams.TrialObject);
+    TrialIndexLst = 1:(exptparams.TrialBlock*exptparams.Repetition);    % List of trial nb sent to <waveform>; modified during reinsertion
+     if (isfield(struct(exptparams.TrialObject),'TrialIndexLst') && isempty(get(exptparams.TrialObject,'TrialIndexLst'))); exptparams.TrialObject = set(exptparams.TrialObject,'TrialIndexLst',TrialIndexLst); end
+  elseif isfield(struct(exptparams.TrialObject),'TrialIndexLst')
+    TrialIndexLst = get(exptparams.TrialObject,'TrialIndexLst');
+    TrialIndexLst = [ TrialIndexLst , max(TrialIndexLst) + (1:(exptparams.TrialBlock*exptparams.Repetition)) ];    % List of trial nb sent to <waveform>; modified during reinsertion
+     exptparams.TrialObject = set(exptparams.TrialObject,'TrialIndexLst',TrialIndexLst);
+  end  
+ 
   iRep = 0;
   while iRep < exptparams.Repetition; % REPETITION LOOP
     iRep = iRep+1;
@@ -55,9 +64,11 @@ while ContinueExp == 1
       exptparams.TotalTrials = TrialIndex;
       
       %% PREPARE TRIAL
-      
-      %Create pump control
       TrialObject = get(exptparams.TrialObject);
+      % 2013/12 YB: VISUAL DISPLAY--Back to grey screen on the second monitor if we are in a psychophysics experiment
+      if isfield(TrialObject,'VisualDisplay') && TrialObject.VisualDisplay; 	[VisualDispColor,exptparams] = VisualDisplay(TrialIndex,'GREY',exptparams); end
+        
+      %Create pump control
       if isfield(TrialObject,'PumpProfile')
           PumpProfile = TrialObject.PumpProfile;
           handles = guihandles(WaterPumpControl(PumpProfile, TrialIndex));
@@ -65,7 +76,12 @@ while ContinueExp == 1
           exptparams.TrialObject = set(exptparams.TrialObject,'PumpProfile',PumpProfile);
       end
       
-      [TrialSound, StimEvents, exptparams.TrialObject] = waveform(exptparams.TrialObject, iTrial);
+      % Yves; 2013/11: I added an input to 'waveform' methods
+      if any(strcmp(fieldnames(exptparams.TrialObject),'TrialIndexLst'))
+        [TrialSound, StimEvents, exptparams.TrialObject] = waveform(exptparams.TrialObject, iTrial,TrialIndexLst(TrialIndex));
+      else
+        [TrialSound, StimEvents, exptparams.TrialObject] = waveform(exptparams.TrialObject, iTrial);
+      end
       [HW,globalparams,exptparams] = LF_setSamplingRate(HW,globalparams,exptparams);
       HW = IOSetLoudness(HW, 80-get(exptparams.TrialObject, 'OveralldB'));
       
@@ -95,13 +111,15 @@ while ContinueExp == 1
       % svd 2012-10-27: moved IOLoadSound after CanStart to allow sounds to
       % be played during CanStart prior to beginning of the aquisition
       % period of the trial. Shouldn't cause any serious changes in timing
-      %using the 2nd SOUNDOUT as pumpcontrol  by PY @ 9-2/2012
+      %using the 2nd SOUNDOUT as pumpcontrol by PY @ 9-2/2012
       if strcmpi(BAPHY_LAB,'nsl') && globalparams.HWSetup==3 
         if size(TrialSound,2)==2
           HW = IOLoadSound(HW, TrialSound(:,[2 1]));
         else
           HW = IOLoadSound(HW, TrialSound(:,[1 1]));
-        end
+        end      
+      elseif strcmp( class(BehaveObject) , 'RewardTargetContinuous' )
+        
       else
           HW = IOLoadSound(HW, TrialSound);
       end
@@ -115,7 +133,9 @@ while ContinueExp == 1
       end
       
       %% MAIN ACQUISITION SECTION
-      [StartEvent,HW] = IOStartAcquisition(HW);
+      if ~strcmp( class(BehaveObject) , 'RewardTargetContinuous' )  % Acquisition starts within BehaviorControl.m
+        [StartEvent,HW] = IOStartAcquisition(HW);
+      end
       
       % HAND CONTROL TO LICK MONITOR TO CONTROL REWARD/SHOCK
       [BehaviorEvents, exptparams] = ...
@@ -204,6 +224,7 @@ while ContinueExp == 1
       % Used in adaptive schemes, where trialset is modified based on animals performance
       % Needs to change NumberOfTrials and Modify the IndexSets
       exptparams = RandomizeSequence(exptparams.TrialObject, exptparams, globalparams, iTrial, 0);
+      if any(strcmp(fieldnames(exptparams.TrialObject),'TrialIndexLst')); TrialIndexLst = get(exptparams.TrialObject,'TrialIndexLst'); end
       
     end % END OF TRIAL LOOP
     exptparams.TotalRepetitions = exptparams.TotalRepetitions + 1;
@@ -247,7 +268,8 @@ while ContinueExp == 1
   end
 end % CHECK FOR CONTINUING EXPERIMENT
 exptparams.StopTime = clock;
-if ~isfield(exptparams,'volreward') exptparams.volreward = exptparams.Water; end
+% svd commented out line 2014-12-01 because it isn't needed any more?
+% if ~isfield(exptparams,'volreward') exptparams.volreward = exptparams.Water; end
 
 %% POSTPROCESSING
 switch HW.params.DAQSystem
@@ -262,7 +284,7 @@ if ~isfield(exptparams,'WaterUnits') | strcmp(exptparams.WaterUnits,'seconds')
 end
 
 % UPDATE DISPLAY WITH WATER AND SOUND
-exptparams = BehaviorDisplay(BehaveObject, HW, StimEvents, globalparams, exptparams, TrialIndex, [], []);
+exptparams = BehaviorDisplay(BehaveObject, HW, StimEvents, globalparams, exptparams, TrialIndex, [], TrialSound);
 
 % MAKE SURE PUMP, SHOCK AND LIGHT ARE OFF
 try IOControlPump(HW,'stop'); IOControlShock(HW,0,'stop'); IOLightSwitch(HW,0); end
@@ -349,7 +371,7 @@ if globalparams.rawid>0 && dbopen,
       sql=['INSERT INTO gHealth (animal_id,animal,date,water,trained,schedule,addedby,info) VALUES'...
         '(',num2str(adata.id),',"',globalparams.Ferret,'",',...
         '"',datestr(now,29),'",'...
-        num2str(exptparams.volreward),',1,1,"',DB_USER,'","dms_run.m")'];
+        num2str(exptparams.Water),',1,1,"',DB_USER,'","dms_run.m")'];
     end
     mysql(sql);
   end

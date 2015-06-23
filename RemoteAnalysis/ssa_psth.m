@@ -7,14 +7,12 @@
 %    .sigthreshold [=4]
 %    .datause [='Both'] % ie, all data, targets and references
 %
-function [ssafrac]=ssa_psth(mfile,options,h)
+function [ssafrac,ssarespz]=ssa_psth(mfile,options,h)
 
 if ~exist('h','var'),
     h=figure;
     h=gca;
     drawnow;
-else
-    axes(h);
 end
 if ~exist('options','var'),
     options=struct();
@@ -60,11 +58,14 @@ concolors=[0.8 0.8 0.8; 0.8 0.2 0.2; 0.2 0.2 0.8];
 mr=nanmean(r,2).*options.rasterfs;
 mrmax=nanmax(mr(:));
 ssafrac=zeros(1,length(ufreq));
+ssarespz=zeros(1,length(ufreq));
 
 prepip=exptparams.TrialObject.ReferenceHandle.PipInterval./2;
 tt=(1:size(r,1))./options.rasterfs-prepip;
+axes(h);
 for uu=1:length(ufreq)
     ff=find(freq==ufreq(uu));
+    
     [~,si]=sort(context(ff));
     ff=ff(si);
     label={};
@@ -85,6 +86,15 @@ for uu=1:length(ufreq)
     ssafrac(uu)=(rrare-rcommon)./(rrare+rcommon);
     sinfo={num2str(ufreq(uu)),sprintf('%.3f',ssafrac(uu))};
     text(0,(uu-1+0.25)*mrmax,sinfo,'HorizontalAlign','Left');
+    
+    rprev=nanmean(r(1:(rstart-1),:,ff),1);
+    rev=nanmean(r(rstart:rstop,:,ff),1);
+    rprev=rprev(:);
+    rev=rev(:);
+    rprev=rprev(~isnan(rprev));
+    rev=rev(~isnan(rev));
+    ssarespz(uu)=abs(mean(rev)-mean(rprev))./sqrt(var(rev)+var(rprev)).*...
+       sqrt(length(rev));
     
 end
 aa=axis;

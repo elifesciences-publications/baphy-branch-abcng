@@ -57,6 +57,7 @@ if isempty(options.ElectrodeMatrix) % IF USER HAS NOT SPECIFIED A DIFFERENT GRID
      ChannelsXY=[1 1; 1 2; 2 1; 2 2];
      ElectrodesXY=[1 1; 1 2; 2 1; 2 2];
   end
+  NElectrodes = size(ElectrodesXY,1);
 else % ELECTRODE MATRIX HAS BEEN SPECIFIED AS GRID
   EM = flipud(options.ElectrodeMatrix);
   for i=1:length(Electrodes)
@@ -122,6 +123,9 @@ if ~ReuseFigure
     AH(ii) = axes('Position',DC{ii},'FontSize',6);
   end
 else % REUSE AXES
+  for ii=1:NElectrodes % Recreate DC for opto (division of AH for Light/NoLight)
+    DC{ii} = DCAll{end-round(ElectrodesXY(ii,2))+1,round(ElectrodesXY(ii,1))};
+  end
   AH = get(BATCH_FIGURE_HANDLE,'Children');
   Types = get(AH,'Type'); Ind = strcmp(Types,'axes');
   AH = sort(AH(Ind));
@@ -158,6 +162,14 @@ for ii=1:NElectrodes
         % BIASED SHEPARD PAIR
       elseif strcmpi(options.runclass,'BSP'),
         MD_computeShepardTuning('MFile',mfile,'Electrode',Electrode,'Unit',unit,...
+          'Axis',AH(ii),'SigmaThreshold',options.sigthreshold);
+        
+        % TONE CLOUD
+      elseif strcmpi(options.runclass,'TMG'),
+        % 14/04-YB: so far, plot a raster w/ trials sorted by FrozenPattern nb
+        %         TMG_ComputeSTRF('MFile',mfile,'Electrode',Electrode,'Unit',unit,...
+        %           'Axis',AH(ii),'SigmaThreshold',options.sigthreshold);
+        TMG_RasterPlot('MFile',mfile,'Electrode',Electrode,'Unit',unit,...
           'Axis',AH(ii),'SigmaThreshold',options.sigthreshold);
         
       elseif strcmpi(options.runclass,'AMT'),
@@ -204,27 +216,27 @@ for ii=1:NElectrodes
       elseif strcmpi(options.runclass,'tst')  %for multi-level tuning
         mltc_online(mfile,Electrode,unit,AH(ii),options);
       elseif strcmpi(options.runclass,'SSA')  %for multi-level tuning
-           options.rasterfs=100;
+          options.rasterfs=100;
           options.channel=Electrode;
-        ssa_psth(mfile,options,AH(ii));
+          ssa_psth(mfile,options,AH(ii));
       else
-        if ~options.usesorted
-          % standard TORC strf
-          options.usefirstcycle=0;
-          options.tfrac = 1;
-          [strf,snr(ii)]=strf_online(mfile,Electrode,AH(ii),options);
-        else
-          mfilename = [mfile,'.m'];
-          spkpath = mfile(1:strfind(mfile,filename)-1);
-          
-          if strcmp(computer,'PCWIN') || strcmp(computer,'PCWIN64')
-            spikefile = [spkpath,'sorted\',filename,'.spk.mat'];
+          if ~options.usesorted
+              % standard TORC strf
+              options.usefirstcycle=0;
+              options.tfrac = 1;
+              [strf,snr(ii)]=strf_online(mfile,Electrode,AH(ii),options,DC{ii});
           else
-            spikefile = [spkpath,'sorted/',filename,'.spk.mat'];
+              mfilename = [mfile,'.m'];
+              spkpath = mfile(1:strfind(mfile,filename)-1);
+              
+              if strcmp(computer,'PCWIN') || strcmp(computer,'PCWIN64')
+                  spikefile = [spkpath,'sorted\',filename,'.spk.mat'];
+              else
+                  spikefile = [spkpath,'sorted/',filename,'.spk.mat'];
+              end
+              
+              [strf,snr(ii)]=strf_offline2(mfilename,spikefile,Electrode,options.sortedunit);
           end
-          
-          [strf,snr(ii)]=strf_offline2(mfilename,spikefile,Electrode,options.sortedunit);
-        end
       end
       
     case 'raster',

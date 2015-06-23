@@ -26,16 +26,20 @@ soundpath = [object_spec.path filesep 'Sounds'];
 % LowFreq and HighFreq
 
 if LowFreq>0,
-   FILTER_ORDER=round(SamplingRate./LowFreq.*3);
-   N=SamplingRate./2;
-   if HighFreq==0,
-      f_bp = firls(FILTER_ORDER,...
-                   [0 (0.95.*LowFreq)/N LowFreq/N 1],[0 0 1 1])';
-   else
-      f_bp = firls(FILTER_ORDER,...
-                   [0 (0.95.*LowFreq)/N LowFreq/N  HighFreq/N (HighFreq./0.95)./N 1],...
-                   [0 0 1 1 0 0])';
-   end
+  FILTER_ORDER=round(SamplingRate./LowFreq.*3);
+  N=SamplingRate./2;
+  if HighFreq==0,
+    f_bp = firls(FILTER_ORDER,...
+      [0 (0.95.*LowFreq)/N LowFreq/N 1],[0 0 1 1])';
+  else
+  %       f_bp = firls(FILTER_ORDER,...
+  %                    [0 (0.95.*LowFreq)/N LowFreq/N  HighFreq/N (HighFreq./0.95)./N 1],...
+  %                    [0 0 1 1 0 0])';
+    
+    [f_bp{1,1},f_bp{1,2}]=butter(2,LowFreq*2/N,'high');
+    [f_bp{2,1},f_bp{2,2}]=butter(2,HighFreq/N,'low');
+    
+  end
 elseif HighFreq>0,
    FILTER_ORDER=round(SamplingRate./HighFreq.*6);
    N=SamplingRate./2;

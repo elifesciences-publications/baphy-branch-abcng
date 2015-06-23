@@ -161,6 +161,24 @@ fcns.name{fcnNum}='DAQmxCreateAIVoltageChan'; fcns.calltype{fcnNum}='stdcall'; f
 fcns.name{fcnNum}='DAQmxCfgDigEdgeStartTrig'; fcns.calltype{fcnNum}='stdcall'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'uint32', 'cstring', 'int32'};fcnNum=fcnNum+1;
 % int32 _stdcall DAQmxCfgAnlgEdgeStartTrig ( TaskHandle taskHandle , const char triggerSource [], int32 triggerSlope , float64 triggerLevel ); 
 fcns.name{fcnNum}='DAQmxCfgAnlgEdgeStartTrig'; fcns.calltype{fcnNum}='stdcall'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'uint32', 'cstring', 'int32', 'double'};fcnNum=fcnNum+1;
+% int32 _stdcall DAQmxGetStartTrigType ( TaskHandle taskHandle , int32 * data ); 
+fcns.name{fcnNum}='DAQmxGetStartTrigType'; fcns.calltype{fcnNum}='stdcall'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'uint32', 'int32Ptr'};fcnNum=fcnNum+1;
+% int32 _stdcall DAQmxSetStartTrigType ( TaskHandle taskHandle , int32 data ); 
+fcns.name{fcnNum}='DAQmxSetStartTrigType'; fcns.calltype{fcnNum}='stdcall'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'uint32', 'int32'};fcnNum=fcnNum+1;
+% int32 _stdcall DAQmxResetStartTrigType ( TaskHandle taskHandle ); 
+fcns.name{fcnNum}='DAQmxResetStartTrigType'; fcns.calltype{fcnNum}='stdcall'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'uint32'};fcnNum=fcnNum+1;
+% int32 _stdcall DAQmxGetDigEdgeStartTrigSrc ( TaskHandle taskHandle , char * data , uInt32 bufferSize ); 
+
+
+% int32 _stdcall DAQmxCreateLinScale ( const char name [], float64 slope , float64 yIntercept , int32 preScaledUnits , const char scaledUnits []); 
+fcns.name{fcnNum}='DAQmxCreateLinScale'; fcns.calltype{fcnNum}='stdcall'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'cstring', 'double', 'double', 'int32', 'cstring'};fcnNum=fcnNum+1;
+% int32 _stdcall DAQmxCreateAIMicrophoneChan ( TaskHandle taskHandle , const char physicalChannel [], const char nameToAssignToChannel [], int32 terminalConfig , int32 units , float64 micSensitivity , float64 maxSndPressLevel , int32 currentExcitSource , float64 currentExcitVal , const char customScaleName []); 
+fcns.name{fcnNum}='DAQmxCreateAIMicrophoneChan'; fcns.calltype{fcnNum}='stdcall'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'uint32', 'cstring', 'cstring', 'int32', 'int32', 'double', 'double', 'int32', 'double', 'cstring'};fcnNum=fcnNum+1;
+% int32 _stdcall DAQmxCfgInputBuffer ( TaskHandle taskHandle , uInt32 numSampsPerChan ); 
+fcns.name{fcnNum}='DAQmxCfgInputBuffer'; fcns.calltype{fcnNum}='stdcall'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'uint32', 'uint32'};fcnNum=fcnNum+1;
+% int32 _stdcall DAQmxCfgOutputBuffer ( TaskHandle taskHandle , uInt32 numSampsPerChan ); 
+fcns.name{fcnNum}='DAQmxCfgOutputBuffer'; fcns.calltype{fcnNum}='stdcall'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'uint32', 'uint32'};fcnNum=fcnNum+1;
+% int32 DAQmxGetBufferAttribute ( TaskHandle taskHandle , int32 attribute , void * value ); 
 
 
 methodinfo=fcns;

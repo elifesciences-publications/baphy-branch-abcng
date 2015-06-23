@@ -7,11 +7,12 @@
 % options.usefirstcycle = 0;
 %
 %
-function [strfest,snr] = strf_online(mfilename,channel,axeshandle,options);
+function [strfest,snr] = strf_online(mfilename,channel,axeshandle,options,divisionhandle);
 
 if ~exist('axeshandle','var'),
     axeshandle=gca;
 end
+AH(1) = axeshandle;
 if ~exist('channel','var'),
     channel=1;
 end
@@ -53,7 +54,7 @@ loadoptions.rasterfs=options.rasterfs;
 loadoptions.channel=channel;
 loadoptions.sigthreshold=options.sigthreshold;
 loadoptions.includeprestim=0;
-loadoptions.tag_masks={'TORC'};
+loadoptions.tag_masks=getparm(options,'tag_masks',{'TORC'});
 loadoptions.lfp=options.lfp;
 [r,tags]=loadevpraster(mfilename,loadoptions);
 toc
@@ -72,6 +73,30 @@ for ii=1:length(TorcNames),
 end
 
 rold=r;
+rini = rold; tagsini = tags;
+
+notempty = @(x) ~isempty(x);
+nolightindex = strfind(tags,'NoLight');
+if any(cellfun(notempty,nolightindex))
+    delete(axeshandle);
+  TwolightConditions = 1;
+  DCAll = HF_axesDivide(1,[1,1],divisionhandle,[],0.4);
+  for ii = 1:2 % 2 light conditions
+    AH(ii) = axes('Position',DCAll{ii},'FontSize',6);
+  end
+  LightConditionNb = 2;
+  LightPatternStr{1} = '+NoLight'; LightPatternStr{2} = '+Light';
+else
+  LightConditionNb = 1;
+  LightPatternStr{1} = 'TORC';
+end
+
+for LightNum = 1:LightConditionNb
+axeshandle = AH(LightNum);
+index = strfind(tagsini,LightPatternStr{LightNum});
+index = find( cellfun(notempty,index) );
+rold = rini(:,:,index);
+tags = {tagsini{index}};
 
 r=zeros(size(r,1),size(r,2),length(TorcNames)).*nan;
 for ii=1:length(tags),
@@ -207,12 +232,13 @@ for rep = 1:realrepcount,
       figure(get(axeshandle,'Parent'));
       axes(axeshandle);
       if sum(isnan(strfest(:)))==0,
+        if LightNum==1; clim = []; end
          if isfield(options,'tfrac') && options.tfrac>0 && options.tfrac<StimParam.basep,
             bp=StimParam.basep*options.tfrac;
             ts=strfest(:,1:round(size(strfest,2).*options.tfrac));
-            stplot(ts,StimParam.lfreq,bp,1,StimParam.octaves);
+            clim = stplot(ts,StimParam.lfreq,bp,1,StimParam.octaves,clim);
          else
-            stplot(strfest,StimParam.lfreq,StimParam.basep,1,StimParam.octaves);
+            clim = stplot(strfest,StimParam.lfreq,StimParam.basep,1,StimParam.octaves,clim);
          end
          if options.scalesnr,
             scalemax=1;
@@ -254,6 +280,9 @@ for rep = 1:realrepcount,
       drawnow;
     end
 end
+
+end
+
 toc
 
 return

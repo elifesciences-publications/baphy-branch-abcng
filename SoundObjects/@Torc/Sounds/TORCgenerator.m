@@ -3,7 +3,7 @@
 % - SVD 2012-07-27
 
 %TorcFormat='standard-448';
-TorcFormat='log-424';
+TorcFormat='standard-424';
 
 switch TorcFormat,
    case 'standard-448',
@@ -61,7 +61,7 @@ a1ph = [a1ph a1ph-180];
 
 % generate ripples
 nstim = size(a1am,2);
-for level = [4 5],
+for level = [4],
     %cond = [T0, f0, BW, SF, CF, df, RO, AF, Mo, wM, Ph]; 
     T0=3;
     if AF==1,
@@ -92,7 +92,7 @@ for level = [4 5],
         stim=wav2spectral(s,'specgram',fs./2,100,32);
         figure(1);clf;imagesc(stim');axis xy;
         drawnow;
-        wavplay(s,fs);
+%         wavplay(s,fs);
         % save parameters with phase in degrees to be compaitble with ststims code
         a = writeTorcInfo([fname '_' str '_' lev(level) '501' '.txt'],rippleList,cond);
     end

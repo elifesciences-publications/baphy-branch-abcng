@@ -185,15 +185,23 @@ for cnt1 = 1:length(DefaultFields)/3
   % now if the CurrentField is edit, get its value from the tempObject which has
   % the last values. But if its popupmenu, then load it with defaults
   % from object constructor (UserDefinableFields)"
-  switch CurrentField{2}
+  switch CurrentField{2}  
     case 'popupmenu'; % if its a popupmenu, find the 'value' of the saved information
       DivPos = strfind(CurrentField{3},'|');
       if ~strcmp(CurrentField{1},'MTTRates')
-      SavePos = strfind(CurrentField{3},get(SavedObject, CurrentField{1}));
+        SavePos = strfind(CurrentField{3},get(SavedObject, CurrentField{1}));
       else
         SavePos=[];
       end
-      if isempty(SavePos) SavePos=1; end
+      if length(SavePos)>1  % 2014/01-YB: there are several string values that share common strings
+        if any( ismember( ( SavePos+length(get(SavedObject, CurrentField{1})) ) , DivPos ) )
+          SavePos = SavePos( ismember( ( SavePos+length(get(SavedObject, CurrentField{1})) ) , DivPos ) );
+        else % it is the last value
+          SavePos = SavePos(end);
+        end
+      elseif isempty(SavePos)
+        SavePos=1;
+      end
       DefaultValue = find(DivPos>SavePos,1);
       if isempty(DefaultValue), DefaultValue = length(DivPos)+1;end
       DefaultString = CurrentField{3};
@@ -262,6 +270,13 @@ for cnt1 = 1:length(fields)/3   % length(fields) should be always a multiple of 
         % if its a popupmenu, find the 'value' property:
         tmp1 = strfind(field{3},'|');
         tmp2 = strfind(field{3},get(tempObject, field{1}));
+        if length(tmp2)>1  % 2014/01-YB: there are several string values that share common strings
+          if any( ismember( ( tmp2+length(get(tempObject, field{1})) ) , tmp1 ) )
+            tmp2 = tmp2( ismember( ( tmp2+length(get(tempObject, field{1})) ) , tmp1 ) );
+          else % it is the last value
+            tmp2 = tmp2(end);
+          end
+        end
         popvalue = find(tmp1>tmp2,1);
         if isempty(popvalue), popvalue = length(tmp1)+1;end
         default = field{3};
@@ -1042,3 +1057,4 @@ function popupmenu9_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
+function checkbox1_Callback(hObject, eventdata, handles)

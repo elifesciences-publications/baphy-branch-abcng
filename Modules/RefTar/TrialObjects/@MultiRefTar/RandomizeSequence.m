@@ -7,8 +7,8 @@ function [exptparams] = RandomizeSequence (o, exptparams, globalparams, RepIndex
 % SVD 2011-06-06, ripped off of Reference Target
 %
 
-if nargin<4, RepOrTrial = 0;end   % default is its a trial call
-if nargin<3, RepIndex = 1;end
+if ~exist('RepOrTrial','var'), RepOrTrial = 0;end   % default is its a trial call
+if ~exist('RepIndex','var'), RepIndex = 1;end
 
 % read the trial parameters
 par = get(o);
@@ -57,6 +57,7 @@ if RepOrTrial == 0,
                 ~isempty(par.TargetIndices{trialidx}),
             NewTargetIndex=find(rand>[0 cumsum(TargetIdxFreq)], 1, 'last' );
             newslot=ceil(rand*(NewNumberOfTrials-trialidx))+trialidx;
+            %newslot=trialidx+1; % temp svd kludge
             fprintf('Miss: Repeating reference with targetidx=%d\n',...
                     NewTargetIndex);
         else
@@ -68,12 +69,12 @@ if RepOrTrial == 0,
         
         NewReferenceIndices={par.ReferenceIndices{1:(newslot-1)} ...
                             par.ReferenceIndices{trialidx} ...
-                            par.ReferenceIndices{newslot:end}
+                            par.ReferenceIndices{newslot:end}};
         NewTargetIndices={par.TargetIndices{1:(newslot-1)} ...
                           NewTargetIndex ...
                           par.TargetIndices{newslot:end}};
         NewCatchIndices={par.CatchIndices{1:(newslot-1)} ...
-                         par.CatchIndices{trialidx}
+                         par.CatchIndices{trialidx} ...
                          par.CatchIndices{newslot:end}};
         NewCatchSeg=[par.CatchSeg(1:(newslot-1));  ...
                      par.CatchSeg(trialidx);  ...
@@ -83,8 +84,12 @@ if RepOrTrial == 0,
         o=set(o,'TargetIndices',NewTargetIndices);
         o=set(o,'CatchIndices',NewCatchIndices);
         o=set(o,'CatchSeg',NewCatchSeg);
+        % svd fixed bug 2014-11-24 where RefDuration was assigned to the
+        % next trail rather than the new slot for misses.
         o=set(o,'SingleRefDuration',...
-            [par.SingleRefDuration(1:trialidx) par.SingleRefDuration(trialidx:end)]);
+            [par.SingleRefDuration(1:(newslot-1)) ...
+            par.SingleRefDuration(trialidx) ...
+            par.SingleRefDuration(newslot:end)]);
         o=set(o,'NumberOfTrials',par.NumberOfTrials+1);
         exptparams.TrialObject = o;
     end
