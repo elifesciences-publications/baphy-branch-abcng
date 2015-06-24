@@ -47,8 +47,14 @@ else                   mfile = []; end
 
 %% PARSE PARAMETERS
 if ~exist('channel','var')
-   options=[]; options.channel=1; stimidx=[];
-elseif isstruct(channel),
+    options=[];
+    options.channel=1;
+    stimidx=[];
+else
+    options=channel;
+end
+
+if isstruct(channel),
    options=channel;
    channel=getparm(options,'channel',1);
    unit=getparm(options,'unit',1);
@@ -81,6 +87,7 @@ else
    if ~exist('psthonly','var')             psthonly=-1;   end
    if ~exist('sorter','var')                 sorter='';    end
    if ~exist('spikeshape','var')         spikeshape = 0; end
+   if ~exist('analoglicktrace','var')         analoglicktrace = 0; end
    includeincorrect=0;  mua=0;  lfpclean=0; stimidx=[];
 end
 

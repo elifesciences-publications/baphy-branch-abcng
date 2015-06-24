@@ -308,6 +308,15 @@ for trialidx=1:TrialCount,
         end
         
     end
+    if isfield(exptparams.TrialObject,'OnsetRampSec') &&...
+       exptparams.TrialObject.OnsetRampSec>0,
+        % add a ramp
+        PreBins=round(t2(1).*TrialFs);
+        OnsetRampBins=round(exptparams.TrialObject.OnsetRampSec.*TrialFs);
+        OnsetRamp=linspace(0,1,OnsetRampBins)';
+        w(PreBins+(1:OnsetRampBins),:)=...
+            w(PreBins+(1:OnsetRampBins),:).*repmat(OnsetRamp,[1 size(w,2)]);
+    end
     
     if strcmpi(filtfmt,'none') || strcmpi(filtfmt,'wav') ||...
             strcmpi(filtfmt,'envelope') || strcmpi(filtfmt,'qspecgram') || strcmpi(filtfmt,'qlspecgram'),
