@@ -186,10 +186,12 @@ for ii=1:NElectrodes
         % parameters
         boost_online(mfile,Electrode,unit,AH(ii),options);
       elseif strcmpi(options.runclass,'CCH') || strcmpi(options.ReferenceClass,'ComplexChord') || ...
-          strcmpi(options.runclass,'BNB') || strcmpi(options.ReferenceClass,'NoiseBurst') || ...
           strcmpi(options.runclass,'FTC'),
         % two-tone 2nd-order tuning surface
         chord_strf_online(mfile,Electrode,unit,AH(ii),options);
+      elseif strcmpi(options.runclass,'BNB') || strcmpi(options.ReferenceClass,'NoiseBurst'),
+        % two-tone 2nd-order tuning surface
+        bnb_online(mfile,Electrode,unit,AH(ii),options);
       elseif strcmpi(options.runclass,'RDT') || ...
               strcmpi(options.ReferenceClass,'NoiseSample'),
           if strcmp(options.datause,'Per trial') || strcmp(options.datause,'Per trial pre-target'),
