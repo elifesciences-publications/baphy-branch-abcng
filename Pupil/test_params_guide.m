@@ -125,7 +125,25 @@ end
 rectangle('Position', handles.roi, 'Linewidth', 1, 'EdgeColor', 'b')
 refresh(handles)
 
-%%Pupil measurement functions
+%%Camera interface
+function preview_video_Callback(hObject, eventdata, handles)
+handles.cam = videoinput('winvideo', 1);
+guidata(hObject, handles)
+res = handles.cam.VideoResolution;
+nbands = handles.cam.NumberOfBands;
+figure('Name', 'Live Video', ...
+       'NumberTitle', 'Off');
+himage = image(zeros(res(2), res(1), nbands));
+preview(handles.cam, himage);
+
+function capture_frame_Callback(hObject, eventdata, handles)
+handles.im = getsnapshot(handles.cam);
+guidata(hObject, handles)
+axes(handles.head_ax)
+cla
+imshow(handles.im)
+
+%%Pupil measurement
 function refresh(handles)
 high = str2num(get(handles.edit_high, 'string'));
 low  = str2num(get(handles.edit_low, 'string'));
