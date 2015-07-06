@@ -278,6 +278,10 @@ while CurrentTime < exptparams.LogDuration  % while trial is not over
                   HitRewardProbability,HitsSinceLastReward);
               ev = struct('Note','BEHAVIOR,NOPUMP','StartTime',IOGetTimeStamp(HW),'StopTime',[]);
               LickEvents = AddEvent(LickEvents, ev, TrialIndex);
+              if strcmpi(get(exptparams.BehaveObject,'TurnOnLight'),'Reward')
+                [~,ev] = IOLightSwitch (HW, 1, get(o,'PumpDuration'),'Start',0,0);
+                LickEvents = AddEvent(LickEvents, ev, TrialIndex);
+              end
           end
           TarFlag = StimPos;
        end
