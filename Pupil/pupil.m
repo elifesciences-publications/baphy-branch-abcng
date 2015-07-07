@@ -1,5 +1,3 @@
-global RUNNING
-
 %%Generic Matlab GUI functions
 function varargout = pupil(varargin)
 gui_Singleton = 1;
@@ -156,24 +154,27 @@ dist = str2num(get(handles.edit_dist, 'string'));
 eye_im = handles.eye_im;
 
 function start_Callback(hObject, eventdata, handles)
-global RUNNING
+global RUNNING;
 RUNNING = 1;
 [eye_im high low slop dist] = update_params(handles)
 d_over_time = [];
+t = [];
+tic
 while RUNNING
     handles.im = getsnapshot(handles.cam);
     handles.eye_im = imcrop(rgb2gray(handles.im), handles.roi);
     guidata(hObject, handles)
-    d = measure_pupil(eye_im, high, low, slop, dist);
+    d = measure_pupil(handles.eye_im, high, low, slop, dist);
     d_over_time = [d_over_time d];
-    if rem(length(d_over_time), 5) == 0
+    t = [t toc];
+    if rem(length(d_over_time), 10) == 0
         axes(handles.time_ax)
-        plot(1:length(d_over_time), d_over_time, 'b.-')
+        plot(t, d_over_time, 'b.-')
         xlabel('Time (s)')
         ylabel('Pupil Diameter (pixels)')
         refresh(handles)
     end
-    pause(1)
+    pause(0.1)
 end
 
 function stop_Callback(hObject, eventdata, handles)
@@ -181,34 +182,7 @@ global RUNNING
 RUNNING = 0;
 
 function refresh(handles)
-[eye_im high low slop dist] = update_params(handles)
-
-[d, im, c, e] = measure_pupil(eye_im, high, low, dist, slop);
-max_dist = (1+slop)*(c.d/2);
-min_dist = (1-slop)*(c.d/2);
-
-axes(handles.pupil_circle_ax)
-cla
-imshow(im.pupil)
-ellipse(min_dist, min_dist, 0, c.x, c.y, 'g');
-ellipse(max_dist, max_dist, 0, c.x, c.y, 'g');
-axis equal
-
-axes(handles.edge_ax)
-cla
-imshow(im.all_edges)
-ellipse(min_dist, min_dist, 0, c.x, c.y, 'g');
-ellipse(max_dist, max_dist, 0, c.x, c.y, 'g');
-axis equal
-
-axes(handles.pupil_ellipse_ax)
-cla
-hold on
-imagesc(eye_im)
-ellipse(e.b, e.a, e.phi, e.Y0_in, e.X0_in, 'r');
-text(c.x, c.y, num2str(round(d)), 'color', 'r');
-hold off
-axis equal
+[eye_im high low slop dist] = update_params(handles);
 
 axes(handles.hist_ax)
 cla
@@ -221,6 +195,37 @@ plot([high high], [ax(3) ax(4)], 'b');
 xlabel('Intensity')
 ylabel('Frequency (# of Pixels)')
 hold off
+
+[d, im, c, e] = measure_pupil(eye_im, high, low, dist, slop);
+max_dist = (1+slop)*(c.d/2);
+min_dist = (1-slop)*(c.d/2);
+
+axes(handles.pupil_circle_ax)
+cla
+imshow(im.pupil)
+hold on
+ellipse(min_dist, min_dist, 0, c.x, c.y, 'g');
+ellipse(max_dist, max_dist, 0, c.x, c.y, 'g');
+hold off
+axis equal
+
+axes(handles.edge_ax)
+cla
+imshow(im.all_edges)
+hold on
+ellipse(min_dist, min_dist, 0, c.x, c.y, 'g');
+ellipse(max_dist, max_dist, 0, c.x, c.y, 'g');
+hold off
+axis equal
+
+axes(handles.pupil_ellipse_ax)
+cla
+imshow(eye_im)
+hold on
+ellipse(e.b, e.a, e.phi, e.Y0_in, e.X0_in, 'r');
+text(c.x, c.y, num2str(round(d)), 'color', 'r');
+hold off
+axis equal
 
 colormap(jet)
 
@@ -269,4 +274,17 @@ end
 
 [pupil_xs, pupil_ys] = find(squeeze(all_edges));
 ellipse = fit_ellipse(pupil_xs,pupil_ys);
+if isempty(ellipse) | not(strcmp(ellipse.status, '')) %could not fit ellipse
+    ellipse = struct( ...
+        'a',0,...
+        'b',0,...
+        'phi',0,...
+        'X0',0,...
+        'Y0',0,...
+        'X0_in',0,...
+        'Y0_in',0,...
+        'long_axis',0,...
+        'short_axis',0,...
+        'status', '');
+end
 d = max(ellipse.a, ellipse.b);
