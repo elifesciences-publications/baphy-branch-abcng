@@ -116,11 +116,53 @@ himage = image(zeros(res(2), res(1), nbands), 'Parent', handles.head_ax);
 preview(handles.cam, himage);
 guidata(hObject, handles)
 
-function capture_frame_Callback(hObject, eventdata, handles)
-handles.im = getsnapshot(handles.cam);
-guidata(hObject, handles)
-if isfield(handles, 'roi')
-    refresh(handles)
+function run_Callback(hObject, eventdata, handles)
+running = get(handles.run, 'value');
+recording = get(handles.record, 'value');
+if running
+    set(handles.run, 'string', 'Stop');
+    [eye_im high low slop dist] = update_params(handles);
+    interval = 0.1;
+    d_over_time = [];
+    t = [];
+    if recording
+        handles.vid_obj.FrameRate = 1/interval;
+        open(handles.vid_obj);
+    end
+    tic
+    while running
+        handles.im = getsnapshot(handles.cam);
+        handles.eye_im = imcrop(rgb2gray(handles.im), handles.roi);
+        guidata(hObject, handles)
+        d = measure_pupil(handles.eye_im, high, low, slop, dist);
+        d_over_time = [d_over_time d];
+        t = [t toc];
+        t = t(1:length(d_over_time));
+        axes(handles.time_ax)
+        plot(t, d_over_time, 'b.-')
+        xlabel('Time (s)')
+        ylabel('Pupil Diameter (pixels)')
+        refresh(handles)
+        if recording
+            frame.cdata = repmat(handles.eye_im, [1 1 3]);
+            frame.colormap = [];
+            writeVideo(handles.vid_obj, frame);
+        end
+        pause(interval)
+        running = get(handles.run, 'value');
+    end
+else
+    set(handles.run, 'string', 'Start')
+    if recording
+        close(handles.vid_obj);
+    end
+end
+
+function record_Callback(hObject, eventdata, handles)
+if get(handles.record, 'value')
+    [f dir] = uiputfile;
+    handles.vid_obj = VideoWriter([dir f]);
+    guidata(hObject, handles)
 end
 
 %%Region of interest selection
@@ -152,34 +194,6 @@ low  = str2num(get(handles.edit_low, 'string'));
 slop = str2num(get(handles.edit_slop, 'string'));
 dist = str2num(get(handles.edit_dist, 'string'));
 eye_im = handles.eye_im;
-
-function start_Callback(hObject, eventdata, handles)
-global RUNNING;
-RUNNING = 1;
-[eye_im high low slop dist] = update_params(handles)
-d_over_time = [];
-t = [];
-tic
-while RUNNING
-    handles.im = getsnapshot(handles.cam);
-    handles.eye_im = imcrop(rgb2gray(handles.im), handles.roi);
-    guidata(hObject, handles)
-    d = measure_pupil(handles.eye_im, high, low, slop, dist);
-    d_over_time = [d_over_time d];
-    t = [t toc];
-    if rem(length(d_over_time), 10) == 0
-        axes(handles.time_ax)
-        plot(t, d_over_time, 'b.-')
-        xlabel('Time (s)')
-        ylabel('Pupil Diameter (pixels)')
-        refresh(handles)
-    end
-    pause(0.1)
-end
-
-function stop_Callback(hObject, eventdata, handles)
-global RUNNING
-RUNNING = 0;
 
 function refresh(handles)
 [eye_im high low slop dist] = update_params(handles);
@@ -250,7 +264,9 @@ circ.x = round(mean(pupil_x));
 circ.y = round(mean(pupil_y));
 circ.a = length(pupil_y);
 circ.d = sqrt(circ.a*4/pi);
-im.pupil(circ.y, circ.x) = 0;
+if not(isnan(circ.x)) & not(isnan(circ.y))
+    im.pupil(circ.y, circ.x) = 0;
+end
 
 [edge_y, edge_x] = find(all_edges);
 dist_from_center = sqrt((edge_x-circ.x).^2 + (edge_y-circ.y).^2);
@@ -264,17 +280,33 @@ for ii = 1:length(bad_edges)
   end
 end
 
-[~, nearest_neighbor] = dsearchn([pupil_y,pupil_x], [edge_y,edge_x]);
-for ii = 1:length(nearest_neighbor)
-  if nearest_neighbor(ii) > dist
-    all_edges(edge_y(ii), edge_x(ii)) = 0;
-    im.all_edges(edge_y(ii), edge_x(ii)) = 0.6;
-  end
-end
-
-[pupil_xs, pupil_ys] = find(squeeze(all_edges));
-ellipse = fit_ellipse(pupil_xs,pupil_ys);
-if isempty(ellipse) | not(strcmp(ellipse.status, '')) %could not fit ellipse
+if not(isempty(pupil_x)) & not(isempty(pupil_y))
+    [~, nearest_neighbor] = dsearchn([pupil_y,pupil_x], [edge_y,edge_x]);
+    for ii = 1:length(nearest_neighbor)
+        if nearest_neighbor(ii) > dist
+            all_edges(edge_y(ii), edge_x(ii)) = 0;
+            im.all_edges(edge_y(ii), edge_x(ii)) = 0.6;
+        end
+    end
+    
+    [pupil_xs, pupil_ys] = find(squeeze(all_edges));
+    ellipse = fit_ellipse(pupil_xs,pupil_ys);
+    if isempty(ellipse) | not(strcmp(ellipse.status, '')) %could not fit ellipse
+        ellipse = struct( ...
+            'a',0,...
+            'b',0,...
+            'phi',0,...
+            'X0',0,...
+            'Y0',0,...
+            'X0_in',0,...
+            'Y0_in',0,...
+            'long_axis',0,...
+            'short_axis',0,...
+            'status', ellipse.status);
+    end
+    d = max(ellipse.a, ellipse.b);
+else
+    d = 0;
     ellipse = struct( ...
         'a',0,...
         'b',0,...
@@ -287,4 +319,3 @@ if isempty(ellipse) | not(strcmp(ellipse.status, '')) %could not fit ellipse
         'short_axis',0,...
         'status', '');
 end
-d = max(ellipse.a, ellipse.b);
