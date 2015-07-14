@@ -238,7 +238,15 @@ elseif ~isempty(tag_masks) && length(tag_masks{1})>=16 && strcmp(tag_masks{1}(1:
     end
     
     % remove duplicate events (for overlaid stim, eg VTL)
-    keepidx=find([1;(diff(eventtime)~=0 | diff(evtrials)~=0)]);
+    keep=ones(size(eventtime));
+    for kk=1:(length(keep)-1),
+        if (eventtime(kk)==eventtime(kk+1) && evtrials(kk)==evtrials(kk+1)),
+            keep(kk)=0;
+        end
+    end
+    keepidx=find(keep);
+    
+    %keepidx=find([1;(diff(eventtime)~=0 | diff(evtrials)~=0)]);
     eventtime=eventtime(keepidx);
     eventtimeoff=eventtimeoff(keepidx);
     evtrials=evtrials(keepidx);

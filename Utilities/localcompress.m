@@ -4,7 +4,7 @@ tempfile = 'localcompress.tmp';
 
 % CHECK SPECIAL SOLUTIONS ON CERTAIN PLATFORMS/COMPUTERS
 switch computer
-  case 'PCWIN64';
+  case {'PCWIN','PCWIN64'},
     % TEST FOR CYGWIN (WORKS ONLY IF PARENT DIRECTORY IS WRITABLE)
     [Check,Output] = system('which tar');
     if ~isempty(Output) && Output(1)=='/' % CYGWIN TAR AVAILABLE

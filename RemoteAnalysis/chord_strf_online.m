@@ -63,7 +63,7 @@ if strcmpi(exptparams.TrialObject.ReferenceClass,'RandomTone') || ...
     
     options.PreStimSilence=ReferencePreStimSilence;
     options.PostStimSilence=ReferencePostStimSilence;
-    options.rasterfs=100;
+    options.rasterfs=1000;
     disp('chord_strf_online: Loading response...');
     [r_ref,tags_ref]=raster_load(mfile,channel,unit,options);
     
@@ -76,7 +76,7 @@ if strcmpi(exptparams.TrialObject.ReferenceClass,'RandomTone') || ...
     freqcount=length(unique_freq);
     
     TrialCount=sum(~isnan(r_ref(1,:)));
-    MaxFreq=min(TrialCount./4,30);
+    MaxFreq=min(TrialCount./4,32);
     if freqcount>MaxFreq,
         newidx=round(linspace(1,freqcount+1,MaxFreq+1));
         newfreq=zeros(MaxFreq,1);
@@ -96,7 +96,7 @@ if strcmpi(exptparams.TrialObject.ReferenceClass,'RandomTone') || ...
     spontbins=1:round(ReferencePreStimSilence*options.rasterfs);
     onsetbins=round(ReferencePreStimSilence*options.rasterfs+1):...
        round((ReferencePreStimSilence+0.05)*options.rasterfs);
-    sustbins=round((ReferencePreStimSilence+0.05)*options.rasterfs+1):...
+    sustbins=round((ReferencePreStimSilence+0)*options.rasterfs+1):...
        round((ReferencePreStimSilence+0.1)*options.rasterfs);
     offsetbins=round((ReferencePreStimSilence+ReferenceDuration)*options.rasterfs+1):...
        round((ReferencePreStimSilence+ReferenceDuration+0.05)*options.rasterfs);
@@ -196,10 +196,10 @@ if strcmpi(exptparams.TrialObject.ReferenceClass,'RandomTone') || ...
     set(gca,'XTick',stimlabelidx,'XTickLabel',stimulusKHz(stimlabelidx));
     
     if RISVAR,
-        hl=legend('Onset','Sust');
+        hl=legend('Onset','All');
         ylabel('Spike std (spikes/sec)');
     else
-        hl=legend('Onset','Sust','Offset');
+        hl=legend('Onset','All','Offset');
         ylabel('Spike rate (spikes/sec)');
     end
     legend(gca,'boxoff');

@@ -70,6 +70,7 @@ adpfrac=zeros(1,length(ufreq));
 ssarespz=zeros(1,length(ufreq));
 
 tt=(1:size(r,1))./options.rasterfs-prepip;
+axes(h);
 for uu=1:length(ufreq)
     ff=find(freq==ufreq(uu));
     
