@@ -24,6 +24,32 @@ guidata(hObject, handles);
 function varargout = pupil_OutputFcn(hObject, eventdata, handles) 
 varargout{1} = handles.output;
 
+%% Set some globals -- Hacked from MANTA M_Defaults.m
+global MG
+MG=Struct();
+MG.Stim=struct();
+MG.Stim.COMterm = 124; % '|'
+MG.Stim.MSGterm = 33; % '!' 
+MG.Stim.Port = 33331; %  Port to connect to 33331 rather than MANTA 33330
+% hard-coding remote (baphy) host for now.
+%MG.Stim.Host = 'localhost';
+MG.Stim.Host = '137.53.80.76';  % weasel.ohsu.edu
+I = ver('instrument');
+if ~isempty(I)
+  MG.Stim.Package = 'ICT'; % Instrument Control Toolbox
+else 
+  error(['Instrument Control Toolbox needs to be installed, since there is no free package that supports Callback functions at this point.']);
+  MG.Stim.Package = 'jTCP'; % Java TCP by Kevin Bartlett (http://www.mathworks.com/matlabcentral/fileexchange/24524-tcpip-communications-in-matlab)
+  I = which('jtcp');
+  if isempty(I) 
+    MG.Stim.Pacakge = 'None';
+    fprintf(['WARNING : NO TCPIP SUITE FOUND!\n'...
+      '\tNeither the instrument control toolbox, nor the open source tcpip suite jTCP have been detected.\n '...
+      '\tPlease install either of those two, in order to connect to a controller/stimulator\n']); 
+  end
+end
+ 
+
 %%Pupil measurement parameters
 function edit_high_Callback(hObject, eventdata, handles)
 refresh(handles)
@@ -121,6 +147,7 @@ running = get(handles.run, 'value');
 recording = get(handles.record, 'value');
 if running
     set(handles.run, 'string', 'Stop');
+    update_status(handles, 'RUNNING')
     [eye_im high low slop dist] = update_params(handles);
     interval = 0.1;
     d_over_time = [];
@@ -128,13 +155,14 @@ if running
     if recording
         handles.vid_obj.FrameRate = 1/interval;
         open(handles.vid_obj);
+        update_status(handles, 'RECORDING')
     end
     tic
     while running
         handles.im = getsnapshot(handles.cam);
         handles.eye_im = imcrop(rgb2gray(handles.im), handles.roi);
         guidata(hObject, handles)
-        d = measure_pupil(handles.eye_im, high, low, slop, dist);
+        d = measure_pupil(handles.eye_im, high, low, dist, slop);
         d_over_time = [d_over_time d];
         t = [t toc];
         t = t(1:length(d_over_time));
@@ -153,17 +181,37 @@ if running
     end
 else
     set(handles.run, 'string', 'Start')
+    update_status(handles, 'IDLE')
     if recording
-        close(handles.vid_obj);
+        close(handles.vid_obj)
     end
 end
 
 function record_Callback(hObject, eventdata, handles)
 if get(handles.record, 'value')
     [f dir] = uiputfile;
-    handles.vid_obj = VideoWriter([dir f]);
-    guidata(hObject, handles)
+    update_savefile(handles, [dir f])
+%     [f dir] = uiputfile;
+%     handles.vid_obj = VideoWriter([dir f], 'Archival');
+%     guidata(hObject, handles)
+%     set(handles.savefile_msg, 'String', uiputfile)
 end
+
+function savefile_msg_Callback(hObject, eventdata, handles)
+
+function savefile_msg_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), ...
+        get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+function update_savefile(handles, f)
+if isfield(handles, 'vid_obj')
+    close(handles.vid_obj)
+end
+handles.vid_obj = VideoWriter(f, 'Archival');
+guidata(hObject, handles)
+set(handles.savefile_msg, 'String', f)
 
 %%Region of interest selection
 function set_roi_Callback(hObject, eventdata, handles)
@@ -244,7 +292,7 @@ axis equal
 colormap(jet)
 
 function [d, im, circ, ellipse] = measure_pupil(eye_im, high, low, dist, slop) 
-eye_thresh = eye_im;
+eye_thresh = eye_im+1;
 eye_thresh(eye_im>high) = 0;
 eye_thresh(eye_im<low) = 0;
 
@@ -319,3 +367,20 @@ else
         'short_axis',0,...
         'status', '');
 end
+
+%%Communication with Baphy
+
+
+% --- Executes on button press in btnConnect.
+function btnConnect_Callback(hObject, eventdata, handles)
+% hObject    handle to btnConnect (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+global MG
+
+MG.handles=handles;
+State = get(hObject,'Value');
+update_status(handles,['Connect: ',num2str(State)]);
+
+%if State M_startTCPIP; else M_stopTCPIP; end
