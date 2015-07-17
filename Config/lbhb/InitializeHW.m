@@ -9,7 +9,7 @@ function [HW, globalparams] = InitializeHW (globalparams)
 % Nima, original November 2005
 % SVD, lab specific setups 2012-05
 %
-
+global SAVEPUPIL
 global FORCESAMPLINGRATE
 
 if ~exist('globalparams','var'),
@@ -115,6 +115,11 @@ switch globalparams.HWSetup
     
     %% COMMUNICATE WITH MANTA
     if doingphysiology  [HW,globalparams] = IOConnectWithManta(HW,globalparams); end
+    
+    %% COMMUNICATE WITH Pupil
+    if SAVEPUPIL 
+        [HW,globalparams] = IOConnectPupil(HW,globalparams);
+    end
     
   case {4,5},  % (LB-2) LARGE SOUND BOOTH 2
       % setup 4 = audio channel 1 (AO0) on Right

@@ -28,7 +28,7 @@ global globalparams
 disp('*** Starting baphy ***'); quit_baphy=0;
 warning('off','MATLAB:dispatcher:InexactMatch');
 baphy_set_path;
-
+global SAVEPUPIL
 if exist('HW','var') ShutdownHW(HW); end
 
 while ~quit_baphy,
@@ -108,6 +108,11 @@ while ~quit_baphy,
             globalparams.rawid=0;
         end
     end
+    % Also generate pupil filename.
+    if SAVEPUPIL,
+        globalparams.PupilFilename = strrep(globalparams.mfilename,'.m','.avi');
+    end
+    
     % check to see if tempdatapath and outpath are acessable, if not DONT
     % continue:
     if ~isempty(exptparams) && ~exist(globalparams.tempdatapath,'dir')

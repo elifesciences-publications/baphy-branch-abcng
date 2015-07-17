@@ -22,9 +22,9 @@ for ff=1:length(par.Frequencies),
         lf=round(2.^(log2(f0)-par.Bandwidth./2));
         hf=round(2.^(log2(f0)+par.Bandwidth./2));
         Pips{ff}=BandpassNoise(lf,hf,par.PipDuration,par.SamplingRate);
-        Pips{ff)(1:length(rampon))=Pips{ff)(1:length(rampon)).*rampon;
-        Pips{ff)((end-length(rampoff)+1):end)=...
-            Pips{ff)((end-length(rampoff)+1):end).*rampoff;
+        Pips{ff}(1:length(rampon))=Pips{ff}(1:length(rampon)).*rampon;
+        Pips{ff}((end-length(rampoff)+1):end)=...
+            Pips{ff}((end-length(rampoff)+1):end).*rampoff;
     else
         ToneSamples=round(par.PipDuration.*par.SamplingRate);
         tt=(0:(ToneSamples-1))./par.SamplingRate;
