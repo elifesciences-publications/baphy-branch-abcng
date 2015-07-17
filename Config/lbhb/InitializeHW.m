@@ -62,7 +62,8 @@ switch globalparams.HWSetup
     HW=niCreateAI(HW,DAQID,'ai0:1','Touch,Microphone','/Dev1/PFI0');
     
     %% ANALOG OUTPUT
-    HW=niCreateAO(HW,DAQID,'ao0:1','SoundOut1,SoundOut2','/Dev1/PFI1');
+    %HW=niCreateAO(HW,DAQID,'ao0:1','SoundOut1,SoundOut2','/Dev1/PFI1');
+    HW=niCreateAO(HW,DAQID,'ao0:1','SoundOut2,SoundOut1','/Dev1/PFI1');
     
     %% SETUP SPEAKER CALIBRATION
     %HW.Calibration.Speaker = 'FreeFieldCMB1';
@@ -71,6 +72,8 @@ switch globalparams.HWSetup
    
     % no filter, so use higher AO sampling rate in some sound objects:
     FORCESAMPLINGRATE=[];
+    
+    HW.params.SoftwareEqz(:)=2;
 
   case {2,3,8,9},  % (LB-1) LARGE SOUND BOOTH 1 -- Copied mostly from SB-1
       % setup 2 = audio channel 1 (AO0) on Right
@@ -130,8 +133,8 @@ switch globalparams.HWSetup
     % port0/line2 reserved for inverse TrigAI
     HW=niCreateDO(HW,DAQID,'port0/line3','Pump','InitState',0);
     HW=niCreateDI(HW,DAQID,'port0/line4','Touch');
-    HW=niCreateDO(HW,DAQID,'port0/line5','Light','InitState',0);
-    HW=niCreateDO(HW,DAQID,'port0/line6','Light2','InitState',0);
+    HW=niCreateDO(HW,DAQID,'port0/line5','Light','InitState',0); % spout light
+    HW=niCreateDO(HW,DAQID,'port0/line6','Light2','InitState',0); % room light
     HW=niCreateDO(HW,DAQID,'port0/line7','Light3','InitState',0);
     %HW=niCreateDO(HW,DAQID,'port0/line4','Shock','InitState',0);
     

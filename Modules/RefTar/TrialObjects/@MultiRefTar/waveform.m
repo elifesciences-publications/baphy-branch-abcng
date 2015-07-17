@@ -276,9 +276,10 @@ else
     %TrialSound = 5 * TrialSound / max(abs(TrialSound(:)));
 end
 
-if max(abs(TrialSound(:)))>10,
-    error('TrialSound too loud');
-end
+% moved this to IOLoadSound
+% if max(abs(TrialSound(:)))>10,
+%     error('TrialSound too loud');
+% end
 
 if ~isempty(CatchTrialIndex)
     CatchChannel=par.TargetChannel;
