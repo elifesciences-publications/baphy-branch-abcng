@@ -36,12 +36,14 @@ if RepIndex==1 && RepOrTrial,
     for ii=1:length(TargetIdxFreq),
         TarIdxSet=cat(2,TarIdxSet,ones(1,ceil(TrialCount.*TargetIdxFreq(ii))).*TargetIdx(ii));
     end
-    for ii=1:(length(TarIdxSet)-1),
-        % evenly distribute targets
-        n=hist(TarIdxSet(ii:end),TargetIdx);
-        mm=find(n==max(n), 1);
-        mmm=find(TarIdxSet(ii:end)==TargetIdx(mm), 1)+ii-1;
-        TarIdxSet([ii mmm])=TarIdxSet([mmm ii]);
+    if length(TargetIdx)>1,
+        for ii=1:(length(TarIdxSet)-1),
+            % evenly distribute targets
+            n=hist(TarIdxSet(ii:end),TargetIdx);
+            mm=find(n==max(n), 1);
+            mmm=find(TarIdxSet(ii:end)==TargetIdx(mm), 1)+ii-1;
+            TarIdxSet([ii mmm])=TarIdxSet([mmm ii]);
+        end
     end
     
     if strcmpi(par.Mode,'RepDetect'),
@@ -135,6 +137,7 @@ if RepIndex==1 && RepOrTrial,
        end      
     else
        for TrialIdx=1:(TrialCount*TrialMult)
+           refcount=find(rand>[0 cumsum(ReferenceCountFreq)], 1, 'last' )-1;
           switch par.Mode,
              case {'RepDetect','RdtWithSingle'},
                 if TrialIdx>TrialCount,

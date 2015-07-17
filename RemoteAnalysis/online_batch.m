@@ -112,10 +112,14 @@ end
 if ~ReuseFigure
   % CREATE NEW AXES
   for ii=1:NElectrodes
-%     Electrode = Electrodes(ii);
-%     DC{ii} = DCAll{end-round(ElectrodesXY(Electrode,2))+1,round(ElectrodesXY(Electrode,1))};
-    DC{ii} = DCAll{end-round(ElectrodesXY(ii,2))+1,round(ElectrodesXY(ii,1))};
+    Electrode = Electrodes(ii);
+    if NElectrodes==1,
+        DC{ii}=[0.13 0.11 0.775 0.815];
+    else
+        DC{ii} = DCAll{end-round(ElectrodesXY(Electrode,2))+1,round(ElectrodesXY(Electrode,1))};
+    end
     figure(BATCH_FIGURE_HANDLE); % MAKE SURE TO PLOT INTO CORRECT FIGURE
+       
     AH(ii) = axes('Position',DC{ii},'FontSize',6);
   end
 else % REUSE AXES
@@ -206,31 +210,35 @@ for ii=1:NElectrodes
       elseif strcmpi(options.runclass(1:2),'SP') || strcmpi(options.runclass,'SNS'),
         % for speech and sporcs, use boosting to estimate strf
         boost_online(mfile,Electrode,unit,AH(ii),options);
-      elseif strcmpi(options.runclass,'VOC'),
+      elseif strcmpi(options.runclass,'VOC') || strcmpi(options.runclass,'NAT'),
         %options.filtfmt='specgramv';
         options.filtfmt='gamma';
         % for speech and sporcs, use boosting to estimate strf
         boost_online(mfile,Electrode,unit,AH(ii),options);
       elseif strcmpi(options.runclass,'tst')  %for multi-level tuning
         mltc_online(mfile,Electrode,unit,AH(ii),options);
+      elseif strcmpi(options.runclass,'SSA')  %for multi-level tuning
+          options.rasterfs=100;
+          options.channel=Electrode;
+          ssa_psth(mfile,options,AH(ii));
       else
-        if ~options.usesorted
-          % standard TORC strf
-          options.usefirstcycle=0;
-          options.tfrac = 1;
-          [strf,snr(ii)]=strf_online(mfile,Electrode,AH(ii),options,DC{ii});
-        else
-          mfilename = [mfile,'.m'];
-          spkpath = mfile(1:strfind(mfile,filename)-1);
-          
-          if strcmp(computer,'PCWIN') || strcmp(computer,'PCWIN64')
-            spikefile = [spkpath,'sorted\',filename,'.spk.mat'];
+          if ~options.usesorted
+              % standard TORC strf
+              options.usefirstcycle=0;
+              options.tfrac = 1;
+              [strf,snr(ii)]=strf_online(mfile,Electrode,AH(ii),options,DC{ii});
           else
-            spikefile = [spkpath,'sorted/',filename,'.spk.mat'];
+              mfilename = [mfile,'.m'];
+              spkpath = mfile(1:strfind(mfile,filename)-1);
+              
+              if strcmp(computer,'PCWIN') || strcmp(computer,'PCWIN64')
+                  spikefile = [spkpath,'sorted\',filename,'.spk.mat'];
+              else
+                  spikefile = [spkpath,'sorted/',filename,'.spk.mat'];
+              end
+              
+              [strf,snr(ii)]=strf_offline2(mfilename,spikefile,Electrode,options.sortedunit);
           end
-          
-          [strf,snr(ii)]=strf_offline2(mfilename,spikefile,Electrode,options.sortedunit);
-        end
       end
       
     case 'raster',

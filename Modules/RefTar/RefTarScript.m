@@ -16,6 +16,7 @@ function varargout = RefTarScript (globalparams, exptparams, HW)
 global StopExperiment; StopExperiment = 0; % Corresponds to User button
 global exptparams_Copy; exptparams_Copy = exptparams; % some code needs exptparams
 global BAPHY_LAB LoudnessAdjusted
+global SAVEPUPIL
 
 BehaveObject = exptparams.BehaveObject;
 
@@ -87,7 +88,7 @@ while ContinueExp == 1
       
       % CONSTRUCT FILENAME FOR MANTA RECORDINGS (ONLY USED IN MANTA SETUP)
       HW.Filename = M_setRawFileName(globalparams.mfilename,TrialIndex);
-      
+
       % GET & SET LOGGING DURATION FOR PRESENT TRIAL
       exptparams.LogDuration = LogDuration(BehaveObject, HW, ...
         StimEvents, globalparams, exptparams, TrialIndex);
@@ -276,6 +277,12 @@ switch HW.params.DAQSystem
   case 'MANTA';
     MSG = ['RUNFUN',HW.MANTA.COMterm,'M_startEngine; ',HW.MANTA.MSGterm];
     IOSendMessageManta(HW,MSG,'');
+end
+
+% Tell pupil system to stop
+if SAVEPUPIL && isfield(HW,'Pupil'),
+    MSG = ['STOP',HW.Pupil.COMterm,HW.Pupil.MSGterm];
+    [RESP,HW.Pupil] = IOSendMessageTCPIP(HW.Pupil,MSG,'STOP OK','',1);
 end
 
 % GET AMOUNT OF WATER GIVEN

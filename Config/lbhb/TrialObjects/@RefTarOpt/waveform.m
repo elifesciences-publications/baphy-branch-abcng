@@ -171,6 +171,10 @@ TrialDuration=TrialBins./TrialSamplingRate;
 %'LightPulseShift','edit',0,...
 %'LightEpoch','popupmenu','Sound|Sound Onset|Whole'};
 LightBand=zeros(TrialBins,1);
+RampTime=0.000;
+RampOn=linspace(0,5,round(TrialSamplingRate*RampTime));
+RampOff=linspace(5,0,round(TrialSamplingRate*RampTime));
+
 if LightTrial
     disp('Light on trial');
     LightStepSize=TrialSamplingRate./par.LightPulseRate;
@@ -203,6 +207,8 @@ if LightTrial
                 while LightStartTime<StimStopTime,
                     LightStartBin=round(LightStartTime*TrialSamplingRate);
                     LightBand(LightStartBin+(1:LightOnBins))=5;
+                    LightBand(LightStartBin+(1:length(RampOn)))=RampOn;
+                    LightBand(LightStartBin+((LightOnBins-length(RampOff)+1):LightOnBins))=RampOff;
                     LightStartTime=LightStartTime+1./par.LightPulseRate;
                 end
             end

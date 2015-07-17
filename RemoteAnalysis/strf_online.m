@@ -54,7 +54,7 @@ loadoptions.rasterfs=options.rasterfs;
 loadoptions.channel=channel;
 loadoptions.sigthreshold=options.sigthreshold;
 loadoptions.includeprestim=0;
-loadoptions.tag_masks={'TORC'};
+loadoptions.tag_masks=getparm(options,'tag_masks',{'TORC'});
 loadoptions.lfp=options.lfp;
 [r,tags]=loadevpraster(mfilename,loadoptions);
 toc
@@ -78,6 +78,7 @@ rini = rold; tagsini = tags;
 notempty = @(x) ~isempty(x);
 nolightindex = strfind(tags,'NoLight');
 if any(cellfun(notempty,nolightindex))
+    delete(axeshandle);
   TwolightConditions = 1;
   DCAll = HF_axesDivide(1,[1,1],divisionhandle,[],0.4);
   for ii = 1:2 % 2 light conditions
