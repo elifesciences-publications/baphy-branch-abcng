@@ -40,6 +40,7 @@ tmp = get(exptparams.TrialObject,'TargetIndices'); TargetIndices = tmp{exptparam
 %% COMPUTE RESPONSE WINDOWS
 str1ind = strfind(StimEvents(end).Note,' '); str2ind = strfind(StimEvents(end).Note,'-')-1;
 Index = str2num(StimEvents(end).Note(str1ind(3):str2ind(1)));
+RH = get(exptparams.TrialObject,'ReferenceHandle');
 TH = get(exptparams.TrialObject,'TargetHandle');
 DistributionTypeByInd = get(TH,'DistributionTypeByInd');
 DistributionTypeNow = DistributionTypeByInd(Index);
@@ -103,7 +104,7 @@ THcatch = set(THcatch,'MinToC',RefSliceDuration+2*ChordDuration); THcatch = set(
 THcatch = ObjUpdate(THcatch);
 MaxIndex = get(TH,'MaxIndex');
 % After change sound
-ActualTrialSound = exptparams.wAccu;
+ActualTrialSound = exptparams.wAccu((get(RH,'Duration')*SF+1):end);
 % COMPUTE LOUDNESS ATTENUATION
 AttenuationD0 = str2num(get(TH,'AttenuationD0'));
 % if AttenuationD0~=0
@@ -166,7 +167,7 @@ while CurrentTime < (TimingLastChange+RespWinDur)
     RefSliceCounter = RefSliceCounter+1;
     SliceDuration = RefSliceDuration;
   elseif AddTar
-    SliceDuration = TargetSliceToC+RespWinDur-PreStimSilence;
+    SliceDuration = TargetSliceToC+RespWinDur-PreStimSilence-get(RH,'Duration');
     AnticipatedLoadingDuration = 0;  % goes until the end of the slice for target
   end
   TimingLastChange = RefSliceCounter*RefSliceDuration+TargetSliceToC;
@@ -209,6 +210,10 @@ while CurrentTime < (TimingLastChange+RespWinDur)
   
   if RefSliceCounter==1
     NormFactor = maxLocalStd(stim(round(PreStimSilence*SF)+(1:round(SliceDuration*SF))),SF,floor(round(SliceDuration*SF)/SF));
+    if ~AddTar
+      stim = [zeros(get(RH,'Duration')*SF,1) ; stim];
+      SliceDuration = SliceDuration+get(RH,'Duration');
+    end
   end
   global LoudnessAdjusted; LoudnessAdjusted  = 1;
   stim = stim/NormFactor;
@@ -521,6 +526,8 @@ if ~strcmp(Outcome,'SNOOZE')
   while CurrentTime < ResponseTime + get(O,'AfterResponseDuration');
     CurrentTime = toc+InitialTime; pause(0.05);
   end
+else
+  pause(get(O,'AfterResponseDuration'));
 end
 
 function Events = LF_TimeOut(HW,TimeOut,Light,cTrial,Outcome)

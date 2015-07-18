@@ -110,6 +110,8 @@ elseif isempty(tar),
       runclass = 'MMC';      
     case 'MEMOCLOUDS'
       runclass = 'MTC';
+    case 'STCLICK'
+      runclass = 'STC';
     otherwise
       runclass = '';
   end
@@ -222,6 +224,8 @@ else
       runclass = 'RST';      
     case 'WHITENOISE'
       runclass = 'WHN';
+      case 'STCLICK'
+      runclass = 'STC';
     otherwise
       error('Enter a runclass into RunClassTable.m to avoid later confusion!');
   end

@@ -45,7 +45,9 @@ if nargout
 else
   gui_mainfcn(gui_State, varargin{:});
 end
-set(gcf,'WindowStyle','normal');
+if strcmp(get(0,'DefaultFigureWindowStyle'),'docked')
+  set(gcf,'WindowStyle','normal');
+end
 % End initialization code - DO NOT EDIT
 
 
