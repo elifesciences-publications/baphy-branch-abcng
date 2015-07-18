@@ -1,4 +1,4 @@
-function [wrapdata,cnorm] = psth(dsum,fhist,startime,endtime,mf);
+function [wrapdata,cnorm] = psth_Martin(dsum,fhist,startime,endtime,mf);
 % [wrapdata,cnorm] = psth(dsum,fhist,startime,endtime,mf);
 % 
 % PSTH: Creates a period histogram according to the period
