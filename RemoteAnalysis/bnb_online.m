@@ -131,6 +131,8 @@ else
     bf=0;
     blo=0;
     bhi=0;
+    lidx=0;
+    hidx=0;
 end
 
 %fit a gaussian to the tuning curve
@@ -179,9 +181,11 @@ if bf>0,
     l=text(0.01*aa(2),0.85*aa(4),...
         sprintf('half-max width: %.2f oct (%d-%d)\n0.37 oct:%.0f-%.0f\n0.5 oct: %.0f-%.0f',...
         log2(bhi/blo),blo,bhi,bf*2^(-0.37/2),bf*2^(0.37/2),bf*2^(-0.25),bf*2^0.25));
+    set(l, 'FontSize', 6);
 else
     ht=title(sprintf('%s Rep%d BF=nan',...
         basename(mfile),size(r,2)));
+    l='';
 end
 set(ht,'Interpreter','none');
 set(l,'Interpreter','none');
