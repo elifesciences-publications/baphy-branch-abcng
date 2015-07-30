@@ -3,13 +3,14 @@ function M_stopTCPIP
 % This file is part of MANTA licensed under the GPL. See MANTA.m for details.
 global MG Verbose
 
-try; 
+try, 
   fclose(MG.Stim.TCPIP); 
-  M_Logger('Connection to stimulator terminated.\n');
-catch; 
+  disp('Connection to stimulator terminated.\n');
+catch,
+    disp('No TCPIP connection to close');
 end
 
 % SET STATE IN GUI
-set(MG.GUI.TCPIP,'BackgroundColor',...
-  MG.Colors.TCPIP.(MG.Stim.TCPIP.Status),...
-  'Value',strcmp('open',MG.Stim.TCPIP.Status));
+%set(MG.Stim.TCPIP,'BackgroundColor',...
+%  MG.Colors.TCPIP.(MG.Stim.TCPIP.Status),...
+%  'Value',strcmp('open',MG.Stim.TCPIP.Status));

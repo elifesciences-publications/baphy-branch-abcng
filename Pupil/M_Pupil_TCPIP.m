@@ -6,7 +6,7 @@ Sep = filesep;
 
 % GET DATA FROM STIMULATOR
 if ~obj.BytesAvailable 
-  echo('\n\tWARNING : No Bytes Available.\n'); 
+  fprintf('WARNING : No Bytes Available.\n'); 
   return; 
 end
 ArrivalTime = now;
@@ -17,7 +17,7 @@ Pos = find(int8(Messages{end})==MG.Stim.COMterm);
 if isempty(Pos)  Pos = length(Messages{end})+1; end
 [TV,TS] = datenum2time(ArrivalTime);
 
-echo([' <---> TCPIP message received: ',escapeMasker(Messages{end}),' (',TS{1},')\n']); 
+disp([' <---> TCPIP message received: ',escapeMasker(Messages{end}),' (',TS{1},')\n']); 
 
 COMMAND = Messages{end}(1:Pos-1);
 DATA = Messages{end}(Pos+1:end);
@@ -25,17 +25,23 @@ DATA = Messages{end}(Pos+1:end);
 switch COMMAND
   case 'INIT';    
     BaseName = DATA;
-    MG.Pupil.BaseName = BaseName;
-    MG.Pupil.BasePath = BaseName(1:find(BaseName==filesep,1,'last'));
+
     % UPDATE DISPLAY
-    set(MG.Pupil.BaseName,'String',BaseName);
-    set(MG.Pupil.CurrentFileSize,'String','');
+    set(MG.handles.video_file, 'String',  BaseName);
+    
     % PARSE NAME AND CHECK EXISTENCE OF DIRECTORY
     mkdirAll(BaseName);
-    M_sendMessage([COMMAND,' OK']);
 
+    M_sendMessage([COMMAND,' OK']);
+    set(MG.handles.status_msg,'String','baphy told us to start');
+    
+    % Start recording pupil data
+    pupil_start_recording(MG.hObject, MG.handles)
+    %set(MG.handles.checkRunning,'Value',1);
+    
   case 'START';
-    M_parseFilename(DATA);
+      % deprecated
+    %M_parseFilename(DATA);
    
     % 
     % UPDATE DISPLAY -- replace with update_status, filename etc in pupil
@@ -53,15 +59,15 @@ switch COMMAND
     
     M_sendMessage([COMMAND,' OK']);
     
-    % Start recording pupil data 
-    % call SOMETHING IN pupil.m
-    
   case 'STOP';
-    MG.DAQ.StopMessageReceived = 1;
+    MG.StopMessageReceived = 1;
     % Stop recording pupil data 
-    % call SOMETHING IN pupil.m
-    % M_stopRecording; 
+    MG.recording=0;
+    M_sendMessage([COMMAND,' OK']);
+    %set(MG.handles.checkRunning,'Value',0);
+    set(MG.handles.status_msg,'String','baphy told us to stop');
 
+    
 %
 % Following 3 cases are probably not necessary but worth leaving around in
 % case they become useful
@@ -97,7 +103,9 @@ switch COMMAND
   case 'COMTEST';
     M_sendMessage([COMMAND,' OK']);
     
-  otherwise fprintf(['WARNING: Unknown command received: ',COMMAND,'\n']);
+    otherwise
+        fprintf(['WARNING: Unknown command received: ',COMMAND,'\n']);
+        M_sendMessage([COMMAND,' UNKNOWN']);
 end
 
   

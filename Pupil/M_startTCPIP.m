@@ -4,7 +4,7 @@ function M_startTCPIP
 global MG
 
 % OBTAIN CONNECTION OBJECT
-disp(['Establishing connection with Host ',MG.Stim.Host,':',n2s(MG.Stim.Port),'...\n']);
+disp(['Establishing connection with Host ',MG.Stim.Host,':',num2str(MG.Stim.Port),'...\n']);
 MG.Stim.TCPIP = tcpip(MG.Stim.Host,MG.Stim.Port,'TimeOut',.4,'OutputBufferSize',2^18);
 
 % SET PROPERTIES
