@@ -1,8 +1,16 @@
 function [data] = SpeakerCalibrationGolay (inputstim)
 
+if ~exist('inputstim','var'),
+    load GolayStims
+    disp('StimA and StimB loaded into main workspace.');
+    disp('Now re-run : [data] = SpeakerCalibrationGolay(stimA)');
+    disp('Or         : [data] = SpeakerCalibrationGolay(stimB)');
+    return
+end
+
 if ~exist('globalparams','var'),
     globalparams=[];
-    globalparams.HWSetup=2;
+    globalparams.HWSetup=1;
 end
 globalparams.Physiology = 'No';
 HW = InitializeHW(globalparams);
@@ -10,13 +18,12 @@ HW = InitializeHW(globalparams);
 % init signal to tones of above frequencies
 voltage      = 10.0;   %This is the peak-to-peak of the output from computer.
 
-if ~exist('inputstim','var'),
-    load GolayStims
-    disp('StimA and StimB loaded into main workspace');
-    return
+if  globalparams.HWSetup==1
+    % NI card can't handle anything faster, it seems?
+    samplingfreq = 20000;%actfreq*mult_fact;
+else
+    samplingfreq = 100000;%actfreq*mult_fact;
 end
-
-samplingfreq = 100000;%actfreq*mult_fact;
 signal=inputstim.*voltage;
 signaldur=length(signal)./samplingfreq;
 %actfreq=2000;

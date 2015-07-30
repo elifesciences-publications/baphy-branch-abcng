@@ -80,15 +80,18 @@ switch HW.params.HWSetup
     % Only change level of channels named "Sound*":
     AudioChannels=IOGetAudioChannels(HW);
     if isfield(HW,'SoftwareAttendB')
-      attend_db=HW.SoftwareAttendB;
+      atten_db=HW.SoftwareAttendB;
     elseif isfield(HW.params,'SoftwareEqz') && any(HW.params.SoftwareEqz),
       atten_db=HW.params.SoftwareEqz(1);
     else
       atten_db = 0;
     end
-    level_scale=10.^(-attend_db./20);
+    level_scale=10.^(-atten_db./20);
     stim(:,AudioChannels)=stim(:,AudioChannels).*level_scale;
-    
+    if max(abs(stim(:)))>10,
+        error('IOLoadSound: TrialSound too loud');
+    end
+
     %% 2 SPEAKERS and Loudness are not been adjusted in the waveform of the SO
     if isfield(HW,'TwoSpeakers') && HW.TwoSpeakers && (isempty(LoudnessAdjusted) || ~LoudnessAdjusted)
       stim(:,1:SpeakerNb) = stim(:,1:SpeakerNb) * 0.5;
