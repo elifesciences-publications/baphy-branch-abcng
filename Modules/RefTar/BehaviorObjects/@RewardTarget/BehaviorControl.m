@@ -34,6 +34,7 @@ RefFlag=[];
 TarFlag=[];
 FalseAlarm = 0;
 StopTargetFA = get(o,'StopTargetFA');
+RewardAmount = get(o,'RewardAmount');
 LickEvents = [];
 tardur=0;   %added by py @ 9/6/2012
 if ~isfield(exptparams,'Water'), exptparams.Water = 0;end
@@ -48,7 +49,7 @@ end
 
 for cnt1 = 1:length(StimEvents);
     [Type, StimName, StimRefOrTar] = ParseStimEvent (StimEvents(cnt1));
-    if strcmpi(Type,'Stim') && ~isempty(strfind(StimName,'$'))
+    if strcmpi(Type,'Stim') %&& ~isempty(strfind(StimName,'$'))  % 15/06: YB (condition never filled in for TORC/Tone at least)
         if ~isempty(RefResponseWin)  % the response window should not go to the next sound!
             RefResponseWin(end) = min(RefResponseWin(end), StimEvents(cnt1).StartTime);
         end
@@ -75,7 +76,7 @@ lightonfreq = get(o,'LightOnFreq');
 tarcnt = 1;
 refcnt = 1;
 while CurrentTime < exptparams.LogDuration
-    ThisLick = IOLickRead (HW);  
+    ThisLick = IOLickRead(HW);
     Lick = ThisLick && ~LastLick;
     LastLick = ThisLick;
     if ~isempty(RefResponseWin) && CurrentTime>(RefResponseWin(end)-0.2)
@@ -169,11 +170,12 @@ while CurrentTime < exptparams.LogDuration
         else
             WaterFraction = 1;
         end
-        PumpDuration = get(o,'PumpDuration') * WaterFraction;
+        PumpDuration = RewardAmount* WaterFraction/globalparams.PumpMlPerSec.Pump;
+%         PumpDuration = get(o,'PumpDuration') * WaterFraction;
         if PumpDuration > 0
             ev = IOControlPump (HW,'start',PumpDuration);
             LickEvents = AddEvent(LickEvents, ev, TrialIndex);
-            exptparams.Water = exptparams.Water+PumpDuration;
+            exptparams.Water = exptparams.Water+RewardAmount* WaterFraction;
             if strcmpi(get(exptparams.BehaveObject,'RewardSound'),'Click') && PumpDuration
                 ClickSend (PumpDuration/2);
             end
