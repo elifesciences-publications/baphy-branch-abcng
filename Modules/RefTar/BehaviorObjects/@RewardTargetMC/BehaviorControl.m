@@ -61,7 +61,7 @@ AutomaticReward = get(O,'AutomaticReward');
 
 % PREPARE FOR LATE CENTERING REWARD
 CenteringRewardDelay = get(O,'CenteringRewardDelay');
-CenteringRewarded = 0;
+CenteringRewarded = 1;
 
 % PREPARE FOR CENTER REWARD
 CenterRewardAmount = get(O,'CenterRewardAmount');
@@ -83,6 +83,7 @@ LightSensorChannels = find(strcmp(SensorNames,'Light'));
 automatichit=0;
 
 % SYNCHRONIZE COMPUTER CLOCK WITH DAQ TIME
+ CurrentTimeIndice=1;
 tic; CurrentTime = IOGetTimeStamp(HW); InitialTime = CurrentTime;
 fprintf(['Running Trial [ <=',n2s(exptparams.LogDuration),'s ] ... ']);
 while CurrentTime < exptparams.LogDuration
@@ -93,14 +94,16 @@ while CurrentTime < exptparams.LogDuration
   
   AutomaticLick=0;
   
+  tictocresolution=0.000001;
   if CurrentTime<TarWindow(1)
     % READ LIGHT SENSOR
     if ~Simulick
-      cVals = IOLickRead(HW,LightSensorChannels);
-      if ~cVals
+      cVals(CurrentTimeIndice)= IOLickRead(HW,LightSensorChannels);
+      if CurrentTimeIndice>=30001 && mean(cVals(CurrentTimeIndice-30000:CurrentTimeIndice))==0 % tictoc resolution : 0.000001 du coup *30000 pour 30ms Trying to prevent too many snoozes for Paneer
         BrokenLight = 1;
       end
     end
+    
     
   elseif CurrentTime>TarWindow(1) && CurrentTime<TarWindow(2)
     % READ LICKS FROM ALL SENSORS
@@ -120,9 +123,10 @@ while CurrentTime < exptparams.LogDuration
     end
   end
 
-    
+    CurrentTimeIndice=CurrentTimeIndice+1;
+     
     % PROCESS LIGHT BEAM
-    if BrokenLight
+    if BrokenLight    
       ResponseTime = CurrentTime;
       Events=AddEvent(Events,'LIGHT',TrialIndex,ResponseTime,[]);
       break;
@@ -162,23 +166,23 @@ while CurrentTime < exptparams.LogDuration
     end
     
     % DELIVER DELAYED CENTERING REWARD (FOR CASES IN WHICH THE CENTERING OCCURS DURING RECORDING)
-    if ~CenteringRewarded && any(CenterRewardAmount) && (CurrentTime > CenteringRewardDelay)
+    if CenteringRewarded && any(CenterRewardAmount) && (CurrentTime > CenteringRewardDelay)
       fprintf('Centering reward ');
       cPumpDuration = CenterRewardAmount/globalparams.PumpMlPerSec.Pump;
       PumpEvent = IOControlPump(HW,'start',cPumpDuration,'Pump');
       exptparams.Water = exptparams.Water+CenterRewardAmount;
       Events = AddEvent(Events, PumpEvent, TrialIndex);
-      fprintf('\b ... '); CenteringRewarded = 1;
+      fprintf('\b ... '); CenteringRewarded = 0;
     end
     
     % DELIVER CENTER STAYING REWARD
-    if ~CenterRewarded && any(CenterRewardAmount) && (CurrentTime > TarWindow(1))
+    if CenterRewarded && any(CenterRewardAmount) && (CurrentTime > TarWindow(1))
       fprintf('Center reward ');
       cPumpDuration = CenterRewardAmount/globalparams.PumpMlPerSec.Pump;
       PumpEvent = IOControlPump(HW,'start',cPumpDuration,'Pump');
       exptparams.Water = exptparams.Water+CenterRewardAmount;
       Events = AddEvent(Events, PumpEvent, TrialIndex);
-      fprintf('\b ... '); CenterRewarded = 1;
+      fprintf('\b ... '); CenterRewarded = 0;
     end
     
     % DELIVER PREWARD IF PREWARDDURATION > 0
@@ -234,7 +238,7 @@ while CurrentTime < exptparams.LogDuration
         IOStartSound(HW,randn(10000,1)); pause(0.25); IOStopSound(HW);
       end
       TimeOut = get(O,'TimeOutError'); if ischar(TimeOut) TimeOut = str2num(TimeOut); end
-      LightEvents = LF_TimeOut(HW,roundn(TimeOut*(1+rand),-1),0,TrialIndex);
+      LightEvents = LF_TimeOut(HW,TimeOut,0,TrialIndex);
       Events = AddEvent(Events, LightEvents, TrialIndex);
       
     case 'HIT'; % PROVIDE REWARD AT CORRECT SPOUT
@@ -262,8 +266,14 @@ while CurrentTime < exptparams.LogDuration
       IOControlPump(HW,'stop',0,'Pump');
       
     case 'SNOOZE';
+     StopEvent = IOStopSound(HW);
+      Events = AddEvent(Events, StopEvent, TrialIndex);
       cLickSensor = 'None'; cLickSensorNot = 'None';
       pause(0.1); % TO AVOID EMPTY LICKSIGNAL
+      
+      TimeOut = get(O,'TimeOutEarly'); if ischar(TimeOut) TimeOut = str2num(TimeOut); end
+      LightEvents = LF_TimeOut(HW,TimeOut,0,TrialIndex);
+      Events = AddEvent(Events, LightEvents, TrialIndex);
       
     otherwise error(['Unknown outcome ''',Outcome,'''!']);
   end

@@ -343,7 +343,8 @@ elseif ~isempty(mfile),
     else
        switch globalparams.HWparams.DAQSystem
          case 'MANTA';
-           set(handles.editSigThreshold,'String','0');
+           %set(handles.editSigThreshold,'String','0');
+           set(handles.editSigThreshold,'String','-4.0');
          otherwise,
            set(handles.editSigThreshold,'String','4');
        end

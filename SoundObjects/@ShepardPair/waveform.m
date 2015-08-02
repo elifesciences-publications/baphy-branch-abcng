@@ -15,6 +15,8 @@ PostStimSilence = get(o,'PostStimSilence');
 P = get(o,'Par');
 NPitchClasses = length(P.PitchClasses);
 Spatialization = str2num( get(o,'Spatialization') );
+StimRep=str2num( get(o,'StimRepetition') );
+RepWindow = get(o,'RepetitionWindow');
 
 % CORRECT PARAMETER WHITESPACE
 cPos = find(P.EnvStyle==' ',1,'first');
@@ -25,6 +27,7 @@ MaxIndex = get(o,'MaxIndex');
 if Index > MaxIndex error('Number of available Stimuli exceeded'); end
 
 % GET PARAMETERS OF CURRENT Index
+ToneNb =2;
 iPitchStep = ceil(Index/NPitchClasses);
 cPitchStep = P.PitchSteps(iPitchStep);
 iPitchClass = Index - (iPitchStep-1)*NPitchClasses;
@@ -43,6 +46,7 @@ switch P.EnvStyle
     else error('Undefined PitchStep!');
     end
   case 'Tones'; cDirection = sign(cPitchStep);
+  case 'SingleTone'; cDirection = sign(cPitchStep); ToneNb = 1; Pitches = Pitches(2);
   otherwise error('Envelope Style not implemented');
 end
 
@@ -80,18 +84,27 @@ else % Coherent waveforms on both channels
 end
 
 if length(P.PairDurations)==1 P.PairDurations = [P.PairDurations,P.PairDurations]; end
-for i=1:2
+for i=1:ToneNb
   P.PitchClassShift = Pitches(i);
   P.Durations = P.PairDurations(i);
   if P.Durations>0
   cBlock = buildShepardTone(P,SR);
   cBlock = addSinRamp(cBlock,0.002,SR,'<=>');
-  w(k+1:k+length(cBlock)) = cBlock;
+  Silence=zeros(SR*0.9,1);% Between stim rep : 0.2s
+  Max_Length=SR*RepWindow;
+  Rep_Sequence=[cBlock' Silence' cBlock' Silence' ];
+  Max_Nb_Sequence=Max_Length/length(Rep_Sequence);
+  if StimRep==1
+   pre_w_rep=repmat([cBlock' Silence' cBlock' Silence' ]',Max_Nb_Sequence,1);
+  w(k+1:k+(length(pre_w_rep))) = pre_w_rep;
+  else
+      w(k+1:k+length(cBlock)) =cBlock;
+  end
   k = k+length(cBlock);
   ev = AddEvent(ev,['STIM , ShepardTone ',num2str(Index),' - ',num2str(i)],...
     [ ],ev(end).StopTime,ev(end).StopTime+P.PairDurations(i));
   end
-  if i==1
+  if i==1 && ToneNb>1
     cBlock = zeros(round(P.BetweenPairPause*SR),1);
     w(k+1:k+length(cBlock)) = cBlock;
     k = k+length(cBlock);

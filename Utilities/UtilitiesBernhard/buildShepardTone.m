@@ -36,13 +36,13 @@ for i=1:NFs
         A(i) = (1+cos(2*pi*(log2(Fs(i))-log2(Par.EnvCenters))/(2*Par.EnvWidths)))/2;
       end
     case 'Constant';    A(i) = 1;
-    case 'Tones';
+    case {'Tones','SingleTone'}
       FsInd = find(Octs==0);
-      if i==FsInd A(FsInd) = 1; end
-      
+      if i==FsInd A(FsInd) = 1; end      
     otherwise  error('Unknown Envelope!');
   end
 end
+
 % More efficient computation of the sines
 if Par.ComponentJitter == 0
   Sound = sum(bsxfun(@times,sin(bsxfun(@times,bsxfun(@plus,repmat(Time,1,NFs),Phases),2*pi*Fs)),A),2);

@@ -18,6 +18,14 @@ end
 
 Par.PitchClasses = sort(Par.PitchClasses);
 Par.PitchSteps = sort(Par.PitchSteps);
+if  length(Par.PitchSteps)==2
+switch get(o,'BothSides')
+  case 'Down'
+    Par.PitchSteps = Par.PitchSteps(1);
+  case 'Up  '  % add 2 white spaces
+    Par.PitchSteps = Par.PitchSteps(2);
+end
+end
 MaxIndex = length(Par.PitchSteps)*length(Par.PitchClasses);
 o = set(o,'MaxIndex',MaxIndex);
 o = set(o,'Par',Par);
