@@ -14,7 +14,7 @@ function HW = IOLoadSound(HW, stim)
      stim(:,2) = stim(:,1);
    end
  else
-   SpeakerNb = size(stim,2);
+   SpeakerNb = 1;%size(stim,2);
  end
 
 %% CALIBRATE SPECTRUM AND VOLUME FOR SOME SETUPS
@@ -113,7 +113,7 @@ switch HW.params.HWSetup
       % make sure that the AO objects have sampling rates specified in
       % HW.params.fsAO
       HW=niSetAOSamplingRate(HW);
-      
+     
       % dulicate sound on the 2 channels if no analog stim on the 2nd one
       global SecondChannelAO;
       if ~isempty(SecondChannelAO) && ~SecondChannelAO && SpeakerNb == 1
@@ -123,7 +123,7 @@ switch HW.params.HWSetup
         stim=cat(2,stim,zeros(size(stim,1),HW.AO(1).NumChannels-size(stim,2)));
       end
       % actually load the samples
-      SamplesLoaded=niLoadAOData(HW.AO(1),stim);     
+      SamplesLoaded=niLoadAOData(HW.AO(1),stim);
       case 'DAQTOOLBOX';
     
        %% RESET TRIGGER LINE
@@ -131,8 +131,8 @@ switch HW.params.HWSetup
        ResetValAO = IOGetTriggerValue(HW.AO,'RESET');
        putvalue(HW.DIO.Line(TrigIndexAO),ResetValAO);
 
-       %% FRP 2: input range of amp is not +/- 5, which distorts the sound
-       % if we use that range. So, we are reduce it to 1/3, and adjust the gain of the amp
+       %% FRP 2: input range of amp is not +/- 5, which distords the sound
+       % if we use that range. So, we reduce it to 1/3, and adjust the gain of the amp
        % to get the correct dB in the SPR.
        % Only adjusting auditory channel 0, leave AO1 (light) intact
        if HW.params.HWSetup==4  stim(:,1) = stim(:,1) / 3; end

@@ -19,7 +19,7 @@ for iCond=1:length(Conds)
   % LOOP OVER SEQUENCES OF STIMULI
   for i = 1:length(Indices.(cCond))  % go through all the reference sounds in the trial
     [cWaveform, cEvents,Objects.(cCond)] = waveform(Objects.(cCond), Indices.(cCond)(i),strcmp(cCond,'Ref'),[],TrialTotal);
-    
+
     TrialSound = [TrialSound ; cWaveform];
 
     % PROCESS DIFFERENCES BETWEEN REFERENCE & TARGET
@@ -27,7 +27,7 @@ for iCond=1:length(Conds)
       case 'Ref'; cNote = [' , Reference '];
       case 'Tar'; cNote = [' , Target '];
     end
-    
+
     % ADD EVENTS
     for j = 1:length(cEvents)
         cEvents(j).Note = [cEvents(j).Note,cNote];

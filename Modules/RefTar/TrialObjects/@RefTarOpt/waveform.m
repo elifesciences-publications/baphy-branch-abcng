@@ -201,24 +201,40 @@ if LightTrial
                 StimStartTime=events(evidx).StartTime;
                 StimStopTime=events(evidx).StopTime;
                 LightStartTime=StimStartTime+par.LightPulseShift;
-                while LightStartTime<StimStopTime,
+                while (LightStartTime+1/TrialSamplingRate)<StimStopTime,
                     LightStartBin=round(LightStartTime*TrialSamplingRate);
                     LightBand(LightStartBin+(1:LightOnBins))=LightPower;
                     LightStartTime=LightStartTime+1./par.LightPulseRate;
                 end
             end
             
-        case {'PreRef','PostRef'}
+       case 'PreRef_WholeSound',
+           LocusStr = 'Pre';
+           IndStimSil = find( ~cellfun(@isempty,strfind( {ev.Note},'Reference')) &  ~cellfun(@isempty,strfind( {ev.Note}, [LocusStr 'StimSilence'])) );
+           StimStartTime=ev(IndStimSil).StartTime;
+           
+           for evidx=2:3:length(events),
+               StimStopTime=events(evidx).StopTime;
+               LightStartTime=StimStartTime+par.LightPulseShift;
+               while LightStartTime<StimStopTime,
+                   LightStartBin=round(LightStartTime*TrialSamplingRate);
+                   LightBand(LightStartBin+(1:LightOnBins))=LightPower;
+                   LightStartTime=LightStartTime+1./par.LightPulseRate;
+               end
+           end
+           
+       case {'PreRef','PostRef'}
           LocusStr = par.LightEpoch(1:(strfind(par.LightEpoch,'Ref')-1));
           IndStimSil = find( ~cellfun(@isempty,strfind( {ev.Note},'Reference')) &  ~cellfun(@isempty,strfind( {ev.Note}, [LocusStr 'StimSilence'])) );
           StimStartTime=ev(IndStimSil).StartTime;
           StimStopTime=ev(IndStimSil).StopTime;
           LightStartTime=StimStartTime+par.LightPulseShift;
-          while LightStartTime<StimStopTime,
+          while (LightStartTime+1/TrialSamplingRate)<StimStopTime,
             LightStartBin=round(LightStartTime*TrialSamplingRate);
             LightBand(LightStartBin+(1:LightOnBins))=LightPower;
             LightStartTime=LightStartTime+1./par.LightPulseRate;
           end
+
         otherwise
             error([par.LightEpoch, ' LightEpoch not supported yet']);
     end
@@ -230,6 +246,7 @@ end
 %     TrialSound=cat(2,TrialSound,zeros(size(TrialSound)),LightBand);
 % else
     TrialSound=cat(2,TrialSound,LightBand);
+    TrialSound(1:100,:) = 0;
 % end
 
 

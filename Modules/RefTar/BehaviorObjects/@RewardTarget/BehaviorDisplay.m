@@ -26,13 +26,23 @@ if ~isfield(exptparams, 'ResultsFigure')
     movegui(exptparams.ResultsFigure,'northwest');
     %     end
 end
+
 figure(exptparams.ResultsFigure);
+% NAME FIGURE
+FigName = ['Ferret: ',globalparams.Ferret,' | ',... 
+  'Water: ',num2str(exptparams.Water),' | ',...
+  num2str(exptparams.StartTime(1:3),' Date: %1.0f-%1.0f-%1.0f  | '),...
+  num2str(exptparams.StartTime(4:6),' Start: %1.0f:%1.0f:%1.0f')];
+set(exptparams.ResultsFigure,'NumberTitle','off','Name',FigName);
+
 subplot(4,4,1:4);
 % create the title:
 HWSetup = BaphyMainGuiItems('HWSetup');
 titleMes = ['Ferret: ' globalparams.Ferret '     Reference: ' ...
     get(exptparams.TrialObject,'ReferenceClass') '     Target: ' ...
-    get(exptparams.TrialObject,'TargetClass') '     Rig: ' , HWSetup{1+globalparams.HWSetup} '       ' ...
+    get(exptparams.TrialObject,'TargetClass') ...
+     ' | Water: ',num2str(exptparams.Water),' | ',...
+     '     Rig: ' , HWSetup{1+globalparams.HWSetup} '       ' ...
     num2str(exptparams.StartTime(1:3),'Date: %1.0f-%1.0f-%1.0f') '     ' ...
     num2str(exptparams.StartTime(4:6),'Start: %1.0f:%1.0f:%1.0f')];
 if isfield(exptparams,'StopTime')
@@ -110,7 +120,9 @@ set(h,'position', LegPos);
 xlabel('Trial Number','FontWeight','bold');
 % display the lick signal and the boundaries:
 h = subplot(4,4,5:8);plot(AIData);
-axis ([0 length(AIData) 0 1.5]);
+if length(AIData)>0
+  axis ([0 length(AIData) 0 1.5]);
+end
 set(h,'XTickLabel',get(h,'Xtick')/fs); % convert to seconds
 xlabel('Time (seconds)','FontWeight','bold');
 % First, draw the boundries of Reference and Target

@@ -95,9 +95,9 @@ else % PARSE INDICES BY STIMCLASS
          SpaceInds = find(cNote==' ');
          CommaInds = find(cNote==',');
          DashInds = find(cNote=='-'); DashInds = [SpaceInds(3)-1,DashInds,CommaInds(2)];
-         switch cNote(SpaceInds(2)+1:SpaceInds(3)-1)
-           case 'S0Sbis'; T.SOrder{iT} =  1;
-           case 'SbisS0'; T.SOrder{iT} =  -1;
+         switch lower( cNote(SpaceInds(2)+1:SpaceInds(3)-1) )
+           case 's0sbis'; T.SOrder{iT} =  1;
+           case 'sbiss0'; T.SOrder{iT} =  -1;
          end
          for iV = 1:length(Vars)
            T.(Vars{iV}){iT} = str2num(cNote(DashInds(iV)+2:DashInds(iV+1)-2)); 
@@ -107,9 +107,9 @@ else % PARSE INDICES BY STIMCLASS
          else
            T.Indices{iT} = T.Index{iT};
          end
-         T.Times{iT} = [P.Events(TargetStimInd(iT)).StartTime,P.Events(TargetStimInd(iT)).StopTime];
+         T.Times{iT} = [P.Events(TargetStimInd(iT)).StartTime,P.Events(TargetStimInd(iT)).StopTime];  % Timing of start and stop of the S0 (pre-change sound, without silences)
          T.Tags{iT} = cNote(CommaInds(1)+1:CommaInds(2)-1);
-         T.Durations{iT} = diff(T.Times{iT}); 
+         T.Durations{iT} = diff(T.Times{iT});                                                         % Duration of S0
        end
       
     case {'pure tones','randomtone','amtone'};
@@ -314,4 +314,6 @@ end
 T.UIndices = unique(cell2mat(T.Indices));
 T.NIndices = sum(T.UIndices>0);
 warning on all;
-if T.NIndices ~=  T.UIndices(end) fprintf('WARNING (Events2Trials) : # Indices |= maximal Index\n'); end
+if T.NIndices ~=  T.UIndices(end)
+    fprintf('WARNING (Events2Trials) : # Indices |= maximal Index\n');
+end

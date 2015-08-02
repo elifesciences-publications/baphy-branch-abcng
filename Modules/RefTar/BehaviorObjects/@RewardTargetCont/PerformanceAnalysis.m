@@ -60,7 +60,7 @@ for i=1:length(cP.AllTargetPositions)
   for j=1:TrialIndex cTargetsInd(j) = any(strcmp(AllPerf(j).CurrentTargetPositions,cP.AllTargetPositions{i})); end
   cP.HitRates(i) = sum(cTargetsInd.*cHitInd)/sum(cTargetsInd);
 end
-cP.DiscriminationRate = prod(cP.HitRates);
+cP.DiscriminationRate = (cP.HitRate+cP.SnoozeRate) * (1-cP.EarlyRate);
 if isnan(cP.DiscriminationRate) cP.DiscriminationRate = 0; end
 cP.Trials = TrialIndex;
 

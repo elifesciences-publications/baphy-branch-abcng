@@ -33,17 +33,6 @@ if Index > MaxIndex; error('Number of available Stimuli exceeded'); end
 % CURRENT REPETITION NB
 CurrentRepetitionNb = ceil(Global_TrialNb/MaxIndex);
 
-% GENERATE Timing of Change [ToC]
-if Par.MinToC == Par.MaxToC
-    ToC = Par.MinToC;
-else
-    RToC = RandStream('mt19937ar','Seed',IniSeed*Global_TrialNb);   % mcg16807 is fucked up
-    lambda = 0.15;
-    ToC = PoissonProcessPsychophysics(lambda,Par.MaxToC-Par.MinToC,1,RToC,BinToC);
-    ToC = ToC + Par.MinToC;
-end
-ToC = round(ToC/ChordDuration)*ChordDuration;
-
 % GET PARAMETERS OF CURRENT Index
 tmp = get(O,'DistributionTypeByInd'); ChangedD_Num = tmp(Index);
 tmp = get(O,'MorphingTypeByInd'); MorphingNum = tmp(Index);
@@ -62,6 +51,29 @@ DifficultyLvl = getfield(Par,['DifficultyLvl_D' num2str(ChangedD_Num)]);
 DiffLvl = DifficultyLvl(DifficultyNum);       % given in %
 Quantal_Delta = getfield(Par,'QuantalDelta');       % given in %
 % if DiffLvl==0; ToC = max(Par.MinToC,ToC-StimulusBisDuration); end    % Catch trial are shortened by TarWindow duration
+
+
+% GENERATE Timing of Change [ToC]
+if Par.MinToC == Par.MaxToC
+    ToC = Par.MinToC;
+else
+    if DiffLvl~=0
+        RToC = RandStream('mt19937ar','Seed',IniSeed*Global_TrialNb);   % mcg16807 is fucked up
+        lambda = 0.15;
+        ToC = PoissonProcessPsychophysics(lambda,Par.MaxToC-Par.MinToC,1,RToC,BinToC);
+        ToC = ToC + Par.MinToC;
+    else % Fix Catch trials to longer durations because shorter durations are screened by CR before the change
+        if BinToC>0
+            ToC = Par.MaxToC+StimulusBisDuration;
+        else BinToC==0
+            RToC = RandStream('mt19937ar','Seed',IniSeed*Global_TrialNb);   % mcg16807 is fucked up
+            lambda = 0.15;
+            ToC = PoissonProcessPsychophysics(lambda,Par.StimulusBisDuration,1,RToC,BinToC);
+            ToC = ToC + Par.MaxToC-Par.StimulusBisDuration;
+        end   
+    end
+end
+ToC = round(ToC/ChordDuration)*ChordDuration;
     
 D0param = [FO OctaveNb Par.IniSeed Global_TrialNb Quantal_Delta];
 Dparam = [D0param(1:end-3) Bins2Change{ChangedD_Num}(MorphingNum,:)];    % We don't need a Seed to modify the original distribution
@@ -132,6 +144,7 @@ if Par.AttenuationD0~=0
   NormFactor = maxLocalStd(w,sF,floor(length(w)/sF));
   RatioToDesireddB = 10^(Par.AttenuationD0/20);   % dB to ratio in SPL
   FirstPart = FirstPart*RatioToDesireddB;
+  if DiffLvl==0;  SecondPart = SecondPart*RatioToDesireddB; end
   w = [FirstPart' ; SecondPart']/NormFactor;
 end
 w = [zeros((PreStimSilence*sF),size(w,2)) ; w ; zeros((PostStimSilence*sF),size(w,2))];

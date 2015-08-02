@@ -43,7 +43,7 @@ switch globalparams.HWSetup
     HW=niCreateDI(HW,DAQID,'port0/line6','Light');
     HW=niCreateDI(HW,DAQID,'port0/line2','TouchR');
     HW=niCreateDI(HW,DAQID,'port0/line5','TouchL');
-%   HW=niCreateDI(HW,DAQID,'port0/line5','Touch');
+    %   HW=niCreateDI(HW,DAQID,'port0/line5','Touch');
     %% ANALOG INPUT
     HW=niCreateAI(HW,DAQID,'ai0:2','TouchL,Microphone,TouchR',['/',DAQID,'/PFI0']);
     
@@ -56,13 +56,13 @@ switch globalparams.HWSetup
     HW.Calibration(2).Speaker = ['RSL',globalparams.HWSetupName];
     HW.Calibration(2).Microphone = 'GRAS46BE';
     HW.Calibration = IOLoadCalibration(HW.Calibration);
-       
+    
     %% COMMUNICATE WITH MANTA
     if Physiology  [HW,globalparams] = IOConnectWithManta(HW,globalparams); end
-      
     
-  case {2,3} % ALL RECORDING BOOTHS SHOULD REMAIN IDENTICAL AS LONG AS POSSIBLE
-    SetupNames = {'SB1','SB2','LB1'};
+    
+  case {2,3,5} % ALL RECORDING BOOTHS SHOULD REMAIN IDENTICAL AS LONG AS POSSIBLE
+    SetupNames = {'SB1','SB2','LB1',[],'SB2Earphones'};
     globalparams.HWSetupName = SetupNames{globalparams.HWSetup};
     
     DAQID = 'D0'; % NI BOARD ID WHICH CONTROLS STIMULUS & BEHAVIOR
@@ -73,28 +73,30 @@ switch globalparams.HWSetup
     HW=niCreateDO(HW,DAQID,'port0/line2','Light','InitState',0);
     HW=niCreateDO(HW,DAQID,'port0/line3','LightR','InitState',0);
     HW=niCreateDO(HW,DAQID,'port0/line4','LightL','InitState',0);
-    HW=niCreateDO(HW,DAQID,'port1/line5','Pump','InitState',0);    
+    HW=niCreateDO(HW,DAQID,'port1/line5','Pump','InitState',0);
     HW=niCreateDI(HW,DAQID,'port0/line5','Touch');
     
     %% ANALOG INPUT
-    HW=niCreateAI(HW,DAQID,'ai0:1','Touch,Microphone',['/',DAQID,'/PFI0']);
+        HW=niCreateAI(HW,DAQID,'ai0:1','Touch,Microphone',['/',DAQID,'/PFI0']);
     
     %% ANALOG OUTPUT % 14/09-YB: rmv independant audio channels for introducing Opto
-    HW=niCreateAO(HW,DAQID,'ao0:1','SoundOut,OptTrig',['/',DAQID,'/PFI1']);
+%         HW=niCreateAO(HW,DAQID,'ao0:1','SoundOut,OptTrig',['/',DAQID,'/PFI1']);
     
     %% SETUP SPEAKER CALIBRATION
     switch globalparams.HWSetup
-        case 3            
-            HW.Calibration.Speaker = ['SHIE800',globalparams.HWSetupName];
-        case 2
-            HW.Calibration.Speaker = ['RS',globalparams.HWSetupName];
+      case {3,5}
+        HW=niCreateAO(HW,DAQID,'ao0','SoundOut,OptTrig',['/',DAQID,'/PFI1']); % for SB2 instead of changing set-up constantly, speaker and headphones are on different output 20/07/15 Jennifer
+        HW.Calibration.Speaker = ['SHIE800',globalparams.HWSetupName];
+      case 2
+        HW=niCreateAO(HW,DAQID,'ao1','SoundOut,OptTrig',['/',DAQID,'/PFI1']);
+        HW.Calibration.Speaker = ['RS',globalparams.HWSetupName];
     end
     HW.Calibration.Microphone = 'GRAS46BE';
     HW.Calibration = IOLoadCalibration(HW.Calibration);
     
     %% COMMUNICATE WITH MANTA
     if Physiology  [HW,globalparams] = IOConnectWithManta(HW,globalparams); end
-  
+    
   case 4 % TWO PHOTON BOOTH IN BIOLOGY
     DAQID = 'D5'; % NI BOARD ID WHICH CONTROLS STIMULUS & BEHAVIOR
     niResetDevice(DAQID);
@@ -132,7 +134,7 @@ switch globalparams.HWSetup
     HW.Calibration.Speaker = 'SHHD380';
     HW.Calibration.Microphone = 'GRAS46BE';
     HW.Calibration = IOLoadCalibration(HW.Calibration);
-
+    
     HW.params.DAQSystem = 'none';
     
 end % END SWITCH
@@ -145,4 +147,4 @@ end
 globalparams.HWparams = HW.params;
 
 function CBF_Trigger(obj,event)
-[TV,TS] = datenum2time(now); fprintf([' >> Trigger received (',TS{1},')\n']); 
+[TV,TS] = datenum2time(now); fprintf([' >> Trigger received (',TS{1},')\n']);

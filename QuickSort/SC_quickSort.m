@@ -1,4 +1,5 @@
 function SC_quickSort(varargin)
+baphy_set_path;
 
 % SET VARIABLES
 P = parsePairs(varargin);
@@ -8,9 +9,9 @@ checkField(P,'Depth');
 checkField(P,'Recording',[]);
 checkField(P,'Recordings',[]);
 checkField(P,'Electrode');
-checkField(P,'Sorter','englitz');
+checkField(P,'Sorter','personne');
 checkField(P,'FilterStyle','butter');
-checkField(P,'Threshold',-3.5);
+checkField(P,'Threshold',4);
 checkField(P,'LargeThreshold',100);
 checkField(P,'TimeIndex',0);
 checkField(P,'SaveSorter',0);
@@ -117,16 +118,18 @@ fprintf(['Loading Cells from ']);
 for i=1:length(M)
     Info{i} = getRecInfo('Identifier',M(i).parmfile(1:end-8),'Quick',1);
     if exist(Info{i}.SpikeFile,'file')
-        fprintf([M(i).parmfile(1:end-8),' ']);
-        cSortInfo = load(Info{i}.SpikeFile);
-        % LOAD SORTINFO IF AVAILABLE
-        C  = mysql(['SELECT * FROM sCellFile WHERE rawid=',n2s(Info{i}.ID)]);
+      fprintf([M(i).parmfile(1:end-8),' ']);
+      cSortInfo = load(Info{i}.SpikeFile);
+      C  = mysql(['SELECT * FROM sCellFile WHERE rawid=',n2s(Info{i}.ID)]);
+      % LOAD SORTINFO IF AVAILABLE
+      if ~length(C)==0 % 15/03-YB: in case a sorting has been deleted
         Inds = find([C.channum]==P.Electrode);
         cUnits{i} = sort([C(Inds).unit],'ascend');
         for iU = 1:length(cUnits{i})
             if length(mWavesC)<cUnits{i}(iU) mWavesC{cUnits{i}(iU)} = []; end
             mWavesC{cUnits{i}(iU)}(:,end+1) = cSortInfo.sortinfo{P.Electrode}{1}(iU).Template(:,iU);
         end
+      end
     end
 end
 for iS = 1:length(mWavesC)

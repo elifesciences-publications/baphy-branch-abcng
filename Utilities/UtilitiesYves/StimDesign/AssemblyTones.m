@@ -52,7 +52,10 @@ for ChordNum = 1:ChordNb
     
     Chord = zeros(size(ChordTimeSamples));
     TrialTonesF = ToneFrequencies((PreviousRandomChordNum+1):(PreviousRandomChordNum+NbTonesChord));
-    TrialTonesPhase = TonePhases((PreviousRandomChordNum+1):(PreviousRandomChordNum+NbTonesChord));    
+    % 15/03/25-YB: constant phases for overlapping tones
+    TrialTonesPhase = TonePhases((PreviousRandomChordNum+1):(PreviousRandomChordNum+NbTonesChord));
+    [Ctemp,ia,ic] = unique( TrialTonesF );
+    TrialTonesPhase = TrialTonesPhase(ic);
     PreviousRandomChordNum = PreviousRandomChordNum+NbTonesChord;
     if ~isempty(TrialTonesF)
       Chord = SingleChord(TrialTonesF,Lvl,sF,ChordDuration,TrialTonesPhase);

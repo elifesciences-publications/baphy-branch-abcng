@@ -13,6 +13,7 @@ switch nargin
       'ClickTrainDur','edit',0.5,...
       'nreps','edit',3,...
       'key','edit',99999,...
+      'reseed','edit',0,...
       'highfreq','edit',2000,...
       'SequenceGap','edit',0.25,...
       'IntroduceTORC','popupmenu','yes|no'...
@@ -31,6 +32,7 @@ switch nargin
     o.highfreq                     = 2000;
     o.SNR                           = 100; % for SNR>99, no pink noise added;
     o.ClickTrainDur              = 0.5;
+    o.ClickTimes                  = {};
     o.nreps                         = 3;
     
     % Torc
@@ -45,6 +47,7 @@ switch nargin
     % Stim conditions
     o.MaxIndex                  = 1;  % no. of conditions
     o.Key                           = []; % replace seed no. of earlier block for re-test
+    o.ReSeed                     = 0;
     o.Seeds                       = [];
     o.PastRef                     = [];
     o.Stimulus                    = [];
