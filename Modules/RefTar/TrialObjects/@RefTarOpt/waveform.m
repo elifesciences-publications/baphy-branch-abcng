@@ -208,7 +208,22 @@ if LightTrial
                 end
             end
             
-        case {'PreRef','PostRef'}
+       case 'PreRef_WholeSound',
+           LocusStr = 'Pre';
+           IndStimSil = find( ~cellfun(@isempty,strfind( {ev.Note},'Reference')) &  ~cellfun(@isempty,strfind( {ev.Note}, [LocusStr 'StimSilence'])) );
+           StimStartTime=ev(IndStimSil).StartTime;
+           
+           for evidx=2:3:length(events),
+               StimStopTime=events(evidx).StopTime;
+               LightStartTime=StimStartTime+par.LightPulseShift;
+               while LightStartTime<StimStopTime,
+                   LightStartBin=round(LightStartTime*TrialSamplingRate);
+                   LightBand(LightStartBin+(1:LightOnBins))=LightPower;
+                   LightStartTime=LightStartTime+1./par.LightPulseRate;
+               end
+           end
+           
+       case {'PreRef','PostRef'}
           LocusStr = par.LightEpoch(1:(strfind(par.LightEpoch,'Ref')-1));
           IndStimSil = find( ~cellfun(@isempty,strfind( {ev.Note},'Reference')) &  ~cellfun(@isempty,strfind( {ev.Note}, [LocusStr 'StimSilence'])) );
           StimStartTime=ev(IndStimSil).StartTime;

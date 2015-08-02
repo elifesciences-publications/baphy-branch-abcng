@@ -131,8 +131,8 @@ switch HW.params.HWSetup
        ResetValAO = IOGetTriggerValue(HW.AO,'RESET');
        putvalue(HW.DIO.Line(TrigIndexAO),ResetValAO);
 
-       %% FRP 2: input range of amp is not +/- 5, which distorts the sound
-       % if we use that range. So, we are reduce it to 1/3, and adjust the gain of the amp
+       %% FRP 2: input range of amp is not +/- 5, which distords the sound
+       % if we use that range. So, we reduce it to 1/3, and adjust the gain of the amp
        % to get the correct dB in the SPR.
        % Only adjusting auditory channel 0, leave AO1 (light) intact
        if HW.params.HWSetup==4  stim(:,1) = stim(:,1) / 3; end
