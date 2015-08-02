@@ -131,9 +131,16 @@ elseif TarObject == -1
       if ~OverrideAutoScale,
         TrialSound = 5 * TrialSound / max(abs(TrialSound(:)));
       end
-        if get(o,'RelativeTarRefdB')>0
-            TrialSound = TrialSound / (10^(get(o,'RelativeTarRefdB')/20));
-        end
+      if strcmp(upper(class(RefObject)),'TORC')
+        global LoudnessAdjusted; LoudnessAdjusted = 1;
+        sf = 100000;
+        Duration = length(TrialSound)/sf;
+        Val = maxLocalStd(TrialSound,sf,Duration);
+        TrialSound =  TrialSound/Val;
+      end
+      if get(o,'RelativeTarRefdB')>0
+        TrialSound = TrialSound / (10^(get(o,'RelativeTarRefdB')/20));
+      end
     end
 end
 

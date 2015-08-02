@@ -262,11 +262,11 @@ while ContinueExp == 1
   if HW.params.HWSetup ~= 0 %Checking if using Test mode
     if ~isempty(exptparams.Repetition) && iRep==exptparams.Repetition && ...
             isempty(strfind(globalparams.Physiology,'No')) && ContinueExp
-      ContinueExp = ContinueOrNot;  % END OF REPETITION : CHECK IF USE WANTS TO CONTINUE
+      ContinueExp = ContinueOrNot;  % END OF REPETITION : CHECK IF USER WANTS TO CONTINUE
     end
   else
     if (iRep==exptparams.Repetition) && ContinueExp
-      ContinueExp = ContinueOrNot;  % END OF REPETITION : CHECK IF USE WANTS TO CONTINUE
+      ContinueExp = ContinueOrNot;  % END OF REPETITION : CHECK IF USER WANTS TO CONTINUE
     end
   end
 end % CHECK FOR CONTINUING EXPERIMENT
