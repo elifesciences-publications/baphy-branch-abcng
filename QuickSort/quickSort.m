@@ -38,7 +38,7 @@ global QG U Verbose Plotting; if isempty(U) U = units; end
 P = parsePairs(varargin);
 
 if ~isfield(P,'STs') P.STs = NaN; end
-if ~isfield(P,'Threshold') P.Threshold = -3.5; end
+if ~isfield(P,'Threshold') P.Threshold = -4; end
 if ~isfield(P,'LargeThreshold') P.LargeThreshold = 100; end
 if ~isfield(P,'ThreshType') P.ThreshType = 'Amplitude'; end
 if ~isfield(P,'ClustSel') ClustSel = NaN; else ClustSel = P.ClustSel; end
@@ -116,6 +116,8 @@ DC([3:5]) = HF_axesDivide([1,1,0.5],[1],tmp{2},[.3],[]);
 DC{end+1} = [DC{3}(1),0.04,DC{3}(3),DC{3}(2)-0.06];
 DC{end+1} = [DC{4}(1),0.04,DC{4}(3),DC{4}(2)-0.06];
 
+DC{end+1} = [DC{5}(1),0.04,DC{5}(3),DC{5}(2)-0.06];
+
 for i=1:numel(DC)
     QG.(FID).GUI.Axes(i) = axes('Pos',DC{i},QG.FigOpt.AxisOpt{:}); hold on;
     if i==7 set(QG.(FID).GUI.Axes(i),'Visible','Off'); end
@@ -129,6 +131,7 @@ QG.(FID).GUI.Trace = QG.(FID).GUI.Axes(4);
 QG.(FID).GUI.ISI = QG.(FID).GUI.Axes(5);
 QG.(FID).GUI.PSTH = QG.(FID).GUI.Axes(6);
 QG.(FID).GUI.TraceZoom = QG.(FID).GUI.Axes(7);
+QG.(FID).GUI.CC = QG.(FID).GUI.Axes(8);
 
 set(QG.(FID).GUI.Clusters,'ButtonDownFcn',{@Rotator});
 set(P.FIG,'WindowButtonUpFcn','global Rotating_ ; Rotating_ = 0;');
@@ -489,6 +492,7 @@ LF_plotRaster(FID);
 LF_plotPSTH(FID);
 LF_plotTrace(FID);
 LF_plotISIhist(FID);
+LF_plotCrossCorr(FID);
 
 function LF_setClusterColors(FID)
 % ASSIGN COLORS
@@ -496,11 +500,16 @@ global QG;
 NVec = QG.(FID).NVec;
 extNVec = QG.(FID).extNVec;
 QG.(FID).Colors = cell(extNVec,1);
-rand('seed',0);
+
+hh = lines(extNVec);   % 15-06/YB: remove random colors because too much comfound
 for i=1:extNVec
-    %  QG.(FID).Colors{i} = hsv2rgb([1-eps-(i-1)/QG.(FID).NVec,1,1]);
-    QG.(FID).Colors{i} = 0.8*hsv2rgb([rand,1,1]);
+    QG.(FID).Colors{i} = hh(i,:);
 end
+% rand('seed',0);
+% for i=1:extNVec
+%     %  QG.(FID).Colors{i} = hsv2rgb([1-eps-(i-1)/QG.(FID).NVec,1,1]);
+%     QG.(FID).Colors{i} = 0.8*hsv2rgb([rand,1,1]);
+% end
 
 function LF_runSorting(FID)
 % START SPIKESORTING
@@ -765,6 +774,19 @@ b = sum(a);
 ActiveMergeLst = find(b==NVec);
 h = cell2mat(QG.(FID).GUI.hISI(ActiveMergeLst)); set(h,'Visible','on');
 
+% Hide all CC
+h = cell2mat(QG.(FID).GUI.hCC(:)); set(h,'Visible','off');
+% Show CC when pair
+if length(find(ActiveClusterLst))==2
+    inddAct = find(ActiveClusterLst);
+    PairNum = ( QG.(FID).NPair_Table(1,:)==ActiveClusterLst(inddAct(1)) & QG.(FID).NPair_Table(2,:)==ActiveClusterLst(inddAct(2)) );
+    h = cell2mat(QG.(FID).GUI.hCC(PairNum)); set(h,'Visible','on');
+    
+    xdata = get(QG.(FID).GUI.hCC{PairNum},'XData');
+    ydata = get(QG.(FID).GUI.hCC{PairNum},'YData');
+    cAxis = QG.(FID).GUI.CC;
+    axis(cAxis,[xdata([1 end]),0,max(ydata)]);
+end
 
 function LF_CBF_changePermInd(obj,event,FID)
 global QG
@@ -921,15 +943,18 @@ for iRec = 1:length(P.Recordings)
     %collect trial indexes from this recording and then make the indexes
     %start from 0
     cR.TrialIndices = P.TrialIndices(cRecInd) - MinStep;
-    
-    %check if there are spikes in this recording
-    SpikesInThisRecording = 0;
-    for iC=1:length(cR.STs) 
-        if ~isempty(cR.STs{iC}) 
-            SpikesInThisRecording = 1; 
+
+    if length(P.Recordings)==1
+        %check if there are spikes in this recording
+        SpikesInThisRecording = 0;
+        for iC=1:length(cR.STs) 
+            if ~isempty(cR.STs{iC}) 
+                SpikesInThisRecording = 1; 
+            end
         end
+    else  % 15/06-YB: save in any case when multiple recordings, for ensuring continuity of SU throughout recordings
+        SpikesInThisRecording = 1;
     end
-    
     %if there are spikes, then save the data
     if SpikesInThisRecording
         quickSaveResults(cR,'Animal',P.Animal,'Penetration',P.Penetration,'Depth',P.Depth,...
@@ -952,9 +977,11 @@ global QG
 NVec = str2num(get(obj,'String'));
 extNVec = NVec;
 for VecNum = 2:NVec; extNVec = extNVec + nchoosek(NVec,VecNum); end
+NPair = nchoosek(NVec,2);
 QG.(FID).NewSorting = 1;
 QG.(FID).NVec = NVec;
 QG.(FID).extNVec = extNVec;
+QG.(FID).NPair = NPair;
 
 function LF_CBF_setLinkage(obj,event,FID)
 global QG
@@ -1437,6 +1464,125 @@ for i=1:extNVec
 end
 
 
+function LF_plotCrossCorr(FID)
+% PLOT CROSS-CORRELOGRAM HISTOGRAMS
+global QG U;
+
+cAxis = QG.(FID).GUI.CC;
+NVec = QG.(FID).NVec;
+NPair = QG.(FID).NPair;
+SR = QG.(FID).P.SR;
+BinSize = 0.001;          % in s.
+cMax = 0; Bins = (-25:25)*BinSize*1000;  % in ms
+
+% Table of correspondance [selected clusters-NPair]
+Cluster_NPair_Table = zeros(2,NPair); IndNow = 0;
+for VecNum = 1:NVec
+    Cluster_NPair_Table(:,(IndNow+1):(IndNow+NVec-VecNum)) = [ ones(1,NVec-VecNum)*VecNum ; (VecNum+1:NVec) ];
+    IndNow = IndNow+NVec-VecNum;
+end
+QG.(FID).NPair_Table = Cluster_NPair_Table;
+
+if ~isfield(QG.(FID).GUI,'hCC') NewPlot = 1;
+    QG.(FID).GUI.hCC = cell(NPair,1);
+    set(cAxis,'NextPlot','add');
+    title(cAxis,'CC Hist');
+    xlabel(cAxis,'Time [ms] ');
+    set(cAxis,'xtick',sort([-(0:5:-Bins(1)) 5:5:Bins(end)]));
+    axis(cAxis,[Bins([1 end]),0,1.1]);
+    grid(cAxis,'on');
+    box on;
+else
+    NewPlot = 0;
+    if NPair < length(QG.(FID).GUI.hCC)
+        delete([QG.(FID).GUI.hCC{NPair+1:end}]);
+        QG.(FID).GUI.hCC = QG.(FID).GUI.hCC(1:NPair);
+    end
+end
+
+% CC FOR PAIR OF CLUSTERS
+for PairNum = 1:NPair
+    tx = QG.(FID).STs{Cluster_NPair_Table(1,PairNum)}/SR/U.s;
+    ty = QG.(FID).STs{Cluster_NPair_Table(2,PairNum)}/SR/U.s;
+    C = spike_crossx_matlab(tx,ty,BinSize,length(Bins));
+    H{PairNum} = C;
+end
+
+for PairNum=1:NPair
+    if PairNum<=NVec && QG.(FID).GUI.ShowState(PairNum); State='on'; else State='off'; end
+    if isempty(H{PairNum}) H{PairNum} = zeros(length(Bins)-1,1); end
+    if NewPlot || PairNum>length(QG.(FID).GUI.hCC)
+        QG.(FID).GUI.hCC{PairNum} = plot(cAxis,1,1,'HitTest','off');
+    end
+    set(QG.(FID).GUI.hCC{PairNum},...
+        'XData',Bins(1:end-1),...
+        'YData',H{PairNum},...
+        'linewidth',2,...
+        'Color',QG.(FID).Colors{PairNum},'Visible',State);
+end
+
+function [C] = spike_crossx_matlab(tX,tY,binsize,nbins)
+% 15/08-YB: taken from FieldTrip
+tX = sort(tX(:));
+tY = sort(tY(:));
+
+minLag = - binsize * (nbins-1) / 2;
+j = 0:nbins-1;
+B = minLag + j * binsize;
+tX(tX<(tY(1)+minLag) | tX>(tY(end)-minLag))   = [];
+if isempty(tX), 
+  C = zeros(1,length(B)-1);
+  return;
+end
+tY(tY>(tX(end)-minLag) | tY<(tX(1)+minLag)) = [];
+if isempty(tY), 
+  C = zeros(1,length(B)-1);
+  return;
+end
+nX = length(tX); nY = length(tY);
+
+% compute all distances at once using a multiplication trick
+if (nX*nY)<2*10^7  % allow matrix to grow to about 150 MB, should always work
+  D = log(exp(-tX(:))*exp(tY(:)'));
+  D = D(:);
+  D(abs(D)>abs(minLag)) = [];
+  [C] = histc(D,B);
+  C(end) = [];  
+else  
+  % break it down in pieces such that nX*nY<2*10*7
+  k   = 2;
+  nXs = round(nX/k);
+  while (nXs*nY)>=(2*10^7)
+    k = k+1;
+    nXs = round(nX/k);
+  end
+  
+  % get the indices
+  steps = round(nX/k);
+  begs = [1:steps:steps*k];
+  ends = begs+(steps-1);
+  rm   = begs>nX;
+  begs(rm) = [];
+  ends(rm) = [];
+  ends(end) = nX;
+  nSteps    = length(begs);
+  
+  D = [];
+  C = zeros(1,length(B));
+  for iStep = 1:nSteps
+    d = log(exp(-tX(begs(iStep):ends(iStep)))*exp(tY(:)'));
+    d = d(:);
+    d(abs(d)>abs(minLag)) = [];
+    C = C + histc(d,B)';    
+  end
+  C(end) = [];
+end
+
+if isempty(C)
+    C = zeros(1,length(B)-1);
+end
+
+
 function LF_collectHandles(FID)
 global QG
 
@@ -1528,7 +1674,7 @@ h=uicontrol('Parent',Panel,'Style','text',...
 
 function [Data,TrialIdx] = LF_createTestData
 
-NSteps = 10000; NTrials = 100; SR = 25000; FSpike = 1000; NSpikes = 10;
+NSteps = 10000; NTrials = 100; SR = 31250; FSpike = 1000; NSpikes = 10;
 Data = zeros(NTrials,NSteps);
 K = sin(2*pi*FSpike*[1:25]/SR);
 for i=1:NTrials

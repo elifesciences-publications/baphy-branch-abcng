@@ -7,13 +7,13 @@ function [ w , ev , O , D0 , ChangeD , Parameters] = waveform(O,Index,IsRef,Mode
 %at the scale of the whole session
 
 % GET PARAMETERS
-ChordDuration = 0.03; % s    %Rabinowitsch or also Maria Cheit
 sF = get(O,'SamplingRate');
 PreStimSilence = get(O,'PreStimSilence');
 PostStimSilence = get(O,'PostStimSilence');
 IniSeed = get(O,'IniSeed');
 FrozenPatternsAdress = get(O,'FrozenPatternsAdress');
 Par = get(O,'Par');
+ChordDuration = Par.ToneDuration; % s    %Rabinowitsch or also Maria Cheit
 BinToC = Par.BinToC;
 FrozenPatternsNb = Par.FrozenPatternsNb;
 if FrozenPatternsNb == 0; Mode = 'NoFrozen'; end
@@ -120,10 +120,10 @@ end
 % Random stream to draw tones for each distribution
 PlotDistributions = 0;
 RtonesD0 = RandStream('mt19937ar','Seed',Global_TrialNb*Index);
-[Stimulus0,ToneMatrix{1}] = AssemblyTones(FrequencySpace,D0,XDistri,Stimulus0Duration,sF,PlotDistributions,[],RtonesD0); 
+[Stimulus0,ToneMatrix{1}] = AssemblyTones(FrequencySpace,D0,XDistri,Stimulus0Duration,sF,PlotDistributions,[],RtonesD0,Par); 
 
 RtonesD = RandStream('mt19937ar','Seed',Global_TrialNb*Index*2);
-[StimulusBis,ToneMatrix{2}] = AssemblyTones(FrequencySpace,ChangeD,XDistri,StimulusBisDuration,sF,PlotDistributions,[],RtonesD);
+[StimulusBis,ToneMatrix{2}] = AssemblyTones(FrequencySpace,ChangeD,XDistri,StimulusBisDuration,sF,PlotDistributions,[],RtonesD,Par);
 
 % PREPARE THE 2 Parts OF THE WHOLE STIMULUS
 if Reverse

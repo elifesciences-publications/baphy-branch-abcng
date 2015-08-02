@@ -26,7 +26,11 @@ Path = MD_getDir('Identifier',P.Identifier,'DB',1);
 
 %LOAD STIMULUS MFILE
 P.StimStart = I.exptparams.TrialObject.ReferenceHandle.PreStimSilence;
-P.StimStop = P.StimStart + I.exptparams.TrialObject.ReferenceHandle.Duration;
+if isfield(I.exptparams.TrialObject.ReferenceHandle,'Duration')
+    P.StimStop = P.StimStart + mean(I.exptparams.TrialObject.ReferenceHandle.Duration);
+else
+    P.StimStop = P.StimStart + mean([I.exptevents.StopTime]);
+end
 Path = MD_getDir('Identifier',P.Identifier,'Kind','Sorted','DB',1);
 
 % CONVERT RESULTS TO OLD FORMAT FOR DB ACCESS

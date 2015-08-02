@@ -38,7 +38,9 @@ switch nargin
     o.FieldTypes = Fields(2:3:end-1);
     o.MaxIndex = 0;
     o.RunClass = 'TMG'; o.Duration = NaN;
-    o.Version = 150523;
+    o.Version = 150719;
+    o.ToneDuration = 0.03;
+    o.TonesPerOctave = 2;
 
     o.FrequencySpace = []; o.XDistri = []; o.F0 = [];
     o.IniSeed = []; o.MorphingDuration = [];

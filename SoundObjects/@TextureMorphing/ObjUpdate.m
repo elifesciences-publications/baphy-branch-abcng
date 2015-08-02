@@ -27,8 +27,8 @@ end
 Par.LRextraFrequencies = 0.7;   % Oct.; empty space on left and right sides of the frequency axis
 Par.FrequencyRange_LB = Par.FrequencyRange(1);
 Par.FrequencyRange_UB = Par.FrequencyRange(2);
-Par.ToneDuration = 0.03;
-Par.TonesPerOctave = 2;
+Par.ToneDuration = get(o,'ToneDuration');
+Par.TonesPerOctave = get(o,'TonesPerOctave');
 if Par.FrozenPatternsNb==0
   Par.FrozenPatternDuration = 0;
 else
