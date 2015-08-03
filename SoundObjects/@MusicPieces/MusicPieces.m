@@ -10,6 +10,7 @@ case 0
                      });
 	o.DatasetNum = 1;
     o.SoundPath = '';
+    o.RunClass = 'MUS'; 
     o = class(o,'MusicPieces',s);
     o = ObjUpdate (o);
 case 1
