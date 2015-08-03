@@ -1,14 +1,15 @@
-function [Stimulus,ToneMatrix] = AssemblyTones(FrequencySpace,Distribution,X,Duration,sF,PlotMe,LineName,Rgenerator)
+function [Stimulus,ToneMatrix] = AssemblyTones(FrequencySpace,Distribution,X,Duration,sF,PlotMe,LineName,Rgenerator,Par)
 if nargin <=6 || not(PlotMe); LineName = []; end
 if nargin <8; Rgenerator = RandStream('mt19937ar'); end
 reset(Rgenerator)
 % Duration in s / F1 in Hz / [x,Distribution from <DrawDistribution>
 Stimulus = zeros(1,ceil(Duration*sF));
-ChordDuration = 0.03; % s    %Rabinowitsch or also Maria Cheit
+ChordDuration = Par.ToneDuration; % s    %Rabinowitsch or also Maria Cheit
+TonesPerOctave = Par.TonesPerOctave; % s    %Rabinowitsch or also Maria Cheit
 % Parameters
 ChordTimeSamples = linspace(0,ChordDuration,round(ChordDuration*sF));
 ChordNb = Duration/ChordDuration;    % should be integer for D0 because ToC is rounded in <waveform.m>
-AverageNbTonesChord = round(2*log(FrequencySpace(end)/FrequencySpace(1))/log(2));    % Average of 2 tones per octave (cf. Ahrens 2008)
+AverageNbTonesChord = round(TonesPerOctave*log(FrequencySpace(end)/FrequencySpace(1))/log(2));    % Average of 2 tones per octave (cf. Ahrens 2008)
 XPoisson = 0:(AverageNbTonesChord*2);                                                % Decrease to *2 because of saturation suspicion (cracks in the headphones)
 CumDistriPoisson = poisscdf(XPoisson,AverageNbTonesChord);
 if nargout>1; ToneMatrix=zeros(length(FrequencySpace),floor(ChordNb));  end;         % ChordNb could be not integer only for DbisDuration

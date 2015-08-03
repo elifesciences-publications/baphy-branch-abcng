@@ -17,3 +17,4 @@ Config/BaphyConfigPath.m
 Config/lbhb/SoundObjects/@NoiseSample/cache/*.wav
 Config/lbhb/SoundObjects/@NoiseSample/cache/*.mat
 /Config/HWSetupParams.mat
+/Modules/RefTar/TrialObjects/@ReferenceTarget/LastLookup.mat

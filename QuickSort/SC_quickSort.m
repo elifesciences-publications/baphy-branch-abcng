@@ -53,7 +53,11 @@ for iRec = 1:length(P.Recordings)
     
     % LOAD STIMULUS MFILE INFO
     P.StimStart = I.exptparams.TrialObject.ReferenceHandle.PreStimSilence;
-    P.StimStop = P.StimStart + mean(I.exptparams.TrialObject.ReferenceHandle.Duration);
+    if isfield(I.exptparams.TrialObject.ReferenceHandle,'Duration')
+        P.StimStop = P.StimStart + mean(I.exptparams.TrialObject.ReferenceHandle.Duration);
+    else
+        P.StimStop = P.StimStart + mean([I.exptevents.StopTime]);
+    end
     Ttmp = Events2Trials('Events',I.exptevents,'Stimclass',I.Stimclass,'TimeIndex',P.TimeIndex);
     
     % LOOP OVER THESE INDEXES TO CONCATENATE OVER RECORDINGS

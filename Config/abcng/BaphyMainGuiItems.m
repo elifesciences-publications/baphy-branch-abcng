@@ -51,7 +51,7 @@ switch field
     varargout{1} = {''};
   case 'HWSetup'
     % Sound Proof rooms:
-    varargout{1} = {'0: Test', '1: SB1', '2: SB2','3: LB1','11:HP1'};
+    varargout{1} = {'0: Test', '1: SB1', '2: SB2','3: LB1','11:HP1','5:SB2Earphones'};
     % number of electrodes
   case 'NumberOfElectrodes'
     varargout{1} = '1';
@@ -66,7 +66,7 @@ switch field
          else
             varargout{1}=fileparts(tempname);
          end
-      case {1,2,3} % PHYSIOLOGY SETUPS
+      case {1,2,3,5} % PHYSIOLOGY SETUPS
         varargout{1}='D:\Data\';
       case {4,11} % PSYCHOPHYSICSSETUP
         varargout = {'C:\Data\'};

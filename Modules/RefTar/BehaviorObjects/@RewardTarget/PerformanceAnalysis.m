@@ -31,7 +31,7 @@ NumRef = 0;
 % starts with $ sign.
 for cnt1 = 1:length(StimEvents);
     [Type, StimName, StimRefOrTar] = ParseStimEvent (StimEvents(cnt1));
-    if strcmpi(Type,'Stim') && ~isempty(strfind(StimName,'$'))
+    if strcmpi(Type,'Stim') %&& ~isempty(strfind(StimName,'$'))  % 15/06: YB (condition never filled in for TORC/Tone at least)
         if ~isempty(RefResponseWin)  % the response window should not go to the next sound!
             RefResponseWin(end) = min(RefResponseWin(end), StimEvents(cnt1).StartTime);
         end
@@ -68,8 +68,8 @@ LickData = max(0,diff(LickData));
 RefFalseAlarm = 0;RefFirstLick = NaN;
 for cnt2 = 1:NumRef
     cnt1 = (cnt2-1)*2+1;
-    RefResponseLicks{cnt2} = LickData(max(1,fs*RefResponseWin(cnt1)):min(length(LickData),fs*RefResponseWin(cnt1+1)));
-    RefEarlyLicks{cnt2} = LickData(max(1,fs*RefEarlyWin(cnt1)):min(length(LickData),fs*RefEarlyWin(cnt1+1)));
+    RefResponseLicks{cnt2} = LickData(max(1,round(fs*RefResponseWin(cnt1))):min(length(LickData),round(fs*RefResponseWin(cnt1+1))));
+    RefEarlyLicks{cnt2} = LickData(max(1,round(fs*RefEarlyWin(cnt1))):min(length(LickData),round(fs*RefEarlyWin(cnt1+1))));
     temp = find([RefEarlyLicks{cnt2}; RefResponseLicks{cnt2}],1)/fs;
     if ~isempty(temp), RefFirstLick(cnt2) = temp; else RefFirstLick(cnt2) = nan;end
     RefFalseAlarm(cnt2) = double(~isempty(find(RefResponseLicks{cnt2},1)));
@@ -77,7 +77,7 @@ end
 if isempty(TarResponseWin)   %for no target (sham trial)  by py&9/6/2012
     TarResponseLick=[];
 else
-    TarResponseLick = LickData(max(1,fs*TarResponseWin(1)):min(length(LickData),fs*TarResponseWin(2)));
+    TarResponseLick = LickData(max(1,round(fs*TarResponseWin(1))):min(length(LickData),round(fs*TarResponseWin(2))));
 end
 % in an ineffective trial, discard the lick during target because target
 % was never played:
@@ -85,7 +85,8 @@ FalseAlarm = sum(RefFalseAlarm)/NumRef;
 if isempty(TarResponseWin)   %for no target (sham trial)  by py&9/6/2012
     TarEarlyLick=[];
 else
-    TarEarlyLick = LickData(fs*max(1,TarEarlyWin(1)):min(length(LickData),fs*TarEarlyWin(2)));
+%     TarEarlyLick = LickData(fs*max(1,TarEarlyWin(1)):min(length(LickData),fs*TarEarlyWin(2)));
+    TarEarlyLick = LickData(max(1,round(fs*TarEarlyWin(1))):min(length(LickData),round(fs*TarEarlyWin(2))));   % 15/07: YB
 end
 if (FalseAlarm>=StopTargetFA)  % in ineffective
     TarResponseLick = zeros(size(TarResponseLick));
