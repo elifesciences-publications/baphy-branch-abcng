@@ -206,7 +206,7 @@ exptparams.Performance(cnt2+1) = perfPer;
 target_tr=find(~isnan(cat(1,perf.Hit)));
 if isfield(exptparams,'Performance') && (length(target_tr)>2) && isempty(strfind(globalparams.Physiology,'Passive'))
     DidSheLick = cat(1,exptparams.Performance(target_tr(end-2:end)).LickRate);
-    if sum(DidSheLick) == 0, StopExperiment = 1;end
+%     if sum(DidSheLick) == 0, StopExperiment = 1;end  % 15/08-YB
 end
 if isfield(exptparams,'Water')
     exptparams.Performance(end).Water = exptparams.Water .* globalparams.PumpMlPerSec.Pump;
