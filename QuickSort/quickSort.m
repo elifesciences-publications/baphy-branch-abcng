@@ -291,7 +291,7 @@ LargeThrshold = QG.(FID).P.LargeThreshold;
 spikefs = u2num(QG.(FID).P.SR);
 Artifacts = find(TempData > LargeThrshold);
 QG.(FID).Data=QG.(FID).RawData;
-ArtWin = .5*spikefs; %+/-500 ms zeroing window around an amplitude artifact
+ArtWin = .5*spikefs; % +/-500 ms zeroing window around an amplitude artifact
 for tt = 1:length(Artifacts)
     QG.(FID).Data(Artifacts(tt)-ArtWin:Artifacts(tt)+ArtWin)=0;
 end
