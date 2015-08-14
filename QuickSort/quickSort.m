@@ -46,7 +46,7 @@ if ~isfield(P,'NVec') | isnan(P.NVec) P.NVec = 10; end
 if ~isfield(P,'TrialIndices') P.TrialIndices = 1; end
 if ~isfield(P,'PermInd') P.PermInd = [ ]; end
 if ~isfield(P,'Linkage') P.Linkage = 'ward'; end
-if ~isfield(P,'SR') P.SR = 25*U.kHz; end
+if ~isfield(P,'SR') P.SR = 31.25*U.kHz; end
 if ~isfield(P,'ISIDur') P.ISIDur = 1.5*U.ms; end
 if ~isfield(P,'PreDur') P.PreDur = 2*U.ms; end
 if ~isfield(P,'PostDur') P.PostDur = 2.5*U.ms; end
@@ -785,7 +785,7 @@ if length(find(ActiveClusterLst))==2
     xdata = get(QG.(FID).GUI.hCC{PairNum},'XData');
     ydata = get(QG.(FID).GUI.hCC{PairNum},'YData');
     cAxis = QG.(FID).GUI.CC;
-    axis(cAxis,[xdata([1 end]),0,max(ydata)]);
+    axis(cAxis,[xdata([1 end]),0,max([ydata,1e-3])]);
 end
 
 function LF_CBF_changePermInd(obj,event,FID)
