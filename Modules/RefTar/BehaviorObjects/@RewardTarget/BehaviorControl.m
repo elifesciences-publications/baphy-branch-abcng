@@ -37,6 +37,7 @@ StopTargetFA = get(o,'StopTargetFA');
 RewardAmount = get(o,'RewardAmount');
 LickEvents = [];
 tardur=0;   %added by py @ 9/6/2012
+SoundStopped = 0;
 if ~isfield(exptparams,'Water'), exptparams.Water = 0;end
 % calculate target duratioin; added by Ling Ma,04/2007.
 [t,trial,Note,toff,TarIndex] = evtimes(StimEvents,'*Target*');
@@ -120,6 +121,7 @@ while CurrentTime < exptparams.LogDuration
     if StopFlag && (FalseAlarm>=StopTargetFA)
         % ineffective sound:
         ev = IOStopSound(HW);
+        SoundStopped = 1;
         LickEvents = AddEvent(LickEvents, ev, TrialIndex);
         ThisTime = clock;
         if strcmpi(get(o,'TurnOffLight'),'Ineffective')
@@ -152,7 +154,7 @@ while CurrentTime < exptparams.LogDuration
     if (Lick) && ~Ref && mod(EarlyPos,2)
         % if she licks in early window, terminate the trial immediately, and
         % give her timeout.
-        % ev = IOStopSound(HW);
+        % ev = IOStopSound(HW); SoundStopped = 1;
         % LickEvents = AddEvent(LickEvents, ev, TrialIndex);
         break;
 %         ThisTime = clock;
@@ -168,7 +170,8 @@ while CurrentTime < exptparams.LogDuration
         if StopTargetFA<1
             WaterFraction = 1-FalseAlarm;
         else
-            WaterFraction = 1;
+            WaterFraction = 1-FalseAlarm;
+%             WaterFraction = 1;
         end
         PumpDuration = RewardAmount* WaterFraction/globalparams.PumpMlPerSec.Pump;
 %         PumpDuration = get(o,'PumpDuration') * WaterFraction;
@@ -187,6 +190,9 @@ while CurrentTime < exptparams.LogDuration
         TarFlag = StimPos;
     end
     CurrentTime = IOGetTimeStamp(HW);
+end
+if ~SoundStopped
+  ev = IOStopSound(HW);
 end
 if TimeOutFlag>0
     ThisTime = clock;

@@ -56,8 +56,9 @@ case 0
     RefTarO.NumOfEvPerRef = 3;  % how many stim each reference produces??
     RefTarO.NumOfEvPerTar = 3;  % how many stim each Target produces??
     RefTarO.RunClass = '[]';
+    RefTarO.MaxRef = 4;
     RefTarO.UserDefinableFields = {'OveralldB','edit',65,'RelativeTarRefdB',...
-        'edit',0};
+        'edit',0,'MaxRef','edit',4};
     RefTarO = class(RefTarO,'ReferenceTarget');
     RefTarO = ObjUpdate(RefTarO);
 case 1

@@ -27,9 +27,12 @@ if IsLookup
             NumRef=1;
         end
     else
-        LookupTable = [3 4 7 3 2 7 3 1 4 1 5 7 2 1 6 4 7 2 1 7 2 5 1 3 2 1 7 4 7 5 6];
+%         LookupTable = [3 4 7 3 2 7 3 1 4 1 5 7 2 1 6 4 7 2 1 7 2 5 1 3 2 1 7 4 7 5 6];
+        LookupTable = repmat(1:(par.MaxRef+1),1,10);
+        LookupTable = LookupTable(randperm(length(LookupTable)));
+        % max is sham (catch) trials
         tt = what(class(o));
-        LookupFile = [tt.path filesep 'LastLookup.mat']
+        LookupFile = [tt.path filesep 'LastLookup.mat'];
         if exist(LookupFile,'file')      load (LookupFile);
         else             LastLookup = 1;
         end
