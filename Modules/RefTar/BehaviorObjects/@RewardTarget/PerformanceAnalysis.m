@@ -64,7 +64,7 @@ LickData = max(0,diff(LickData));
 %  2) false alarm for each reference, and hit for target at different
 %       positions
 %
-% first, extract the relavant lick data:
+% first, extract the relevant lick data:
 RefFalseAlarm = 0;RefFirstLick = NaN;
 for cnt2 = 1:NumRef
     cnt1 = (cnt2-1)*2+1;
@@ -98,7 +98,7 @@ end
 TarFirstLick = find([TarEarlyLick ;TarResponseLick],1)/fs;
 if isempty(TarFirstLick), TarFirstLick = nan;end
 % a special performance is calculated here for the graph that shows the hit
-% and false alram based on the position of the target/reference:
+% and false alarm based on the position of the target/reference:
 % record the first lick time for ref and tar
 if isfield(exptparams,'FirstLick') 
     exptparams.FirstLick.Tar(end+1) = TarFirstLick;
@@ -113,14 +113,23 @@ end
 if isfield(exptparams, 'Performance') 
     perf = exptparams.Performance(1:end-1);
     cnt2 = length(perf) + 1;
+    prevNumRefTot = perf(cnt2-1).NumRefTot; prevNumLickedRefTot = perf(cnt2-1).NumLickedRefTot;
 else
     cnt2 = 1;
+    prevNumRefTot = 0; prevNumLickedRefTot = 0;
 end
 perf(cnt2).ThisTrial    = '??';
 if NumRef
-    perf(cnt2).FalseAlarm   = sum(RefFalseAlarm)/NumRef; % sum of false alarams divided by num of ref
+    perf(cnt2).FalseAlarm   = sum(RefFalseAlarm)/NumRef; % sum of false alarms divided by num of ref
+    perf(cnt2).NumRefTot   = prevNumRefTot+NumRef; % sum of false alarms divided by num of ref
+    perf(cnt2).NumLickedRefTot   = prevNumLickedRefTot+sum(RefFalseAlarm); 
 else
     perf(cnt2).FalseAlarm = NaN;
+end
+if perf(cnt2).NumRefTot==0
+  perf(cnt2).FaRate = 0;
+else
+  perf(cnt2).FaRate = perf(cnt2).NumLickedRefTot/perf(cnt2).NumRefTot;
 end
 perf(cnt2).Ineffective  = double(perf(cnt2).FalseAlarm >= StopTargetFA);
 perf(cnt2).WarningTrial = double(~perf(cnt2).Ineffective);
@@ -128,13 +137,15 @@ perf(cnt2).EarlyTrial   = double(perf(cnt2).WarningTrial && ~isempty(find(TarEar
 %
 perf(cnt2).Hit          = double(perf(cnt2).WarningTrial && ~perf(cnt2).EarlyTrial && ~isempty(find(TarResponseLick,1))); % if there is a lick in target response window, its a hit
 perf(cnt2).Miss         = double(perf(cnt2).WarningTrial && ~perf(cnt2).EarlyTrial && ~perf(cnt2).Hit);
+perf(cnt2).Catch         = double((get(exptparams.TrialObject,'MaxRef')+1)==NumRef);
 perf(cnt2).ReferenceLickTrial = double((perf(cnt2).FalseAlarm>0));
 %
 perf(cnt2).LickRate = length(find(LickData)) / length(LickData);
 % Now calculate hit and miss rates:
 TotalWarn                   = sum(cat(1,perf.WarningTrial));
-perf(cnt2).HitRate          = sum(cat(1,perf.Hit)) / TotalWarn;
-perf(cnt2).MissRate         = sum(cat(1,perf.Miss)) / TotalWarn;
+TotalWarnAndNoCatch         = sum([perf.WarningTrial] & ~[perf.Catch]);
+perf(cnt2).HitRate          = sum(cat(1,perf.Hit)) / TotalWarnAndNoCatch;
+perf(cnt2).MissRate         = sum(cat(1,perf.Miss)) / TotalWarnAndNoCatch;
 perf(cnt2).EarlyRate        = sum(cat(1,perf.EarlyTrial))/TotalWarn;
 perf(cnt2).WarningRate      = sum(cat(1,perf.WarningTrial))/TrialIndex;
 perf(cnt2).IneffectiveRate  = sum(cat(1,perf.Ineffective))/TrialIndex;
@@ -143,7 +154,17 @@ perf(cnt2).IneffectiveRate  = sum(cat(1,perf.Ineffective))/TrialIndex;
 tt = cat(1,perf.FalseAlarm);
 tt(find(isnan(tt)))=[];
 perf(cnt2).FalseAlarmRate   = sum(tt)/length(tt);
-perf(cnt2).DiscriminationRate = perf(cnt2).HitRate * (1-perf(cnt2).FalseAlarmRate);
+% perf(cnt2).DiscriminationRate = perf(cnt2).HitRate * (1-perf(cnt2).FalseAlarmRate);
+if perf(cnt2).HitRate==0
+  perf(cnt2).DiscriminationRate = 0;
+elseif perf(cnt2).FaRate==0
+  perf(cnt2).DiscriminationRate = 0;
+elseif perf(cnt2).HitRate==1
+  HitRate = (sum(cat(1,perf.Hit))-1) / TotalWarnAndNoCatch;
+  perf(cnt2).DiscriminationRate =  erfinv(HitRate)-erfinv(perf(cnt2).FaRate);
+else
+  perf(cnt2).DiscriminationRate =  erfinv(perf(cnt2).HitRate)-erfinv(perf(cnt2).FaRate);
+end
 %also, calculate the stuff for this trial block:
 RecentIndex = max(1 , TrialIndex-exptparams.TrialBlock+1):TrialIndex;
 tt = cat(1,perf(RecentIndex).FalseAlarm);
@@ -181,7 +202,7 @@ perfPer.WarningTrial(2) = TrialIndex;
 perfPer.ReferenceLickTrial = TrialIndex;
 perfPer.FalseAlarm(2) = TrialIndex;
 %
-% now position hit and false alram:
+% now position hit and false alarm:
 if ~isfield(exptparams,'PositionHit')  || (size(exptparams.PositionHit,1)<NumRef+1) 
     exptparams.PositionHit(NumRef+1,1:2) = 0;
 end

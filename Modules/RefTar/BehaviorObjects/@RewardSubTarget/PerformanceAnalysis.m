@@ -17,7 +17,12 @@ TargetIndices = get(TO,'TargetIndices');
 cP.AllTargetPositions = get(get(exptparams.TrialObject,'TargetHandle'),'AllTargetPositions');
 cP.CurrentTargetPositions = get(get(exptparams.TrialObject,'TargetHandle'),'CurrentTargetPositions'); 
 cHitInd =  strcmp({AllPerf.Outcome},'HIT');
-cP.HitRate = sum(cHitInd)/TrialIndex;
+EffectiveTrialNb = sum(~[AllPerf.IneffectiveTrial]);
+if EffectiveTrialNb == 0
+  cP.HitRate = 0;
+else
+  cP.HitRate = sum(cHitInd)/EffectiveTrialNb;
+end
 cP.SnoozeRate = sum(strcmp({AllPerf.Outcome},'SNOOZE'))/TrialIndex;
 cP.EarlyRate = sum(strcmp({AllPerf.Outcome},'EARLY'))/TrialIndex;
 cP.ErrorRate = sum(strcmp({AllPerf.Outcome},'ERROR'))/TrialIndex;  % no ERROR in the detection change task
@@ -31,9 +36,13 @@ if get(O,'GradualResponse')
     cP.DiscriminationRate = 0;
   elseif HitRate==0
     cP.DiscriminationRate = 0;
+  elseif HitRate==1
+    HitRate = (sum(cHitInd)-1)/EffectiveTrialNb;
+    cP.DiscriminationRate = erfinv(HitRate)-erfinv(FaRate);
   else
     cP.DiscriminationRate = erfinv(HitRate)-erfinv(FaRate);
   end
+  cP.EarlyRate = FaRate;
 %   cP.DiscriminationRate = (cP.DiscriminationRate/3) +0.5;
 else
   cP.DiscriminationRate = prod(cP.HitRate);
@@ -85,7 +94,8 @@ AverageSteps = 10;
 RecentPerf = AllPerf([max([1,end-AverageSteps+1]):end]);
 cP.HitRateRecent = sum(strcmp({RecentPerf.Outcome},'HIT'))/AverageSteps;
 cP.SnoozeRateRecent = sum(strcmp({RecentPerf.Outcome},'SNOOZE'))/AverageSteps;
-cP.EarlyRateRecent = sum(strcmp({RecentPerf.Outcome},'EARLY'))/AverageSteps;
+% cP.EarlyRateRecent = sum(strcmp({RecentPerf.Outcome},'EARLY'))/AverageSteps;
+cP.EarlyRateRecent = sum([AllPerf((max([1 end-AverageSteps+1]):end)).FaNb]) / sum([AllPerf((max([1 end-AverageSteps+1]):end)).TargetIndices]);
 cP.ErrorRateRecent = sum(strcmp({RecentPerf.Outcome},'ERROR'))/AverageSteps;
 
 %% TIMING  % so far, LICKS before the ToC are not seen in LickTargetOnly MODE

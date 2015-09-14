@@ -58,6 +58,7 @@ MinimalDelayResponse = get(O,'MinimalDelayResponse');
 
 TrialObject = get(exptparams.TrialObject);
 LickTargetOnly = TrialObject.LickTargetOnly;
+IneffectiveTrial = 0;
 
 %% PREPARE FOR PREWARD
 cPositions = {'center'};
@@ -150,32 +151,42 @@ DetectType = 'ON'; LickOccured = 0;
     exptparams.Water = exptparams.Water + PrewardAmount;
     fprintf('\b ... '); Prewarded = 1;
   end
+  
+  % Count number of references where a lick occured
+  if CurrentTime > StimEvents(Index-1+4).StartTime  
+    if get(O,'GradualResponse')
+      DidItLicks = zeros(1,Index);
+      for LickNum = 1:length(CountingLicks)
+        for RefNum = 1:(Index-1)
+          if CountingLicks(LickNum)>StimEvents(RefNum+4).StartTime && CountingLicks(LickNum)<StimEvents(RefNum+4).StopTime && DidItLicks(RefNum) == 0
+            DidItLicks(RefNum) = 1;
+          end
+        end
+        RefNum = Index;
+        if CountingLicks(LickNum)>StimEvents(RefNum+4).StartTime && CountingLicks(LickNum)<TarWindow(1) && DidItLicks(RefNum) == 0
+          DidItLicks(RefNum) = 1;
+        end
+      end
+
+      BadLickSum = sum(DidItLicks);
+      if TrialIndex == 1
+        exptparams.Performance.FaNb = BadLickSum;
+        exptparams.DBfields.Performance = {'DiscriminationRate','HitRate','SnoozeRate','EarlyRate','ErrorRate','Trials'};
+      else
+        exptparams.Performance(TrialIndex).FaNb = BadLickSum;
+      end
+      if Index~=1 && sum(DidItLicks(1:(end-1))) == (Index-1)
+        StopEvent = IOStopSound(HW);
+        IneffectiveTrial = 1;
+        break;
+      end
+    else
+      BadLickSum = 0;
+    end
+  end  
+  
 end
 
-% Count number of references where a lick occured
-if get(O,'GradualResponse')
-  DidItLicks = zeros(1,Index);
-  for LickNum = 1:length(CountingLicks)
-    for RefNum = 1:(Index-1)
-      if CountingLicks(LickNum)>StimEvents(RefNum+4).StartTime && CountingLicks(LickNum)<StimEvents(RefNum+4).StopTime && DidItLicks(RefNum) == 0
-        DidItLicks(RefNum) = 1;
-      end
-    end
-    RefNum = Index;
-    if CountingLicks(LickNum)>StimEvents(RefNum+4).StartTime && CountingLicks(LickNum)<TarWindow(1) && DidItLicks(RefNum) == 0
-      DidItLicks(RefNum) = 1;
-    end
-  end
-  BadLickSum = sum(DidItLicks);
-  if TrialIndex == 1
-    exptparams.Performance.FaNb = BadLickSum;
-    exptparams.DBfields.Performance = {'DiscriminationRate','HitRate','SnoozeRate','EarlyRate','ErrorRate','Trials'};
-  else
-    exptparams.Performance(TrialIndex).FaNb = BadLickSum;
-  end
-else
-  BadLickSum = 0;
-end
 
 % IF NO RESPONSE OCCURED
 if ~LickOccured && isempty(CountingLicks); ResponseTime = inf; end
@@ -190,7 +201,7 @@ end
 if any( CountingLicks>TarWindow(1)  & CountingLicks < TarWindow(2) )
   Outcome = 'HIT';
   ResponseTime = CountingLicks(end);
-elseif ~isempty(CountingLicks) && all( CountingLicks<TarWindow(1) )
+elseif ( ~isempty(CountingLicks) && all( CountingLicks<TarWindow(1) ) ) ||  ( Index~=1 && sum(DidItLicks) == (Index-1) )
   Outcome = 'EARLY';
   ResponseTime = CountingLicks(1);
 else  % CASES NO LICK AND LATE LICK
@@ -314,6 +325,7 @@ fprintf('\n');
 if ~strcmp(Outcome,'SNOOZE'); LickTime = ResponseTime; else LickTime = NaN; end
 exptparams.Performance(TrialIndex).ReferenceIndices = ReferenceIndices;
 exptparams.Performance(TrialIndex).TargetIndices = TargetIndices;
+exptparams.Performance(TrialIndex).IneffectiveTrial  = IneffectiveTrial;
 exptparams.Performance(TrialIndex).Outcome = Outcome;
 exptparams.Performance(TrialIndex).TarWindow = TarWindow;
 exptparams.Performance(TrialIndex).RefWindow = RefWindow;
