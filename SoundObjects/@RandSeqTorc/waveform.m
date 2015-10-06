@@ -39,13 +39,13 @@ PastRef = get(o,'PastRef');
 if isempty(PastRef)  % First trial
    RefNow = 0;
    o = set(o,'PastRef',[PastRef index]);
-elseif length(PastRef) < TrialNum   % during the experiment, only this condition should be true
+else%if length(PastRef) < TrialNum   % during the experiment, if no reinject
    RefNow = sum(PastRef);
    o = set(o,'PastRef',[PastRef index]);
-elseif length(PastRef) >= TrialNum && index == PastRef(TrialNum)  % When you load a SO from a previous experiment
-   RefNow = sum(PastRef(1:TrialNum)) - PastRef(TrialNum);
-elseif length(PastRef) > TrialNum && index ~= PastRef(TrialNum)
-   error('Valeur index attendue: %d', PastRef(TrialNum));
+% elseif length(PastRef) >= TrialNum && index == PastRef(TrialNum)  % When you load a SO from a previous experiment
+%    RefNow = sum(PastRef(1:TrialNum)) - PastRef(TrialNum);
+% elseif length(PastRef) > TrialNum && index ~= PastRef(TrialNum)
+%    error('Valeur index attendue: %d', PastRef(TrialNum));
 end
 
 % MATRIX OF PERMUTATION WITH CONTRAINS

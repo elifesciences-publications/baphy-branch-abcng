@@ -153,9 +153,9 @@ DetectType = 'ON'; LickOccured = 0;
   end
   
   % Count number of references where a lick occured
-  if CurrentTime > StimEvents(Index-1+4).StartTime  
+  if CurrentTime > StimEvents(Index-2+4).StartTime  % (Index-1+4): last // (Index-2+4): last but one [l.179 should be changed as well]
     if get(O,'GradualResponse')
-      DidItLicks = zeros(1,Index);
+      DidItLicks = zeros(1,Index-1);
       for LickNum = 1:length(CountingLicks)
         for RefNum = 1:(Index-1)
           if CountingLicks(LickNum)>StimEvents(RefNum+4).StartTime && CountingLicks(LickNum)<StimEvents(RefNum+4).StopTime && DidItLicks(RefNum) == 0
@@ -163,9 +163,10 @@ DetectType = 'ON'; LickOccured = 0;
           end
         end
         RefNum = Index;
-        if CountingLicks(LickNum)>StimEvents(RefNum+4).StartTime && CountingLicks(LickNum)<TarWindow(1) && DidItLicks(RefNum) == 0
-          DidItLicks(RefNum) = 1;
-        end
+        % Commented in order not to include target seq
+%         if CountingLicks(LickNum)>StimEvents(RefNum+4).StartTime && CountingLicks(LickNum)<TarWindow(1) && DidItLicks(RefNum) == 0
+%           DidItLicks(RefNum) = 1;
+%         end
       end
 
       BadLickSum = sum(DidItLicks);
@@ -175,7 +176,7 @@ DetectType = 'ON'; LickOccured = 0;
       else
         exptparams.Performance(TrialIndex).FaNb = BadLickSum;
       end
-      if Index~=1 && sum(DidItLicks(1:(end-1))) == (Index-1)
+      if Index~=1 && sum(DidItLicks(1:(end-1))) >= (Index-2)
         StopEvent = IOStopSound(HW);
         IneffectiveTrial = 1;
         break;
@@ -189,7 +190,7 @@ end
 
 
 % IF NO RESPONSE OCCURED
-if ~LickOccured && isempty(CountingLicks); ResponseTime = inf; end
+if ~LickOccured && isempty(CountingLicks); ResponseTime = inf; DidItLicks = 0; end
 
 if ~isempty(CountingLicks)
   fprintf(['\t Lick detected [ ',cLickSensor,', at ',n2s(CountingLicks(end),3),'s ] ... ']);
@@ -201,7 +202,7 @@ end
 if any( CountingLicks>TarWindow(1)  & CountingLicks < TarWindow(2) )
   Outcome = 'HIT';
   ResponseTime = CountingLicks(end);
-elseif ( ~isempty(CountingLicks) && all( CountingLicks<TarWindow(1) ) ) ||  ( Index~=1 && sum(DidItLicks) == (Index-1) )
+elseif ( ~isempty(CountingLicks) && all( CountingLicks<TarWindow(1) ) ) ||  ( get(O,'GradualResponse') && Index~=1 && sum(DidItLicks) == (Index-1) )
   Outcome = 'EARLY';
   ResponseTime = CountingLicks(1);
 else  % CASES NO LICK AND LATE LICK
@@ -284,9 +285,9 @@ switch Outcome
     if isempty(NbContiguousLastHits), NbContiguousLastHits = length( find(strcmp(LastOutcomes,'HIT')) );
     else NbContiguousLastHits = NbContiguousLastHits - length( find(strcmp(LastOutcomes(1:(NbContiguousLastHits+1)),'SNOOZE')) ); end  % But Snoozes don't give bonus
     RewardAmount = RewardAmount + IncrementRewardAmount*NbContiguousLastHits;
-    if get(O,'GradualResponse')
+    if get(O,'GradualResponse') && Index ~= 1
       % Linear: RewardAmount = MinRewardAmount + (RewardAmount-MinRewardAmount)*(Index-BadLickSum)/Index;
-      RewardAmount = MinRewardAmount + (RewardAmount-MinRewardAmount)*exp(0.5*-BadLickSum).*(Index-BadLickSum)/Index;
+      RewardAmount = MinRewardAmount + (RewardAmount-MinRewardAmount)*exp(0.3*-BadLickSum).*(Index-BadLickSum)/Index;
     end
     % Reward is dependant on the Index
     %RewardAmount = RewardAmount*min(1,round(Index*2/get(Objects.Tar,'MaxIndex')));

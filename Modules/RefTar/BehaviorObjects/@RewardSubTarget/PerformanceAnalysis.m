@@ -30,7 +30,7 @@ cP.ErrorRate = sum(strcmp({AllPerf.Outcome},'ERROR'))/TrialIndex;  % no ERROR in
 % DISCRIMINATION
 if get(O,'GradualResponse')
   HitRate = cP.HitRate;
-  FaRate = sum([AllPerf.FaNb]) / sum([AllPerf.TargetIndices]);
+  FaRate = sum([AllPerf.FaNb]) / sum([AllPerf.TargetIndices]-1);
 %   FaRate = sum([AllPerf.FaNb]) / ( sum( [AllPerf(1:TrialIndex).TargetIndices] - 1) + cP.FaNb );
   if FaRate==0
     cP.DiscriminationRate = 0;
@@ -95,7 +95,11 @@ RecentPerf = AllPerf([max([1,end-AverageSteps+1]):end]);
 cP.HitRateRecent = sum(strcmp({RecentPerf.Outcome},'HIT'))/AverageSteps;
 cP.SnoozeRateRecent = sum(strcmp({RecentPerf.Outcome},'SNOOZE'))/AverageSteps;
 % cP.EarlyRateRecent = sum(strcmp({RecentPerf.Outcome},'EARLY'))/AverageSteps;
-cP.EarlyRateRecent = sum([AllPerf((max([1 end-AverageSteps+1]):end)).FaNb]) / sum([AllPerf((max([1 end-AverageSteps+1]):end)).TargetIndices]);
+if get(O,'GradualResponse')
+  cP.EarlyRateRecent = sum([AllPerf((max([1 end-AverageSteps+1]):end)).FaNb]) / sum([AllPerf((max([1 end-AverageSteps+1]):end)).TargetIndices]);
+else
+  cP.EarlyRateRecent = sum(strcmp({RecentPerf.Outcome},'EARLY'))/AverageSteps;
+end
 cP.ErrorRateRecent = sum(strcmp({RecentPerf.Outcome},'ERROR'))/AverageSteps;
 
 %% TIMING  % so far, LICKS before the ToC are not seen in LickTargetOnly MODE
