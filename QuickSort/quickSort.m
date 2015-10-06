@@ -371,7 +371,8 @@ for i=1:NVec
         'HorizontalAlignment','center',...
         'FontName','Dialog','BackGroundColor',[1,1,1],...
         'Callback',{@LF_showSeparation,FID,i});
-    LS{i} = ['C',n2s(i),' (',sprintf('%1.1f | ',QG.(FID).SNRs(i)),n2s(length(QG.(FID).Inds{i})),')'];
+%     LS{i} = ['C',n2s(i),' (',sprintf('%1.1f | ',QG.(FID).SNRs(i)),n2s(length(QG.(FID).Inds{i})),')'];
+    LS{i} = ['C',n2s(i),' (',sprintf('%1.1f | ',QG.(FID).SNRs(i)),n2s(length(QG.(FID).STs{i})),')'];  % 15/08-YB
     QG.(FID).GUI.ClusterLabels(i) = uicontrol('style','text',...
         'Units','normalized','Enable','inactive',...
         'Position',cDC{2},...
@@ -554,6 +555,17 @@ switch lower(Basis)
 end
 CovM = double(cov(cData)); [EVec,EVal] = eigs(CovM,3); % Covariance Matrix
 PCProj = double(EVec(:,end-2:end)'*cData');
+Sample2Remove = [];
+for dimNum = 1:3
+    Sample2Remove = [Sample2Remove find(abs(PCProj(dimNum,:))>10*std(PCProj(dimNum,:)))];
+end
+Sample2Remove = unique(Sample2Remove);
+if ~isempty(Sample2Remove)
+    disp([num2str(length(Sample2Remove)) ' samples removed for PCA calculus'])
+    SampleForPCA = setdiff(1:size(cData,1),Sample2Remove);
+    CovM = double(cov(cData(SampleForPCA,:))); [EVec,EVal] = eigs(CovM,3); % Covariance Matrix
+    PCProj = double(EVec(:,end-2:end)'*cData');
+end
 % CLUSTERING (faster than clustvec)
 Distances = pdist(PCProj(:,QG.(FID).PCAInd)','euclid');
 BinTree = linkage(Distances,QG.(FID).Linkages{QG.(FID).LinkageInd});
@@ -878,7 +890,7 @@ for i=1:NVec
     ClustInd(i) = str2num(cSelect);
 end
 for i=1:NVec
-    if ~isempty(find(ClustInd==i)) ClustSel{end+1} = find(ClustInd==i); end
+    if ~isempty(find(ClustInd==i)) ClustSel{i} = find(ClustInd==i); end
 end
 
 for i=1:length(ClustSel) ClustSelStr = [ClustSelStr,' { ',sprintf('%d ',ClustSel{i}),'}']; end

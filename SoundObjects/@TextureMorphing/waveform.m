@@ -65,7 +65,7 @@ else
     else % Fix Catch trials to longer durations because shorter durations are screened by CR before the change
         if BinToC>0
             ToC = Par.MaxToC+StimulusBisDuration;
-        else BinToC==0
+        elseif BinToC==0
             RToC = RandStream('mt19937ar','Seed',IniSeed*Global_TrialNb);   % mcg16807 is fucked up
             lambda = 0.15;
             ToC = PoissonProcessPsychophysics(lambda,Par.StimulusBisDuration,1,RToC,BinToC);

@@ -429,11 +429,11 @@ for trialidx=trialrange,
     % generate/use cachefile that already has spike events extracted from evp
     % for this channel/sigthreshold
     if isempty(big_rs),
-      if globalparams.HWSetup==3 || globalparams.HWSetup==11  %for SPR2: use 1.0 shockNaNwindow addby py@6/25/2013
-        cachefile=cacheevpspikes(evpfile,channel,sigthreshold,0,0,1.0);
-      else
+%       if globalparams.HWSetup==3 || globalparams.HWSetup==11  % 15/08-YB; for SPR2: use 1.0 shockNaNwindow addby py@6/25/2013
+%         cachefile=cacheevpspikes(evpfile,channel,sigthreshold,0,0,1.0);
+%       else
         cachefile=cacheevpspikes(evpfile,channel,sigthreshold);
-      end
+%       end
       big_rs=load(cachefile);
       
       if verbose fprintf('%s big_rs loaded: %.1f sec\n',mfilename,toc); end
