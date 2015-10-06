@@ -18,7 +18,11 @@ for iCond=1:length(Conds)
   if strcmp(cCond,'Tar') & strcmp(O.TargetClass,'None') continue; end
   % LOOP OVER SEQUENCES OF STIMULI
   for i = 1:length(Indices.(cCond))  % go through all the reference sounds in the trial
-    [cWaveform, cEvents,Objects.(cCond)] = waveform(Objects.(cCond), Indices.(cCond)(i),strcmp(cCond,'Ref'),[],TrialTotal);
+    try
+      [cWaveform, cEvents,Objects.(cCond)] = waveform(Objects.(cCond), Indices.(cCond)(i),strcmp(cCond,'Ref'),[],TrialTotal);
+    catch
+      [cWaveform, cEvents] = waveform(Objects.(cCond), Indices.(cCond)(i),strcmp(cCond,'Ref'));
+    end
 
     TrialSound = [TrialSound ; cWaveform];
 

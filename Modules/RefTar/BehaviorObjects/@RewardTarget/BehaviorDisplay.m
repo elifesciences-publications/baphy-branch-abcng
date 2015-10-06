@@ -101,18 +101,20 @@ if isempty(AIData) && isempty(TrialSound)
     return;
 end
 % display Hitrate, FalseAlarmRate.
-subplot(4,4,1:4),plot(100*cat(1,exptparams.Performance(1:end-1).HitRate),'o-','LineWidth',2,...
+subplot(4,4,1:4),plot(cat(1,exptparams.Performance(1:end-1).HitRate),'o-','LineWidth',2,...
     'MarkerFaceColor',[1 .5 .5],'MarkerSize',5,'color',[1 .5 .5]);
 hold on;
-plot(100*cat(1,exptparams.Performance(1:end-1).FalseAlarmRate),'<-','LineWidth',2,...
+plot(cat(1,exptparams.Performance(1:end-1).FalseAlarmRate),'<-','LineWidth',2,...
     'MarkerFaceColor',[.1 .5 .1],'MarkerSize',5,'color',[.1 .5 .1]);
+plot(cat(1,exptparams.Performance(1:end-1).DiscriminationRate),'x-','LineWidth',2,...
+    'MarkerFaceColor',[.1 .1 .1],'MarkerSize',5,'color',[.1 .1 .1]);
 % also, show which trials were Ineffective:
 AllIneffective = cat(1,exptparams.Performance(1:TrialIndex).Ineffective);
 AllIneffective(find(AllIneffective==0))=nan;
-plot(110*AllIneffective,'r*','markersize',10);
-axis ([0 (TrialIndex+1) 0 115]);
+plot(1.1*AllIneffective,'r*','markersize',10);
+axis ([0 (TrialIndex+1) 0 1.15]);
 title(titleMes,'FontWeight','bold','interpreter','none');
-h=legend({'HR','FAR','Inef'},'Location','SouthWest');
+h=legend({'HR','FAR','d''','Inef'},'Location','SouthWest');
 LegPos = get(h,'position');
 set(h,'fontsize',8);
 LegPos(1) = 0.005; % put the legend on the far left of the screen

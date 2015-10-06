@@ -69,12 +69,15 @@ else TimeR = 0;
 end
 set([AH.Licks,AH.Sound],'XLim',[0,max([Tmax,TimeS(end),TimeR(end)])]);
 
-%% PLOT RECENT AND OVERALL HITRATE / FALSEALARMRATE / MISSRATE / DISCRIMINATION
+%% PLOT RECENT AND OVERALL HITRATE / FALSEALARMRATE / MISSRATE / DISCRIMINATION / INEFFECTIVE
 axes(AH.Performance); Performance = exptparams.Performance;
 set(AH.Performance,'XLim',[0,TrialIndex+1]); Plots = PH.Performance.Plots;
 for i=1:length(Plots)
   set(PH.Performance.(Plots{i}),'XData',[1:TrialIndex],'YData',0.005*(i-1)+[Performance.(Plots{i})]);
 end
+AllIneffective = cat(1,exptparams.Performance(1:TrialIndex).IneffectiveTrial);
+AllIneffective(find(AllIneffective==0)) = nan;
+set(PH.Performance.IneffectiveTrials,'XData',[1:TrialIndex],'YData',1.05*AllIneffective);
 set(AH.Performance,'XLim',[0.5,max([TrialIndex,get(AH.Performance,'XLim')])]);
 
 %% PLOT RESPONSE DISTRIBUTION OVER SPOUTS FOR EACH TARGET
@@ -242,6 +245,7 @@ else % CREATE A NEW SET OF HANDLES
     if ~isempty(strfind(cName,'Recent')) cColor = HF_whiten(cColor,0.75); end
     PH.Performance.(cName) = plot(0,0,'.-','Color',cColor);
   end
+  PH.Performance.IneffectiveTrials = plot(nan,nan,'r*','markersize',10);
   Opts = {'Units','N','FontWeight','bold','FontSize',7};
   text(0.01,0.9,'Hit','Color',Colors.Hit,Opts{:});
   text(0.01,0.8,'Early','Color',Colors.Early,Opts{:});

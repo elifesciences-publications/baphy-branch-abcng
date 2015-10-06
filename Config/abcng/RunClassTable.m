@@ -106,8 +106,10 @@ elseif isempty(tar),
       runclass = 'WHN';
     case 'TEXTUREMORPHING';
       runclass = 'TMG';
+    case 'TEXTUREMORPHING';
+      runclass = 'TMG';
     case 'MEMOCLICKS';
-      runclass = 'MMC';      
+      runclass = 'MMC';
     case 'MEMOCLOUDS'
       runclass = 'MTC';
     case 'STCLICK'
@@ -218,15 +220,17 @@ else
       runclass = 'ATS';
     case 'TEXTUREMORPHING';
       runclass = 'TMG';
+    case 'TEXTUREMORPHINGPSYCHOPHYSIC';
+      runclass = 'TMP';
     case 'MEMOCLICKS';
-      runclass = 'MMC';  
+      runclass = 'MMC';
     case 'MEMOCLOUDS';
       runclass = 'MTC';
     case 'RANDSEQTORC';
-      runclass = 'RST';      
+      runclass = 'RST';
     case 'WHITENOISE'
       runclass = 'WHN';
-      case 'STCLICK'
+    case 'STCLICK'
       runclass = 'STC';
     otherwise
       error('Enter a runclass into RunClassTable.m to avoid later confusion!');

@@ -72,6 +72,13 @@ switch RepOrTrial
             % 2014/02-YB: reinsertion (in the next <P.ReinsertTrials>) of TrialIndex sent to <waveform> (in order to re-generate the same ToC)
             RndNextInd = R.randperm(P.ReinsertTrials);
             P.TrialIndexLst(TrialIndex+RndNextInd(1)) = P.TrialIndexLst(TrialIndex);
+            
+            CurrentTrial = Counter;
+            P.ReferenceIndices(CurrentTrial+RndNextInd) =  P.ReferenceIndices(CurrentTrial);
+            P.TargetIndices(CurrentTrial+RndNextInd) = P.TargetIndices(CurrentTrial);
+            P.TrialTags(CurrentTrial+RndNextInd) = P.TrialTags(CurrentTrial);
+            P.NumberOfTrials(CurrentTrial+RndNextInd) = length(CurrentTrial);
+            
           end
       end
     end

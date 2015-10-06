@@ -138,9 +138,9 @@ elseif TarObject == -1
         Val = maxLocalStd(TrialSound,sf,Duration);
         TrialSound =  TrialSound/Val;
       end
-      if get(o,'RelativeTarRefdB')>0
-        TrialSound = TrialSound / (10^(get(o,'RelativeTarRefdB')/20));
-      end
+%       if get(o,'RelativeTarRefdB')>0
+%         TrialSound = TrialSound / (10^(get(o,'RelativeTarRefdB')/20));
+%       end
     end
 end
 

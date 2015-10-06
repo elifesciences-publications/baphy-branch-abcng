@@ -42,7 +42,7 @@ if ~isempty(exptparams_Copy)
         w = wTorc + wTone;
     end
 end
-if globalparams.HWSetup== 1 | globalparams.HWSetup== 3 | globalparams.HWSetup== 5   
+if 0 && globalparams.HWSetup== 1 | globalparams.HWSetup== 3 | globalparams.HWSetup== 5   
     wTone= 5*(wTone/max(abs(wTone)));
     disp(['tone: ' num2str(max(abs(wTone)))])
     wTorc= 5*(wTorc/max(abs(wTorc)));
