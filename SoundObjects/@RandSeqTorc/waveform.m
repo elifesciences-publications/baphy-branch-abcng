@@ -9,12 +9,12 @@ PostStimSilence = get(o,'PostStimSilence');
 % PARAMETERS OF RandSeqTorc OBJECT
 SameRef = get(o,'SameRef');                  % unique tone in the reference
 RampProbability = get(o,'RampProbability');  % probability of having descending or ascending ramp
-UniqueToneIndex = get(o,'UniqueToneIndex');
 ToneDur = get(o,'ToneDur');  % sec.
 ToneGap = get(o,'ToneGap');  % sec.
 SeqGap = get(o,'SequenceGap');  % sec.
 
 TargetF = get(o,'TargetF');
+UniqueToneIndex =  get(o,'UniqueToneIndex'); %length(TargetF); Jennifer 17/09/15, scories ?
 RampInterval = get(o,'RampInterval');     % in semitones
 IdenticalTones= get(o,'IdenticalTones');
 LoudnessCue = get(o,'LoudnessCue');
@@ -23,12 +23,14 @@ Parameters.Sequences = [];
 
 % Create an instance of TORC object:
 TORC = get(o,'TORC');
+if strcmp(TORC,'yes')
 TorcDur = get(o,'TorcDuration');
 TorcFreq = get(o,'FrequencyRange');
 TorcRates = get(o,'TorcRates');
 TORCPreStimSilence = 0; TORCPostStimSilence = 0;
 TorcObj = Torc(fs,0, ...                          % No Loudness
     TORCPreStimSilence,TORCPostStimSilence,TorcDur, TorcFreq, TorcRates);
+end
   
 % RANDOM NUMBER GENERATOR
 Key = get(o,'Key');
@@ -48,6 +50,7 @@ else%if length(PastRef) < TrialNum   % during the experiment, if no reinject
 %    error('Valeur index attendue: %d', PastRef(TrialNum));
 end
 
+if 0  % we do not do permutation currently
 % MATRIX OF PERMUTATION WITH CONTRAINS
 PermIndex = find(IdenticalTones ~= 1);
 MustPermIndex = find(IdenticalTones == -1);
@@ -81,7 +84,8 @@ RandTORC = [];
 TorcNb = 30;
 for RepNum = 1:(ceil(RefNow/RefNb)+RefNb)
     RandSequence = [RandSequence TrialKey.randperm(RefNb)];
-    RandTORC = [RandTORC TrialKey.randperm(TorcNb)];
+    if strcmp(TORC,'yes'); RandTORC = [RandTORC TrialKey.randperm(TorcNb)]; end
+end
 end
 
 % BUILD THE WAVEFORM
@@ -159,7 +163,7 @@ for j = (RefNow+1) : (RefNow+index-1)  % index-1 is the number of Ref
   
   % LABEL OF SEQUENCE TONES
   if strcmp(SameRef,'yes')
-      Parameters.Sequences(j-RefNow,:) = ones(1,4)*UniqueToneIndex(ThisTrial_FreqNum);
+      Parameters.Sequences(j-RefNow,:) = ones(1,length(UniqueToneIndex))*UniqueToneIndex(ThisTrial_FreqNum);
       if RampProbability>0 & any(RampPositions==(j-RefNow))
         Parameters.RampPositions(j-RefNow,:) = 1;
         Parameters.RampTypes(j-RefNow,:) = RampTypes(find(RampPositions==(j-RefNow)));        
