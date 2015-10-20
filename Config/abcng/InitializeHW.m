@@ -80,15 +80,14 @@ switch globalparams.HWSetup
         HW=niCreateAI(HW,DAQID,'ai0:1','Touch,Microphone',['/',DAQID,'/PFI0']);
     
     %% ANALOG OUTPUT % 14/09-YB: rmv independant audio channels for introducing Opto
-%         HW=niCreateAO(HW,DAQID,'ao0:1','SoundOut,OptTrig',['/',DAQID,'/PFI1']);
+    HW=niCreateAO(HW,DAQID,'ao0:1','SoundOut,OptTrig',['/',DAQID,'/PFI1']);
     
-    %% SETUP SPEAKER CALIBRATION
+    %% SETUP SPEAKER CALIBRATION    
     switch globalparams.HWSetup
       case {3,5}
-        HW=niCreateAO(HW,DAQID,'ao0','SoundOut,OptTrig',['/',DAQID,'/PFI1']); % for SB2 instead of changing set-up constantly, speaker and headphones are on different output 20/07/15 Jennifer
         HW.Calibration.Speaker = ['SHIE800',globalparams.HWSetupName];
       case 2
-        HW=niCreateAO(HW,DAQID,'ao1','SoundOut,OptTrig',['/',DAQID,'/PFI1']);
+%         HW=niCreateAO(HW,DAQID,'ao1','SoundOut,OptTrig',['/',DAQID,'/PFI1']);
         HW.Calibration.Speaker = ['RS',globalparams.HWSetupName];
     end
     HW.Calibration.Microphone = 'GRAS46BE';

@@ -64,6 +64,10 @@ LickData = max(0,diff(LickData));
 %  2) false alarm for each reference, and hit for target at different
 %       positions
 %
+%Added by CB 10/11/15: check if trial contains a target - DIRTY
+if NumRef == 8
+  exptparams.NoTargetInTrialCount = [exptparams.NoTargetInTrialCount  1]
+end  
 % first, extract the relavant lick data:
 RefFalseAlarm = 0;RefFirstLick = NaN;
 for cnt2 = 1:NumRef
@@ -133,8 +137,8 @@ perf(cnt2).ReferenceLickTrial = double((perf(cnt2).FalseAlarm>0));
 perf(cnt2).LickRate = length(find(LickData)) / length(LickData);
 % Now calculate hit and miss rates:
 TotalWarn                   = sum(cat(1,perf.WarningTrial));
-perf(cnt2).HitRate          = sum(cat(1,perf.Hit)) / TotalWarn;
-perf(cnt2).MissRate         = sum(cat(1,perf.Miss)) / TotalWarn;
+perf(cnt2).HitRate          = sum(cat(1,perf.Hit)) / (TotalWarn-sum(exptparams.NoTargetInTrialCount)); %Modified by CB 10/11/15
+perf(cnt2).MissRate         = sum(cat(1,perf.Miss)) / (TotalWarn-sum(exptparams.NoTargetInTrialCount)); %Modified by CB 10/11/15
 perf(cnt2).EarlyRate        = sum(cat(1,perf.EarlyTrial))/TotalWarn;
 perf(cnt2).WarningRate      = sum(cat(1,perf.WarningTrial))/TrialIndex;
 perf(cnt2).IneffectiveRate  = sum(cat(1,perf.Ineffective))/TrialIndex;

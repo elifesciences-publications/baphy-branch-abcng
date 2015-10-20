@@ -57,6 +57,7 @@ while ContinueExp == 1
     exptparams = RandomizeSequence(exptparams.TrialObject, exptparams, globalparams, iRep, 1);
     
     iTrial=0;
+    exptparams.NoTargetInTrialCount = [];%Added by CB 10/11/15
     while iTrial<get(exptparams.TrialObject,'NumberOfTrials') % TRIAL LOOP
       TrialIndex = TrialIndex + 1; % MAIN TRIAL COUNTER
       iTrial = iTrial+1;  % TRIAL COUNTER WITHIN REPETITION
