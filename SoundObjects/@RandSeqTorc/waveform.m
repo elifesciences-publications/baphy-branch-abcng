@@ -9,12 +9,12 @@ PostStimSilence = get(o,'PostStimSilence');
 % PARAMETERS OF RandSeqTorc OBJECT
 SameRef = get(o,'SameRef');                  % unique tone in the reference
 RampProbability = get(o,'RampProbability');  % probability of having descending or ascending ramp
-UniqueToneIndex = get(o,'UniqueToneIndex');
 ToneDur = get(o,'ToneDur');  % sec.
 ToneGap = get(o,'ToneGap');  % sec.
 SeqGap = get(o,'SequenceGap');  % sec.
 
 TargetF = get(o,'TargetF');
+UniqueToneIndex =  get(o,'UniqueToneIndex'); %length(TargetF); Jennifer 17/09/15, scories ?
 RampInterval = get(o,'RampInterval');     % in semitones
 IdenticalTones= get(o,'IdenticalTones');
 LoudnessCue = get(o,'LoudnessCue');
@@ -23,12 +23,14 @@ Parameters.Sequences = [];
 
 % Create an instance of TORC object:
 TORC = get(o,'TORC');
+if strcmp(TORC,'yes')
 TorcDur = get(o,'TorcDuration');
 TorcFreq = get(o,'FrequencyRange');
 TorcRates = get(o,'TorcRates');
 TORCPreStimSilence = 0; TORCPostStimSilence = 0;
 TorcObj = Torc(fs,0, ...                          % No Loudness
     TORCPreStimSilence,TORCPostStimSilence,TorcDur, TorcFreq, TorcRates);
+end
   
 % RANDOM NUMBER GENERATOR
 Key = get(o,'Key');
@@ -39,15 +41,16 @@ PastRef = get(o,'PastRef');
 if isempty(PastRef)  % First trial
    RefNow = 0;
    o = set(o,'PastRef',[PastRef index]);
-elseif length(PastRef) < TrialNum   % during the experiment, only this condition should be true
+else%if length(PastRef) < TrialNum   % during the experiment, if no reinject
    RefNow = sum(PastRef);
    o = set(o,'PastRef',[PastRef index]);
-elseif length(PastRef) >= TrialNum && index == PastRef(TrialNum)  % When you load a SO from a previous experiment
-   RefNow = sum(PastRef(1:TrialNum)) - PastRef(TrialNum);
-elseif length(PastRef) > TrialNum && index ~= PastRef(TrialNum)
-   error('Valeur index attendue: %d', PastRef(TrialNum));
+% elseif length(PastRef) >= TrialNum && index == PastRef(TrialNum)  % When you load a SO from a previous experiment
+%    RefNow = sum(PastRef(1:TrialNum)) - PastRef(TrialNum);
+% elseif length(PastRef) > TrialNum && index ~= PastRef(TrialNum)
+%    error('Valeur index attendue: %d', PastRef(TrialNum));
 end
 
+if 0  % we do not do permutation currently
 % MATRIX OF PERMUTATION WITH CONTRAINS
 PermIndex = find(IdenticalTones ~= 1);
 MustPermIndex = find(IdenticalTones == -1);
@@ -81,7 +84,8 @@ RandTORC = [];
 TorcNb = 30;
 for RepNum = 1:(ceil(RefNow/RefNb)+RefNb)
     RandSequence = [RandSequence TrialKey.randperm(RefNb)];
-    RandTORC = [RandTORC TrialKey.randperm(TorcNb)];
+    if strcmp(TORC,'yes'); RandTORC = [RandTORC TrialKey.randperm(TorcNb)]; end
+end
 end
 
 % BUILD THE WAVEFORM
@@ -99,10 +103,13 @@ w = [w ; prestim(:)];
 % REFERENCE(S)
 % 1) RAMP
 if RampProbability>0
-  RampPosition = find(TrialKey.rand(1,(index-1))<RampProbability);
-  AscRampPosition = RampPosition(TrialKey.rand(1,length(RampPosition))>0.5);  % Half ascending
-  DescRampPosition = setdiff(RampPosition,AscRampPosition);                   % Half descending
-else RampPosition = []; AscRampPosition = []; DescRampPosition = []; end
+  RampsF = get(o,'RampsF');
+  RampNb = size(RampsF,1); % number of possible ramps
+  RampPositions = find(TrialKey.rand(1,(index-1))<RampProbability);
+  RampTypes = randi(RampNb,[1 length(RampPositions)]);
+%   AscRampPosition = RampPosition(TrialKey.rand(1,length(RampPosition))>0.5);  % Half ascending
+%   DescRampPosition = setdiff(RampPosition,AscRampPosition);                   % Half descending
+else RampPositions = []; AscRampPosition = []; DescRampPosition = []; end
 for j = (RefNow+1) : (RefNow+index-1)  % index-1 is the number of Ref  
 %   LocalSeq = SeqFrequency(RandSequence(j),:);  % Select the right permutation
   % TORC
@@ -117,24 +124,26 @@ for j = (RefNow+1) : (RefNow+index-1)  % index-1 is the number of Ref
   % 2) SINGLE-FREQUENCIED REF
   if strcmp(SameRef,'yes')
     ThisTrial_FreqNum = TrialKey.randi(length(UniqueToneIndex),1);
-    if any(AscRampPosition==(j-RefNow)) && ThisTrial_FreqNum == 3
-      DescRampPosition = [DescRampPosition j-RefNow];
-      AscRampPosition(AscRampPosition==(j-RefNow)) = [];
-    elseif any(DescRampPosition==(j-RefNow)) && ThisTrial_FreqNum == 4
-      AscRampPosition = [AscRampPosition j-RefNow];
-      DescRampPosition(DescRampPosition==(j-RefNow)) = [];
-    end
+%     if any(AscRampPosition==(j-RefNow)) && ThisTrial_FreqNum == 3
+%       DescRampPosition = [DescRampPosition j-RefNow];
+%       AscRampPosition(AscRampPosition==(j-RefNow)) = [];
+%     elseif any(DescRampPosition==(j-RefNow)) && ThisTrial_FreqNum == 4
+%       AscRampPosition = [AscRampPosition j-RefNow];
+%       DescRampPosition(DescRampPosition==(j-RefNow)) = [];
+%     end
   end
   
   % BUILD TONES
   for FreqNum = 1:length(TargetF)
       if strcmp(SameRef,'yes')
-          if any(RampPosition==(j-RefNow))
-              if any(AscRampPosition==(j-RefNow))
-                  w0 = addenv(sin(2*pi*TargetF(UniqueToneIndex(ThisTrial_FreqNum))*2^(RampInterval*(FreqNum-1)/12) *t),fs);
-              elseif any(DescRampPosition==(j-RefNow))
-                  w0 = addenv(sin(2*pi*TargetF(UniqueToneIndex(ThisTrial_FreqNum))*2^(-RampInterval*(FreqNum-1)/12) *t),fs);
-              else disp('BUG'); end
+          if any(RampPositions==(j-RefNow))
+%               if any(AscRampPosition==(j-RefNow))
+%                   w0 = addenv(sin(2*pi*TargetF(UniqueToneIndex(ThisTrial_FreqNum))*2^(RampInterval*(FreqNum-1)/12) *t),fs);
+%               elseif any(DescRampPosition==(j-RefNow))
+%                   w0 = addenv(sin(2*pi*TargetF(UniqueToneIndex(ThisTrial_FreqNum))*2^(-RampInterval*(FreqNum-1)/12) *t),fs);
+%               else disp('BUG'); end
+              ThisRampF = RampsF(RampTypes(find(RampPositions==(j-RefNow))),:); 
+              w0 = addenv(sin(2*pi*ThisRampF(FreqNum)*t),fs);
           else
               w0 = addenv(sin(2*pi*TargetF(UniqueToneIndex(ThisTrial_FreqNum))*t),fs);
           end
@@ -154,7 +163,14 @@ for j = (RefNow+1) : (RefNow+index-1)  % index-1 is the number of Ref
   
   % LABEL OF SEQUENCE TONES
   if strcmp(SameRef,'yes')
-      Parameters.Sequences(j-RefNow,:) = ones(1,4)*UniqueToneIndex(ThisTrial_FreqNum);
+      Parameters.Sequences(j-RefNow,:) = ones(1,length(UniqueToneIndex))*UniqueToneIndex(ThisTrial_FreqNum);
+      if RampProbability>0 & any(RampPositions==(j-RefNow))
+        Parameters.RampPositions(j-RefNow,:) = 1;
+        Parameters.RampTypes(j-RefNow,:) = RampTypes(find(RampPositions==(j-RefNow)));        
+      elseif RampProbability>0 & any(RampPositions~=(j-RefNow))
+        Parameters.RampPositions(j-RefNow,:) = 0;
+        Parameters.RampTypes(j-RefNow,:) = 0;
+      end
   else
       for FreqNum = 1:length(TargetF); Parameters.Sequences(j-RefNow,FreqNum) = find( TargetF == LocalSeq(FreqNum) ); end
   end

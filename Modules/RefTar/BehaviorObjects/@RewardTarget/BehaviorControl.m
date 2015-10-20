@@ -39,6 +39,7 @@ LickEvents = [];
 tardur=0;   %added by py @ 9/6/2012
 SoundStopped = 0;
 if ~isfield(exptparams,'Water'), exptparams.Water = 0;end
+exptparams.WaterUnits = 'milliliter';
 % calculate target duratioin; added by Ling Ma,04/2007.
 [t,trial,Note,toff,TarIndex] = evtimes(StimEvents,'*Target*');
 [t,trial,Note,toff,StimIndex] = evtimes(StimEvents,'Stim*');
@@ -76,6 +77,7 @@ TimeOutFlag=1;
 lightonfreq = get(o,'LightOnFreq');
 tarcnt = 1;
 refcnt = 1;
+fprintf(['\nRunning Trial [ <=',n2s(exptparams.LogDuration),'s -- ' num2str(NumRef) 'ref & ' num2str(~strcmpi(StimRefOrTar,'Reference')) 'tar] ... ']);
 while CurrentTime < exptparams.LogDuration
     ThisLick = IOLickRead(HW);
     Lick = ThisLick && ~LastLick;
@@ -186,6 +188,7 @@ while CurrentTime < exptparams.LogDuration
                 [ll,ev] = IOLightSwitch (HW, 1, get(o,'PumpDuration'));
                 LickEvents = AddEvent(LickEvents, ev, TrialIndex);
             end
+            fprintf(['\t Lick on Target detected @ ',num2str(CurrentTime-RefResponseWin(end)),'s ... ']);
         end
         TarFlag = StimPos;
     end

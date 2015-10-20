@@ -509,14 +509,14 @@ if cLFP,
 end
 
 if cSpike || cRaw || cLFP
-  R = MD_dataFormat('FileName',filename);
-  try,
-     [ElectrodesByChannel,Electrode2Channel] ...
-        = MD_getElectrodeGeometry('Identifier',R.FileName,'FilePath',fileparts(filename));
-  catch
+%   R = MD_dataFormat('FileName',filename);
+%   try,
+%      [ElectrodesByChannel,Electrode2Channel] ...
+%         = MD_getElectrodeGeometry('Identifier',R.FileName,'FilePath',fileparts(filename));
+%   catch
      ElectrodesByChannel=1:maxchan;
      Electrode2Channel=1:maxchan;
-  end
+%   end
 end
 if cSpike
   P.spikechans =Electrode2Channel(P.spikeelecs);

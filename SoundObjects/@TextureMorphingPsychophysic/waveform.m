@@ -7,13 +7,13 @@ function [ w , ev , O , D0 , ChangeD , Parameters] = waveform(O,Index,IsRef,Mode
 %at the scale of the whole session
 
 % GET PARAMETERS
+% ChordDuration = get(O,'ChordDuration'); % s    %Rabinowitsch or also Maria Cheit
 sF = get(O,'SamplingRate');
 PreStimSilence = get(O,'PreStimSilence');
 PostStimSilence = get(O,'PostStimSilence');
 IniSeed = get(O,'IniSeed');
 FrozenPatternsAdress = get(O,'FrozenPatternsAdress');
 Par = get(O,'Par');
-ChordDuration = Par.ToneDuration; % s    %Rabinowitsch or also Maria Cheit
 BinToC = Par.BinToC;
 FrozenPatternsNb = Par.FrozenPatternsNb;
 if FrozenPatternsNb == 0; Mode = 'NoFrozen'; end
@@ -37,6 +37,8 @@ CurrentRepetitionNb = ceil(Global_TrialNb/MaxIndex);
 tmp = get(O,'DistributionTypeByInd'); ChangedD_Num = tmp(Index);
 tmp = get(O,'MorphingTypeByInd'); MorphingNum = tmp(Index);
 tmp = get(O,'DifficultyLvlByInd'); DifficultyNum = tmp(Index);
+tmp= get(O,'ChordDurationByInd'); ChordDurationNum=tmp(Index);
+tmp= get(O,'AverageNbTonesChordByInd'); AverageNbTonesChordNum=tmp(Index);
 tmp = get(O,'ReverseByInd'); Reverse = tmp(Index); 
 Bins2Change = get(O,'Bins2Change');
 DistriBinNb = Par.DistriBinNb;
@@ -50,6 +52,10 @@ Dtype = getfield(Par,['D' num2str(ChangedD_Num) 'shape']);
 DifficultyLvl = getfield(Par,['DifficultyLvl_D' num2str(ChangedD_Num)]);
 DiffLvl = DifficultyLvl(DifficultyNum);       % given in %
 Quantal_Delta = getfield(Par,'QuantalDelta');       % given in %
+ChordDurationLvl = getfield(Par,'ChordDuration');
+ChordDuration = ChordDurationLvl(ChordDurationNum);
+AverageNbTonesChordLvl = getfield(Par,'AverageNbTonesChord');
+AverageNbTonesChord = AverageNbTonesChordLvl(AverageNbTonesChordNum);
 % if DiffLvl==0; ToC = max(Par.MinToC,ToC-StimulusBisDuration); end    % Catch trial are shortened by TarWindow duration
 
 
@@ -65,7 +71,7 @@ else
     else % Fix Catch trials to longer durations because shorter durations are screened by CR before the change
         if BinToC>0
             ToC = Par.MaxToC+StimulusBisDuration;
-        elseif BinToC==0
+        else BinToC==0
             RToC = RandStream('mt19937ar','Seed',IniSeed*Global_TrialNb);   % mcg16807 is fucked up
             lambda = 0.15;
             ToC = PoissonProcessPsychophysics(lambda,Par.StimulusBisDuration,1,RToC,BinToC);
@@ -77,7 +83,7 @@ ToC = round(ToC/ChordDuration)*ChordDuration;
     
 D0param = [FO OctaveNb Par.IniSeed Global_TrialNb Quantal_Delta];
 Dparam = [D0param(1:end-3) Bins2Change{ChangedD_Num}(MorphingNum,:)];    % We don't need a Seed to modify the original distribution
-[D0,ChangeD,D0information] = BuildMorphing(D0type,Dtype,D0param,Dparam,DistriBinNb,XDistri,MorphingNum,DiffLvl,PlotDistributions,sF,FrequencySpace);
+[D0,ChangeD,D0information] = BuildMorphing(D0type,Dtype,D0param,Dparam,DistriBinNb,XDistri,MorphingNum,DiffLvl,PlotDistributions,sF,FrequencySpace,ChordDurationNum,AverageNbTonesChordNum);
 
 % REVERSE S0 AND Sbis
 if Reverse            % Rem.: 'NoFrozen' is compulsory when 'Inverse_D0Dbis'==1
@@ -120,10 +126,12 @@ end
 % Random stream to draw tones for each distribution
 PlotDistributions = 0;
 RtonesD0 = RandStream('mt19937ar','Seed',Global_TrialNb*Index);
-[Stimulus0,ToneMatrix{1}] = AssemblyTones(FrequencySpace,D0,XDistri,Stimulus0Duration,sF,PlotDistributions,[],RtonesD0,Par); 
+TempPar.ToneDuration = ChordDuration;
+TempPar.TonesPerOctave = AverageNbTonesChord;
+[Stimulus0,ToneMatrix{1}] = AssemblyTones(FrequencySpace,D0,XDistri,Stimulus0Duration,sF,PlotDistributions,[],RtonesD0,TempPar); 
 
 RtonesD = RandStream('mt19937ar','Seed',Global_TrialNb*Index*2);
-[StimulusBis,ToneMatrix{2}] = AssemblyTones(FrequencySpace,ChangeD,XDistri,StimulusBisDuration,sF,PlotDistributions,[],RtonesD,Par);
+[StimulusBis,ToneMatrix{2}] = AssemblyTones(FrequencySpace,ChangeD,XDistri,StimulusBisDuration,sF,PlotDistributions,[],RtonesD,TempPar);
 
 % PREPARE THE 2 Parts OF THE WHOLE STIMULUS
 if Reverse

@@ -24,6 +24,14 @@ function o = ObjUpdate (o)
 
 o = set(o,'AllTargetPositions',{'center'});   % for Bernhard script [PerformanceAnalysis.m]
 o = set(o,'CurrentTargetPositions',{'center'});
+FirstF = get(o,'FirstF');
+TargetF = [ FirstF  FirstF*2^(-2/12)  FirstF*2^(-1/12) ];
+o = set(o,'TargetF',TargetF);   % -2 +1 -2 semitone-intervals
+o = set(o,'RampsF',[ TargetF([1 3 2]) ;... 
+TargetF([2 3 1]) ;... 
+TargetF(2)*2^(-2/12) TargetF([2 3]) ;... 
+TargetF([1 2]) TargetF(2)*2^(-1/12)]);
+
 
 if isempty(get(o,'Key'))  % First trial
   KeyNum = round(prod(clock)*5/10000);

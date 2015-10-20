@@ -120,6 +120,9 @@ switch globalparams.HWSetup
     
     %% DIGITAL IO
     HW=niCreateDO(HW,DAQID,'port0/line0:1','TrigAI,TrigAO','InitState',[0 0]);
+    HW=niCreateDO(HW,DAQID,'port0/line2','Light','InitState',0);
+    HW=niCreateDO(HW,DAQID,'port1/line3','LightR','InitState',0);
+    HW=niCreateDO(HW,DAQID,'port0/line0:1','TrigAI,TrigAO','InitState',[0 0]);
     HW=niCreateDO(HW,DAQID,'port0/line3','Pump','InitState',0);
     HW=niCreateDI(HW,DAQID,'port0/line5','Touch');
     
