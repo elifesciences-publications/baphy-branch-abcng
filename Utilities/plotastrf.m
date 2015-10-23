@@ -4,7 +4,11 @@ function plotastrf(strf,interpfactor,ff,timefs);
 tbincount=size(strf,2);
 
 if exist('interpfactor','var') & interpfactor>1,
+  if exist('imresize')==5
     strf=imresize(strf,interpfactor,'bilinear');
+  else
+    strf=interp2(strf,2);
+  end
 else
     interpfactor=1;
 end

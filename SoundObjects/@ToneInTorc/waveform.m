@@ -56,5 +56,5 @@ end
 if ~isempty(w)
     disp(max(abs(w)))
 end
-    events = [eTorc eTone];
+    events = eTone;
     
