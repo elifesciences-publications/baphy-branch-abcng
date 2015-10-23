@@ -20,8 +20,8 @@ else
   I=GPROPS.I;
 end
 
- Trials = Events2Trials('Events',I.exptevents,'Stimclass','texturemorphing','Runclass',I.Runclass,...
-   'RefSO',I.exptparams.TrialObject.ReferenceHandle,'TargetSO',I.exptparams.TrialObject.TargetHandle);
+Trials = Events2Trials('Events',I.exptevents,'Stimclass','texturemorphing','Runclass',I.Runclass,...
+   'RefSO',I.exptparams.TrialObject.ReferenceHandle,'TargetSO',I.exptparams.TrialObject.TargetHandle,'exptparams',I.exptparams);
 NTrials = length(Trials.Indices);
 SpiketimesByTrial = cell(NTrials,1);
 switch P.SpikeSource
@@ -54,9 +54,9 @@ for iT=1:NTrials % LOOP OVER TRIALS
   cIndex = cell2mat(Trials.Indices(iT));
   cI = find(cIndex==AllIndices);
   
-  cStart = Trials.Times{iT}(1) + PreTarDuration;
-  cStop = Trials.Times{iT}(2); % + FrozenPatternDuration;
-  cResponse = SpiketimesByTrial{iT}( SpiketimesByTrial{iT} >= cStart & SpiketimesByTrial{iT} < cStop );
+  cStop = Trials.ChangeTime{iT}+str2num(I.exptparams.TrialObject.TargetHandle.StimulusBisDuration); % + FrozenPatternDuration;
+  cStart = cStop-2.5;
+  cResponse = SpiketimesByTrial{iT}( SpiketimesByTrial{iT} >= cStart & SpiketimesByTrial{iT} < cStop )-Trials.ChangeTime{iT};
   Responses{cI,TrialCountByIndex(cI)+1} = cResponse;
   TrialCountByIndex(cI) = TrialCountByIndex(cI) +1;
 end
@@ -66,16 +66,22 @@ for cIndex = AllIndices'
   cI = find(cIndex==AllIndices);
   for iT = 1:TrialCountByIndex(cI)
     for iSpike = 1:length(Responses{cI,iT})
-      yPos = cIndex-0.5+((iT-1)/TrialCountByIndex(cI))
+      yPos = cIndex-0.5+((iT-1)/TrialCountByIndex(cI));
       plot(P.Axis,[Responses{cI,iT}(iSpike) Responses{cI,iT}(iSpike)],[yPos yPos+1/TrialCountByIndex(cI)],'Color',[0,0,0],'LineWidth',1);
     end
   end
 end
+plot(P.Axis,[0 0],[0 yPos],'b--','linewidth',2.5)
+BinSize = 0.05; BinNb = 2.5/BinSize;  % 50ms binning
+[yHist,xHist] = hist(cell2mat(Responses(:)),linspace(-2.5+.85,.85,BinNb));
+yHist = yHist/BinSize;
+yHist = yHist/100;
+plot(P.Axis,xHist,yHist,'color',[1 .3 .3],'linewidth',3)
 if FrozenPatternDuration~=0
   plot(P.Axis,repmat(FrozenPatternDuration,1,2),[AllIndices(1)-0.5 AllIndices(end)+0.5],'Color',[0.7,0.7,0.7],'LineWidth',2);
 end
 
-
+axis(P.Axis,'tight');
 title(P.Axis,['E',n2s(P.Electrode),' U',n2s(P.Unit), ' Spont: ' num2str(mean(SpontRates(iT))) 'Hz']);
 xlabel(P.Axis,'Time (s)');
 ylabel(P.Axis,'Index');

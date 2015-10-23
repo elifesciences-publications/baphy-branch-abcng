@@ -40,7 +40,7 @@ tardur=0;   %added by py @ 9/6/2012
 SoundStopped = 0;
 if ~isfield(exptparams,'Water'), exptparams.Water = 0;end
 exptparams.WaterUnits = 'milliliter';
-% calculate target duratioin; added by Ling Ma,04/2007.
+% calculate target duration; added by Ling Ma,04/2007.
 [t,trial,Note,toff,TarIndex] = evtimes(StimEvents,'*Target*');
 [t,trial,Note,toff,StimIndex] = evtimes(StimEvents,'Stim*');
 index = intersect(TarIndex,StimIndex);
