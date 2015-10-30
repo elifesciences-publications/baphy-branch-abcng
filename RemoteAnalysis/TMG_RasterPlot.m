@@ -56,8 +56,8 @@ AllIndices = unique( cell2mat(Trials.Indices) );
 if PlotGroupedByIndex; Responses = cell(length(AllIndices),1); end
 TrialCountByIndex = zeros(1,length(AllIndices));
 
+hold(P.Axis,'on');
 if ~P.LFP
-    hold(P.Axis,'on');
     for iT=1:NTrials % LOOP OVER TRIALS
       cIndex = cell2mat(Trials.Indices(iT));
       cI = find(cIndex==AllIndices);
@@ -87,8 +87,6 @@ if ~P.LFP
             end
         end
     end
-    axis(P.Axis,'tight');
-    plot(P.Axis,[0 0],get(P.Axis,'ylim'),'b--','linewidth',PsthDuration)
     BinSize = 0.05; BinNb = PsthDuration/BinSize;  % 50ms binning
     [yHist,xHist] = hist(cell2mat(Responses(:)),linspace(-PsthDuration+StimulusBisDuration,StimulusBisDuration,BinNb));
     yHist = yHist/BinSize;
@@ -107,8 +105,11 @@ else
       cResponse = P.r( round(cStart*P.LFPsf) : min(size(P.r,1),round(cStop*P.LFPsf)) ,iT);
       Responses(iT,1:length(cResponse)) = cResponse;
     end
-    plot(P.Axis,linspace(-PsthDuration+StimulusBisDuration,StimulusBisDuration,size(Responses,2)),nanmean(Responses,1),'color',[1 .3 .3],'linewidth',3)
+    plot(P.Axis,linspace(-PsthDuration+StimulusBisDuration,StimulusBisDuration,size(Responses,2)),nanmean(Responses,1),'color',[1 .3 .3],'linewidth',2)
+    plot(P.Axis,[-PsthDuration+StimulusBisDuration,StimulusBisDuration],[0 0],'k')
 end
+axis(P.Axis,'tight');
+plot(P.Axis,[0 0],get(P.Axis,'ylim'),'b--','linewidth',PsthDuration)
 
 title(P.Axis,['E',n2s(P.Electrode),' U',n2s(P.Unit), ' Spont: ' num2str(mean(SpontRates(iT))) 'Hz']);
 xlabel(P.Axis,'Time (s)');
