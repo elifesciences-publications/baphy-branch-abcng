@@ -165,8 +165,12 @@ for ii=1:NElectrodes
         % 14/04-YB: so far, plot a raster w/ trials sorted by FrozenPattern nb
         %         TMG_ComputeSTRF('MFile',mfile,'Electrode',Electrode,'Unit',unit,...
         %           'Axis',AH(ii),'SigmaThreshold',options.sigthreshold);
+        if options.lfp
+            channel = Electrode;
+            [r,tags]=raster_load(mfile,channel,unit,options);
+        else r = []; end
         TMG_RasterPlot('MFile',mfile,'Electrode',Electrode,'Unit',unit,...
-          'Axis',AH(ii),'SigmaThreshold',options.sigthreshold);
+          'Axis',AH(ii),'SigmaThreshold',options.sigthreshold,'LFP',options.lfp,'r',r);
         
       elseif strcmpi(options.runclass,'AMT'),
         % for audio-visual stimuli, special analysis

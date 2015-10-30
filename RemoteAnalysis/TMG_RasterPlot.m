@@ -8,6 +8,9 @@ checkField(P,'Axis',gca);
 checkField(P,'SR',100);
 checkField(P,'SpikeSource','Threshold');
 checkField(P,'SigmaThreshold',0);
+checkField(P,'r',[]);
+checkField(P,'LFP',0);
+checkField(P,'LFPsf',1000);
 
 P.Identifier = MD_MFile2Identifier(P.MFile);
 
@@ -20,6 +23,8 @@ else
   I=GPROPS.I;
 end
 
+PsthDuration = 2.5; StimulusBisDuration = str2num(I.exptparams.TrialObject.TargetHandle.StimulusBisDuration);
+PlotGroupedByIndex = 0;
 Trials = Events2Trials('Events',I.exptevents,'Stimclass','texturemorphing','Runclass',I.Runclass,...
    'RefSO',I.exptparams.TrialObject.ReferenceHandle,'TargetSO',I.exptparams.TrialObject.TargetHandle,'exptparams',I.exptparams);
 NTrials = length(Trials.Indices);
@@ -48,42 +53,64 @@ for iT = 1:NTrials
 end
 
 AllIndices = unique( cell2mat(Trials.Indices) );
-Responses = cell(length(AllIndices),1);
+if PlotGroupedByIndex; Responses = cell(length(AllIndices),1); end
 TrialCountByIndex = zeros(1,length(AllIndices));
-for iT=1:NTrials % LOOP OVER TRIALS
-  cIndex = cell2mat(Trials.Indices(iT));
-  cI = find(cIndex==AllIndices);
-  
-  cStop = Trials.ChangeTime{iT}+str2num(I.exptparams.TrialObject.TargetHandle.StimulusBisDuration); % + FrozenPatternDuration;
-  cStart = cStop-2.5;
-  cResponse = SpiketimesByTrial{iT}( SpiketimesByTrial{iT} >= cStart & SpiketimesByTrial{iT} < cStop )-Trials.ChangeTime{iT};
-  Responses{cI,TrialCountByIndex(cI)+1} = cResponse;
-  TrialCountByIndex(cI) = TrialCountByIndex(cI) +1;
-end
 
-hold(P.Axis,'on');
-for cIndex = AllIndices'
-  cI = find(cIndex==AllIndices);
-  for iT = 1:TrialCountByIndex(cI)
-    for iSpike = 1:length(Responses{cI,iT})
-      yPos = cIndex-0.5+((iT-1)/TrialCountByIndex(cI));
-      plot(P.Axis,[Responses{cI,iT}(iSpike) Responses{cI,iT}(iSpike)],[yPos yPos+1/TrialCountByIndex(cI)],'Color',[0,0,0],'LineWidth',1);
+if ~P.LFP
+    hold(P.Axis,'on');
+    for iT=1:NTrials % LOOP OVER TRIALS
+      cIndex = cell2mat(Trials.Indices(iT));
+      cI = find(cIndex==AllIndices);
+
+      cStop = Trials.ChangeTime{iT}+StimulusBisDuration; % + FrozenPatternDuration;
+      cStart = cStop-PsthDuration;
+      cResponse = SpiketimesByTrial{iT}( SpiketimesByTrial{iT} >= cStart & SpiketimesByTrial{iT} < cStop )-Trials.ChangeTime{iT};
+      if PlotGroupedByIndex
+          Responses{cI,TrialCountByIndex(cI)+1} = cResponse;
+          TrialCountByIndex(cI) = TrialCountByIndex(cI) +1;
+      else
+          Responses{iT} = cResponse;
+          for iSpike = 1:length(cResponse)
+            plot(P.Axis,[cResponse(iSpike) cResponse(iSpike)],[iT iT+.85],'Color',[0,0,0],'LineWidth',1);
+          end
+      end
     end
-  end
-end
-plot(P.Axis,[0 0],[0 yPos],'b--','linewidth',2.5)
-BinSize = 0.05; BinNb = 2.5/BinSize;  % 50ms binning
-[yHist,xHist] = hist(cell2mat(Responses(:)),linspace(-2.5+.85,.85,BinNb));
-yHist = yHist/BinSize;
-yHist = yHist/100;
-plot(P.Axis,xHist,yHist,'color',[1 .3 .3],'linewidth',3)
-if FrozenPatternDuration~=0
-  plot(P.Axis,repmat(FrozenPatternDuration,1,2),[AllIndices(1)-0.5 AllIndices(end)+0.5],'Color',[0.7,0.7,0.7],'LineWidth',2);
+
+    if PlotGroupedByIndex
+        for cIndex = AllIndices'
+            cI = find(cIndex==AllIndices);
+            for iT = 1:TrialCountByIndex(cI)
+                for iSpike = 1:length(Responses{cI,iT})
+                    yPos = cIndex-0.5+((iT-1)/TrialCountByIndex(cI));
+                    plot(P.Axis,[Responses{cI,iT}(iSpike) Responses{cI,iT}(iSpike)],[yPos yPos+1/TrialCountByIndex(cI)],'Color',[0,0,0],'LineWidth',1);
+                end
+            end
+        end
+    end
+    axis(P.Axis,'tight');
+    plot(P.Axis,[0 0],get(P.Axis,'ylim'),'b--','linewidth',PsthDuration)
+    BinSize = 0.05; BinNb = PsthDuration/BinSize;  % 50ms binning
+    [yHist,xHist] = hist(cell2mat(Responses(:)),linspace(-PsthDuration+StimulusBisDuration,StimulusBisDuration,BinNb));
+    yHist = yHist/BinSize;
+    yHist = yHist/30;
+    plot(P.Axis,xHist,yHist,'color',[1 .3 .3],'linewidth',3)
+    if FrozenPatternDuration~=0
+      plot(P.Axis,repmat(FrozenPatternDuration,1,2),[AllIndices(1)-0.5 AllIndices(end)+0.5],'Color',[0.7,0.7,0.7],'LineWidth',2);
+    end
+else
+    for iT=1:NTrials % LOOP OVER TRIALS
+      cIndex = cell2mat(Trials.Indices(iT));
+      cI = find(cIndex==AllIndices);
+
+      cStop = Trials.ChangeTime{iT}+StimulusBisDuration; % + FrozenPatternDuration;
+      cStart = cStop-PsthDuration;
+      cResponse = P.r( round(cStart*P.LFPsf) : min(size(P.r,1),round(cStop*P.LFPsf)) ,iT);
+      Responses(iT,1:length(cResponse)) = cResponse;
+    end
+    plot(P.Axis,linspace(-PsthDuration+StimulusBisDuration,StimulusBisDuration,size(Responses,2)),nanmean(Responses,1),'color',[1 .3 .3],'linewidth',3)
 end
 
-axis(P.Axis,'tight');
 title(P.Axis,['E',n2s(P.Electrode),' U',n2s(P.Unit), ' Spont: ' num2str(mean(SpontRates(iT))) 'Hz']);
 xlabel(P.Axis,'Time (s)');
 ylabel(P.Axis,'Index');
-ylim(P.Axis,[AllIndices(1)-0.5 AllIndices(end)+0.5]);
 set(gcf,'Name',[P.Identifier,' (',n2s(NTrials),')']);
