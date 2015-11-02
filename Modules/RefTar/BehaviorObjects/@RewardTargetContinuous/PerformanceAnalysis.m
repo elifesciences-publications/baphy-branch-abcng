@@ -34,19 +34,49 @@ else
   CurrentTrialIndex = TargetIndices( mod(TrialIndex,get(SO,'MaxIndex')) );  % Condition number
 end
 CurrentTrialIndex = CurrentTrialIndex{1};
-DiffiLevels = get(SO,'DifficultyLvlByInd'); 
-DistributionTypes = get(SO,'DistributionTypeByInd');
-
-DistributionTypeNow = DistributionTypes(CurrentTrialIndex); 
-DifficultyLvl = str2num(get(SO,['DifficultyLvl_D' num2str(DistributionTypeNow)]));
-DifficultyNow = DifficultyLvl( DiffiLevels(CurrentTrialIndex) );
-if DifficultyNow==0; CatchTrial = 1; else CatchTrial = 0; end
-
-TrialDiffiMat = zeros(length(unique(DifficultyLvl ,'stable')),3);
-if DistributionTypes(CurrentTrialIndex) == 1  % Display for only one DistributionType
-  TrialDiffiLvl = find(DifficultyNow==unique(DifficultyLvl ,'stable'));
-  TrialSuccessCase = find( strcmp({'HIT','SNOOZE','EARLY'} , {AllPerf(end).Outcome}) );
-  TrialDiffiMat(TrialDiffiLvl,TrialSuccessCase) = 1;
+switch get(SO,'descriptor')
+  case 'TextureMorphing'
+    DiffiLevels = get(SO,'DifficultyLvlByInd');
+    DistributionTypes = get(SO,'DistributionTypeByInd');
+    
+    DistributionTypeNow = DistributionTypes(CurrentTrialIndex);
+    DifficultyLvl = str2num(get(SO,['DifficultyLvl_D' num2str(DistributionTypeNow)]));
+    DifficultyNow = DifficultyLvl( DiffiLevels(CurrentTrialIndex) );
+    if DifficultyNow==0; CatchTrial = 1; else CatchTrial = 0; end
+    
+    TrialDiffiMat = zeros(length(unique(DifficultyLvl ,'stable')),3);
+    if DistributionTypes(CurrentTrialIndex) == 1  % Display for only one DistributionType
+      TrialDiffiLvl = find(DifficultyNow==unique(DifficultyLvl ,'stable'));
+      TrialSuccessCase = find( strcmp({'HIT','SNOOZE','EARLY'} , {AllPerf(end).Outcome}) );
+      TrialDiffiMat(TrialDiffiLvl,TrialSuccessCase) = 1;
+    end
+  case 'RandSeqTorc'
+%     if CurrentTrialIndex==get(SO,'MaxIndex')
+%       CatchTrial=1;
+%     else CatchTrial=0; end
+    CatchTrial=0;
+    if mod(TrialIndex,get(SO,'MaxIndex')) ==0
+      CurrentTrialIndex = TargetIndices(get(SO,'MaxIndex'));
+    else
+      CurrentTrialIndex = TargetIndices( mod(TrialIndex,get(SO,'MaxIndex')) );  % Condition number
+    end
+    CurrentTrialIndex = CurrentTrialIndex{1};
+    MaxIndex =get(SO,'MaxIndex');
+    IndexLst = 1:MaxIndex;
+    TarInd = find(~cellfun(@isempty,strfind({StimEvents.Note},'TargetSequence')));
+    str1ind = strfind(StimEvents(TarInd).Note,'-'); str1ind = str1ind(end)+2;
+    str2ind = strfind(StimEvents(TarInd).Note,','); str2ind = str2ind(end)-2;
+    IndexNow = str2num(StimEvents(TarInd).Note((str1ind):(str2ind)));
+    % EarlyWindow = StimEvents(TarInd(end)+1).StartTime;
+    % EndWindow = StimEvents(TarInd(end)+1).StopTime;
+    
+    TrialIndexMat = zeros(length(unique(IndexLst ,'stable')),3);
+    
+    TrialIndexLvl = find(IndexNow==unique(IndexLst ,'stable'));
+    TrialSuccessCase = find( strcmp({'HIT','SNOOZE','EARLY'} , {AllPerf(end).Outcome}) );
+    TrialIndexMat(TrialIndexLvl,TrialSuccessCase) = 1;
+    
+    TrialDiffiMat = TrialIndexMat; DifficultyLvl = IndexLst; TrialDiffiMat = TrialIndexMat;
 end
 
 if TrialIndex == 1   

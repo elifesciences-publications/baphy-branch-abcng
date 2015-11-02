@@ -44,6 +44,7 @@ Data=Data(:);
 DataPtr = libpointer('doublePtr',Data);
 SamplesWritten = libpointer('int32Ptr',false);
 % start during load, don't need separate start cmd.
+
 S = DAQmxWriteAnalogF64(AO.Ptr,NElements, 1, 10, uint32(NI_decode('DAQmx_Val_GroupByChannel')),...
   DataPtr,SamplesWritten,[]);
 if S NI_MSG(S); end
