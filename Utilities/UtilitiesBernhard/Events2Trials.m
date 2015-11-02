@@ -2,10 +2,11 @@ function T = Events2Trials(varargin)
 
 P = parsePairs(varargin); %NAF 9/2: changed to varargin to allow for optional Runclass input.
 
-checkField(P,'Events')
-checkField(P,'Stimclass')
+checkField(P,'Events');
+checkField(P,'exptparams',[]);
+checkField(P,'Stimclass');
 checkField(P,'Runclass','');
-checkField(P,'TimeIndex',0)
+checkField(P,'TimeIndex',0);
 
 Notes = lower({P.Events.Note});
 
@@ -109,7 +110,12 @@ else % PARSE INDICES BY STIMCLASS
          end
          T.Times{iT} = [P.Events(TargetStimInd(iT)).StartTime,P.Events(TargetStimInd(iT)).StopTime];  % Timing of start and stop of the S0 (pre-change sound, without silences)
          T.Tags{iT} = cNote(CommaInds(1)+1:CommaInds(2)-1);
-         T.Durations{iT} = diff(T.Times{iT});                                                         % Duration of S0
+         T.Durations{iT} = diff(T.Times{iT});                                                      % Duration of S0
+         if isfield(P.exptparams,'Performance')
+            T.ChangeTime{iT} =  P.exptparams.Performance(iT).TarWindow(1);
+         else
+            T.ChangeTime{iT} =  T.Times{iT}(2);
+         end
        end
       
     case {'pure tones','randomtone','amtone'};

@@ -123,6 +123,10 @@ elseif ~isempty(tag_masks) && length(tag_masks{1})>=16 && strcmp(tag_masks{1}(1:
     elseif includeprestim,
         [eventtime,evtrials,Note,preoff]=evtimes(exptevents,['PreStim*']);
         [xx,yy,zz,eventtimeoff]=evtimes(exptevents,['PostStim*']);
+        if strcmpi(runclass,'TMG')
+            [xxStop,~,~,eventtimeoffStop]=evtimes(exptevents,['TRIALSTOP']);
+            xx(2:2:end) = xxStop; eventtimeoff(2:2:end) = eventtimeoffStop;
+        end
         if isempty(eventtimeoff),
             eventtimeoff=eventtime+0.5;
         end

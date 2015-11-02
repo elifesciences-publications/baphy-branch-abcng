@@ -266,15 +266,7 @@ while CurrentTime < (TimingLastChange+RespWinDur)
     stim = w;
   end
   
-  if RefSliceCounter==1
-    NormFactor = maxLocalStd(stim(round(PreStimSilence*SF)+(1:round(SliceDuration*SF))),SF,floor(round(SliceDuration*SF)/SF));
-    if ~AddTar
-      stim = [zeros(get(RH,'Duration')*SF,1) ; stim];
-      SliceDuration = SliceDuration+get(RH,'Duration');
-    end
-  end
   global LoudnessAdjusted; LoudnessAdjusted  = 1;
-  stim = stim/NormFactor;
   wAccu = [wAccu ; stim(round(PreStimSilence*SF)+(1:round(SliceDuration*SF)))];
   % Do calibration manually with an extra chord to avoid clicks at the end
   % from IOloadSound.m
@@ -295,7 +287,16 @@ while CurrentTime < (TimingLastChange+RespWinDur)
     end
 %   end
 %   if ~AddTar
-  NewSlice = stim(round(PreStimSilence*SF)+(1:round(SliceDuration*SF)));  
+  if RefSliceCounter==1
+    NormFactor = maxLocalStd(stim(round(PreStimSilence*SF)+(1:round(SliceDuration*SF))),SF,floor(round(SliceDuration*SF)/SF));
+    if ~AddTar
+      stim = [zeros(get(RH,'Duration')*SF,1) ; stim];
+      SliceDuration = SliceDuration+get(RH,'Duration');
+    end
+  end
+  stim = HW.Calibration(1).Loudness.Parameters.SignalMatlab80dB*stim/NormFactor;
+  NewSlice = stim(round(PreStimSilence*SF)+(1:round(SliceDuration*SF)));
+  
   RampBetweenSlices = 0.004;   % s 
   Ramp = (sin(linspace(-pi/2,pi/2,RampBetweenSlices*SF))  + 1)/2;
   NewSlice(1:length(Ramp)) = NewSlice(1:length(Ramp)).*Ramp';

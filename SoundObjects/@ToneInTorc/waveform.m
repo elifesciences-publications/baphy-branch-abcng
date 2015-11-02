@@ -57,4 +57,3 @@ if ~isempty(w)
     disp(max(abs(w)))
 end
 events = eTone;
-    
