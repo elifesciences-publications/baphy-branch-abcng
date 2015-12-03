@@ -144,7 +144,7 @@ switch get(TH,'descriptor')
     TargetPartNb = 1;
   case 'RandSeqTorc'  % much longer than TMG sometimes
     PartDuration = 2.5;
-    TargetPartNb = max(floor(length(ActualTrialSound)/SF/PartDuration),1)
+    TargetPartNb = max(floor(length(ActualTrialSound)/SF/PartDuration),1);
     if TargetPartNb>1
       if (floor(length(ActualTrialSound)/SF)-PartDuration)<RefSliceDuration
         TargetPartNb = 1;
