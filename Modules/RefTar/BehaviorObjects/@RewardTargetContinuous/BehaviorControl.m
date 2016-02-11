@@ -475,7 +475,7 @@ switch Outcome
     StopEvent = IOStopSound(HW);
     Events = AddEvent(Events, StopEvent, TrialIndex);
     % 14/02/20-YB: Patched to change LED/pump structure + Duration2Play (cf. lab notebook)
-    Duration2Play = 0.5; LEDposition = {'left'};
+    Duration2Play = 0; LEDposition = {'left'}; % 16/01-YB: put to 0 because is after <IOStopSound>
     % Stop Dbis sound when <Duration2Play> is elapsed
     if ~CatchTrial; pause(max([0 , (TarWindow(1)+Duration2Play)-IOGetTimeStamp(HW) ])); end
     

@@ -605,7 +605,7 @@ for rec = 1:records,
             real(ifft(conj(fft(stimrow)).*fft(dsum'))) *...
             2*nrips/mean(mean(stim.^2))/records/stimLeng;
     end
-end 
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function [strf,residue,u,s,v] = svdclean(strfest,N);
