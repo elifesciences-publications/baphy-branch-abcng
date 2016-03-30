@@ -116,6 +116,8 @@ elseif isempty(tar),
       runclass = 'STC';
     case 'MUSICPIECES'
       runclass = 'MUS';
+    case 'PIPSEQUENCE'
+      runclass = 'PIP';
     otherwise
       runclass = '';
   end
@@ -232,6 +234,8 @@ else
       runclass = 'WHN';
     case 'STCLICK'
       runclass = 'STC';
+    case 'PIPSEQUENCE'
+      runclass = 'PIP';
     otherwise
       error('Enter a runclass into RunClassTable.m to avoid later confusion!');
   end

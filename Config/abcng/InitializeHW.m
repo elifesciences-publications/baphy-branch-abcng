@@ -26,7 +26,7 @@ switch globalparams.HWSetup
     HW.AI = HW.AO;
     HW.DIO.Line.LineName = {'Touch','TouchL','TouchR'};
   case 1 % ALL RECORDING BOOTHS SHOULD REMAIN IDENTICAL AS LONG AS POSSIBLE
-    SetupNames = {'SB1','SB2','LB1'};
+    SetupNames = {'SB1'};
     HW.TwoSpeakers = 1;
     HW.TwoAFCsetup = 1;  % Indicates there are 2 spouts (not necessarly 2 speakers)
     HW.TwoAFCtask= 0;      % By default, the task is Go/NoGo
@@ -62,7 +62,7 @@ switch globalparams.HWSetup
     
     
   case {2,3,5} % ALL RECORDING BOOTHS SHOULD REMAIN IDENTICAL AS LONG AS POSSIBLE
-    SetupNames = {'SB1','SB2','LB1',[],'SB2Earphones'};
+    SetupNames = {'','SB2','LB1',[],'SB2Earphones'};
     globalparams.HWSetupName = SetupNames{globalparams.HWSetup};
     
     DAQID = 'D0'; % NI BOARD ID WHICH CONTROLS STIMULUS & BEHAVIOR
@@ -70,14 +70,18 @@ switch globalparams.HWSetup
     
     %% DIGITAL IO
     HW=niCreateDO(HW,DAQID,'port0/line0:1,port2/line0:1','TrigAI,TrigAO,TrigAIInv,TrigAOInv','InitState',[0 0 1 1]);
-    HW=niCreateDO(HW,DAQID,'port0/line2','Light','InitState',0);
-    HW=niCreateDO(HW,DAQID,'port0/line3','LightR','InitState',0);
+    HW=niCreateDO(HW,DAQID,'port0/line6','TrigOnlineAI','InitState',0);  % monitor eye position online
+    HW=niCreateDO(HW,DAQID,'port0/line2','EyeFixationInitiated','InitState',0);
+    HW=niCreateDO(HW,DAQID,'port0/line3','EyeFixationTerminated','InitState',0);
+    HW=niCreateDO(HW,DAQID,'port2/line3','Light','InitState',0);
+    HW=niCreateDO(HW,DAQID,'port0/line7','LightR','InitState',0);
     HW=niCreateDO(HW,DAQID,'port0/line4','LightL','InitState',0);
     HW=niCreateDO(HW,DAQID,'port1/line5','Pump','InitState',0);
     HW=niCreateDI(HW,DAQID,'port0/line5','Touch');
     
     %% ANALOG INPUT
-        HW=niCreateAI(HW,DAQID,'ai0:1','Touch,Microphone',['/',DAQID,'/PFI0']);
+    HW=niCreateAI(HW,DAQID,'ai0:6','Touch,Microphone,EyeX,EyeY,Diode,PsyTriggers',['/',DAQID,'/PFI0']);
+%     HW=niCreateAI(HW,DAQID,'ai7:8','OnlineEyeX,OnlineEyeY',['/',DAQID,'/PFI2']);  % monitor eye position online; triggered by 'TrigOnlineAI'
     
     %% ANALOG OUTPUT % 14/09-YB: rmv independant audio channels for introducing Opto
     HW=niCreateAO(HW,DAQID,'ao0:1','SoundOut,OptTrig',['/',DAQID,'/PFI1']);
@@ -92,6 +96,14 @@ switch globalparams.HWSetup
     end
     HW.Calibration.Microphone = 'GRAS46BE';
     HW.Calibration = IOLoadCalibration(HW.Calibration);
+    
+    %% VISUAL HW CONFIGURATION
+    HW.VisionHW.ScreenSize = [3840,2160];  % [x,y] in pixels
+    HW.VisionHW.CenterCoordinates  = HW.VisionHW.ScreenSize/2;
+    HW.VisionHW.CCDSize = [512,256];  % [x,y] in pixels
+    HW.VisionHW.AI2ET_ConversionFactor = 0;  % px/mV
+    HW.VisionHW.ET2ScreenMatrix_URL = 'C:\Code\baphy\Hardware\';  % address of the adimensional cell (length 2) that gives CCD coordinates for every pixel of the screen in x and y
+%     HW.VisionHW = load(HW.VisionHW.ET2ScreenMatrix_URL);
     
     %% COMMUNICATE WITH MANTA
     if Physiology  [HW,globalparams] = IOConnectWithManta(HW,globalparams); end

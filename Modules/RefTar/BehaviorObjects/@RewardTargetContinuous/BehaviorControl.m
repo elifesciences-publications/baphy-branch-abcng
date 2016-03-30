@@ -267,7 +267,11 @@ while CurrentTime < (TimingLastChange+RespWinDur)
   end
   
   global LoudnessAdjusted; LoudnessAdjusted  = 1;
-  wAccu = [wAccu ; stim(round(PreStimSilence*SF)+(1:round(SliceDuration*SF)))];
+  if RefSliceCounter>1 || AddTar
+    wAccu = [wAccu ; stim(round(PreStimSilence*SF)+(1:round(SliceDuration*SF)))];
+  else
+    wAccu = [wAccu ; zeros(get(RH,'Duration')*SF,1) ; stim(round(PreStimSilence*SF)+(1:round(SliceDuration*SF)))];    
+  end
   % Do calibration manually with an extra chord to avoid clicks at the end
   % from IOloadSound.m
 %   if AttenuationD0~=0

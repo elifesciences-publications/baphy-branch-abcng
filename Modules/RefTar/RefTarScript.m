@@ -66,8 +66,8 @@ while ContinueExp == 1
       
       %% PREPARE TRIAL
       TrialObject = get(exptparams.TrialObject);
-      % 2013/12 YB: VISUAL DISPLAY--Back to grey screen on the second monitor if we are in a psychophysics experiment
-      if isfield(TrialObject,'VisualDisplay') && TrialObject.VisualDisplay; 	[VisualDispColor,exptparams] = VisualDisplay(TrialIndex,'GREY',exptparams); end
+%       % 2013/12 YB: VISUAL DISPLAY--Back to grey screen on the second monitor if we are in a psychophysics experiment
+%       if isfield(TrialObject,'VisualDisplay') && TrialObject.VisualDisplay; 	[VisualDispColor,exptparams] = VisualDisplay(TrialIndex,'GREY',exptparams); end
         
       %Create pump control
       if isfield(TrialObject,'PumpProfile')
@@ -135,9 +135,9 @@ while ContinueExp == 1
       end
       
       %% MAIN ACQUISITION SECTION
-      if ~strcmp( class(BehaveObject) , 'RewardTargetContinuous' )  % Acquisition starts within BehaviorControl.m
+      if all(~strcmp( class(BehaveObject) , {'RewardTargetContinuous'} ))
         [StartEvent,HW] = IOStartAcquisition(HW);
-      else
+      else  % Acquisition starts within BehaviorControl.m
         StartEvent.Note = 'TRIALSTART'; StartEvent.StartTime = 0; StartEvent.StopTime = 0;
       end
       
@@ -159,14 +159,16 @@ while ContinueExp == 1
       exptevents = AddMultiEvent(exptevents,{StartEvent,StimEvents,BehaviorEvents,TrialStopEvent},TrialIndex);
       
       % COLLECT ANALOG CHANNELS
-      [Data.Aux, Data.Spike, AINames] = IOReadAIData(HW); RespIndices = [];
+      [Data.Aux, Data.Spike, AINames] = IOReadAIData(HW); RespIndices = []; ScalingF = [];
       
       for i=1:length(AINames)
         Data.(AINames{i}) = Data.Aux(:,i);
-        if strcmpi(AINames{i}(1:min(end,5)),'Touch') RespIndices(end+1) = i; end
-        if strcmpi(AINames{i}(1:min(end,4)),'walk') RespIndices(end+1) = i; end
+        if strcmpi(AINames{i}(1:min(end,5)),'Touch') RespIndices(end+1) = i; ScalingF(end+1) = 1; end
+        if strcmpi(AINames{i}(1:min(end,3)),'Eye') RespIndices(end+1) = i; ScalingF(end+1) = 3260; end
+        if strcmpi(AINames{i}(1:min(end,5)),'Diode') RespIndices(end+1) = i; ScalingF(end+1) = 3260; end
+        if strcmpi(AINames{i}(1:min(end,4)),'walk') RespIndices(end+1) = i; ScalingF(end+1) = 1; end
       end
-      Data.Responses = Data.Aux(:,RespIndices);
+      Data.Responses = Data.Aux(:,RespIndices).*repmat(ScalingF,size(Data.Aux,1),1);   % 16/02-YB: add scaling factor to eye data to make them integrer and compatible with 'short' saving in evpwrite
       exptparams.RespSensors = AINames(RespIndices);
       Data.Microphone = [];
       

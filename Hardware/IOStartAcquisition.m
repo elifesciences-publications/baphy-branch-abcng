@@ -84,7 +84,9 @@ switch IODriver(HW)
             end
         end
         
-        niStop(HW.AI);
+        for AInum=1:length(HW.AI),
+          niStop(HW.AI(AInum));
+        end
         
         HW=niStart(HW);
         % make sure not triggering

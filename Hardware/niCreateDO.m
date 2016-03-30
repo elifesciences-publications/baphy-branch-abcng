@@ -1,6 +1,6 @@
 % function HW=niCreateDO(HW,Device,Channels,Names,varargin)
 %
-% create a bank of Digital Output channels in HW.DIO(nextavailableid).  Paramters:
+% create a bank of Digital Output channels in HW.DIO(nextavailableid).  Parameters:
 %   HW: Baphy HW structure
 %   Device: NI device name string (eg, "Dev0")
 %   Channels:  Channel id string (eg, "port0/line2:3")
