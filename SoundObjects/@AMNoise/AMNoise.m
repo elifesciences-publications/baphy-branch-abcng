@@ -33,7 +33,7 @@ case {0,1}
        o = varargin{1};
        return;
     end
-    
+    %Everything linked to square added by CB 17/12/15
     s = SoundObject ('AMNoise', 40000, 0, 0, 0, ...
         {''}, 1, {'Duration','edit',1,...
                   'LowFreq','edit',250,...       
@@ -46,7 +46,9 @@ case {0,1}
                   'Count','edit',15,...
                   'TonesPerOctave','edit',20,...
                   'SimulCount','edit',1,...
-                  'RefRepCount','edit',1});
+                  'RefRepCount','edit',1,...
+                  'Square','edit',0,...  
+                  'SquareDuration','edit',0});
     
     o.PreStimSilence=0.5;
     o.PostStimSilence=0.5;
@@ -65,6 +67,8 @@ case {0,1}
     o.RefRepCount=1;
     o.LoBounds=[];
     o.HiBounds=[];
+    o.Square=0;
+    o.SquareDuration=0;
     
     % if single argument of class SoundObject, return it
     if nargin==1 && isstruct(varargin{1}),

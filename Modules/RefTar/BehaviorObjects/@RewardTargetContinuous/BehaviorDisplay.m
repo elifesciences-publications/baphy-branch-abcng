@@ -56,6 +56,9 @@ set(PH.Licks.RespWindow,'XData',TarRegion(1,:),'YData',TarRegion(2,:),...
 if ~isempty(ResponseData)  
   axes(AH.Licks);
   TimeR = 0 : (1/SRin) : ((size(ResponseData,1)-1)/SRin);
+  % to make sure to see even very short licks
+  LickInd = find(ResponseData);
+  for ln = 1:length(LickInd); ResponseData(LickInd(ln):(LickInd(ln)+12))=1; end
   set(PH.Licks.Image,'XData',TimeR,'YData',1:length(RespInds),'CData',ResponseData(:,RespInds)');
 else TimeR = 0;  
 end
@@ -129,7 +132,7 @@ if ~isempty(ResponseData)
       %         end
       %         axis([Bins([1,end]),0,max(cHist(:))+1]);
       %       end
-      Bins = -3:0.1:3; i =1;
+      Bins = -2:0.1:1; i =1;
       cHist(i,:) = hist(Licks,Bins); ForAxisHist(iO,:,:) = cHist(i,:);
       set(PH.TarTiming.RespHist(iO,i),'xdata',Bins,'ydata',cHist(i,:)+iO*0.05);
       axis([Bins([1,end]),0,max(ForAxisHist(:))+1]);

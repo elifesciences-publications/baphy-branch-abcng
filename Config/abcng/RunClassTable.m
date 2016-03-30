@@ -116,9 +116,9 @@ elseif isempty(tar),
       runclass = 'STC';
     case 'MUSICPIECES'
       runclass = 'MUS';
-    case 'PIPSEQUENCE'
-      runclass = 'PIP';
-    otherwise
+    case 'FROZENNOISE'
+      runclass = 'FNS';
+otherwise
       runclass = '';
   end
 else
