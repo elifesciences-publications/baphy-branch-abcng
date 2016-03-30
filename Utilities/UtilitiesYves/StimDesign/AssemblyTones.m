@@ -1,6 +1,6 @@
 function [Stimulus,ToneMatrix] = AssemblyTones(FrequencySpace,Distribution,X,Duration,sF,PlotMe,LineName,Rgenerator,Par)
 if nargin <=6 || not(PlotMe); LineName = []; end
-if nargin <8; Rgenerator = RandStream('mt19937ar'); end
+if nargin <8 || isempty(Rgenerator); Rgenerator = RandStream('mt19937ar'); end
 reset(Rgenerator)
 % Duration in s / F1 in Hz / [x,Distribution from <DrawDistribution>
 Stimulus = zeros(1,ceil(Duration*sF));
@@ -19,8 +19,8 @@ CumDistri = cumsum(Distribution(X));
 CumDistri = CumDistri/max(CumDistri);
 
 % Added for accounting to the following: the increment brings down the other bins to 0
-X = X(find(CumDistri>0,1,'first')-1:end);
-CumDistri = CumDistri(find(CumDistri>0,1,'first')-1:end);
+X = X(max(1,find(CumDistri>0,1,'first')-1):end);
+CumDistri = CumDistri(max(1,find(CumDistri>0,1,'first')-1):end);
 % Remove doublons in the CumDistri to allow interpolation
 % and avoid boundary effects
 [FirstCumDistri,FirstUniIndex] = unique(CumDistri,'first');
@@ -48,11 +48,18 @@ Lvl = 0; PreviousRandomChordNum = 0;
 for ChordNum = 1:ChordNb
     [CumDistriPoisson,UniIndex] = unique(CumDistriPoisson);
     UniXPoisson = XPoisson(UniIndex);
-    CumDistriPoisson(1) = 0; CumDistriPoisson(end) = 1;   
-    NbTonesChord = round(interp1(CumDistriPoisson,UniXPoisson,Rgenerator.rand(1,1)));
+    CumDistriPoisson(1) = 0; CumDistriPoisson(end) = 1;
+    if ~isfield(Par,'SingleTone') || ~Par.SingleTone
+        NbTonesChord = round(interp1(CumDistriPoisson,UniXPoisson,Rgenerator.rand(1,1)));
+    else % only 1 tone at a time [for instance key-change tone sequence]
+        NbTonesChord = 1;
+    end
     
     Chord = zeros(size(ChordTimeSamples));
     TrialTonesF = ToneFrequencies((PreviousRandomChordNum+1):(PreviousRandomChordNum+NbTonesChord));
+    % When keeping tones in incremented channels for monitoring loudness (see section below)
+%     TrialTonesF(TrialTonesF>=602.8)=[]; NbTonesChord = length(TrialTonesF);
+%     TrialTonesF(TrialTonesF<1277)=[]; NbTonesChord = length(TrialTonesF);
     % 15/03/25-YB: constant phases for overlapping tones
     TrialTonesPhase = TonePhases((PreviousRandomChordNum+1):(PreviousRandomChordNum+NbTonesChord));
     [Ctemp,ia,ic] = unique( TrialTonesF );
@@ -71,4 +78,18 @@ for ChordNum = 1:ChordNb
         end
     end
 end
+
+%% COMPUTE LOUDNESS IN EACH OF THE 3 OR CHANGE CHANNELS ~8dB for humans, +80% || ~10dB +110%
+% TMG_TaskStimFIG; % 1st section
+if 0
+o = set(o,'DifficultyLvl_D1','110'); o = ObjUpdate(o);
+RepNb = 500;
+for iR = 1:RepNb
+    [ w , ev , O , D0 , ChangeD , Parameters] = waveform(o,4,[],[],iR*3);
+    ChangeIdx = round(get(o,'SamplingRate')*Parameters.ToC);
+    w1 = w(1:ChangeIdx); w2 = w(ChangeIdx + (1:round(get(o,'SamplingRate')*str2num(get(o,'StimulusBisDuration')))));
+    LvlIncrease(iR) = 20*log10(sqrt(mean(w2.^2))/sqrt(mean(w1.^2)));
+end
+end
+
 
