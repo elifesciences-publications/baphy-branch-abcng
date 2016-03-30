@@ -79,8 +79,7 @@ if isempty(TarResponseWin)   %for no target (sham trial)  by py&9/6/2012
 else
     TarResponseLick = LickData(max(1,round(fs*TarResponseWin(1))):min(length(LickData),round(fs*TarResponseWin(2))));
 end
-% in an ineffective trial, discard the lick during target because target
-% was never played:
+% in an ineffective trial, discard the lick during target because target was never played:
 FalseAlarm = sum(RefFalseAlarm)/NumRef;
 if isempty(TarResponseWin)   %for no target (sham trial)  by py&9/6/2012
     TarEarlyLick=[];

@@ -51,10 +51,9 @@ switch get(TH,'descriptor')
     DifficultyNow = DifficultyLvl( DifficultyLvlByInd(Index) );
     if DifficultyNow==0; CatchTrial=1; else CatchTrial=0; end
   case 'RandSeqTorc'
-%     if TargetIndices==get(TH,'MaxIndex')
-%       CatchTrial=1;
-%     else CatchTrial=0; end
-    CatchTrial=0;
+    if TargetIndices==get(TH,'MaxIndex')
+      CatchTrial=1;
+    else CatchTrial=0; end
 end
 
 TarInd = find(~cellfun(@isempty,strfind({StimEvents.Note},'Target')));
@@ -158,6 +157,14 @@ switch get(TH,'descriptor')
         ActualTrialSoundParts{TargetPartNb} = ActualTrialSound(PartPointer:end);
       end
     end
+    
+    % Isolate Ref sequences within the actual trials in order to reject
+    %licks that during tone sequences
+    RefEvNoteInd = find(not(cellfun(@isempty,cellfun(@(x)strfind(x,'ReferenceSequence'),{StimEvents.Note},'UniformOutput',0))));
+    TarEvNoteInd = find(not(cellfun(@isempty,cellfun(@(x)strfind(x,'TargetSequence'),{StimEvents.Note},'UniformOutput',0))));
+    ThreeNoteDuration = (get(TH,'ToneDur')+get(TH,'ToneGap'))*3;    
+%       ThreeNoteDuration = StimEvents(TarEvNoteInd(end)).StopTime-StimEvents(TarEvNoteInd(end)).StartTime;
+    RefEvNoteInd = [RefEvNoteInd TarEvNoteInd];
 end
 if TargetPartNb==1
   ActualTrialSoundParts{1} = ActualTrialSound;
@@ -355,7 +362,18 @@ while CurrentTime < (TimingLastChange+RespWinDur)
         Events = AddEvent(Events,['LICK,',cLickSensor],TrialIndex,ResponseTime,[]);
         if AddTar
           if ResponseTime < (TimingLastChange + MinimalDelayResponse)
-            Outcome = 'EARLY';
+            switch get(TH,'descriptor')
+              case 'TextureMorphing'
+                Outcome = 'EARLY';
+              case 'RandSeqTorc'
+                 LastEvNoteInd = find((ResponseTime-(RefSliceCounter*RefSliceDuration))>[StimEvents(RefEvNoteInd).StartTime],1,'last');
+                 LastEvNoteInd = RefEvNoteInd(LastEvNoteInd);
+                 if ~isempty(LastEvNoteInd) && (ResponseTime-(RefSliceCounter*RefSliceDuration))<(StimEvents(LastEvNoteInd).StartTime+ThreeNoteDuration)  % lick during the 3-tone sequence
+                   LickOccured = 0;
+                 else
+                   Outcome = 'EARLY';
+                 end
+            end
           elseif ResponseTime >= (TimingLastChange + MinimalDelayResponse) &&...
               ResponseTime <= (TimingLastChange + RespWinDur)
             Outcome = 'HIT';
@@ -363,26 +381,28 @@ while CurrentTime < (TimingLastChange+RespWinDur)
             Outcome = 'SNOOZE';
           end
           
-          CountingLicks = [CountingLicks ResponseTime];
-          cSensorChannels = SensorChannels(find(cLick,1,'first'));
-          if ~isempty(cSensorChannels)
-            cLickSensorInd = find(cLick,1,'first');
-            cLickSensor = SensorNames{SensorChannels(cLickSensorInd)}; % CORRECT FOR BOTH 'ON' AND 'OFF' RESULTS
-            cLickSensorNot = setdiff(SensorNames(SensorChannels),cLickSensor);
-          else
-            cLickSensor = 'None'; cLickSensorNot = 'None';
-          end          
-          
-%           Events = AddEvent(Events,['OUTCOME,',Outcome],TrialIndex,ResponseTime,[]);
-%           [Events] = ProcessLick(Outcome,Events,HW,O,TH,globalparams,exptparams,LEDfeedback,RewardAmount,IncrementRewardAmount,TrialIndex,...
-%             cLickSensor,MaxIncrementRewardNb);
-%         
-%           if strcmp(Outcome,'HIT'); Outcome2Display = [Outcome ', RT = ' num2str(ResponseTime-TarWindow(1))]; else Outcome2Display = Outcome; end
-%           fprintf(['\t [ ',Outcome2Display,' ] ... ']);
-%           fprintf(['\t Lick detected [ ',cLickSensor,', at ',n2s(ResponseTime,3),'s ] ... ']);
-
-           QuitLoop = 1;
-           break
+          if LickOccured % lick can have been cancelled during RandSeqTorc
+            CountingLicks = [CountingLicks ResponseTime];
+            cSensorChannels = SensorChannels(find(cLick,1,'first'));
+            if ~isempty(cSensorChannels)
+              cLickSensorInd = find(cLick,1,'first');
+              cLickSensor = SensorNames{SensorChannels(cLickSensorInd)}; % CORRECT FOR BOTH 'ON' AND 'OFF' RESULTS
+              cLickSensorNot = setdiff(SensorNames(SensorChannels),cLickSensor);
+            else
+              cLickSensor = 'None'; cLickSensorNot = 'None';
+            end
+            
+            %           Events = AddEvent(Events,['OUTCOME,',Outcome],TrialIndex,ResponseTime,[]);
+            %           [Events] = ProcessLick(Outcome,Events,HW,O,TH,globalparams,exptparams,LEDfeedback,RewardAmount,IncrementRewardAmount,TrialIndex,...
+            %             cLickSensor,MaxIncrementRewardNb);
+            %
+            %           if strcmp(Outcome,'HIT'); Outcome2Display = [Outcome ', RT = ' num2str(ResponseTime-TarWindow(1))]; else Outcome2Display = Outcome; end
+            %           fprintf(['\t [ ',Outcome2Display,' ] ... ']);
+            %           fprintf(['\t Lick detected [ ',cLickSensor,', at ',n2s(ResponseTime,3),'s ] ... ']);
+            
+            QuitLoop = 1;
+            break
+          end
         end
       end
     end

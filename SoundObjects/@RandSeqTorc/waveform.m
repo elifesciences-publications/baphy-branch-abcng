@@ -13,6 +13,7 @@ ToneDur = get(o,'ToneDur');  % sec.
 ToneGap = get(o,'ToneGap');  % sec.
 SeqGap = get(o,'SequenceGap');  % sec.
 
+MaxIndex = get(o,'MaxIndex');
 TargetF = get(o,'TargetF');
 UniqueToneIndex =  get(o,'UniqueToneIndex'); %length(TargetF); Jennifer 17/09/15, scories ?
 RampInterval = get(o,'RampInterval');     % in semitones
@@ -110,7 +111,8 @@ if RampProbability>0
 %   AscRampPosition = RampPosition(TrialKey.rand(1,length(RampPosition))>0.5);  % Half ascending
 %   DescRampPosition = setdiff(RampPosition,AscRampPosition);                   % Half descending
 else RampPositions = []; AscRampPosition = []; DescRampPosition = []; end
-for j = (RefNow+1) : (RefNow+index-1)  % index-1 is the number of Ref  
+if index==MaxIndex; RefN = MaxIndex; else; RefN = index-1; end
+for j = (RefNow+1) : (RefNow+RefN)  % index-1 is the number of Ref, excepted if index==MaxIndex [catch]
 %   LocalSeq = SeqFrequency(RandSequence(j),:);  % Select the right permutation
   % TORC
   if strcmp(TORC,'yes')
@@ -177,31 +179,33 @@ for j = (RefNow+1) : (RefNow+index-1)  % index-1 is the number of Ref
 end
 
 % TARGET
-TargetSequence = [];
-for FreqNum = 1:length(TargetF)
-  wTarg = addenv(sin(2*pi*TargetF(FreqNum)*t),fs);
-  TargetSequence = [TargetSequence ; wTarg(:) ; gap(:)];
+if index~=MaxIndex
+  TargetSequence = [];
+  for FreqNum = 1:length(TargetF)
+    wTarg = addenv(sin(2*pi*TargetF(FreqNum)*t),fs);
+    TargetSequence = [TargetSequence ; wTarg(:) ; gap(:)];
+  end
+  if strcmp(TORC,'yes')
+    [wTorc, eTorc] = waveform(TorcObj, RandTORC(j+1));
+    MTORC = maxLocalStd(wTorc,fs,length(wTorc)/fs);
+  else
+    wTorc = []; MTORC = 1;
+  end
+  MSeq = maxLocalStd(TargetSequence(:),fs,length(TargetSequence(:))/fs);
+  ev = AddEvent(ev, ['TargetSequence' , ' - ',num2str(TrialNum)  , ' - ' , num2str(index) ],...
+    [ ], ev(end).StopTime, ev(end).StopTime + length(TargetSequence(:))/fs );
+  
+  %w=[TargetSequence(:);zeros(3*fs,1);w;TargetSequence(:);gapSeq(:);wTorc(:)];
+  Segment2Add = [TargetSequence(:)/MSeq ; gapSeq(:) ; wTorc(:)/MTORC ; gapSeq(:)];
+  w = [w ; Segment2Add];
+  %ev=ev_struct(ev,['Note ' num2str(TargetF(i))],0,ToneDur,PostStimSilence);
+  TimeLickWindow = length([gapSeq(:) ; wTorc(:) ; gapSeq(:)]);
+  ev = AddEvent(ev, 'LickWindow', [], ev(end).StopTime, ev(end).StopTime+TimeLickWindow/fs);
+  
+  % POSTSTIM
+  w = [w ; poststim(:)];
+  ev = AddEvent(ev,['PostStimSilence - ' , num2str(TrialNum)],[], ev(end).StopTime, ev(end).StopTime + PostStimSilence);
 end
-if strcmp(TORC,'yes')
-  [wTorc, eTorc] = waveform(TorcObj, RandTORC(j+1));
-  MTORC = maxLocalStd(wTorc,fs,length(wTorc)/fs);
-else
-  wTorc = []; MTORC = 1;
-end
-MSeq = maxLocalStd(TargetSequence(:),fs,length(TargetSequence(:))/fs);
-ev = AddEvent(ev, ['TargetSequence' , ' - ',num2str(TrialNum)  , ' - ' , num2str(index) ],...
-  [ ], ev(end).StopTime, ev(end).StopTime + length(TargetSequence(:))/fs );
-
-%w=[TargetSequence(:);zeros(3*fs,1);w;TargetSequence(:);gapSeq(:);wTorc(:)];
-Segment2Add = [TargetSequence(:)/MSeq ; gapSeq(:) ; wTorc(:)/MTORC ; gapSeq(:)];
-w = [w ; Segment2Add];
-%ev=ev_struct(ev,['Note ' num2str(TargetF(i))],0,ToneDur,PostStimSilence);
-TimeLickWindow = length([gapSeq(:) ; wTorc(:) ; gapSeq(:)]);
-ev = AddEvent(ev, 'LickWindow', [], ev(end).StopTime, ev(end).StopTime+TimeLickWindow/fs);
-
-% POSTSTIM
-w = [w ; poststim(:)];
-ev = AddEvent(ev,['PostStimSilence - ' , num2str(TrialNum)],[], ev(end).StopTime, ev(end).StopTime + PostStimSilence); 
 
 % ev = AddEvent(ev, ['RefSequence , ' num2str(index),' - ',num2str(TrialNum) ],...
 %   [ ], ev(end).StopTime, ev(end).StopTime + TimeEndRefSeq);    
