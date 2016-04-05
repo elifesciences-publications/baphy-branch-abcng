@@ -7,7 +7,7 @@ function AddToMFile(fname, StructName, data, writeidx, rec_flag)
 %               replacing, validation, etc...)
 % StructName: the name of the variable that data is assigned to
 % data      : the structure which is written to fid file.
-% writeidx  : the index of data we want to write tot he file, default is
+% writeidx  : the index of data we want to write to the file, default is
 %             everything
 %
 % Note: This version can handle the fields that are numeric, string, cell array
@@ -57,7 +57,7 @@ for cnt1 = writeidx,
   % write all the fields
   for cnt2 = 1:length(fields);
     switch class(data(cnt1).(fields{cnt2}))
-      case {'char', 'double'}
+      case {'char', 'double','logical'}
         % for numbers and strings
         try,
           fprintf(fid,'%s(%d).%s = ', StructName, cnt1,fields{cnt2});

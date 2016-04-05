@@ -104,76 +104,94 @@ switch get(SO,'descriptor')
     % cP.DiscriminationRate = prod(cP.HitRates);
     cP.DiscriminationRate = ( sum([AllPerf.RefSliceCounter])-TrialIndex )/(TrialIndex*10);
     if isnan(cP.DiscriminationRate) cP.DiscriminationRate = 0; end
-  case 'RandSeqTorc'      % HERE we should compute d prime
+  case 'RandSeqTorc'      % HERE we should compute d prime    
+    TH = get(exptparams.TrialObject,'TargetHandle');
     % cP.DiscriminationRate = prod(cP.HitRates);
     cP.DiscriminationRate = ( sum([AllPerf.RefSliceCounter])-TrialIndex )/(TrialIndex*10);
-    if isnan(cP.DiscriminationRate) cP.DiscriminationRate = 0; end    
+    if isnan(cP.DiscriminationRate) cP.DiscriminationRate = 0; end
     
+    %% Not yet done; future dprime
+RespWinDur = get(O,'ResponseWindow');
+    EARLYlst = strcmp('EARLY' , {AllPerf.Outcome});
+    HITlst = strcmp('HIT' , {AllPerf.Outcome});
+    SNOOZElst = strcmp('SNOOZE' , {AllPerf.Outcome});
+    if CurrentTrialIndex==MaxIndex
+      NumRef = MaxIndex; AllPerf(TrialIndex).Catch = 1;
+    else
+      NumRef = CurrentTrialIndex-1; AllPerf(TrialIndex).Catch = 0;
+    end
     
-%     %% Not yet done; future dprime
-%     RefFalseAlarm = 0;RefFirstLick = NaN;
-%     if CurrentTrialIndex==MaxIndex
-%       NumRef = MaxIndex; AllPerf(TrialIndex).Catch = 1;
-%     else
-%       NumRef = CurrentTrialIndex-1; AllPerf(TrialIndex).Catch = 1;
-%     end
-%     for cnt2 = 1:NumRef
-%       cnt1 = (cnt2-1)*2+1;
-%       RefResponseLicks{cnt2} = LickData(max(1,round(fs*RefResponseWin(cnt1))):min(length(LickData),round(fs*RefResponseWin(cnt1+1))));
-%       RefEarlyLicks{cnt2} = LickData(max(1,round(fs*RefEarlyWin(cnt1))):min(length(LickData),round(fs*RefEarlyWin(cnt1+1))));
-%       temp = find([RefEarlyLicks{cnt2}; RefResponseLicks{cnt2}],1)/fs;
-%       if ~isempty(temp), RefFirstLick(cnt2) = temp; else RefFirstLick(cnt2) = nan;end
-%       RefFalseAlarm(cnt2) = double(~isempty(find(RefResponseLicks{cnt2},1)));
-%     end
-%     
-%     % now calculate the performance:
-%     if isfield(exptparams, 'Performance')
-%       perf = exptparams.Performance(1:end-1);
-%       cnt2 = length(perf) + 1;
-%       prevNumRefTot = perf(cnt2-1).NumRefTot; prevNumLickedRefTot = perf(cnt2-1).NumLickedRefTot;
-%     else
-%       cnt2 = 1;
-%       prevNumRefTot = 0; prevNumLickedRefTot = 0;
-%     end
-%     
-%     
-%     if NumRef
-%       AllPerf(TrialIndex).FalseAlarm   = sum(RefFalseAlarm)/NumRef; % sum of false alarms divided by num of ref
-%       AllPerf(TrialIndex).NumRefTot   = prevNumRefTot+NumRef; % sum of false alarms divided by num of ref
-%       AllPerf(TrialIndex).NumLickedRefTot   = prevNumLickedRefTot+sum(RefFalseAlarm);
-%     end
-%     if AllPerf(TrialIndex).NumRefTot==0
-%       AllPerf(TrialIndex).FaRate = 0;
-%     else
-%       AllPerf(TrialIndex).FaRate = AllPerf(TrialIndex).NumLickedRefTot/AllPerf(TrialIndex).NumRefTot;
-%     end
-%     AllPerf(TrialIndex).Ineffective  = double(AllPerf(TrialIndex).FalseAlarm >= StopTargetFA);
-%     AllPerf(TrialIndex).WarningTrial = double(~AllPerf(TrialIndex).Ineffective);
-%     AllPerf(TrialIndex).EarlyTrial   = double(AllPerf(TrialIndex).WarningTrial && ~isempty(find(TarEarlyLick,1)));
-%     %
-%     AllPerf(TrialIndex).Hit          = double(AllPerf(TrialIndex).WarningTrial && ~AllPerf(TrialIndex).EarlyTrial && ~isempty(find(TarResponseLick,1))); % if there is a lick in target response window, its a hit
-%     AllPerf(TrialIndex).Miss         = double(AllPerf(TrialIndex).WarningTrial && ~AllPerf(TrialIndex).EarlyTrial && ~AllPerf(TrialIndex).Hit);
-%     AllPerf(TrialIndex).Catch         = double((get(exptparams.TrialObject,'MaxRef')+1)==NumRef);
-%     
-%     
-%     % Now calculate global hit and miss rates:
-%     TotalNoCatch         = sum(~[AllPerf.Catch]);
-%     AllPerf(TrialIndex).HitRate          = sum(cat(1,AllPerf.Hit)) / TotalNoCatch;
-%     AllPerf(TrialIndex).MissRate         = sum(cat(1,AllPerf.Miss)) / TotalNoCatch;
-%     AllPerf(TrialIndex).EarlyRate        = sum(cat(1,AllPerf.EarlyTrial))/TotalWarn;
-%     
-%     
-%     if AllPerf.HitRate==0
-%       cP.DiscriminationRate = 0;
-%     elseif AllPerf(TrialIndex).FaRate==0
-%       cP.DiscriminationRate = 0;
-%     elseif AllPerf(TrialIndex).HitRate==1
-%       HitRate = (sum(cat(1,AllPerf.Hit))-1) / TotalNoCatch;
-%       cP.DiscriminationRate =  erfinv(HitRate)-erfinv(AllPerf(TrialIndex).FaRate);
-%     else
-%       cP.DiscriminationRate =  erfinv(AllPerf(TrialIndex).HitRate)-erfinv(AllPerf(TrialIndex).FaRate);
-%     end
+    switch AllPerf(end).Outcome
+      case 'HIT'
+        
+      case 'SNOOZE'
+        
+      case 'EARLY'  % only complicated case bc we need to find the seq. the animal licked on
+        RefSliceDuration = get(O,'RefSliceDuration');
+        RefSliceCounter = AllPerf(TrialIndex).RefSliceCounter;
+        % Isolate Ref sequences within the actual trials in order to reject
+        %licks that during tone sequences
+        RefEvNoteInd = find(not(cellfun(@isempty,cellfun(@(x)strfind(x,'ReferenceSequence'),{StimEvents.Note},'UniformOutput',0))));
+        TarEvNoteInd = find(not(cellfun(@isempty,cellfun(@(x)strfind(x,'TargetSequence'),{StimEvents.Note},'UniformOutput',0))));
+        ThreeNoteDuration = (get(TH,'ToneDur')+get(TH,'ToneGap'))*3;
+        RefEvNoteInd = [RefEvNoteInd TarEvNoteInd];
+        % Lick timings
+        LD = find(LickData(:,cP.LickSensorInd));
+        LD = LD/HW.params.fsAI;
+        % Find sequence with lick
+        LT = []; cc = 1;
+        while isempty(LT) && cc<=length(RefEvNoteInd)
+          RefEvNoteNum = RefEvNoteInd(cc);
+          LT = find( (LD-(RefSliceCounter*RefSliceDuration))>[StimEvents(RefEvNoteNum).StartTime+ThreeNoteDuration] & ...
+            (LD-(RefSliceCounter*RefSliceDuration))<(StimEvents(RefEvNoteNum).StartTime+ThreeNoteDuration+RespWinDur) );          
+          NumRef = find(RefEvNoteInd==RefEvNoteNum);
+          cc = cc+1;
+        end
+%         if isempty(LT)
+%           [~,LT] = min(abs(LD-(RefSliceCounter*RefSliceDuration)-[StimEvents(RefEvNoteNum).StartTime+ThreeNoteDuration]));
+%         end
+        LT = LD(LT(1))-RefSliceCounter*RefSliceDuration-StimEvents(RefEvNoteNum).StartTime-ThreeNoteDuration;
+    end
     
+    % now calculate the performance:
+    if isfield(exptparams, 'Performance') && TrialIndex>1
+      prevNumRefTot = AllPerf(TrialIndex-1).NumRefTot;
+    else
+      prevNumRefTot = 0;
+    end
+    
+    AllPerf(TrialIndex).NumRefTot = prevNumRefTot+NumRef; % sum of false alarms divided by num of ref
+    if AllPerf(TrialIndex).NumRefTot==0
+      AllPerf(TrialIndex).FaRate = 0;
+    else
+      AllPerf(TrialIndex).FaRate = length(find(EARLYlst))/AllPerf(TrialIndex).NumRefTot;
+    end
+    AllPerf(TrialIndex).Ineffective  = AllPerf(TrialIndex).Catch || EARLYlst(TrialIndex);  % target was not presented
+    AllPerf(TrialIndex).WarningTrial = double(~AllPerf(TrialIndex).Ineffective);             % target was presented
+    %
+    AllPerf(TrialIndex).Hit          = ~AllPerf(TrialIndex).Catch && HITlst(TrialIndex);
+    
+    TotalWarnAndNoCatch         = sum([AllPerf.WarningTrial] & ~[AllPerf.Catch]);
+    AllPerf(TrialIndex).HitRate          = sum(cat(1,AllPerf.Hit)) / TotalWarnAndNoCatch;
+    
+    if AllPerf(TrialIndex).HitRate==0
+      cP.DiscriminationRate = 0;
+    elseif AllPerf(TrialIndex).FaRate==0
+      cP.DiscriminationRate = 0;
+    elseif AllPerf(TrialIndex).HitRate==1
+      HitRate = (sum(cat(1,AllPerf.Hit))-1) / sum(~[AllPerf.Catch]);
+      cP.DiscriminationRate =  erfinv(HitRate)-erfinv(AllPerf(TrialIndex).FaRate);
+    else
+      cP.DiscriminationRate =  erfinv(AllPerf(TrialIndex).HitRate)-erfinv(AllPerf(TrialIndex).FaRate);
+    end
+    cP.NumRefTot = AllPerf(TrialIndex).NumRefTot;
+    cP.WarningTrial = AllPerf(TrialIndex).WarningTrial;
+    cP.Hit = AllPerf(TrialIndex).Hit;
+    cP.Ineffective = AllPerf(TrialIndex).Ineffective;
+    cP.Catch = AllPerf(TrialIndex).Catch;
+%     cP.FaRate = AllPerf(TrialIndex).FaRate;
+%     cP.HitRate = AllPerf(TrialIndex).HitRate;
+%     cP.FaRate = AllPerf(TrialIndex).FaRate;
 end
 
 %% RECENT PERFORMANCE
@@ -240,20 +258,22 @@ if isempty(cP.LickTime); cP.LickTime = NaN; cP.LickSensorInd = NaN; end  % pump 
 cP.LickTime = cP.LickTime/HW.params.fsAI;
 if strcmp(get(SO,'descriptor'),'RandSeqTorc') && strcmp(AllPerf(end).Outcome,'EARLY') &&...
     ~isnan(cP.LickTime)
-  % lock on last reference sequence
-  SeqOnsetTiming = [ find(~cellfun(@isempty,strfind({StimEvents.Note},'ReferenceSequence'))) ...
-    TarInd];
-  RelativeRefStartTiming = ToC - [StimEvents(SeqOnsetTiming).StartTime];
-  LD = find(LickData(:,cP.LickSensorInd));
-  RT = LD(find(LD>((cP.TarWindow(1)-ToC)*HW.params.fsAI),1,'first'))/HW.params.fsAI - cP.TarWindow(1);
-  LastRefNum = find( (RelativeRefStartTiming + RT)>0,1,'last');
-  if ~isempty(TarInd)
-    cP.FirstLickRelTarget = LD(find(LD>((cP.TarWindow(1)-ToC)*HW.params.fsAI),1,'first'))/HW.params.fsAI -...
-      (cP.TarWindow(1)-ToC)-StimEvents(SeqOnsetTiming(LastRefNum)).StartTime-(ToC-StimEvents(TarInd).StartTime);
-  else % Catch
-    cP.FirstLickRelTarget = LD(find(LD>((cP.TarWindow(1)-ToC)*HW.params.fsAI),1,'first'))/HW.params.fsAI -...
-      (cP.TarWindow(1)-ToC)-StimEvents(SeqOnsetTiming(LastRefNum)).StartTime-(ToC-StimEvents(end).StartTime);
-  end
+%   cP.LickTime = LT;
+  cP.FirstLickRelTarget = LT;
+%   % lock on last reference sequence
+%   SeqOnsetTiming = [ find(~cellfun(@isempty,strfind({StimEvents.Note},'ReferenceSequence'))) ...
+%     TarInd];
+%   RelativeRefStartTiming = ToC - [StimEvents(SeqOnsetTiming).StartTime];
+%   LD = find(LickData(:,cP.LickSensorInd));
+%   RT = LD(find(LD>((cP.TarWindow(1)-ToC)*HW.params.fsAI),1,'first'))/HW.params.fsAI - cP.TarWindow(1);
+%   LastRefNum = find( (RelativeRefStartTiming + RT)>0,1,'last');
+%   if ~isempty(TarInd)
+%     cP.FirstLickRelTarget = LD(find(LD>((cP.TarWindow(1)-ToC)*HW.params.fsAI),1,'first'))/HW.params.fsAI -...
+%       (cP.TarWindow(1)-ToC)-StimEvents(SeqOnsetTiming(LastRefNum)).StartTime-(ToC-StimEvents(TarInd).StartTime);
+%   else % Catch
+%     cP.FirstLickRelTarget = LD(find(LD>((cP.TarWindow(1)-ToC)*HW.params.fsAI),1,'first'))/HW.params.fsAI -...
+%       (cP.TarWindow(1)-ToC)-StimEvents(SeqOnsetTiming(LastRefNum)).StartTime-(ToC-StimEvents(end).StartTime);
+%   end
 else
   cP.FirstLickRelTarget = cP.LickTime - cP.TarWindow(1);
 end

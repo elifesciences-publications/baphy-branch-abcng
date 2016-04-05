@@ -57,7 +57,7 @@ if ~isempty(ResponseData)
   axes(AH.Licks);
   TimeR = 0 : (1/SRin) : ((size(ResponseData,1)-1)/SRin);
   % to make sure to see even very short licks
-  LickInd = find(ResponseData);
+  LickInd = find(ResponseData(:,1));
   for ln = 1:length(LickInd); ResponseData(LickInd(ln):(LickInd(ln)+12))=1; end
   set(PH.Licks.Image,'XData',TimeR,'YData',1:length(RespInds),'CData',ResponseData(:,RespInds)');
 else TimeR = 0;  
@@ -143,6 +143,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% HELPER FUNCTION FOR SETTING UP THE DISPLAY
 function [FIG,AH,PH,Conditions,PlotOutcomes,exptparams] = LF_prepareFigure(exptparams,DC,TrialIndex)
+SO = get(exptparams.TrialObject,'TargetHandle');
 
 if ~isfield(exptparams,'ResultsFigure') ...
   || isempty(exptparams.ResultsFigure) ...
@@ -204,7 +205,12 @@ else % CREATE A NEW SET OF HANDLES
   text(0.01,0.9,'Hit','Color',Colors.Hit,Opts{:});
   text(0.01,0.8,'Early','Color',Colors.Early,Opts{:});
   text(0.01,0.7,'Snooze','Color',Colors.Snooze,Opts{:});
-  text(0.01,0.6,'Discrimination','Color',Colors.Discrimination,Opts{:});
+  switch get(SO,'descriptor')
+    case 'TextureMorphing'
+      text(0.01,0.6,'NbExtraRefSlice','Color',Colors.Discrimination,Opts{:});
+    case 'RandSeqTorc'
+      text(0.01,0.6,'d''','Color',Colors.Discrimination,Opts{:});
+  end
   set(AH.Performance,'XLim',[0.5,10],'YLim',[-.05,1.05],'YTick',[0:0.25:1]);
   
 %% TARGET DISTRIBUTION

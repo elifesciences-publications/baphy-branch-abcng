@@ -65,7 +65,12 @@ if ~CatchTrial % not a catch trial
   TarWindow(2) = TarWindow(1) + get(O,'ResponseWindow');
   CatchStr = '';
 else
-  TarWindow(1) = TargetStartTime + EarlyWindow  + get(O,'ResponseWindow');
+  switch get(TH,'descriptor')
+    case 'TextureMorphing'
+      TarWindow(1) = TargetStartTime + EarlyWindow  + get(O,'ResponseWindow');
+    case 'RandSeqTorc'
+      TarWindow(1) = TargetStartTime + StimEvents(end).StopTime;
+  end
   TarWindow(2) = TarWindow(1);
   RespWinDur = 0;
   CatchStr = 'Catch ';
@@ -279,8 +284,7 @@ while CurrentTime < (TimingLastChange+RespWinDur)
   else
     wAccu = [wAccu ; zeros(get(RH,'Duration')*SF,1) ; stim(round(PreStimSilence*SF)+(1:round(SliceDuration*SF)))];    
   end
-  % Do calibration manually with an extra chord to avoid clicks at the end
-  % from IOloadSound.m
+  % Do calibration manually with an extra chord to avoid clicks at the end from IOloadSound.m
 %   if AttenuationD0~=0
     if isfield(HW.params,'driver') && strcmpi(HW.params.driver,'NIDAQMX'),
       if isfield(HW,'Calibration') && length(stim)>length(HW.Calibration.IIR)
@@ -372,7 +376,7 @@ while CurrentTime < (TimingLastChange+RespWinDur)
               case 'RandSeqTorc'
                  LastEvNoteInd = find((ResponseTime-(RefSliceCounter*RefSliceDuration))>[StimEvents(RefEvNoteInd).StartTime],1,'last');
                  LastEvNoteInd = RefEvNoteInd(LastEvNoteInd);
-                 if ~isempty(LastEvNoteInd) && (ResponseTime-(RefSliceCounter*RefSliceDuration))<(StimEvents(LastEvNoteInd).StartTime+ThreeNoteDuration)  % lick during the 3-tone sequence
+                 if isempty(LastEvNoteInd) || (ResponseTime-(RefSliceCounter*RefSliceDuration))<(StimEvents(LastEvNoteInd).StartTime+ThreeNoteDuration) % lick during the 3-tone sequence
                    LickOccured = 0;
                  else
                    Outcome = 'EARLY';
@@ -382,7 +386,11 @@ while CurrentTime < (TimingLastChange+RespWinDur)
               ResponseTime <= (TimingLastChange + RespWinDur)
             Outcome = 'HIT';
           else
-            Outcome = 'SNOOZE';
+            if ~CatchTrial
+              Outcome = 'SNOOZE';
+            else
+              Outcome = 'HIT';
+            end
           end
           
           if LickOccured % lick can have been cancelled during RandSeqTorc
