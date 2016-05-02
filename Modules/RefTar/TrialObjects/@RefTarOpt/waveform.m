@@ -197,6 +197,7 @@ if LightTrial
             end
             
         case 'WholeSound',
+          if par.LightTrainRate == 0
             for evidx=2:3:length(events),
                 StimStartTime=events(evidx).StartTime;
                 StimStopTime=events(evidx).StopTime;
@@ -207,6 +208,23 @@ if LightTrial
                     LightStartTime=LightStartTime+1./par.LightPulseRate;
                 end
             end
+          else
+            for evidx=2:3:length(events),
+                StimStartTime=events(evidx).StartTime;
+                StimStopTime=events(evidx).StopTime;
+                LightStartTime=StimStartTime+par.LightPulseShift;
+                LightStartBin=round(LightStartTime*TrialSamplingRate);
+                while LightStartTime<StimStopTime
+                    LightBand(LightStartBin+(1:LightOnBins))=LightPower;
+                    LightStartTime=LightStartTime+1./par.LightPulseRate; 
+                    if LightStartTime>(StimStartTime+par.LightTrainDuration)
+                      StimStartTime = StimStartTime+1/par.LightTrainRate;
+                      LightStartTime=StimStartTime;
+                    end
+                    LightStartBin=round(LightStartTime*TrialSamplingRate);
+                end
+            end            
+          end
             
        case 'PR_WS',
            LocusStr = 'Pre';

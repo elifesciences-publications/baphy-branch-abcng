@@ -80,8 +80,8 @@ switch globalparams.HWSetup
     HW=niCreateDI(HW,DAQID,'port0/line5','Touch');
     
     %% ANALOG INPUT
-    HW=niCreateAI(HW,DAQID,'ai0:6','Touch,Microphone,EyeX,EyeY,Diode,PsyTriggers',['/',DAQID,'/PFI0']);
-%     HW=niCreateAI(HW,DAQID,'ai7:8','OnlineEyeX,OnlineEyeY',['/',DAQID,'/PFI2']);  % monitor eye position online; triggered by 'TrigOnlineAI'
+    HW=niCreateAI(HW,DAQID,'ai0:7','Touch,Microphone,EyeX,EyeY,Diode,PsyTriggers,PupilD',['/',DAQID,'/PFI0']);
+    HW=niCreateAI(HW,DAQID,'ai8:9','OnlineEyeX,OnlineEyeY',['/',DAQID,'/PFI2']);  % monitor eye position online; triggered by 'TrigOnlineAI'
     
     %% ANALOG OUTPUT % 14/09-YB: rmv independant audio channels for introducing Opto
     HW=niCreateAO(HW,DAQID,'ao0:1','SoundOut,OptTrig',['/',DAQID,'/PFI1']);
