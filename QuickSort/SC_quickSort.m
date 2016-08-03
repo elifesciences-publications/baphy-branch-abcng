@@ -137,7 +137,9 @@ for i=1:length(M)
     end
 end
 for iS = 1:length(mWavesC)
+  if not(isempty(mWavesC{iS})) || length(mWavesC)<2
     mWaves(:,iS) = mean(mWavesC{iS},2);
+  end
 end
 fprintf('\n');
 if ~exist('cUnits','var') cUnits = []; mWaves = []; end

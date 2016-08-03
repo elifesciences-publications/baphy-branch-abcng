@@ -19,6 +19,18 @@ global BAPHY_LAB LoudnessAdjusted
 
 BehaveObject = exptparams.BehaveObject;
 
+% START PSYTOOLBOX FOR VISUAL EXPERIMENT
+if ~isempty(strfind(class(BehaveObject),'Eye'))
+  AssertOpenGL;
+  Screen('Preference', 'SkipSyncTests', 1);
+  screens = Screen('Screens');
+  if size(screens,2)>1
+    screenNumber = max(screens);
+    [winPtr, winRect] = Screen('OpenWindow', screenNumber, 180);
+  end
+  HW.VisionHW.ScreenID = winPtr;
+end
+
 if strcmpi(exptparams.BehaveObjectClass,'MriPassive') && ...
         get(BehaveObject,'DelayAfterScanTTL')==0,
    disp('MriPassive: press a key to synchronize with start of MRI scan ...');
@@ -166,6 +178,7 @@ while ContinueExp == 1
         if strcmpi(AINames{i}(1:min(end,5)),'Touch') RespIndices(end+1) = i; ScalingF(end+1) = 1; end
         if strcmpi(AINames{i}(1:min(end,3)),'Eye') RespIndices(end+1) = i; ScalingF(end+1) = 3260; end
         if strcmpi(AINames{i}(1:min(end,5)),'Diode') RespIndices(end+1) = i; ScalingF(end+1) = 3260; end
+        if strcmpi(AINames{i}(1:min(end,5)),'Pupil') RespIndices(end+1) = i; ScalingF(end+1) = 3260; end
         if strcmpi(AINames{i}(1:min(end,4)),'walk') RespIndices(end+1) = i; ScalingF(end+1) = 1; end
       end
       Data.Responses = Data.Aux(:,RespIndices).*repmat(ScalingF,size(Data.Aux,1),1);   % 16/02-YB: add scaling factor to eye data to make them integrer and compatible with 'short' saving in evpwrite

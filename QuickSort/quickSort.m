@@ -1585,7 +1585,9 @@ else
     d = log(exp(-tX(begs(iStep):ends(iStep)))*exp(tY(:)'));
     d = d(:);
     d(abs(d)>abs(minLag)) = [];
-    C = C + histc(d,B)';    
+    addC = histc(d,B)';
+    if size(addC,2)==1; addC = addC'; end      
+    C = C + addC;    
   end
   C(end) = [];
 end
