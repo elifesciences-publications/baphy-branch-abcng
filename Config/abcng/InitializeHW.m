@@ -78,10 +78,12 @@ switch globalparams.HWSetup
     HW=niCreateDO(HW,DAQID,'port0/line4','LightL','InitState',0);
     HW=niCreateDO(HW,DAQID,'port1/line5','Pump','InitState',0);
     HW=niCreateDI(HW,DAQID,'port0/line5','Touch');
+    HW=niCreateDI(HW,DAQID,'port1/line6','Fixation');
     
     %% ANALOG INPUT
-    HW=niCreateAI(HW,DAQID,'ai0:7','Touch,Microphone,EyeX,EyeY,Diode,PsyTriggers,PupilD',['/',DAQID,'/PFI0']);
-    HW=niCreateAI(HW,DAQID,'ai8:9','OnlineEyeX,OnlineEyeY',['/',DAQID,'/PFI2']);  % monitor eye position online; triggered by 'TrigOnlineAI'
+    HW=niCreateAI(HW,DAQID,'ai0:7','Touch,Microphone,PupilD,EyeX,Diode,PsyTriggers,EyeY',['/',DAQID,'/PFI0']); 
+    % 16/08-YB: was before HW=niCreateAI(HW,DAQID,'ai0:7','Touch,Microphone,EyeX,EyeY,Diode,PsyTriggers,PupilD',['/',DAQID,'/PFI0'])
+%     HW=niCreateAI(HW,DAQID,'ai8:9','OnlineEyeX,OnlineEyeY',['/',DAQID,'/PFI2']);  % monitor eye position online; triggered by 'TrigOnlineAI'
     
     %% ANALOG OUTPUT % 14/09-YB: rmv independant audio channels for introducing Opto
     HW=niCreateAO(HW,DAQID,'ao0:1','SoundOut,OptTrig',['/',DAQID,'/PFI1']);
@@ -98,11 +100,26 @@ switch globalparams.HWSetup
     HW.Calibration = IOLoadCalibration(HW.Calibration);
     
     %% VISUAL HW CONFIGURATION
-    HW.VisionHW.ScreenSize = [3840,2160];  % [x,y] in pixels
-    HW.VisionHW.CenterCoordinates  = HW.VisionHW.ScreenSize/2;
-    HW.VisionHW.CCDSize = [512,256];  % [x,y] in pixels
-    HW.VisionHW.AI2ET_ConversionFactor = 0;  % px/mV
-    HW.VisionHW.ET2ScreenMatrix_URL = 'C:\Code\baphy\Hardware\';  % address of the adimensional cell (length 2) that gives CCD coordinates for every pixel of the screen in x and y
+     HW.VisionHW.ScreenSize = [1920, 1080];  % [x,y] in pixels
+     HW.VisionHW.CenterCoordinates  = HW.VisionHW.ScreenSize/2;
+     HW.VisionHW.CenterCoordinatesL  = [1920/4, 1080/2];
+     HW.VisionHW.CenterCoordinatesR  = [3*1920/4, 1080/2];
+     HW.VisionHW.CCDSize = [512,256];  % [x,y] in pixels
+     HW.VisionHW.AI2ET_ConversionFactor = 512/10000;  % px/mV
+     HW.VisionHW.Pix2Deg = 17.89;
+     HW.VisionHW.DotPitch = 1075/1920;
+     HW.VisionHW.horShift = 1.3750/HW.VisionHW.DotPitch; %(distance 675 mm, depth 185 mm in front)
+     HW.VisionHW.CircleRectL = [HW.VisionHW.CenterCoordinatesL-HW.VisionHW.Pix2Deg*[1,2], HW.VisionHW.CenterCoordinatesL+HW.VisionHW.Pix2Deg*[2,4]]+[HW.VisionHW.horShift, 0, HW.VisionHW.horShift, 0];
+     HW.VisionHW.CircleRectR = [HW.VisionHW.CenterCoordinatesR-HW.VisionHW.Pix2Deg*[1,2], HW.VisionHW.CenterCoordinatesR+HW.VisionHW.Pix2Deg*[2,4]]-[HW.VisionHW.horShift, 0, HW.VisionHW.horShift, 0];
+     
+     HW.VisionHW.CircleRectLin = [HW.VisionHW.CenterCoordinatesL-HW.VisionHW.Pix2Deg*[0.1,1.1], HW.VisionHW.CenterCoordinatesL+HW.VisionHW.Pix2Deg*[1.1,3.1]]+[HW.VisionHW.horShift, 0, HW.VisionHW.horShift, 0];
+     HW.VisionHW.CircleRectRin = [HW.VisionHW.CenterCoordinatesR-HW.VisionHW.Pix2Deg*[0.1,1.1], HW.VisionHW.CenterCoordinatesR+HW.VisionHW.Pix2Deg*[1.1,3.1]]-[HW.VisionHW.horShift, 0, HW.VisionHW.horShift, 0];
+         
+     HW.VisionHW.rectFixVL = [HW.VisionHW.CenterCoordinatesL-HW.VisionHW.Pix2Deg*[-0.3,1.1], HW.VisionHW.CenterCoordinatesL+HW.VisionHW.Pix2Deg*[0.7,3.1]]+[HW.VisionHW.horShift, 0, HW.VisionHW.horShift, 0];%fixation cross thickness and size in deg
+     HW.VisionHW.rectFixVR = [HW.VisionHW.CenterCoordinatesR-HW.VisionHW.Pix2Deg*[-0.3,1.1], HW.VisionHW.CenterCoordinatesR+HW.VisionHW.Pix2Deg*[0.7,3.1]]-[HW.VisionHW.horShift, 0, HW.VisionHW.horShift, 0];
+     HW.VisionHW.rectFixHL = [HW.VisionHW.CenterCoordinatesL-HW.VisionHW.Pix2Deg*[0.1,-0.3], HW.VisionHW.CenterCoordinatesL+HW.VisionHW.Pix2Deg*[1.1,1.7]]+[HW.VisionHW.horShift, 0, HW.VisionHW.horShift, 0];
+     HW.VisionHW.rectFixHR = [HW.VisionHW.CenterCoordinatesR-HW.VisionHW.Pix2Deg*[0.1,-0.3], HW.VisionHW.CenterCoordinatesR+HW.VisionHW.Pix2Deg*[1.1,1.7]]-[HW.VisionHW.horShift, 0, HW.VisionHW.horShift, 0];
+%     HW.VisionHW.ET2ScreenMatrix_URL = 'C:\Code\baphy\Hardware\';  % address of the adimensional cell (length 2) that gives CCD coordinates for every pixel of the screen in x and y
 %     HW.VisionHW = load(HW.VisionHW.ET2ScreenMatrix_URL);
     
     %% COMMUNICATE WITH MANTA
