@@ -16,7 +16,7 @@ end
 Names = get(o,'Names');
 % generate the tone
 timesamples = (1 : Duration*SamplingRate) / SamplingRate;
-w = chirp(timesamples,StartFrequency,timesamples(end),EndFrequency);
+w = chirp(timesamples,StartFrequency,timesamples(end),EndFrequency,'logarithmic');
 % 10ms ramp at onset:
 w = w(:);
 ramp = hanning(round(.01 * SamplingRate*2));
