@@ -54,9 +54,9 @@ end
 % IF DB PATH STILL NOT SET, TAKE SOME DEFAULTS
 if isempty(P.DBPath)
   switch computer
-    case {'PCWIN','PCWIN64'}; P.DBPath = ['M:\daq\'];
-    case {'MACI','MACI64'};     P.DBPath = ['/auto/data/daq/'];
-    otherwise                         P.DBPath = ['/auto/data/daq/'];
+    case {'PCWIN','PCWIN64'}; P.DBPath = ['M:\'];
+    case {'MACI','MACI64'};     P.DBPath = ['/auto/data/'];
+    otherwise                         P.DBPath = ['/auto/data/'];
   end
 end
 
