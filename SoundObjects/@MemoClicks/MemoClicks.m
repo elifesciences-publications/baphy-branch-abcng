@@ -42,7 +42,7 @@ switch nargin
     o.TorcDuration              = [0.5];
     o.FrequencyRange         = 'H:250-8000 Hz';
     o.TorcRates                  = '4:4:48';
-    o.IntroduceTORC           = 'yes';
+    o.IntroduceTORC           = 'no';
     
     % Stim conditions
     o.MaxIndex                  = 1;  % no. of conditions

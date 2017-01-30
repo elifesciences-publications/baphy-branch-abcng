@@ -1,4 +1,4 @@
-function [x,sP] = genmemoclicks(sP,sigint);
+function [x,sP] = genmemoclicks(sP,sigint)
 % 14/05-T/Y: We commented all the parts that regenerated seeds
 % 15.02.15 - added sP.clicktimes to get time of individual clicks in a sequence. ST
 

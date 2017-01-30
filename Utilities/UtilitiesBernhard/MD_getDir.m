@@ -56,7 +56,7 @@ if isempty(P.DBPath)
   switch computer
     case {'PCWIN','PCWIN64'}; P.DBPath = ['M:\daq\'];
     case {'MACI','MACI64'};     P.DBPath = ['/auto/data/daq/'];
-    otherwise                         P.DBPath = ['/auto/data/daq/'];
+    otherwise                         P.DBPath = ['/auto/data/'];
   end
 end
 

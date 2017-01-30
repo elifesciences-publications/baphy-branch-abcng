@@ -1,5 +1,5 @@
 function [w, ev,o] = waveform (o,index,IsRef,Mode,TrialNum)
-%  14/05-TP/YB
+% 14/05-TP/YB
 % index is the Nb of CT
 % function w=waveform(t);
 % this function is the waveform generator for objectMemoClicks
@@ -95,7 +95,8 @@ for j = (RefNow+1) : (RefNow+index)
   else
     sP.seed = Key*(RefNow+j);
   end
-  
+  disp([sP.stimtype sP.seed RefNow]);
+      
   Seed = get(o,'Seeds');
   o      = set(o,'Seeds',[Seed sP.seed]);
   
