@@ -111,7 +111,7 @@ switch get(SO,'descriptor')
     if isnan(cP.DiscriminationRate) cP.DiscriminationRate = 0; end
     
     %% Not yet done; future dprime
-RespWinDur = get(O,'ResponseWindow');
+    RespWinDur = get(O,'ResponseWindow');
     EARLYlst = strcmp('EARLY' , {AllPerf.Outcome});
     HITlst = strcmp('HIT' , {AllPerf.Outcome});
     SNOOZElst = strcmp('SNOOZE' , {AllPerf.Outcome});
@@ -134,7 +134,8 @@ RespWinDur = get(O,'ResponseWindow');
         RefEvNoteInd = find(not(cellfun(@isempty,cellfun(@(x)strfind(x,'ReferenceSequence'),{StimEvents.Note},'UniformOutput',0))));
         TarEvNoteInd = find(not(cellfun(@isempty,cellfun(@(x)strfind(x,'TargetSequence'),{StimEvents.Note},'UniformOutput',0))));
         ThreeNoteDuration = (get(TH,'ToneDur')+get(TH,'ToneGap'))*3;
-        RefEvNoteInd = [RefEvNoteInd TarEvNoteInd];
+%         RefEvNoteInd = [RefEvNoteInd TarEvNoteInd];
+        RefEvNoteInd = [RefEvNoteInd];
         % Lick timings
         LD = find(LickData(:,cP.LickSensorInd));
         LD = LD/HW.params.fsAI;
@@ -147,9 +148,11 @@ RespWinDur = get(O,'ResponseWindow');
           NumRef = find(RefEvNoteInd==RefEvNoteNum);
           cc = cc+1;
         end
-%         if isempty(LT)
-%           [~,LT] = min(abs(LD-(RefSliceCounter*RefSliceDuration)-[StimEvents(RefEvNoteNum).StartTime+ThreeNoteDuration]));
-%         end
+        if isempty(LT)
+          LD = nan; LT = 1;
+        elseif isempty(LT)     % handle case where lick is read during the next tone sequence
+          [~,LT] = min(abs(LD-(RefSliceCounter*RefSliceDuration)-[StimEvents(RefEvNoteInd).StopTime]));
+        end
         LT = LD(LT(1))-RefSliceCounter*RefSliceDuration-StimEvents(RefEvNoteNum).StartTime-ThreeNoteDuration;
     end
     

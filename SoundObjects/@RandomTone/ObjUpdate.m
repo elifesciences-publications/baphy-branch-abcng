@@ -24,3 +24,8 @@ if isempty(Names)
 end
 o = set(o,'Names',Names);
 o = set(o,'MaxIndex',length(Names));
+
+if strcmpi( get(o,'RandomSequence') , 'yes' )
+  NoT = get(o,'NumberOfTones');
+  o = set(o,'NumberOfTones',ceil(NoT/length(Names))*length(Names));
+end
