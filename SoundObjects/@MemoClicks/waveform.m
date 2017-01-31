@@ -1,5 +1,5 @@
 function [w, ev,o] = waveform (o,index,IsRef,Mode,TrialNum)
-%  14/05-TP/YB
+% 14/05-TP/YB
 % index is the Nb of CT
 % function w=waveform(t);
 % this function is the waveform generator for objectMemoClicks
