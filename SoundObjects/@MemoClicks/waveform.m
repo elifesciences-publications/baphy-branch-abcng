@@ -36,21 +36,21 @@ sP.clicktimes = get(o,'ClickTimes');
 
 %% Create an instance of TORC object:
 
-PutTORC               = get(o,'IntroduceTORC');
+PutTORC = strcmpi(get(o,'IntroduceTORC'),'yes');
 
 if PutTORC
-  TorcDur             = get(o,'TorcDuration');
-  TorcFreq            = get(o,'FrequencyRange');
-  TorcRates           = get(o,'TorcRates');
-  TORCPreStimSilence  = 0;
-  TORCPostStimSilence = 0;
-  TorcObj             = Torc(fs,0, ...                    % No Loudness
-    TORCPreStimSilence,TORCPostStimSilence,TorcDur, TorcFreq, TorcRates);
+    TorcDur = get(o,'TorcDuration');
+    TorcFreq = get(o,'FrequencyRange');
+    TorcRates = get(o,'TorcRates');
+    TORCPreStimSilence = 0;
+    TORCPostStimSilence = 0;
+    TorcObj = Torc(fs,0, ...                    % No Loudness
+        TORCPreStimSilence,TORCPostStimSilence,TorcDur, TorcFreq, TorcRates);
 end
 
 %% RANDOM NUMBER GENERATOR
 
-Key      = get(o,'Key');
+Key      = get(o,'Key')
 TrialKey = RandStream('mrg32k3a','Seed',Key);
 PastRef  = get(o,'PastRef');
 sP.seed  = Key;
@@ -59,15 +59,15 @@ sP.seed  = Key;
 % PastRef STORES THE PREVIOUS INDEX
 
 if isempty(PastRef)  % First trial
-  RefNow = 0;
-  o      = set(o,'PastRef',[PastRef index]);
+    RefNow = 0;
+    o      = set(o,'PastRef',[PastRef index]);
 elseif length(PastRef) < TrialNum   % during the experiment, only this condition should be true
-  RefNow = sum(PastRef);
-  o      = set(o,'PastRef',[PastRef index]);
+    RefNow = sum(PastRef);
+    o      = set(o,'PastRef',[PastRef index]);
 elseif length(PastRef) >= TrialNum && index == PastRef(TrialNum)  % When you load a SO from a previous experiment
-  RefNow = sum(PastRef(1:TrialNum)) - PastRef(TrialNum);
+    RefNow = sum(PastRef(1:TrialNum)) - PastRef(TrialNum);
 elseif length(PastRef) > TrialNum && index ~= PastRef(TrialNum)
-  error('Valeur index attendue: %d', PastRef(TrialNum));
+    error('Valeur index attendue: %d', PastRef(TrialNum));
 end
 
 %% Sequences of 0 1 2 (stimtype)
@@ -75,7 +75,7 @@ end
 RandSequence = [ones(1,floor(RateRC)) 2*ones(1,floor(RateRefRC)) zeros(1,floor((100-RateRC - RateRefRC)))];
 RandPick     = [];
 for i = 1:4
-  RandPick = [RandPick TrialKey.randperm(100)];
+    RandPick = [RandPick TrialKey.randperm(100)];
 end
 
 gapSeq = zeros(round(SeqGap*fs),1);
@@ -85,51 +85,52 @@ w      = [w ; prestim(:)];
 %% GENERATE CLICK TRAINS
 
 for j = (RefNow+1) : (RefNow+index)
-  
-  sP.stimtype  = RandSequence(RandPick(j)); % stimulus type: 0 is C, 1 is RC, 2 is RefRC
-  StimulusType = get(o,'Stimulus');
-  o            = set(o,'Stimulus',[StimulusType sP.stimtype]);
-  
-  if sP.stimtype == 2
-    sP.seed = Key;
-  else
-    sP.seed = Key*(RefNow+j);
-  end
-  
-  Seed = get(o,'Seeds');
-  o      = set(o,'Seeds',[Seed sP.seed]);
-  
-  ReSeed = get(o,'ReSeed');
-  o      = set(o,'ReSeed',ReSeed);
-  
-  [wSeq, sP] = genmemoclicks(sP);
-  ClickTimes = get(o,'ClickTimes');
-  o               = set(o,'ClickTimes',[ClickTimes sP.clicktimes]);
-  
-  MSeq       = maxLocalStd(wSeq(:),fs,length(wSeq(:))/fs);
-  w          = [w ; wSeq(:)/MSeq ; gapSeq(:)];
-  
-  ev = AddEvent(ev,  ['ClickSequence',  num2str(TrialNum),  'Type: ' num2str(sP.stimtype) '; Seed: ' num2str(sP.seed)],  [ ] , ev(end).StopTime,  ev(end).StopTime + length([wSeq(:) ; gapSeq(:)])/fs );
-  
-  
+    
+    sP.stimtype  = RandSequence(RandPick(j)); % stimulus type: 0 is C, 1 is RC, 2 is RefRC
+    StimulusType = get(o,'Stimulus');
+    o = set(o,'Stimulus',[StimulusType sP.stimtype]);
+    
+    if sP.stimtype == 2
+        sP.seed = Key;
+    else
+        sP.seed = Key*(RefNow+j);
+    end
+    
+    Seed = get(o,'Seeds');
+    o = set(o,'Seeds',[Seed sP.seed]);
+    
+    %   ReSeed = get(o,'ReSeed');
+    %   o = set(o,'ReSeed',ReSeed);
+    
+    [wSeq, sP] = genmemoclicks(sP);
+    ClickTimes = get(o,'ClickTimes');
+    o = set(o,'ClickTimes',[ClickTimes sP.clicktimes]);
+    
+    MSeq = maxLocalStd(wSeq(:),fs,length(wSeq(:))/fs);
+    w = [w ; wSeq(:)/MSeq ; gapSeq(:)];
+    
+    ev = AddEvent(ev,  ['ClickSequence',  num2str(TrialNum),  'Type: ' num2str(sP.stimtype) '; Seed: ' num2str(sP.seed)],  [ ] , ev(end).StopTime,  ev(end).StopTime + length([wSeq(:) ; gapSeq(:)])/fs );
+    
 end
 
 %% END WITH TORC
 
 TorcSequence = [];
 if PutTORC
-  [wTarg, eTorc] = waveform(TorcObj, 1);    % so far, only 1 TORC pattern
-  TorcSequence   =  [TorcSequence; wTarg(:); gapSeq(:)];
-  MSeq           = maxLocalStd(TorcSequence(:),sP.fs,length(TorcSequence(:))/fs);
-  TorcSequence   = [TorcSequence(:)/MSeq ; gapSeq(:)];
-  w              = [w ; TorcSequence];
+    [wTarg, eTorc] = waveform(TorcObj, 1);    % so far, only 1 TORC pattern
+    TorcSequence =  [TorcSequence; wTarg(:); gapSeq(:)];
+    MSeq = maxLocalStd(TorcSequence(:),sP.fs,length(TorcSequence(:))/fs);
+    TorcSequence = [TorcSequence(:)/MSeq ; gapSeq(:)];
+    w = [w ; TorcSequence];
+    ev = AddEvent(ev, ['TorcSequence ' ,num2str(TrialNum) ],[],...
+        ev(end).StopTime, ev(end).StopTime + length(TorcSequence(:))/fs );
+else
+    global LoudnessAdjusted; LoudnessAdjusted = 1;
+    w = w*50/max(w);
 end
-
-ev               = AddEvent(ev, ['TorcSequence ' ,num2str(TrialNum) ],[],...
-  ev(end).StopTime, ev(end).StopTime + length(TorcSequence(:))/fs );
-
-w                = [w ; poststim(:)];
-ev               = AddEvent(ev, 'PostSilence', [], ev(end).StopTime, ev(end).StopTime + PostStimSilence);
-
-if exist('Mode','var') && strcmp(Mode,'Simulation'); return; end
-
+    
+    w = [w ; poststim(:)];
+    ev = AddEvent(ev, 'PostSilence', [], ev(end).StopTime, ev(end).StopTime + PostStimSilence);
+    
+    if exist('Mode','var') && strcmp(Mode,'Simulation'); return; end
+    
