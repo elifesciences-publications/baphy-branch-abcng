@@ -25,7 +25,7 @@ switch globalparams.HWSetup
     HW.AO = audioplayer(rand(4000,1), HW.params.fsAO);
     HW.AI = HW.AO;
     HW.DIO.Line.LineName = {'Touch','TouchL','TouchR'};
-  case 1 % ALL RECORDING BOOTHS SHOULD REMAIN IDENTICAL AS LONG AS POSSIBLE
+  case 10 % ALL RECORDING BOOTHS SHOULD REMAIN IDENTICAL AS LONG AS POSSIBLE
     SetupNames = {'SB1'};
     HW.TwoSpeakers = 1;
     HW.TwoAFCsetup = 1;  % Indicates there are 2 spouts (not necessarly 2 speakers)
@@ -61,8 +61,8 @@ switch globalparams.HWSetup
     if Physiology  [HW,globalparams] = IOConnectWithManta(HW,globalparams); end
     
     
-  case {2,3,5} % ALL RECORDING BOOTHS SHOULD REMAIN IDENTICAL AS LONG AS POSSIBLE
-    SetupNames = {'','SB2','LB1',[],'SB2Earphones'};
+  case {1,2,3,5} % ALL RECORDING BOOTHS SHOULD REMAIN IDENTICAL AS LONG AS POSSIBLE
+    SetupNames = {'SB1','SB2','LB1',[],'SB2Earphones'};
     globalparams.HWSetupName = SetupNames{globalparams.HWSetup};
     
     DAQID = 'D0'; % NI BOARD ID WHICH CONTROLS STIMULUS & BEHAVIOR
@@ -90,7 +90,7 @@ switch globalparams.HWSetup
     
     %% SETUP SPEAKER CALIBRATION    
     switch globalparams.HWSetup
-      case {3,5}
+      case {1,3,5}
         HW.Calibration.Speaker = ['SHIE800',globalparams.HWSetupName];
       case 2
 %         HW=niCreateAO(HW,DAQID,'ao1','SoundOut,OptTrig',['/',DAQID,'/PFI1']);
