@@ -27,6 +27,7 @@ function [LickEvents, exptparams] = BehaviorControl(o, HW, StimEvents, ...
 RefResponseWin = [];
 TarResponseWin = [];
 TarEarlyWin    = [];
+RefEarlyWin    = [];
 RefLightWin = [];
 TarLightWin = [];
 NumRef = 0;
@@ -35,6 +36,15 @@ TarFlag=[];
 FalseAlarm = 0;
 StopTargetFA = get(o,'StopTargetFA');
 RewardAmount = get(o,'RewardAmount');
+EarlyWindow = get(o,'EarlyWindow');
+% if strcmpi(class(RH),'TorcToneDiscrim')
+%   % for this paradigm (ONLY WITH MAXREF=1), EarLyWindow specifies when
+%   %within the Tone the EarlyWindow stops
+%   EarlyWindow = EarlyWindow + get(StimEvents(end-2).StartTime);
+% end
+AutomaticReward = get(o,'AutomaticReward');
+RH = get(exptparams.TrialObject,'ReferenceHandle'); TH = get(exptparams.TrialObject,'TargetHandle');
+FirstRef = 1;
 LickEvents = [];
 tardur=0;   %added by py @ 9/6/2012
 SoundStopped = 0;
@@ -48,29 +58,45 @@ if ~isempty(index)
     tardur = StimEvents(index(end)).StopTime-StimEvents(index(1)).StartTime; else
     tardur = StimEvents(StimIndex(end)).StopTime-StimEvents(StimIndex(end)).StartTime;   %refdur
 end
-
-for cnt1 = 1:length(StimEvents);
-    [Type, StimName, StimRefOrTar] = ParseStimEvent (StimEvents(cnt1));
-    if strcmpi(Type,'Stim') %&& ~isempty(strfind(StimName,'$'))  % 15/06: YB (condition never filled in for TORC/Tone at least)
-        if ~isempty(RefResponseWin)  % the response window should not go to the next sound!
-            RefResponseWin(end) = min(RefResponseWin(end), StimEvents(cnt1).StartTime);
-        end
-        if strcmpi(StimRefOrTar,'Reference')
-            RefResponseWin = [RefResponseWin StimEvents(cnt1).StartTime + get(o,'EarlyWindow') ...
-                StimEvents(cnt1).StartTime + get(o,'ResponseWindow') + get(o,'EarlyWindow')];
-            NumRef = NumRef + 1;
-            RefLightWin = [RefLightWin StimEvents(cnt1).StartTime StimEvents(cnt1).StartTime+tardur];
-        else
-            TarResponseWin = [TarResponseWin StimEvents(cnt1).StartTime + get(o,'EarlyWindow') ...
-                StimEvents(cnt1).StartTime + get(o,'ResponseWindow') + get(o,'EarlyWindow')];
-            TarEarlyWin = [TarEarlyWin StimEvents(cnt1).StartTime ...
-                StimEvents(cnt1).StartTime + get(o,'EarlyWindow')];
-            TarLightWin = [TarLightWin StimEvents(cnt1).StartTime StimEvents(cnt1).StartTime+tardur];
-        end
+ 
+for cnt1 = 1:length(StimEvents)
+  [Type, StimName, StimRefOrTar] = ParseStimEvent (StimEvents(cnt1));
+  if strcmpi(Type,'Stim') %&& ~isempty(strfind(StimName,'$'))  % 15/06: YB (condition never filled in for TORC/Tone at least)
+    
+    if ~isempty(RefResponseWin) %&& ~strcmpi(class(RH),'TorcToneDiscrim') % the response window should not go to the next sound!
+      RefResponseWin(end) = min(RefResponseWin(end), StimEvents(cnt1).StartTime);
+%     elseif strcmpi(class(RH),'TorcToneDiscrim') && ...
+%         ( (get(o,'ResponseWindow') + EarlyWindow) > get(RH,'PreStimSilence')+get(RH,'TorcDuration')+max(get(RH,'TorcToneGap'))+get(RH,'ToneDuration')+get(RH,'PostStimSilence') )
+%       error('Response window too long: overlaps next sound')
     end
-end 
+    
+    if strcmpi(StimRefOrTar,'Reference')
+      if ~strcmpi(class(RH),'TorcToneDiscrim') || ( strcmpi(class(RH),'TorcToneDiscrim') && isempty(strfind(upper(StimName),'TORC')) )
+        RefResponseWin = [RefResponseWin StimEvents(cnt1).StartTime + EarlyWindow ...
+          StimEvents(cnt1).StartTime + EarlyWindow + get(o,'ResponseWindow')];
+        NumRef = NumRef + 1;
+        RefLightWin = [RefLightWin StimEvents(cnt1).StartTime StimEvents(cnt1).StartTime+tardur];
+        RefEarlyWin = [RefEarlyWin StimEvents(cnt1).StartTime ...
+          StimEvents(cnt1).StartTime + EarlyWindow];
+%         FirstRef = 0;
+%       else
+%         FirstRef = 1;
+      end
+    elseif strcmpi(StimRefOrTar,'Target')
+      if ~strcmpi(class(TH),'TorcToneDiscrim') || ( strcmpi(class(TH),'TorcToneDiscrim') && isempty(strfind(upper(StimName),'TORC')) )
+        TarResponseWin = [TarResponseWin StimEvents(cnt1).StartTime + EarlyWindow ...
+          StimEvents(cnt1).StartTime + EarlyWindow + get(o,'ResponseWindow')];
+        TarEarlyWin = [TarEarlyWin StimEvents(cnt1).StartTime ...
+          StimEvents(cnt1).StartTime + EarlyWindow];
+        TarLightWin = [TarLightWin StimEvents(cnt1).StartTime StimEvents(cnt1).StartTime+tardur];
+      end
+    end
+    
+  end
+end
 
 CurrentTime = IOGetTimeStamp(HW);
+[LightState, ev] = IOLightSwitch(HW,1,0.0,[],0,0,'LightR');
 % we monitor the lick until the end plus response time and postargetlick
 LastLick = 0;
 TimeOutFlag=1;
@@ -78,13 +104,24 @@ lightonfreq = get(o,'LightOnFreq');
 tarcnt = 1;
 refcnt = 1;
 fprintf(['\nRunning Trial [ <=',n2s(exptparams.LogDuration),'s -- ' num2str(NumRef) 'ref & ' num2str(~strcmpi(StimRefOrTar,'Reference')) 'tar] ... ']);
-while CurrentTime < exptparams.LogDuration
+exptparams.LogDuration
+ExtraDuration = str2num(get(o,'ExtraDuration'));
+Events = [];
+
+while CurrentTime < exptparams.LogDuration % BE removed +0.05 here (which screws up acquisition termination)
+    % added by YB and CB 01/12/2016
+    % send trig every second
+    if (mod(CurrentTime,1) < 0.005) && (LightState == 0)
+      [LightState, ev] = IOLightSwitch(HW,1,0.0,[],0,0,'LightR');
+    elseif LightState == 1
+      [LightState, ev] = IOLightSwitch(HW,0,0.0,[],0,0,'LightR');
+    end
+    
     ThisLick = IOLickRead(HW);
     Lick = ThisLick && ~LastLick;
     LastLick = ThisLick;
     if ~isempty(RefResponseWin) && CurrentTime>(RefResponseWin(end)-0.2)
-        % this is to fix the problem of stopping in the begining of the
-        % target
+        % this is to fix the problem of stopping in the begining of the target
         StopFlag = 1;
     else
         StopFlag = 0;
@@ -108,6 +145,7 @@ while CurrentTime < exptparams.LogDuration
         if  ~(lightonfreq==0) 
             IOLightSwitch(HW,0);
         end
+        EarlyPos = length(find(RefEarlyWin<CurrentTime)); % not used so far since early exists only for tar
     else % if we are in target part
         StimPos = length(find(TarResponseWin<CurrentTime));
         EarlyPos = length(find(TarEarlyWin<CurrentTime));
@@ -136,7 +174,7 @@ while CurrentTime < exptparams.LogDuration
 %         while(IOGetTimeStamp(HW)<exptparams.LogDuration), end;
 %         break;
     end
-    if (Lick) && Ref && mod(StimPos,2) && ~isequal(RefFlag,StimPos)
+    if (Lick) && Ref && mod(StimPos,2) && ~isequal(RefFlag,StimPos) %% for including licks in the ref early window:% & (Ref && mod(EarlyPos,2))
         % RefFlag: we want to add to the FalseAlarm only once for each
         % reference.
         % if she licks in reference response window, add to the false alarm
@@ -153,11 +191,11 @@ while CurrentTime < exptparams.LogDuration
         RefFlag = StimPos;
         FalseAlarm = FalseAlarm + 1/NumRef;
     end
-    if (Lick) && ~Ref && mod(EarlyPos,2)
+    if (Lick) && (~Ref && mod(EarlyPos,2))
         % if she licks in early window, terminate the trial immediately, and
         % give her timeout.
-        % ev = IOStopSound(HW); SoundStopped = 1;
-        % LickEvents = AddEvent(LickEvents, ev, TrialIndex);
+        ev = IOStopSound(HW); SoundStopped = 1;
+        LickEvents = AddEvent(LickEvents, ev, TrialIndex);
         break;
 %         ThisTime = clock;
 %         while etime(clock,ThisTime) < (get(o,'TimeOut')+exptparams.LogDuration-CurrentTime)
@@ -166,7 +204,7 @@ while CurrentTime < exptparams.LogDuration
 %         while(IOGetTimeStamp(HW)<exptparams.LogDuration), end;
 %         break;
     end
-    if (Lick) && mod(StimPos,2) && ~isequal(TarFlag,StimPos) && ~Ref
+    if ((Lick) || AutomaticReward) && mod(StimPos,2) && ~isequal(TarFlag,StimPos) && ~Ref
         % if she licks in target response window
         TimeOutFlag = 0;
         if StopTargetFA<1
@@ -188,20 +226,49 @@ while CurrentTime < exptparams.LogDuration
                 [ll,ev] = IOLightSwitch (HW, 1, get(o,'PumpDuration'));
                 LickEvents = AddEvent(LickEvents, ev, TrialIndex);
             end
-            fprintf(['\t Lick on Target detected @ ',num2str(CurrentTime-RefResponseWin(end)),'s ... ']);
+            if ~isempty(RefResponseWin) 
+              fprintf(['\t Lick on Target detected @ ',num2str(CurrentTime-RefResponseWin(end)),'s ... ']);
+            else
+              fprintf(['\t Lick on Target detected @ ',num2str(CurrentTime),'s ... ']);
+            end
         end
         TarFlag = StimPos;
     end
-    CurrentTime = IOGetTimeStamp(HW);
+    
+    %CurrentTime = IOGetTimeStamp(HW);
+    tmp = IOGetTimeStamp(HW);
+    
+    % leave it here in case something goes wrong
+    if tmp > (CurrentTime+0.1)
+      disp('***')
+      disp('Problem with trig interval.')
+      disp('***')
+    end
+    CurrentTime = tmp;
+    
 end
 if ~SoundStopped
   ev = IOStopSound(HW);
 end
+
+% added by YB and CB 12/12/2016
+if ExtraDuration~=0
+  Events = AddEvent(Events, ev, TrialIndex);
+  while CurrentTime < (exptparams.LogDuration+ExtraDuration)
+    if (mod(CurrentTime,1) < 0.005) && ( (exptparams.LogDuration+ExtraDuration-3)>CurrentTime ) && (LightState == 0)
+      [LightState, ev] = IOLightSwitch(HW,1,0.0,[],0,0,'LightR');
+    elseif LightState == 1
+      [LightState, ev] = IOLightSwitch(HW,0,0.0,[],0,0,'LightR');
+    end
+    CurrentTime = IOGetTimeStamp(HW);
+  end
+end
+
 if TimeOutFlag>0
     ThisTime = clock;
     TimeOut = ifstr2num(get(o,'TimeOut'));
-    TimeOut = TimeOut * (1+2*FalseAlarm);
-    while etime(clock,ThisTime) < (TimeOut+exptparams.LogDuration-CurrentTime)
+%     TimeOut = TimeOut * (1+2*FalseAlarm);  % 16/10-YB
+    while etime(clock,ThisTime) < (TimeOut+exptparams.LogDuration+ExtraDuration-CurrentTime)
         drawnow;
     end
 end

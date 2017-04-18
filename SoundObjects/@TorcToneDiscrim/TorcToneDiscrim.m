@@ -8,11 +8,12 @@ function o = TorcToneDiscrim (varargin)
 switch nargin
 case 0
     % if no input arguments, create a default object
-    s = SoundObject ('TorcToneDiscrim', 40000, 0, 0.4, 0.8, {}, 1, ...
+    s = SoundObject ('TorcToneDiscrim', 100000, 0, 0.4, 0.8, {}, 1, ...
         {'TorcRates','popupmenu','4:4:24|4:4:48|8:8:48|8:8:96',...
         'TorcFreqRange','popupmenu','L:125-4000 Hz|H:250-8000 Hz|V:500-16000 Hz',...
         'TorcDuration','edit',3,'ToneFreqs','edit',1000,'ToneDuration','edit',1,...
-        'TorcToneGap','edit',0,'ToneGap','edit',0,'TorcToneDB','edit',0});
+        'TorcToneGap','edit',0,'ToneGap','edit',0,'TorcToneDB','edit',0,...
+        'RandomInterval','popupmenu','yes|no'});
     % generate the torc fields first::
     o.TorcDuration = 3;
     o.TorcFreqRange = 'L:125-4000';
@@ -37,6 +38,8 @@ case 0
     o.TorcToneGap = 0;
     o.ToneGap=0;
     o.TorcToneDB = 0;
+    o.RandomInterval = 'no';
+    o.InterToneSilenceList = 1:3;
     o = class(o,'TorcToneDiscrim',s);
     o = ObjUpdate (o);
 case 1

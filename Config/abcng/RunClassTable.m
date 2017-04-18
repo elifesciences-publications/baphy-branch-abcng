@@ -106,8 +106,6 @@ elseif isempty(tar),
       runclass = 'WHN';
     case 'TEXTUREMORPHING';
       runclass = 'TMG';
-    case 'TEXTUREMORPHING';
-      runclass = 'TMG';
     case 'MEMOCLICKS';
       runclass = 'MMC';
     case 'MEMOCLOUDS'
@@ -118,6 +116,8 @@ elseif isempty(tar),
       runclass = 'MUS';
     case 'FROZENNOISE'
       runclass = 'FNS';
+    case 'MEMONOISE'
+      runclass = 'MMN';
 otherwise
       runclass = '';
   end

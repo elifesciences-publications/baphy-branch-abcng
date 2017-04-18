@@ -157,7 +157,9 @@ end
 %disp(['outWFM:' num2str(max(abs(TrialSound)))])
 
 loudness = max(Refloudness,Tarloudness);
-if loudness(min(RefTrialIndex(1),length(loudness)))>0
-    o = set(o,'OveralldB', loudness(min(RefTrialIndex(1),length(loudness))));    
+if ~isempty(RefTrialIndex) %CB 27/10/16 quick hack when trial without ref
+  if loudness(min(RefTrialIndex(1),length(loudness)))>0
+    o = set(o,'OveralldB', loudness(min(RefTrialIndex(1),length(loudness))));
+  end
 end
 o = set(o, 'SamplingRate', TrialSamplingRate);
