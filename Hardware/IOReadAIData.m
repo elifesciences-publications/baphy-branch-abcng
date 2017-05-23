@@ -28,6 +28,7 @@ if strcmpi(IODriver(HW),'NIDAQMX'),
   touchchannels = find(~cellfun(@isempty,strfind(names,'Touch')));
   if ~isempty(touchchannels) & size(d,2) >= max(touchchannels)
       d(:,touchchannels) = (d(:,touchchannels)>0.75); % threshold analog signal
+      % CB 06 Oct. - want the whole signal for heartbeat and respiration
       if isfield(HW.params,'LickSign') && HW.params.LickSign == -1 % invert the signal
           d(:,touchchannels)=~d(:,touchchannels);
       end

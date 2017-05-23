@@ -242,6 +242,8 @@ switch Outcome
     Events = AddEvent(Events, LightEvents, TrialIndex);
   
   case 'HIT'; % STOP SOUND, PROVIDE REWARD AT CORRECT SPOUT
+    StopEvent = IOStopSound(HW);
+    Events = AddEvent(Events, StopEvent, TrialIndex);
     % 14/02/20-YB: Patched to change LED/pump structure + Duration2Play (cf. lab notebook)
     Duration2Play = 0.5; LEDposition = {'left'};
     % Stop Dbis sound when <Duration2Play> is elapsed
@@ -291,9 +293,6 @@ switch Outcome
     PumpEvent = IOControlPump(HW,'stop',0,PumpName);
     Events = AddEvent(Events, PumpEvent, TrialIndex);
     IOControlPump(HW,'stop',0,'Pump');
-    
-    StopEvent = IOStopSound(HW);
-    Events = AddEvent(Events, StopEvent, TrialIndex);
     
     % Turn LED OFF
     [State,LightEvent] = IOLightSwitch(HW,0,0,[],[],[],LightNames{1});

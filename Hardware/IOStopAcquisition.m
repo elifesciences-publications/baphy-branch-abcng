@@ -23,7 +23,7 @@ if strcmpi(IODriver(HW),'NIDAQMX'),
     %if isrunning(HW.AO),
     stop(HW.AO);
     %end
-    stop(HW.AI);
+    stop(HW.AI(1));
   else
     
     % Configure Triggers
@@ -103,7 +103,7 @@ switch HW.params.HWSetup
         
         % always trigger AI
         % SVD fixed absurd bug where sign was swapped 2010-12-16
-        if any(strcmpi(get(HW.AI,'TriggerCondition'),{'NegativeEdge','None'}))
+        if any(strcmpi(get(HW.AI(1),'TriggerCondition'),{'NegativeEdge','None'}))
             idxout=1;
         else
             idxout=0;
@@ -131,9 +131,9 @@ switch HW.params.HWSetup
         if strcmp(A0TriggerType,'HwDigital')
             stop(HW.AO);
         end
-        stop(HW.AI);
+        stop(HW.AI(1));
                 
-        ev.StartTime=get(HW.AI,'SamplesAcquired')/HW.params.fsAI;
+        ev.StartTime=get(HW.AI(1),'SamplesAcquired')/HW.params.fsAI;
         ev.StopTime=ev.StartTime;
 end
 

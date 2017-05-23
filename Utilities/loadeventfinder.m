@@ -256,7 +256,7 @@ else
     tgoodidx=zeros(size(tags));
     for ii=1:length(tags),
         b=strsep(tags{ii},',',1);
-        if isempty(findstr(b{2},'StimSilence')),
+        if length(b)>2 && isempty(findstr(b{2},'StimSilence')),
             tgoodidx(ii)=1;
         end
     end

@@ -580,6 +580,41 @@ for i=1:NVec
         QG.(FID).PreSteps+1+QG.(FID).ForwardSteps),1);
     Strengths(i)=std(Means(i,:))*length(Inds{i});
 end;
+
+CellLen = cellfun(@length,Inds);
+TooSmallCluster = find(CellLen<=10);
+if length(TooSmallCluster)>1    
+    disp(['Merged ' num2str(length(TooSmallCluster)) ' clusters too small'])
+    for CluNum = 2:length(TooSmallCluster)
+        Inds{TooSmallCluster(1)} = [Inds{TooSmallCluster(1)};Inds{TooSmallCluster(CluNum)}];
+        WInds{TooSmallCluster(1)} = [WInds{TooSmallCluster(1)};WInds{TooSmallCluster(CluNum)}];
+    end
+    StoreOutlier.Inds = Inds{TooSmallCluster(1)};
+    StoreOutlier.WInds = WInds{TooSmallCluster(1)};
+    TempPCAInd = setdiff(QG.(FID).PCAInd,StoreOutlier.WInds);
+    % RECLUSTERING (faster than clustvec)
+    Distances = pdist(PCProj(:,TempPCAInd)','euclid');
+    BinTree = linkage(Distances,QG.(FID).Linkages{QG.(FID).LinkageInd});
+    ClustVec = cluster(BinTree,'maxclust',NVec-1);
+    
+    Means = zeros(NVec,QG.(FID).ForwardSteps*2+1);
+    Strengths = zeros(NVec,1);
+    for i=1:(NVec-1)
+        Inds{i}=find(ClustVec==i); WInds{i} = TempPCAInd(Inds{i})';
+        Means(i,:)=mean(QG.(FID).Waves(WInds{i},...
+            QG.(FID).PreSteps+1-QG.(FID).ForwardSteps:...
+            QG.(FID).PreSteps+1+QG.(FID).ForwardSteps),1);
+        Strengths(i)=std(Means(i,:))*length(Inds{i});
+    end;
+    i = NVec;
+    Inds{i} = StoreOutlier.Inds;
+    WInds{i} = StoreOutlier.WInds;
+    Means(i,:)=mean(QG.(FID).Waves(WInds{i},...
+        QG.(FID).PreSteps+1-QG.(FID).ForwardSteps:...
+        QG.(FID).PreSteps+1+QG.(FID).ForwardSteps),1);
+    Strengths(i)=std(Means(i,:))*length(Inds{i});
+end
+
 [Strengths,SInd] = sort(Strengths,'descend');
 Inds = Inds(SInd); WInds = WInds(SInd);
 
@@ -1171,7 +1206,7 @@ if NewPlot
         cWaveTime = [-QG.(FID).P.PreDur/U.ms:(1./QG.(FID).P.SR)/U.ms:((size(mWaves,1)-1)/QG.(FID).P.SR)/U.ms-QG.(FID).P.PreDur/U.ms]';
         if ~isempty(Units)
             for i=1:length(Units) % LOOP OVER CELLS IN OTHER RECORDING
-                plot(cAxis,cWaveTime,mWaves(:,i),'k');
+                plot(cAxis,cWaveTime,mWaves(:,Units(i)),'k');  % 17/03-YB: plot(cAxis,cWaveTime,mWaves(:,i),'k','linewidth',5);
                 [MAX,Pos] = max(mWaves(:,i));
                 text(cWaveTime(Pos),double(1.2*MAX),n2s(Units(i)));
             end
