@@ -1,4 +1,4 @@
-function o = PunishTarget (varargin);
+function o = Passive (varargin);
 % Passive behavior control does not do anything
 
 switch nargin
@@ -6,7 +6,18 @@ switch nargin
         % if no input arguments, create a default object
         % this is the constructor:
         o.descriptor = 'Passive';
-        o.UserDefinableFields = {};
+        o.RandomReward = 0;
+        o.RewardAmount = 0.2;
+        o.RewardInterval = 1;                  % in s
+        o.RewardIntervalStd = 50;              % in percent
+        o.RewardIntervalLaw = 'Uniform';       % could be exponentially decaying for flat hazard rate
+        o.ExtraDuration = 0;
+        o.UserDefinableFields = {...
+          'RandomReward','edit',0,...
+          'RewardInterval','edit',1,...
+          'RewardIntervalStd','edit',50,...
+          'RewardAmount','edit',0.2,...
+          'ExtraDuration','edit',0};
         o = class(o,'Passive');
         o = ObjUpdate(o);
     case 1

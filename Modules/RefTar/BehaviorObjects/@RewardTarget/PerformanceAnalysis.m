@@ -21,6 +21,7 @@ global StopExperiment;
 fs = HW.params.fsAI;
 StopTargetFA = get(o,'StopTargetFA');
 %
+RH = get(exptparams.TrialObject,'ReferenceHandle'); TH = get(exptparams.TrialObject,'TargetHandle');
 RefResponseWin = [];
 RefEarlyWin = [];
 TarResponseWin = [];
@@ -35,17 +36,21 @@ for cnt1 = 1:length(StimEvents);
         if ~isempty(RefResponseWin)  % the response window should not go to the next sound!
             RefResponseWin(end) = min(RefResponseWin(end), StimEvents(cnt1).StartTime);
         end
-        if strcmpi(StimRefOrTar,'Reference')
+        if strcmpi(StimRefOrTar,'Reference')          
+          if ~strcmpi(class(RH),'TorcToneDiscrim') || ( strcmpi(class(RH),'TorcToneDiscrim') && isempty(strfind(upper(StimName),'TORC')) )
             RefEarlyWin = [RefEarlyWin StimEvents(cnt1).StartTime ...
-                StimEvents(cnt1).StartTime + get(o,'EarlyWindow')];
+              StimEvents(cnt1).StartTime + get(o,'EarlyWindow')];
             RefResponseWin = [RefResponseWin StimEvents(cnt1).StartTime + get(o,'EarlyWindow') ...
-                StimEvents(cnt1).StartTime + get(o,'ResponseWindow') + get(o,'EarlyWindow')];
+              StimEvents(cnt1).StartTime + get(o,'ResponseWindow') + get(o,'EarlyWindow')];
             NumRef = NumRef + 1;
+          end
         else
+          if ~strcmpi(class(TH),'TorcToneDiscrim') || ( strcmpi(class(TH),'TorcToneDiscrim') && isempty(strfind(upper(StimName),'TORC')) )
             TarResponseWin = [TarResponseWin StimEvents(cnt1).StartTime + get(o,'EarlyWindow') ...
-                StimEvents(cnt1).StartTime + get(o,'ResponseWindow') + get(o,'EarlyWindow')];
+              StimEvents(cnt1).StartTime + get(o,'ResponseWindow') + get(o,'EarlyWindow')];
             TarEarlyWin = [TarEarlyWin StimEvents(cnt1).StartTime ...
-                StimEvents(cnt1).StartTime + get(o,'EarlyWindow')];
+              StimEvents(cnt1).StartTime + get(o,'EarlyWindow')];
+          end
         end
     end
 end% now, RefResponseWin is a vector that has the start and stop point of each
@@ -124,6 +129,8 @@ if NumRef
     perf(cnt2).NumLickedRefTot   = prevNumLickedRefTot+sum(RefFalseAlarm); 
 else
     perf(cnt2).FalseAlarm = NaN;
+    perf(cnt2).NumRefTot   = prevNumRefTot+0; % sum of false alarms divided by num of ref
+    perf(cnt2).NumLickedRefTot   = prevNumLickedRefTot+sum(RefFalseAlarm); 
 end
 if perf(cnt2).NumRefTot==0
   perf(cnt2).FaRate = 0;
