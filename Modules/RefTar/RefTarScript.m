@@ -21,14 +21,7 @@ BehaveObject = exptparams.BehaveObject;
 
 % START PSYTOOLBOX FOR VISUAL EXPERIMENT
 if ~isempty(strfind(class(BehaveObject),'Eye'))
-  AssertOpenGL;
-  Screen('Preference', 'SkipSyncTests', 1);
-  screens = Screen('Screens');
-  if size(screens,2)>1
-    screenNumber = max(screens);
-    [winPtr, winRect] = Screen('OpenWindow', screenNumber, 180);
-  end
-  HW.VisionHW.ScreenID = winPtr;
+  InitializeHW_VisualExperiment;
 end
 
 if strcmpi(exptparams.BehaveObjectClass,'MriPassive') && ...

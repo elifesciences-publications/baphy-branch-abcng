@@ -616,7 +616,7 @@ exptparams.Performance(TrialIndex).DetectType = DetectType;
 
 %% WAIT AFTER RESPONSE TO RECORD POST-DATA
 if ~strcmp(Outcome,'SNOOZE')
-  while CurrentTime < ResponseTime + get(O,'AfterResponseDuration');
+  while CurrentTime < (ResponseTime + get(O,'AfterResponseDuration'));
     CurrentTime = toc+InitialTime; pause(0.05);
   end
 else

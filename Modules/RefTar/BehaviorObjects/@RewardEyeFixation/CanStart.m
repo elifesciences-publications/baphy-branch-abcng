@@ -1,4 +1,4 @@
-function StopExperiment = CanStart (o, HW, StimEvents, globalparams, exptparams, TrialIndex)
+function [StopExperiment, HW] = CanStart (o, HW, StimEvents, globalparams, exptparams, TrialIndex)
 % CanStart for ReferenceEyeFixation
 % We wait until the animal fixates for at least NoResponseTime
 
@@ -67,18 +67,54 @@ AllowedRadius = exptparams.BehaveObject.AllowedRadius;
 %% WAIT FOR LONG ENOUGH FIXATION FOR INITIATING TRIALS
 disp(['Waiting for initial fixation during ' num2str(get(o,'NoResponseTime')) 's']);
 
+%% DISPLAY
+
+        Screen('FillRect', HW.VisionHW.ScreenID, [255 255 255], HW.VisionHW.rectRefrL);
+ %      Screen('FillRect', HW.VisionHW.ScreenID, [255 255 255], HW.VisionHW.rectRefrR);
+       
+switch o.StimType
+    
+        case 'approxRFbar'
+      Screen('FillRect', HW.VisionHW.ScreenID, [255 255 255], HW.VisionHW.rectRefrL);      
+      Screen('FillRect', HW.VisionHW.ScreenID, [0 0 0], []);
+  
+       
+    case 'Training'
 %% DISPLAY FIXATION CROSS
 
-       Screen('FillOval', HW.VisionHW.ScreenID, [255 0 0], HW.VisionHW.CircleRectL);
-       Screen('FillOval', HW.VisionHW.ScreenID, [255 0 0], HW.VisionHW.CircleRectR);
-       Screen('FillOval', HW.VisionHW.ScreenID, 180, HW.VisionHW.CircleRectLin);
-       Screen('FillOval', HW.VisionHW.ScreenID, 180, HW.VisionHW.CircleRectRin)
-             Screen('FillRect', HW.VisionHW.ScreenID, [255 0 0], HW.VisionHW.rectFixVL);
-Screen('FillRect', HW.VisionHW.ScreenID, [255 0 0], HW.VisionHW.rectFixHL);
-Screen('FillRect', HW.VisionHW.ScreenID, [255 0 0], HW.VisionHW.rectFixVR);
-Screen('FillRect', HW.VisionHW.ScreenID, [255 0 0], HW.VisionHW.rectFixHR);
+      Screen('FillOval', HW.VisionHW.ScreenID, [255 0 0 0.1], HW.VisionHW.CircleRectL);
+      Screen('FillOval', HW.VisionHW.ScreenID, [255 0 0 0.1], HW.VisionHW.CircleRectR);
+      Screen('FillOval', HW.VisionHW.ScreenID, 180, HW.VisionHW.CircleRectLin);
+      Screen('FillOval', HW.VisionHW.ScreenID, 180, HW.VisionHW.CircleRectRin);
+      Screen('FillRect', HW.VisionHW.ScreenID, [255 0 0 0.1], HW.VisionHW.rectFixVL);
+Screen('FillRect', HW.VisionHW.ScreenID, [255 0 0 0.1], HW.VisionHW.rectFixHL);
+Screen('FillRect', HW.VisionHW.ScreenID, [255 0 0 0.1], HW.VisionHW.rectFixVR);
+Screen('FillRect', HW.VisionHW.ScreenID, [255 0 0 0.1], HW.VisionHW.rectFixHR);      
+%         Screen('FillRect', HW.VisionHW.ScreenID, [255 0 0 0.1], HW.VisionHW.rectFixV);
+%         Screen('FillRect', HW.VisionHW.ScreenID, [255 0 0 0.1], HW.VisionHW.rectFixH);
+
+    case 'MseqMono'
+%% DISPLAY FIXATION CROSS
+
+%       Screen('FillOval', HW.VisionHW.ScreenID, [255 0 0 0.1], HW.VisionHW.CircleRectL);
+%       Screen('FillOval', HW.VisionHW.ScreenID, [255 0 0 0.1], HW.VisionHW.CircleRectR);
+%       Screen('FillOval', HW.VisionHW.ScreenID, 180, HW.VisionHW.CircleRectLin);
+%       Screen('FillOval', HW.VisionHW.ScreenID, 180, HW.VisionHW.CircleRectRin);
+%       Screen('FillRect', HW.VisionHW.ScreenID, [255 0 0 0.1], HW.VisionHW.rectFixVL);
+% Screen('FillRect', HW.VisionHW.ScreenID, [255 0 0 0.1], HW.VisionHW.rectFixHL);
+% Screen('FillRect', HW.VisionHW.ScreenID, [255 0 0 0.1], HW.VisionHW.rectFixVR);
+% Screen('FillRect', HW.VisionHW.ScreenID, [255 0 0 0.1], HW.VisionHW.rectFixHR);      
+        Screen('FillRect', HW.VisionHW.ScreenID, [255 0 0 0.1], HW.VisionHW.rectFixV);
+        Screen('FillRect', HW.VisionHW.ScreenID, [255 0 0 0.1], HW.VisionHW.rectFixH);
 
 
+
+     case 'HartleyMono'
+             Screen('FillRect', HW.VisionHW.ScreenID, [255 0 0 0.1], HW.VisionHW.rectFixV);
+        Screen('FillRect', HW.VisionHW.ScreenID, [255 0 0 0.1], HW.VisionHW.rectFixH);
+     
+     
+end
 Screen('Flip', HW.VisionHW.ScreenID);
 
 global StopExperiment;

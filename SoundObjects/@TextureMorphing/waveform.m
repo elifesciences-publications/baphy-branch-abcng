@@ -177,6 +177,11 @@ ev = AddEvent(ev,['Change ,' b ',' c],[],ev(end).StopTime,ev(end).StopTime+After
 [a,b,c]  = ParseStimEvent(ev(end),0); 
 ev = AddEvent(ev,['PostStimSilence ,' b ',' c],[],ev(end).StopTime,ev(end).StopTime+PostStimSilence);
 
+% To save data and check post-hoc synthesis
+% fn = dir(['C:\Users\LargeBooth\Desktop\TMGtest\test' num2str(Global_TrialNb) '*']);
+% fc = length(fn)+1;
+% save(['C:\Users\LargeBooth\Desktop\TMGtest\test' num2str(Global_TrialNb) '_' num2str(fc) '.mat'],'ToneMatrix','w');
+
 % OUPUT ON THE FLY STIM. PARAMETERS RANDOMLY BUT DETERMINISTICALLY GENERATED
 if nargout>5
     Parameters.Loudness = PickedUpLoudness;

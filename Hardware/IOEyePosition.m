@@ -19,7 +19,7 @@ end
 
 if strcmpi(IODriver(HW),'NIDAQMX'),
   AInum = find(~cell2mat(cellfun(@isempty,strfind({HW.AI.Names},'OnlineEye'),'UniformOutput',0)));
-  d=niReadAIData(HW.AI(AInum));
+  d = niReadAIData(HW.AI(AInum));
   names=strsep(HW.AI(AInum).Names,',');
   EyeChannels=find(~cell2mat(cellfun(@isempty,strfind(names,'Eye'),'UniformOutput',0)));
   switch options.WhichSamples
