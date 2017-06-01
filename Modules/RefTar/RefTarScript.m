@@ -13,11 +13,14 @@ function varargout = RefTarScript (globalparams, exptparams, HW)
 % BE, modified & polished, 2011/7
 % SVD, added NIDAQMX support 2012/05
 
+
 global StopExperiment; StopExperiment = 0; % Corresponds to User button
 global exptparams_Copy; exptparams_Copy = exptparams; % some code needs exptparams
 global BAPHY_LAB LoudnessAdjusted
 
 BehaveObject = exptparams.BehaveObject;
+% Initialize psychtoolbox for eyetracker JL 17/05/03
+if isfield(HW,'PsychoVisualDisplay') && HW.PsychoVisualDisplay; InitializeHW_VisualExperiment; end
 
 if strcmpi(exptparams.BehaveObjectClass,'MriPassive') && ...
         get(BehaveObject,'DelayAfterScanTTL')==0,
@@ -66,8 +69,7 @@ while ContinueExp == 1
       %% PREPARE TRIAL
       TrialObject = get(exptparams.TrialObject);
       % 2013/12 YB: VISUAL DISPLAY--Back to grey screen on the second monitor if we are in a psychophysics experiment
-      if isfield(TrialObject,'VisualDisplay') && TrialObject.VisualDisplay; 	[VisualDispColor,exptparams] = VisualDisplay(TrialIndex,'GREY',exptparams); end
-        
+      if isfield(TrialObject,'VisualDisplay') && TrialObject.VisualDisplay; 	[exptparams] = VisualDisplayEyeTracking(TrialIndex,'GREY',exptparams); end% VisualDisplayEyeTracking instead of VisualDisplay JL 01/05/17        
       %Create pump control
       if isfield(TrialObject,'PumpProfile')
           PumpProfile = TrialObject.PumpProfile;
@@ -75,6 +77,7 @@ while ContinueExp == 1
           PumpProfile = str2num(get(handles.edit1,'string'));
           exptparams.TrialObject = set(exptparams.TrialObject,'PumpProfile',PumpProfile);
       end
+      
       
       % Yves; 2013/11: I added an input to 'waveform' methods
       if any(strcmp(fieldnames(exptparams.TrialObject),'TrialIndexLst'))
@@ -158,14 +161,17 @@ while ContinueExp == 1
       exptevents = AddMultiEvent(exptevents,{StartEvent,StimEvents,BehaviorEvents,TrialStopEvent},TrialIndex);
       
       % COLLECT ANALOG CHANNELS
-      [Data.Aux, Data.Spike, AINames] = IOReadAIData(HW); RespIndices = [];
+      [Data.Aux, Data.Spike, AINames] = IOReadAIData(HW); RespIndices = []; ScalingF = [];
       
       for i=1:length(AINames)
         Data.(AINames{i}) = Data.Aux(:,i);
-        if strcmpi(AINames{i}(1:min(end,5)),'Touch') RespIndices(end+1) = i; end
-        if strcmpi(AINames{i}(1:min(end,4)),'walk') RespIndices(end+1) = i; end
+        if strcmpi(AINames{i}(1:min(end,5)),'Touch') RespIndices(end+1) = i; ScalingF(end+1) = 1; end
+        if strcmpi(AINames{i}(1:min(end,3)),'Eye') RespIndices(end+1) = i; ScalingF(end+1) = 3260; end
+        if strcmpi(AINames{i}(1:min(end,5)),'Diode') RespIndices(end+1) = i; ScalingF(end+1) = 3260; end
+        if strcmpi(AINames{i}(1:min(end,5)),'Pupil') RespIndices(end+1) = i; ScalingF(end+1) = 3260; end
+        if strcmpi(AINames{i}(1:min(end,4)),'walk') RespIndices(end+1) = i; ScalingF(end+1) = 1; end
       end
-      Data.Responses = Data.Aux(:,RespIndices);
+      Data.Responses = Data.Aux(:,RespIndices).*repmat(ScalingF,size(Data.Aux,1),1);   % 16/02-YB: add scaling factor to eye data to make them integrer and compatible with 'short' saving in evpwrite
       exptparams.RespSensors = AINames(RespIndices);
       Data.Microphone = [];
       

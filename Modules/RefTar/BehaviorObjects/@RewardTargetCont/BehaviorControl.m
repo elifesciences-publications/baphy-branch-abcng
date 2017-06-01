@@ -134,9 +134,9 @@ DetectType = 'ON'; LickOccured = 0;
     end
    
     Events = AddEvent(Events,['LICK,',cLickSensor],TrialIndex,ResponseTime,[]);
-    if ~get(O,'GradualResponse') && ResponseTime >  PreSoundSilence;
+    if ~get(O,'GradualResponse') && ResponseTime >  PreSoundSilence
       break
-    elseif  ~get(O,'GradualResponse') && ResponseTime <= PreSoundSilence;
+    elseif  ~get(O,'GradualResponse') && ResponseTime <= PreSoundSilence
       LickOccured = 0;
     elseif get(O,'GradualResponse') && ResponseTime > (TarWindow(1) + MinimalDelayResponse) && ResponseTime<TarWindow(2)
       break
@@ -210,16 +210,12 @@ Events = AddEvent(Events,['OUTCOME,',Outcome],TrialIndex,ResponseTime,[]);
 if strcmp(Outcome,'HIT'); Outcome2Display = [Outcome ', RT = ' num2str(ResponseTime-TarWindow(1))]; else Outcome2Display = Outcome; end
 fprintf(['\t [ ',Outcome2Display,' ] ... ']);
 
-%% ACTUALIZE VISUAL FEEDBACK FOR THE SUBJECT
-if TrialObject.VisualDisplay
-    [VisualDispColor,exptparams] = VisualDisplay(TrialIndex,Outcome,exptparams);
-end
+
 
 %% TAKE ACTION BASED ON OUTCOME
 switch Outcome
   case 'EARLY'; % STOP SOUND, TIME OUT + LIGHT ON
     StopEvent = IOStopSound(HW);
-    
     if strcmp(get(O,'PunishSound'),'Noise')
       IOStartSound(HW,randn(5000,1)*15); pause(0.25); IOStopSound(HW);
     elseif  strcmp(get(O,'PunishSound'),'Buzz')
@@ -242,6 +238,8 @@ switch Outcome
     Events = AddEvent(Events, LightEvents, TrialIndex);
   
   case 'HIT'; % STOP SOUND, PROVIDE REWARD AT CORRECT SPOUT
+    StopEvent = IOStopSound(HW);
+    Events = AddEvent(Events, StopEvent, TrialIndex);
     % 14/02/20-YB: Patched to change LED/pump structure + Duration2Play (cf. lab notebook)
     Duration2Play = 0.5; LEDposition = {'left'};
     % Stop Dbis sound when <Duration2Play> is elapsed
@@ -292,9 +290,6 @@ switch Outcome
     Events = AddEvent(Events, PumpEvent, TrialIndex);
     IOControlPump(HW,'stop',0,'Pump');
     
-    StopEvent = IOStopSound(HW);
-    Events = AddEvent(Events, StopEvent, TrialIndex);
-    
     % Turn LED OFF
     [State,LightEvent] = IOLightSwitch(HW,0,0,[],[],[],LightNames{1});
     Events = AddEvent([],LightEvent,TrialIndex);
@@ -330,6 +325,12 @@ switch Outcome
     
   otherwise error(['Unknown outcome ''',Outcome,'''!']);
 end
+if TrialObject.VisualDisplay
+    exptparams = VisualDisplayEyeTracking(TrialIndex,Outcome,exptparams);
+%     [VisualDispColor,exptparams] = VisualDisplay(TrialIndex,Outcome,exptparams);
+end
+
+
 fprintf('\n');
 
 if CatchTrial; LickTime = NaN; elseif ~strcmp(Outcome,'SNOOZE'); LickTime = ResponseTime; else LickTime = NaN; end
@@ -390,3 +391,5 @@ if strcmpi(Outcome,'Early');
     Events = AddEvent(Events,TimeOutEvent,cTrial);
   end
 end
+
+%% ACTUALIZE VISUAL FEEDBACK FOR THE SUBJECT
