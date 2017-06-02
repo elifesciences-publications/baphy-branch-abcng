@@ -128,12 +128,12 @@ switch globalparams.HWSetup
     HW=niCreateDO(HW,DAQID,'port0/line0:1','TrigAI,TrigAO','InitState',[0 0]);
     HW=niCreateDO(HW,DAQID,'port0/line2','Light','InitState',0);
     HW=niCreateDO(HW,DAQID,'port1/line3','LightR','InitState',0);
-    HW=niCreateDO(HW,DAQID,'port0/line0:1','TrigAI,TrigAO','InitState',[0 0]);
+    HW=niCreateDO(HW,DAQID,'port0/line4','LightL','InitState',0);
     HW=niCreateDO(HW,DAQID,'port0/line3','Pump','InitState',0);
     HW=niCreateDI(HW,DAQID,'port0/line5','Touch');
     
     %% ANALOG INPUT
-    HW=niCreateAI(HW,DAQID,'ai0','Touch',['/',DAQID,'/PFI0']);
+    HW=niCreateAI(HW,DAQID,'ai0:3','Touch,PupilD,EyeX,EyeY',['/',DAQID,'/PFI0']); % JL added the eye-tracking analog input channels
     
     %% ANALOG OUTPUT
     HW=niCreateAO(HW,DAQID,'ao0:1','SoundOutL,SoundOutR',['/',DAQID,'/PFI1']);
@@ -144,6 +144,7 @@ switch globalparams.HWSetup
     HW.Calibration = IOLoadCalibration(HW.Calibration);
     
     HW.params.DAQSystem = 'none';
+    HW.PsychoVisualDisplay = 1;
     
 end % END SWITCH
 

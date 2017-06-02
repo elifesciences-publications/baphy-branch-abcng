@@ -21,8 +21,10 @@ switch nargin
       'Distri_Morphing_BinNb','edit','[]',...
       'RovingLoudness','popupmenu','no|yes',...
       'AttenuationD0','edit','0',...
-      'ChordDuration','edit','0.03',...
-      'AverageNbTonesChord','edit','2'};  
+      'ChordDuration','edit','0.03',... % Duration of tones
+      'AverageNbTonesChord','edit','2', ... % Density of the spectrum 
+      'ChangeTimeBlocks','edit','[]', ...
+      'BlockOrderCT','edit','[]'};  
   
 %      'D2shape','popupmenu','none|contig_increm|fixed_increm|non_contig_increm',...
 %       'DifficultyLvl_D2','edit','110',...
@@ -39,6 +41,7 @@ switch nargin
     o.FieldNames = Fields(1:3:end-2); 
     o.FieldTypes = Fields(2:3:end-1);
     o.MaxIndex = 0;
+    o.TrialPerBlock = 120;   % multiple of MaxIndex
     o.RunClass = 'TMG'; o.Duration = NaN;
     o.Version = 150523;
 
@@ -47,11 +50,11 @@ switch nargin
     o.FrequencySpace = []; o.XDistri = []; o.F0 = [];
     o.IniSeed = []; o.MorphingDuration = [];
     o.DistributionTypeByInd = []; o.MorphingTypeByInd = []; o.DifficultyLvlByInd = []; o.ReverseByInd = [];
-    o.MorphingNb = []; o.Bins2Change = []; o.ChannelDistancesByMorphing = []; o.ChordDurationByInd = []; o.AverageNbTonesChordByInd = [];
-    o.AllTargetPositions = []; o.CurrentTargetPositions = [];
+    o.MorphingNb = []; o.Bins2Change = []; o.ChannelDistancesByMorphing = []; o.ChordDurationByInd = []; o.AverageNbTonesChordByInd = []; o.ChangeTimeBlocks = [];
+    o.AllTargetPositions = []; o.CurrentTargetPositions = []; o.BlockOrderCT = [];
     
     o.Names = {};
-    o.Ranges = {}; o.VarFieldNames = {};  o.VarFieldInds = []; o.Par = [];    o = class(o,'TextureMorphingPsychophysic',s);
+    o.Ranges = {}; o.VarFieldNames = {};  o.VarFieldInds = []; o.Par = [];    o = class(o,'TextureMorphingPsychophysic',s); 
     o = ObjUpdate(o);
   case 1 % if single argument of class SoundObject, return it
     if isa(varargin{1},'SoundObject')   s = varargin{1};

@@ -128,8 +128,12 @@ for ChangedD_Num = 1:ChangedD_Nb
   end
 end
 
-% CALCULATE CONDITION NB
-MaxIndex = (ReverseNb+1)*sum(DifficultyLvlNb.*MorphingNb.*ChordDurationNb.*AverageNbTonesChordNb);
+% CALCULATE CONDITION NB % JL 01/05/17
+% if ~isempty(o.ChangeTimeBlocks)
+%   MaxIndex = (ReverseNb+1)*sum(DifficultyLvlNb);
+% else
+  MaxIndex = (ReverseNb+1)*sum(DifficultyLvlNb.*MorphingNb.*ChordDurationNb.*AverageNbTonesChordNb);
+% end
 o = set(o,'MorphingNb',MorphingNb);
 o = set(o,'Bins2Change',Bins2Change);
 o = set(o,'ChannelDistancesByMorphing',ChannelDistancesByMorphing);
@@ -190,4 +194,6 @@ o = set(o,'DifficultyLvlByInd',DifficultyLvlByInd);
 o = set(o,'ReverseByInd',ReverseByInd);
 o = set(o,'ChordDurationByInd',ChordDurationByInd);
 o = set(o,'AverageNbTonesChordByInd',AverageNbTonesChordByInd);
+% o = set(o,'ChangeTimeBlocks',ChangeTimeBlocksByInd);
+
 o = set(o,'Names',Names);

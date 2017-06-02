@@ -27,6 +27,11 @@ while CurrentTime < (exptparams.LogDuration) % BE removed +0.05 here (which scre
      [LightState, ev] = IOLightSwitch(HW,0,0.0,[],0,0,'LightR');
    end
    
+
+	if ~get(o,'CalibrationPupil')
+	  LickEvents = [];
+	end
+
    if get(o,'RandomReward')
      if RewardOccured
        % Calculate next reward timing
@@ -84,4 +89,7 @@ if ExtraDuration~=0
     end
     CurrentTime = IOGetTimeStamp(HW);
   end
+end
+if ~get(o,'CalibrationPupil')
+  LickEvents = [];
 end
