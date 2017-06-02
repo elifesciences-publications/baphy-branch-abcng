@@ -84,7 +84,10 @@ if force || strcmp(computer,'GLNX86'),
    end
 end
 
-if isempty(DBISOPEN) || ~DBISOPEN || force==1,
+ [str,status] = urlread('http://www.google.fr');
+if ~status
+    DBISOPEN=0;
+elseif isempty(DBISOPEN) || ~DBISOPEN || force==1,
     try,
         if ~(strcmp(computer,'PCWIN') || strcmp(computer,'PCWIN64') || ...
                 strcmp(computer,'MAC') || strcmp(computer,'MAC'))

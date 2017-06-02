@@ -14,7 +14,7 @@ width           = get(o,'ClickWidth');
 rate            = str2num(Names{index});
 SamplingRate    = get(o,'SamplingRate');
 %
-w           = zeros(1, duration * SamplingRate);
+w           = zeros(1, round(duration * SamplingRate));
 rateSamples = SamplingRate / rate;
 Cindex       = 1:rateSamples:length(w);
 OnSamples   = width * SamplingRate / 2;
