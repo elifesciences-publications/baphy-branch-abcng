@@ -135,7 +135,7 @@ if ~isobject(parmfile),
     end
     dstr=strrep(dstr,' ','_');
     
-    if strcmp(computer,'PCWIN'),
+    if strcmp(computer,'PCWIN') || strcmp(computer,'PCWIN64'),
         ppdir=tempdir;
     elseif exist('/auto/data/tmp/tstim/','dir')
         ppdir=['/auto/data/tmp/tstim/'];

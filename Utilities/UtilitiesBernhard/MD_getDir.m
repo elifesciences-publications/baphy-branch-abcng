@@ -42,7 +42,7 @@ if isempty(P.LocalPath)
         case 'deepthought'; P.LocalPath = ['C:\SharedFolders\Data\']; % case 'deepthought'; LocalPath = ['W:\'];
         case 'avw2202j';      P.LocalPath = ['K:\'];
         case 'avw2202f';      P.LocalPath = ['W:\'];
-        case{ 'chronic1','chronic1-pc','chronic2-pc','chronic2','chronic3'};   P.LocalPath = ['D:\Data\'];
+        case{'largebooth','chronic1','chronic1-pc','chronic2-pc','chronic2','chronic3'};   P.LocalPath = ['D:\Data\'];
         otherwise  error('Paths for this computer not set yet.');
       end
     otherwise
@@ -54,9 +54,9 @@ end
 % IF DB PATH STILL NOT SET, TAKE SOME DEFAULTS
 if isempty(P.DBPath)
   switch computer
-    case {'PCWIN','PCWIN64'}; P.DBPath = ['M:\daq\'];
-    case {'MACI','MACI64'};     P.DBPath = ['/auto/data/daq/'];
-    otherwise                         P.DBPath = ['/auto/data/daq/'];
+    case {'PCWIN','PCWIN64'}; P.DBPath = ['M:\'];
+    case {'MACI','MACI64'};     P.DBPath = ['/auto/data/'];
+    otherwise                         P.DBPath = ['/auto/data/'];
   end
 end
 

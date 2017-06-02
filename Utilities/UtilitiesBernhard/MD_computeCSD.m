@@ -193,7 +193,7 @@ switch lower(Method)
     
     % electrode parameters:
     Depths = Depths*1e-3; % mm -> m
-    %AverageSeparation = mean(diff(Depths));
+    AverageSeparation = mean(diff(Depths));
     cLFP = LFP;
     
     % compute standard CSD with vaknin el.
@@ -203,8 +203,8 @@ switch lower(Method)
       cLFP = LFP([1,1:end,end],:);
     end;
     
-    CSD = -Conductance*SecondDeriv_irreg(Depths)*cLFP;
-    %CSD = -Conductance*SecondDeriv(length(cLFP(:,1)),AverageSeparation)*cLFP;
+%     CSD = -Conductance*SecondDeriv_irreg(Depths)*cLFP;
+    CSD = -Conductance*SecondDeriv(length(cLFP(:,1)),AverageSeparation)*cLFP;
     
     if wNeighbor~=0 %filter iCSD (does not change size of CSD matrix)
       [n1,n2]=size(CSD);

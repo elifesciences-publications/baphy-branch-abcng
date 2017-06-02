@@ -106,8 +106,6 @@ elseif isempty(tar),
       runclass = 'WHN';
     case 'TEXTUREMORPHING';
       runclass = 'TMG';
-    case 'TEXTUREMORPHING';
-      runclass = 'TMG';
     case 'MEMOCLICKS';
       runclass = 'MMC';
     case 'MEMOCLOUDS'
@@ -116,7 +114,11 @@ elseif isempty(tar),
       runclass = 'STC';
     case 'MUSICPIECES'
       runclass = 'MUS';
-    otherwise
+    case 'FROZENNOISE'
+      runclass = 'FNS';
+    case 'MEMONOISE'
+      runclass = 'MMN';
+otherwise
       runclass = '';
   end
 else
@@ -232,6 +234,8 @@ else
       runclass = 'WHN';
     case 'STCLICK'
       runclass = 'STC';
+    case 'PIPSEQUENCE'
+      runclass = 'PIP';
     otherwise
       error('Enter a runclass into RunClassTable.m to avoid later confusion!');
   end

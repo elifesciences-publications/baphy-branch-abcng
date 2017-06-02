@@ -49,6 +49,7 @@ case 0
     o.UniqueToneIndex = 2;
     o.SameRef = 'no';
     o.RampProbability = 0;
+    o.Names = {};
 
     %o.Type='Single';  %or 'multiple' sequency
     o = class(o,'RandSeqTorc',s);

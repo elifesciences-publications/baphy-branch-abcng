@@ -65,7 +65,7 @@ else
     else % Fix Catch trials to longer durations because shorter durations are screened by CR before the change
         if BinToC>0
             ToC = Par.MaxToC+StimulusBisDuration;
-        else BinToC==0
+        elseif BinToC==0
             RToC = RandStream('mt19937ar','Seed',IniSeed*Global_TrialNb);   % mcg16807 is fucked up
             lambda = 0.15;
             ToC = PoissonProcessPsychophysics(lambda,Par.StimulusBisDuration,1,RToC,BinToC);
@@ -176,6 +176,11 @@ ev(1).Note = ['PreStimSilence ,' b ',' c];
 ev = AddEvent(ev,['Change ,' b ',' c],[],ev(end).StopTime,ev(end).StopTime+AfterChangeSoundDuration);
 [a,b,c]  = ParseStimEvent(ev(end),0); 
 ev = AddEvent(ev,['PostStimSilence ,' b ',' c],[],ev(end).StopTime,ev(end).StopTime+PostStimSilence);
+
+% To save data and check post-hoc synthesis
+% fn = dir(['C:\Users\LargeBooth\Desktop\TMGtest\test' num2str(Global_TrialNb) '*']);
+% fc = length(fn)+1;
+% save(['C:\Users\LargeBooth\Desktop\TMGtest\test' num2str(Global_TrialNb) '_' num2str(fc) '.mat'],'ToneMatrix','w');
 
 % OUPUT ON THE FLY STIM. PARAMETERS RANDOMLY BUT DETERMINISTICALLY GENERATED
 if nargout>5

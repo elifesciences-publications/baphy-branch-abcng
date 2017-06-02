@@ -116,7 +116,7 @@ switch HW.params.HWSetup
       % HW.params.fsAO
       HW=niSetAOSamplingRate(HW);
      
-      % dulicate sound on the 2 channels if no analog stim on the 2nd one
+      % duplicate sound on the 2 channels if no analog stim on the 2nd one
       global SecondChannelAO;
       if ~isempty(SecondChannelAO) && ~SecondChannelAO && SpeakerNb == 1
         stim(:,2) = stim(:,1);

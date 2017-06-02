@@ -34,7 +34,7 @@ switch nargin
     o.D0shape = 'uniform'; o.D1shape = 'contig_increm'; o.D2shape = 'none'; o.FrozenPatternsAdress = 'none';
     o.Inverse_D0Dbis = 'no'; o.RovingLoudness = 'no';
     o.Fields = Fields;
-    o.FieldNames = Fields(1:3:end-2); 
+    o.FieldNames = Fields(1:3:end-2);
     o.FieldTypes = Fields(2:3:end-1);
     o.MaxIndex = 0;
     o.RunClass = 'TMG'; o.Duration = NaN;

@@ -21,6 +21,8 @@ case 0
     RefTarO.LightPulseRate=50;
     RefTarO.LightPulseDuration=0.01;
     RefTarO.LightPulseShift=0;
+    RefTarO.LightTrainRate=0;
+    RefTarO.LightTrainDuration=0.1;
     RefTarO.LightEpoch='WholeSound';
     
     RefTarO.NumberOfTrials = 30;  % In memory of Torcs!
@@ -50,7 +52,9 @@ case 0
          'LightPulseDuration','edit',0.01,...
          'LEDpower','edit',2,...
          'Pairing','edit',0,...
-         'LightEpoch','popupmenu','WholeSound|SoundOnset|WholeTrial|PreRef|PostRef|PR_WS'};
+         'LightEpoch','popupmenu','WholeSound|SoundOnset|WholeTrial|PreRef|PostRef|PR_WS',...
+         'LightTrainRate','edit',0,...
+         'LightTrainDuration','edit',0.1};
 %          'LightPulseShift','edit',0,...
     
     RefTarO = class(RefTarO,'RefTarOpt');

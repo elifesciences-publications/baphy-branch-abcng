@@ -1,6 +1,6 @@
 % function HW=niCreateAI(HW,Device,Channels,Names,TriggerSource)
 %
-% create a bank of Analog input channels in HW.Ai(nextavailableid).  Paramters:
+% create a bank of Analog input channels in HW.Ai(nextavailableid).  Parameters:
 %   HW: Baphy HW structure
 %   Device: NI device name string (eg, "Dev0")
 %   Channels:  Channel id string (eg, "ai0:1")

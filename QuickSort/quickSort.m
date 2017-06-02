@@ -371,7 +371,8 @@ for i=1:NVec
         'HorizontalAlignment','center',...
         'FontName','Dialog','BackGroundColor',[1,1,1],...
         'Callback',{@LF_showSeparation,FID,i});
-    LS{i} = ['C',n2s(i),' (',sprintf('%1.1f | ',QG.(FID).SNRs(i)),n2s(length(QG.(FID).Inds{i})),')'];
+%     LS{i} = ['C',n2s(i),' (',sprintf('%1.1f | ',QG.(FID).SNRs(i)),n2s(length(QG.(FID).Inds{i})),')'];
+    LS{i} = ['C',n2s(i),' (',sprintf('%1.1f | ',QG.(FID).SNRs(i)),n2s(length(QG.(FID).STs{i})),')'];  % 15/08-YB
     QG.(FID).GUI.ClusterLabels(i) = uicontrol('style','text',...
         'Units','normalized','Enable','inactive',...
         'Position',cDC{2},...
@@ -554,6 +555,17 @@ switch lower(Basis)
 end
 CovM = double(cov(cData)); [EVec,EVal] = eigs(CovM,3); % Covariance Matrix
 PCProj = double(EVec(:,end-2:end)'*cData');
+Sample2Remove = [];
+for dimNum = 1:3
+    Sample2Remove = [Sample2Remove find(abs(PCProj(dimNum,:))>10*std(PCProj(dimNum,:)))];
+end
+Sample2Remove = unique(Sample2Remove);
+if ~isempty(Sample2Remove)
+    disp([num2str(length(Sample2Remove)) ' samples removed for PCA calculus'])
+    SampleForPCA = setdiff(1:size(cData,1),Sample2Remove);
+    CovM = double(cov(cData(SampleForPCA,:))); [EVec,EVal] = eigs(CovM,3); % Covariance Matrix
+    PCProj = double(EVec(:,end-2:end)'*cData');
+end
 % CLUSTERING (faster than clustvec)
 Distances = pdist(PCProj(:,QG.(FID).PCAInd)','euclid');
 BinTree = linkage(Distances,QG.(FID).Linkages{QG.(FID).LinkageInd});
@@ -568,6 +580,41 @@ for i=1:NVec
         QG.(FID).PreSteps+1+QG.(FID).ForwardSteps),1);
     Strengths(i)=std(Means(i,:))*length(Inds{i});
 end;
+
+CellLen = cellfun(@length,Inds);
+TooSmallCluster = find(CellLen<=10);
+if length(TooSmallCluster)>1    
+    disp(['Merged ' num2str(length(TooSmallCluster)) ' clusters too small'])
+    for CluNum = 2:length(TooSmallCluster)
+        Inds{TooSmallCluster(1)} = [Inds{TooSmallCluster(1)};Inds{TooSmallCluster(CluNum)}];
+        WInds{TooSmallCluster(1)} = [WInds{TooSmallCluster(1)};WInds{TooSmallCluster(CluNum)}];
+    end
+    StoreOutlier.Inds = Inds{TooSmallCluster(1)};
+    StoreOutlier.WInds = WInds{TooSmallCluster(1)};
+    TempPCAInd = setdiff(QG.(FID).PCAInd,StoreOutlier.WInds);
+    % RECLUSTERING (faster than clustvec)
+    Distances = pdist(PCProj(:,TempPCAInd)','euclid');
+    BinTree = linkage(Distances,QG.(FID).Linkages{QG.(FID).LinkageInd});
+    ClustVec = cluster(BinTree,'maxclust',NVec-1);
+    
+    Means = zeros(NVec,QG.(FID).ForwardSteps*2+1);
+    Strengths = zeros(NVec,1);
+    for i=1:(NVec-1)
+        Inds{i}=find(ClustVec==i); WInds{i} = TempPCAInd(Inds{i})';
+        Means(i,:)=mean(QG.(FID).Waves(WInds{i},...
+            QG.(FID).PreSteps+1-QG.(FID).ForwardSteps:...
+            QG.(FID).PreSteps+1+QG.(FID).ForwardSteps),1);
+        Strengths(i)=std(Means(i,:))*length(Inds{i});
+    end;
+    i = NVec;
+    Inds{i} = StoreOutlier.Inds;
+    WInds{i} = StoreOutlier.WInds;
+    Means(i,:)=mean(QG.(FID).Waves(WInds{i},...
+        QG.(FID).PreSteps+1-QG.(FID).ForwardSteps:...
+        QG.(FID).PreSteps+1+QG.(FID).ForwardSteps),1);
+    Strengths(i)=std(Means(i,:))*length(Inds{i});
+end
+
 [Strengths,SInd] = sort(Strengths,'descend');
 Inds = Inds(SInd); WInds = WInds(SInd);
 
@@ -878,7 +925,7 @@ for i=1:NVec
     ClustInd(i) = str2num(cSelect);
 end
 for i=1:NVec
-    if ~isempty(find(ClustInd==i)) ClustSel{end+1} = find(ClustInd==i); end
+    if ~isempty(find(ClustInd==i)) ClustSel{i} = find(ClustInd==i); end
 end
 
 for i=1:length(ClustSel) ClustSelStr = [ClustSelStr,' { ',sprintf('%d ',ClustSel{i}),'}']; end
@@ -1159,7 +1206,7 @@ if NewPlot
         cWaveTime = [-QG.(FID).P.PreDur/U.ms:(1./QG.(FID).P.SR)/U.ms:((size(mWaves,1)-1)/QG.(FID).P.SR)/U.ms-QG.(FID).P.PreDur/U.ms]';
         if ~isempty(Units)
             for i=1:length(Units) % LOOP OVER CELLS IN OTHER RECORDING
-                plot(cAxis,cWaveTime,mWaves(:,i),'k');
+                plot(cAxis,cWaveTime,mWaves(:,Units(i)),'k');  % 17/03-YB: plot(cAxis,cWaveTime,mWaves(:,i),'k','linewidth',5);
                 [MAX,Pos] = max(mWaves(:,i));
                 text(cWaveTime(Pos),double(1.2*MAX),n2s(Units(i)));
             end
@@ -1573,7 +1620,9 @@ else
     d = log(exp(-tX(begs(iStep):ends(iStep)))*exp(tY(:)'));
     d = d(:);
     d(abs(d)>abs(minLag)) = [];
-    C = C + histc(d,B)';    
+    addC = histc(d,B)';
+    if size(addC,2)==1; addC = addC'; end      
+    C = C + addC;    
   end
   C(end) = [];
 end

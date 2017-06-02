@@ -21,6 +21,7 @@ global StopExperiment;
 fs = HW.params.fsAI;
 StopTargetFA = get(o,'StopTargetFA');
 %
+RH = get(exptparams.TrialObject,'ReferenceHandle'); TH = get(exptparams.TrialObject,'TargetHandle');
 RefResponseWin = [];
 RefEarlyWin = [];
 TarResponseWin = [];
@@ -35,17 +36,21 @@ for cnt1 = 1:length(StimEvents);
         if ~isempty(RefResponseWin)  % the response window should not go to the next sound!
             RefResponseWin(end) = min(RefResponseWin(end), StimEvents(cnt1).StartTime);
         end
-        if strcmpi(StimRefOrTar,'Reference')
+        if strcmpi(StimRefOrTar,'Reference')          
+          if ~strcmpi(class(RH),'TorcToneDiscrim') || ( strcmpi(class(RH),'TorcToneDiscrim') && isempty(strfind(upper(StimName),'TORC')) )
             RefEarlyWin = [RefEarlyWin StimEvents(cnt1).StartTime ...
-                StimEvents(cnt1).StartTime + get(o,'EarlyWindow')];
+              StimEvents(cnt1).StartTime + get(o,'EarlyWindow')];
             RefResponseWin = [RefResponseWin StimEvents(cnt1).StartTime + get(o,'EarlyWindow') ...
-                StimEvents(cnt1).StartTime + get(o,'ResponseWindow') + get(o,'EarlyWindow')];
+              StimEvents(cnt1).StartTime + get(o,'ResponseWindow') + get(o,'EarlyWindow')];
             NumRef = NumRef + 1;
+          end
         else
+          if ~strcmpi(class(TH),'TorcToneDiscrim') || ( strcmpi(class(TH),'TorcToneDiscrim') && isempty(strfind(upper(StimName),'TORC')) )
             TarResponseWin = [TarResponseWin StimEvents(cnt1).StartTime + get(o,'EarlyWindow') ...
-                StimEvents(cnt1).StartTime + get(o,'ResponseWindow') + get(o,'EarlyWindow')];
+              StimEvents(cnt1).StartTime + get(o,'ResponseWindow') + get(o,'EarlyWindow')];
             TarEarlyWin = [TarEarlyWin StimEvents(cnt1).StartTime ...
-                StimEvents(cnt1).StartTime + get(o,'EarlyWindow')];
+              StimEvents(cnt1).StartTime + get(o,'EarlyWindow')];
+          end
         end
     end
 end% now, RefResponseWin is a vector that has the start and stop point of each
@@ -79,8 +84,7 @@ if isempty(TarResponseWin)   %for no target (sham trial)  by py&9/6/2012
 else
     TarResponseLick = LickData(max(1,round(fs*TarResponseWin(1))):min(length(LickData),round(fs*TarResponseWin(2))));
 end
-% in an ineffective trial, discard the lick during target because target
-% was never played:
+% in an ineffective trial, discard the lick during target because target was never played:
 FalseAlarm = sum(RefFalseAlarm)/NumRef;
 if isempty(TarResponseWin)   %for no target (sham trial)  by py&9/6/2012
     TarEarlyLick=[];
@@ -125,19 +129,27 @@ if NumRef
     perf(cnt2).NumLickedRefTot   = prevNumLickedRefTot+sum(RefFalseAlarm); 
 else
     perf(cnt2).FalseAlarm = NaN;
+    perf(cnt2).NumRefTot   = prevNumRefTot+0; % sum of false alarms divided by num of ref
+    perf(cnt2).NumLickedRefTot   = prevNumLickedRefTot+sum(RefFalseAlarm); 
 end
 if perf(cnt2).NumRefTot==0
   perf(cnt2).FaRate = 0;
 else
   perf(cnt2).FaRate = perf(cnt2).NumLickedRefTot/perf(cnt2).NumRefTot;
 end
-perf(cnt2).Ineffective  = double(perf(cnt2).FalseAlarm >= StopTargetFA);
+perf(cnt2).Ineffective  = double(perf(cnt2).FalseAlarm >= StopTargetFA || ~isempty(find(TarEarlyLick,1))); % second condition added by YB
 perf(cnt2).WarningTrial = double(~perf(cnt2).Ineffective);
-perf(cnt2).EarlyTrial   = double(perf(cnt2).WarningTrial && ~isempty(find(TarEarlyLick,1)));
+% perf(cnt2).EarlyTrial   = double(perf(cnt2).WarningTrial && ~isempty(find(TarEarlyLick,1)));
+perf(cnt2).EarlyTrial   = double(~isempty(find(TarEarlyLick,1)));
 %
 perf(cnt2).Hit          = double(perf(cnt2).WarningTrial && ~perf(cnt2).EarlyTrial && ~isempty(find(TarResponseLick,1))); % if there is a lick in target response window, its a hit
 perf(cnt2).Miss         = double(perf(cnt2).WarningTrial && ~perf(cnt2).EarlyTrial && ~perf(cnt2).Hit);
-perf(cnt2).Catch         = double((get(exptparams.TrialObject,'MaxRef')+1)==NumRef);
+MaxRef = get(exptparams.TrialObject,'MaxRef');
+if MaxRef == 1   % specific case zhere lick post REF and lick during TAR are counted as ineffective
+    perf(cnt2).Catch         = double((get(exptparams.TrialObject,'MaxRef'))==NumRef);
+else
+    perf(cnt2).Catch         = double((get(exptparams.TrialObject,'MaxRef')+1)==NumRef);
+end
 perf(cnt2).ReferenceLickTrial = double((perf(cnt2).FalseAlarm>0));
 %
 perf(cnt2).LickRate = length(find(LickData)) / length(LickData);
@@ -161,9 +173,9 @@ elseif perf(cnt2).FaRate==0
   perf(cnt2).DiscriminationRate = 0;
 elseif perf(cnt2).HitRate==1
   HitRate = (sum(cat(1,perf.Hit))-1) / TotalWarnAndNoCatch;
-  perf(cnt2).DiscriminationRate =  erfinv(HitRate)-erfinv(perf(cnt2).FaRate);
+  perf(cnt2).DiscriminationRate =  norminv(HitRate)-norminv(perf(cnt2).FaRate);
 else
-  perf(cnt2).DiscriminationRate =  erfinv(perf(cnt2).HitRate)-erfinv(perf(cnt2).FaRate);
+  perf(cnt2).DiscriminationRate =  norminv(perf(cnt2).HitRate)-norminv(perf(cnt2).FaRate);
 end
 %also, calculate the stuff for this trial block:
 RecentIndex = max(1 , TrialIndex-exptparams.TrialBlock+1):TrialIndex;
@@ -179,6 +191,7 @@ if perf(cnt2).Hit, perf(cnt2).ThisTrial = 'Hit';end
 if perf(cnt2).Miss, perf(cnt2).ThisTrial = 'Miss';end
 if perf(cnt2).EarlyTrial, perf(cnt2).ThisTrial = 'Early';end
 if perf(cnt2).Ineffective, perf(cnt2).ThisTrial = 'Ineffective';end
+fprintf(['d''=' num2str(perf(cnt2).DiscriminationRate) '  /  ' upper( perf(cnt2).ThisTrial ) '  '])
 % change all rates to percentage. If its not rate, put the sum and
 % 'out of' at the end
 PerfFields = fieldnames(perf);

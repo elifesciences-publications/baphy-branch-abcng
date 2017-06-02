@@ -45,7 +45,6 @@ end
 if ~isfield(options,'unit') options.unit=ones(size(Electrodes)); end
 
 %% GET ARRAY OR PLOTTING GEOMETRY
-NElectrodes = length(Electrodes); % Number of Electrodes to plot
 
 if isempty(options.ElectrodeMatrix) % IF USER HAS NOT SPECIFIED A DIFFERENT GRID
   try,
@@ -64,6 +63,9 @@ else % ELECTRODE MATRIX HAS BEEN SPECIFIED AS GRID
     [cY,cX] = find(EM==Electrodes(i)); ElectrodesXY(Electrodes(i),1:2) = [cX,cY];
   end
 end
+
+NElectrodes = length(Electrodes); % Number of Electrodes to plot
+
 Tiling  = max(ElectrodesXY,[],1); 
 if length(ElectrodesXY)<4,
     Tiling(end)=size(ElectrodesXY,1);
@@ -165,8 +167,12 @@ for ii=1:NElectrodes
         % 14/04-YB: so far, plot a raster w/ trials sorted by FrozenPattern nb
         %         TMG_ComputeSTRF('MFile',mfile,'Electrode',Electrode,'Unit',unit,...
         %           'Axis',AH(ii),'SigmaThreshold',options.sigthreshold);
+        if options.lfp
+            channel = Electrode;
+            [r,tags]=raster_load(mfile,channel,unit,options);
+        else r = []; end
         TMG_RasterPlot('MFile',mfile,'Electrode',Electrode,'Unit',unit,...
-          'Axis',AH(ii),'SigmaThreshold',options.sigthreshold);
+          'Axis',AH(ii),'SigmaThreshold',options.sigthreshold,'LFP',options.lfp,'r',r);
         
       elseif strcmpi(options.runclass,'AMT'),
         % for audio-visual stimuli, special analysis
@@ -201,23 +207,26 @@ for ii=1:NElectrodes
       elseif strcmpi(options.runclass,'tst')  %for multi-level tuning
         mltc_online(mfile,Electrode,unit,AH(ii),options);
       else
-        if ~options.usesorted
-          % standard TORC strf
-          options.usefirstcycle=0;
-          options.tfrac = 1;
-          [strf,snr(ii)]=strf_online(mfile,Electrode,AH(ii),options,DC{ii});
-        else
-          mfilename = [mfile,'.m'];
-          spkpath = mfile(1:strfind(mfile,filename)-1);
-          
-          if strcmp(computer,'PCWIN') || strcmp(computer,'PCWIN64')
-            spikefile = [spkpath,'sorted\',filename,'.spk.mat'];
+          if strcmpi(exptparams.BehaveObjectClass,'RewardEyeFixation')   
+            online_VisualSTRF('MFile',mfile,'Electrode',Electrode,'Unit',unit,...
+              'Axis',AH(ii),'SigmaThreshold',options.sigthreshold,'LFP',options.lfp);
+          elseif ~options.usesorted
+              % standard TORC strf
+              options.usefirstcycle=0;
+              options.tfrac = 1;
+              [strf,snr(ii)]=strf_online(mfile,Electrode,AH(ii),options,DC{ii});
           else
-            spikefile = [spkpath,'sorted/',filename,'.spk.mat'];
+              mfilename = [mfile,'.m'];
+              spkpath = mfile(1:strfind(mfile,filename)-1);
+              
+              if strcmp(computer,'PCWIN') || strcmp(computer,'PCWIN64')
+                  spikefile = [spkpath,'sorted\',filename,'.spk.mat'];
+              else
+                  spikefile = [spkpath,'sorted/',filename,'.spk.mat'];
+              end
+              
+              [strf,snr(ii)]=strf_offline2(mfilename,spikefile,Electrode,options.sortedunit);
           end
-          
-          [strf,snr(ii)]=strf_offline2(mfilename,spikefile,Electrode,options.sortedunit);
-        end
       end
       
     case 'raster',

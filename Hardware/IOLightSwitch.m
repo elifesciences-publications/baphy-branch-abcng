@@ -23,7 +23,7 @@ if nargin<7 || isempty(LightName) LightName = 'Light'; end
 if nargin<6 || isempty(Gap) Gap = 0;end
 if nargin<5 || isempty(Frequency) Frequency = 0;end
 if nargin<4 || isempty(Action) Action = 'Start';end
-if nargin<3 || isempty(Duration)  Duration = 0; Action='None';end % zero means for ever, dont set the timer
+if nargin<3 || isempty(Duration)  Duration = 0; Action='None';end % zero means forever, dont set the timer
 if nargin<2, LightState=LIGHTSWITCH0; ev=[]; return; end
 
 if LightSwitch==1

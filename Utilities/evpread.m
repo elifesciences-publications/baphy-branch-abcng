@@ -1,4 +1,4 @@
-function [rs,strialidx,ra,atrialidx,rl,ltrialidx,Info] = evpread(filename,varargin);
+function [rs,strialidx,ra,atrialidx,rl,ltrialidx,Info] = evpread(filename,varargin)
 % function [rS,STrialIdx,rA,ATrialIdx,rL,LTrialIdx]=evpread(filename,spikechans[=all],
 %                                                   auxchans[=none],trials[=all],lfpchans[=none]);
 %
@@ -70,6 +70,7 @@ if ~isfield(P,'trials') || isempty(P.trials), P.trials = inf; end
 if ~isfield(P,'filterstyle') P.filterstyle = 'butter'; end
 if ~isfield(P,'wrap') P.wrap = 0; end
 if ~isfield(P,'SRlfp') P.SRlfp = 2000; end
+if ~isfield(P,'PreStimSilence') P.PreStimSilence = 0; end
 if ~isfield(P,'dataformat') P.dataformat = 'linear'; end
 
 %% CHECK EVP VERSION
@@ -429,26 +430,49 @@ switch EVPVERSION
       fHigh = 1; fLow = 0.3*Nyquist;
       [bLow,aLow] = butter(order,fLow/Nyquist,'low');
       [bHigh,aHigh] = butter(order,fHigh/Nyquist,'high');    
-                              bHumbug=[0.995386247699319  -5.972013278489225  14.929576915653460  -19.905899769726052  14.929576915653460  -5.972013278489225  0.995386247699319 ];
-        aHumbug = [ 1.000000000000000  -5.990446012819222  14.952579842917430  -19.905857198474035  14.906552701679249  -5.953623115411301  0.990793782108932  ];
-         LHumbug = length(bHumbug)-1;
-     Raw=double(rl)'; 
-% IVHumbug = zeros(LHumbug,size(Raw,2)); 
-      [Raw] = filter(bHumbug,aHumbug,Raw);
-      rl = Raw';
+      bHumbug=[0.995386247699319  -5.972013278489225  14.929576915653460  -19.905899769726052  14.929576915653460  -5.972013278489225  0.995386247699319 ];
+      aHumbug = [ 1.000000000000000  -5.990446012819222  14.952579842917430  -19.905857198474035  14.906552701679249  -5.953623115411301  0.990793782108932  ];
+      LHumbug = length(bHumbug)-1;
       if P.wrap
-        tmp = single(NaN*zeros(round((max(diff(cstrialidx))-1)/SR*P.SRlfp),length(P.lfpchans),length(cstrialidx)-1));
-        for i=1:length(cstrialidx)-1
-          tmp2 = single(resample(double(rl(cstrialidx(i):cstrialidx(i+1)-1,:)),P.SRlfp,SR));
-          tmp(1:length(tmp2),:,i) = tmp2;
-        end
-        rl = tmp;
+          % 16/11-YB: remove humbug on a per trial basis otherwise slow artifact at the trial start
+          Raw = double(rl);
+          tmp = Raw;
+%           for i=1:length(cstrialidx)-1
+%               tmp2 = double(Raw(cstrialidx(i):cstrialidx(i+1)-1,:));
+%               tmp(cstrialidx(i):cstrialidx(i+1)-1,:) = filtfilt(bHumbug,aHumbug,tmp2);
+%           end
+          rl = tmp;
+          
+          tmp = single(NaN*zeros(round((max(diff(cstrialidx))-1)/SR*P.SRlfp),length(P.lfpchans),length(cstrialidx)-1));
+          ltrialidx = 1;
+          for i=1:length(cstrialidx)-1
+              tmp2 = single(resample(double(rl(cstrialidx(i):(cstrialidx(i+1)-1),:)),P.SRlfp,SR));
+              tmp2 = tmp2(2:end,:); % % 16/11-YB: resampling sucks
+              tmp(1:size(tmp2,1),:,i) = tmp2;
+              ltrialidx(i+1,1) = ltrialidx(i)+size(tmp2,1);
+          end
+          rl = tmp;
       else
-        rl = single(resample(double(rl),P.SRlfp,SR));
-        ltrialidx = ceil(cstrialidx*P.SRlfp/SR);
+          % 16/11-YB: moved within the IF condition for the above reason
+          Raw=double(rl)';
+          % IVHumbug = zeros(LHumbug,size(Raw,2));
+          [Raw] = filter(bHumbug,aHumbug,Raw);
+          rl = Raw';
+          
+          rl = single(resample(double(rl),P.SRlfp,SR));
+          ltrialidx = ceil(cstrialidx*P.SRlfp/SR);
       end
+      rl = cat(1,rl(round(P.PreStimSilence*P.SRlfp):-1:1,:,:),rl);
       rl = filter(bLow,aLow,rl);
       rl = filter(bHigh,aHigh,rl);
+      rl = rl(round(P.PreStimSilence*P.SRlfp + 1):end,:,:);
+      if P.wrap
+          rlTemp = zeros(ltrialidx(end),length(P.lfpchans));
+          for i=2:length(ltrialidx)
+            rlTemp( ltrialidx(i-1) : (ltrialidx(i)-1) , :) = rl(1:(ltrialidx(i)-ltrialidx(i-1)),:,i-1);
+          end
+          rl = rlTemp;
+      end
      
       %bHumbug = [0.997995527211068  -5.987297083916456  14.967228743433322 -19.955854373444378  14.967228743433322  -5.987297083916456   0.997995527211068];
       %aHumbug = [1.000000000000000  -5.995310048314492  14.977237236960848 -19.955846338529373  14.957216231994666  -5.979292154433458   0.995995072333299];
@@ -509,14 +533,14 @@ if cLFP,
 end
 
 if cSpike || cRaw || cLFP
-  R = MD_dataFormat('FileName',filename);
-  try,
-     [ElectrodesByChannel,Electrode2Channel] ...
-        = MD_getElectrodeGeometry('Identifier',R.FileName,'FilePath',fileparts(filename));
-  catch
+%   R = MD_dataFormat('FileName',filename);
+%   try,
+%      [ElectrodesByChannel,Electrode2Channel] ...
+%         = MD_getElectrodeGeometry('Identifier',R.FileName,'FilePath',fileparts(filename));
+%   catch
      ElectrodesByChannel=1:maxchan;
      Electrode2Channel=1:maxchan;
-  end
+%   end
 end
 if cSpike
   P.spikechans =Electrode2Channel(P.spikeelecs);

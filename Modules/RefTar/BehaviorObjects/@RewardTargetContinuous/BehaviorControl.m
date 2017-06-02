@@ -42,24 +42,35 @@ str1ind = strfind(StimEvents(end).Note,' '); str2ind = strfind(StimEvents(end).N
 Index = str2num(StimEvents(end).Note(str1ind(3):str2ind(1)));
 RH = get(exptparams.TrialObject,'ReferenceHandle');
 TH = get(exptparams.TrialObject,'TargetHandle');
-DistributionTypeByInd = get(TH,'DistributionTypeByInd');
-DistributionTypeNow = DistributionTypeByInd(Index);
-DifficultyLvl = str2num(get(TH,['DifficultyLvl_D' num2str(DistributionTypeNow)]));
-DifficultyLvlByInd = get(TH,'DifficultyLvlByInd');
-DifficultyNow = DifficultyLvl( DifficultyLvlByInd(Index) );
+switch get(TH,'descriptor')
+  case 'TextureMorphing'
+    DistributionTypeByInd = get(TH,'DistributionTypeByInd');
+    DistributionTypeNow = DistributionTypeByInd(Index);
+    DifficultyLvl = str2num(get(TH,['DifficultyLvl_D' num2str(DistributionTypeNow)]));
+    DifficultyLvlByInd = get(TH,'DifficultyLvlByInd');
+    DifficultyNow = DifficultyLvl( DifficultyLvlByInd(Index) );
+    if DifficultyNow==0; CatchTrial=1; else CatchTrial=0; end
+  case 'RandSeqTorc'
+    if TargetIndices==get(TH,'MaxIndex')
+      CatchTrial=1;
+    else CatchTrial=0; end
+end
 
 TarInd = find(~cellfun(@isempty,strfind({StimEvents.Note},'Target')));
 EarlyWindow = StimEvents(end-1).StartTime;        % include Ref-Silence, PreStimSilence until ToC (without response window)
 TargetStartTime = 0; %StimEvents(TarInd(1)).StartTime;
 RespWinDur = get(O,'ResponseWindow');
-if DifficultyNow~=0 % not a catch trial
-  CatchTrial = 0;
+if ~CatchTrial % not a catch trial
   TarWindow(1) = TargetStartTime + EarlyWindow;
   TarWindow(2) = TarWindow(1) + get(O,'ResponseWindow');
   CatchStr = '';
 else
-  CatchTrial = 1;
-  TarWindow(1) = TargetStartTime + EarlyWindow  + get(O,'ResponseWindow');
+  switch get(TH,'descriptor')
+    case 'TextureMorphing'
+      TarWindow(1) = TargetStartTime + EarlyWindow  + get(O,'ResponseWindow');
+    case 'RandSeqTorc'
+      TarWindow(1) = TargetStartTime + StimEvents(end).StopTime;
+  end
   TarWindow(2) = TarWindow(1);
   RespWinDur = 0;
   CatchStr = 'Catch ';
@@ -74,14 +85,19 @@ RewardSnooze = TrialObject.RewardSnooze;
 
 %% SOUND SLICES
 SF = get(TH,'SamplingRate');
-AnticipatedLoadingDuration = 0.300;
-Par = get(TH,'Par');
-ChordDuration = Par.ToneDuration;
-TargetSliceToC = TarWindow(1);
-% TargetSliceToC = round(TargetSliceToC/ChordDuration)*ChordDuration;            % sec.
 RefSliceDuration = get(O,'RefSliceDuration');
-% RefSliceDuration = RefSliceDuration+AnticipatedLoadingDuration;
-RefSliceDuration = round(RefSliceDuration/ChordDuration)*ChordDuration;            % sec.
+TarWin1 = TarWindow(1);
+switch get(TH,'descriptor')
+  case 'TextureMorphing'
+    AnticipatedLoadingDuration = 0.300;
+    Par = get(TH,'Par');
+    ChordDuration = Par.ToneDuration;
+    % TarWin1 = round(TarWin1/ChordDuration)*ChordDuration;            % sec.
+    % RefSliceDuration = RefSliceDuration+AnticipatedLoadingDuration;
+    RefSliceDuration = round(RefSliceDuration/ChordDuration)*ChordDuration;            % sec.
+  case 'RandSeqTorc'
+    AnticipatedLoadingDuration = 0.450;
+end
 % Slice Duration is also the ToC of the last (Target) slice
 % SlicesInAsegment = round(SliceDuration/ChordDuration);
 % SegmentMeanDuration = 3;        % sec.
@@ -98,35 +114,66 @@ RefSliceDuration = round(RefSliceDuration/ChordDuration)*ChordDuration;         
 % Initial distribution SO
 THcatch = TH;
 PreStimSilence = get(THcatch,'PreStimSilence');
-% THcatch = set(THcatch,'PreStimSilence',0);
-THcatch = set(THcatch,'StimulusBisDuration',ChordDuration);
-THcatch = set(THcatch,'MinToC',RefSliceDuration+2*ChordDuration); THcatch = set(THcatch,'MaxToC',RefSliceDuration+2*ChordDuration);
-THcatch = ObjUpdate(THcatch);
 MaxIndex = get(TH,'MaxIndex');
+% THcatch = set(THcatch,'PreStimSilence',0);
 % After change sound
 ActualTrialSound = exptparams.wAccu((get(RH,'Duration')*SF+1):end);
-% COMPUTE LOUDNESS ATTENUATION
-AttenuationD0 = str2num(get(TH,'AttenuationD0'));
-% if AttenuationD0~=0
-%   global LoudnessAdjusted;
-% end
-% AttenuationD0 = -15;
-% if AttenuationD0~=0 % replace with behavior parameters
-%   global LoudnessAdjusted;
-%   LoudnessAdjusted = 1;
-%   NormFactor = maxLocalStd(ActualTrialSound(1:(TargetSliceToC*SF)),SF,floor(length(ActualTrialSound(1:(TargetSliceToC*SF)))/SF))
-%   RatioToDesireddB = 10^(AttenuationD0/20);   % dB to ratio in SPL
-%   ActualTrialSound(1:(TargetSliceToC*SF)) = ActualTrialSound(1:(TargetSliceToC*SF))*RatioToDesireddB;
-%   ActualTrialSound = ActualTrialSound/NormFactor;
-% end
-
-% % Incremented distribution SO
-% THincr = TH;
-% THincr = set(THincr,'PreStimSilence',0);
-% % THincr = set(THincr,'Inverse_D0Dbis','yes');
-% THincr = set(THincr,'MinToC',TargetSliceToC); THincr = set(THincr,'MaxToC',TargetSliceToC);
-% THincr = set(THincr,'StimulusBisDuration',RespWinDur);
-% THincr = ObjUpdate(THincr);
+switch get(TH,'descriptor')
+  case 'TextureMorphing'
+    THcatch = set(THcatch,'StimulusBisDuration',ChordDuration);
+    THcatch = set(THcatch,'MinToC',RefSliceDuration+2*ChordDuration); THcatch = set(THcatch,'MaxToC',RefSliceDuration+2*ChordDuration);
+    THcatch = ObjUpdate(THcatch);
+    % COMPUTE LOUDNESS ATTENUATION
+    AttenuationD0 = str2num(get(TH,'AttenuationD0'));
+    % if AttenuationD0~=0
+    %   global LoudnessAdjusted;
+    % end
+    % AttenuationD0 = -15;
+    % if AttenuationD0~=0 % replace with behavior parameters
+    %   global LoudnessAdjusted;
+    %   LoudnessAdjusted = 1;
+    %   NormFactor = maxLocalStd(ActualTrialSound(1:(TarWin1*SF)),SF,floor(length(ActualTrialSound(1:(TarWin1*SF)))/SF))
+    %   RatioToDesireddB = 10^(AttenuationD0/20);   % dB to ratio in SPL
+    %   ActualTrialSound(1:(TarWin1*SF)) = ActualTrialSound(1:(TarWin1*SF))*RatioToDesireddB;
+    %   ActualTrialSound = ActualTrialSound/NormFactor;
+    % end
+    
+    % % Incremented distribution SO
+    % THincr = TH;
+    % THincr = set(THincr,'PreStimSilence',0);
+    % % THincr = set(THincr,'Inverse_D0Dbis','yes');
+    % THincr = set(THincr,'MinToC',TarWin1); THincr = set(THincr,'MaxToC',TarWin1);
+    % THincr = set(THincr,'StimulusBisDuration',RespWinDur);
+    % THincr = ObjUpdate(THincr);
+    TargetPartNb = 1;
+  case 'RandSeqTorc'  % much longer than TMG sometimes
+    PartDuration = 2.5;
+    TargetPartNb = max(floor(length(ActualTrialSound)/SF/PartDuration),1);
+    if TargetPartNb>1
+      if (floor(length(ActualTrialSound)/SF)-PartDuration)<RefSliceDuration
+        TargetPartNb = 1;
+      else
+        PartPointer = 1;
+        for PartNum = 1:(TargetPartNb-1)
+          ActualTrialSoundParts{PartNum} = ...
+            ActualTrialSound(PartPointer:(PartPointer+PartDuration*SF));
+          PartPointer = PartPointer + PartDuration*SF + 1;
+        end
+        ActualTrialSoundParts{TargetPartNb} = ActualTrialSound(PartPointer:end);
+      end
+    end
+    
+    % Isolate Ref sequences within the actual trials in order to reject
+    %licks that during tone sequences
+    RefEvNoteInd = find(not(cellfun(@isempty,cellfun(@(x)strfind(x,'ReferenceSequence'),{StimEvents.Note},'UniformOutput',0))));
+    TarEvNoteInd = find(not(cellfun(@isempty,cellfun(@(x)strfind(x,'TargetSequence'),{StimEvents.Note},'UniformOutput',0))));
+    ThreeNoteDuration = (get(TH,'ToneDur')+get(TH,'ToneGap'))*3;    
+%       ThreeNoteDuration = StimEvents(TarEvNoteInd(end)).StopTime-StimEvents(TarEvNoteInd(end)).StartTime;
+    RefEvNoteInd = [RefEvNoteInd TarEvNoteInd];
+end
+if TargetPartNb==1
+  ActualTrialSoundParts{1} = ActualTrialSound;
+end
 
 %% BUILD SEQUENCES OF INDEX
 % SliceCounter = 1;
@@ -157,20 +204,35 @@ SensorChannels = find(strcmp(SensorNames,'Touch'));
 AllLickSensorNames = SensorNames(~cellfun(@isempty,strfind(SensorNames,'Touch')));
 
 % SYNCHRONIZE COMPUTER CLOCK WITH DAQ TIME
-fprintf(['Running Trial [' CatchStr 'ToC=' num2str(TargetSliceToC) 's] [ <=',n2s(exptparams.LogDuration),'s ] ... ']);
+switch get(TH,'descriptor')
+  case 'TextureMorphing'
+    fprintf(['Running Trial [' CatchStr 'ToC=' num2str(TarWin1) 's] [ <=',n2s(exptparams.LogDuration),'s ] ... ']);
+  case 'RandSeqTorc'
+    fprintf(['Running Trial [ <=',n2s(exptparams.LogDuration),'s ] ... ']);
+end
 CurrentTime = 0; LickOccured = 0; 
 AddTar = 0; RefSliceCounter = 0; NextSliceTiming = 0; TimingLastChange = RefSliceDuration;
-wAccu = [ ];
+wAccu = [ ]; TargetPartCounter = 0;
 % while ~TargetPlayed(CurrentTime+SliceDuration) < (length(IndexSequence)*SliceDuration)
 while CurrentTime < (TimingLastChange+RespWinDur)
   if ~AddTar
     RefSliceCounter = RefSliceCounter+1;
     SliceDuration = RefSliceDuration;
   elseif AddTar
-    SliceDuration = TargetSliceToC+RespWinDur-PreStimSilence-get(RH,'Duration');
-    AnticipatedLoadingDuration = 0;  % goes until the end of the slice for target
+    TargetPartCounter = TargetPartCounter+1;
+    if TargetPartNb == 1
+      SliceDuration = TarWin1+RespWinDur-PreStimSilence-get(RH,'Duration');
+      AnticipatedLoadingDuration = 0;  % goes until the end of the slice for target
+    else
+      SliceDuration = length(ActualTrialSoundParts{TargetPartCounter})/SF;
+      if TargetPartCounter==TargetPartNb
+        AnticipatedLoadingDuration = 0;  % goes until the end of the slice for target
+      end
+    end
   end
-  TimingLastChange = RefSliceCounter*RefSliceDuration+TargetSliceToC;
+  if TargetPartCounter<=1
+    TimingLastChange = RefSliceCounter*RefSliceDuration+TarWin1;
+  end
 %   % If lick occured, actualize IndexSequence
 %   if LickOccured
 %     switch Outcome
@@ -198,28 +260,31 @@ while CurrentTime < (TimingLastChange+RespWinDur)
   if ~AddTar
     % Trick for keeping the same spectral shape (generated by IniSeed and
     %chosen by TrialIndex) with a different tone sequence (generated by Index)
-    IndexRefSlice(RefSliceCounter) = randi(MaxIndex,1);
-    w = waveform(THcatch,IndexRefSlice(RefSliceCounter),[],[],TrialIndex);
-    w = w(1:round((SliceDuration+2*ChordDuration+PreStimSilence)*SF));
-%     NormFactor = maxLocalStd(w,SF,floor(length(w)/SF))
+    switch get(TH,'descriptor')
+      case 'TextureMorphing'
+        IndexRefSlice(RefSliceCounter) = randi(MaxIndex,1);
+        w = waveform(THcatch,IndexRefSlice(RefSliceCounter),[],[],TrialIndex);
+        w = w(1:round((SliceDuration+2*ChordDuration+PreStimSilence)*SF));
+        %     NormFactor = maxLocalStd(w,SF,floor(length(w)/SF))
+      case 'RandSeqTorc'
+        IndexRefSlice(RefSliceCounter) = randi(100,1);
+        THcatch = set(THcatch,'Key',IndexRefSlice(RefSliceCounter));
+        w = waveform(THcatch,3,[],[],TrialIndex);
+        w = w(1:round((SliceDuration+PreStimSilence)*SF));
+    end
     stim = w;%*RatioToDesireddB/NormFactor;
   else
-    w = ActualTrialSound; %waveform(THincr,Index,[],[],(RefSliceCounter+AddTar)*TrialIndex);
+    w = ActualTrialSoundParts{TargetPartCounter}; %waveform(THincr,Index,[],[],(RefSliceCounter+AddTar)*TrialIndex);
     stim = w;
   end
   
-  if RefSliceCounter==1
-    NormFactor = maxLocalStd(stim(round(PreStimSilence*SF)+(1:round(SliceDuration*SF))),SF,floor(round(SliceDuration*SF)/SF));
-    if ~AddTar
-      stim = [zeros(get(RH,'Duration')*SF,1) ; stim];
-      SliceDuration = SliceDuration+get(RH,'Duration');
-    end
-  end
   global LoudnessAdjusted; LoudnessAdjusted  = 1;
-  stim = stim/NormFactor;
-  wAccu = [wAccu ; stim(round(PreStimSilence*SF)+(1:round(SliceDuration*SF)))];
-  % Do calibration manually with an extra chord to avoid clicks at the end
-  % from IOloadSound.m
+  if RefSliceCounter>1 || AddTar
+    wAccu = [wAccu ; stim(round(PreStimSilence*SF)+(1:round(SliceDuration*SF)))];
+  else
+    wAccu = [wAccu ; zeros(get(RH,'Duration')*SF,1) ; stim(round(PreStimSilence*SF)+(1:round(SliceDuration*SF)))];    
+  end
+  % Do calibration manually with an extra chord to avoid clicks at the end from IOloadSound.m
 %   if AttenuationD0~=0
     if isfield(HW.params,'driver') && strcmpi(HW.params.driver,'NIDAQMX'),
       if isfield(HW,'Calibration') && length(stim)>length(HW.Calibration.IIR)
@@ -237,7 +302,16 @@ while CurrentTime < (TimingLastChange+RespWinDur)
     end
 %   end
 %   if ~AddTar
-  NewSlice = stim(round(PreStimSilence*SF)+(1:round(SliceDuration*SF)));  
+  if RefSliceCounter==1
+    NormFactor = maxLocalStd(stim(round(PreStimSilence*SF)+(1:round(SliceDuration*SF))),SF,floor(round(SliceDuration*SF)/SF));
+    if ~AddTar
+      stim = [zeros(get(RH,'Duration')*SF,1) ; stim];
+      SliceDuration = SliceDuration+get(RH,'Duration');
+    end
+  end
+  stim = HW.Calibration(1).Loudness.Parameters.SignalMatlab80dB*stim/NormFactor;
+  NewSlice = stim(round(PreStimSilence*SF)+(1:round(SliceDuration*SF)));
+  
   RampBetweenSlices = 0.004;   % s 
   Ramp = (sin(linspace(-pi/2,pi/2,RampBetweenSlices*SF))  + 1)/2;
   NewSlice(1:length(Ramp)) = NewSlice(1:length(Ramp)).*Ramp';
@@ -281,7 +355,6 @@ while CurrentTime < (TimingLastChange+RespWinDur)
   % MONITOR POTENTIAL LICK UNTIL SLICE IS ALMOST FINISHED
   LickOccured = 0; QuitLoop = 0;
   while CurrentTime < (NextSliceTiming-AnticipatedLoadingDuration)
-        
     if ~LickOccured % if Lick occured in this Ref Slice, just wait (Ref slice)
       %CurrentTime = IOGetTimeStamp(HW); % INACCURATE WITH DISCRETE STEPS      
       % READ LICKS FROM ALL SENSORS
@@ -293,36 +366,56 @@ while CurrentTime < (TimingLastChange+RespWinDur)
       
       % PROCESS LICK GENERALLY
       if LickOccured
-        ResponseTime = CurrentTime;        
+        ResponseTime = CurrentTime;
         Events = AddEvent(Events,['LICK,',cLickSensor],TrialIndex,ResponseTime,[]);
         if AddTar
-          if ResponseTime < (TimingLastChange + MinimalDelayResponse) ||...
-              ResponseTime > (TimingLastChange + RespWinDur)
-            Outcome = 'EARLY';
-          else
+          if ResponseTime < (TimingLastChange + MinimalDelayResponse)
+            switch get(TH,'descriptor')
+              case 'TextureMorphing'
+                Outcome = 'EARLY';
+              case 'RandSeqTorc'
+                 LastEvNoteInd = find((ResponseTime-(RefSliceCounter*RefSliceDuration))>[StimEvents(RefEvNoteInd).StartTime],1,'last');
+                 LastEvNoteInd = RefEvNoteInd(LastEvNoteInd);
+                 if isempty(LastEvNoteInd) || (ResponseTime-(RefSliceCounter*RefSliceDuration))<(StimEvents(LastEvNoteInd).StartTime+ThreeNoteDuration) % lick during the 3-tone sequence
+                   LickOccured = 0;
+                 else
+                   Outcome = 'EARLY';
+                 end
+            end
+          elseif ResponseTime >= (TimingLastChange + MinimalDelayResponse) &&...
+              ResponseTime <= (TimingLastChange + RespWinDur)
             Outcome = 'HIT';
+          else
+            if ~CatchTrial
+              Outcome = 'SNOOZE';
+            else
+              Outcome = 'HIT';
+            end
           end
           
-          CountingLicks = [CountingLicks ResponseTime];
-          cSensorChannels = SensorChannels(find(cLick,1,'first'));
-          if ~isempty(cSensorChannels)
-            cLickSensorInd = find(cLick,1,'first');
-            cLickSensor = SensorNames{SensorChannels(cLickSensorInd)}; % CORRECT FOR BOTH 'ON' AND 'OFF' RESULTS
-            cLickSensorNot = setdiff(SensorNames(SensorChannels),cLickSensor);
-          else
-            cLickSensor = 'None'; cLickSensorNot = 'None';
-          end          
-          
-%           Events = AddEvent(Events,['OUTCOME,',Outcome],TrialIndex,ResponseTime,[]);
-%           [Events] = ProcessLick(Outcome,Events,HW,O,TH,globalparams,exptparams,LEDfeedback,RewardAmount,IncrementRewardAmount,TrialIndex,...
-%             cLickSensor,MaxIncrementRewardNb);
-%         
-%           if strcmp(Outcome,'HIT'); Outcome2Display = [Outcome ', RT = ' num2str(ResponseTime-TarWindow(1))]; else Outcome2Display = Outcome; end
-%           fprintf(['\t [ ',Outcome2Display,' ] ... ']);
-%           fprintf(['\t Lick detected [ ',cLickSensor,', at ',n2s(ResponseTime,3),'s ] ... ']);
-          QuitLoop = 1;
-          break
-        end      
+          if LickOccured % lick can have been cancelled during RandSeqTorc
+            CountingLicks = [CountingLicks ResponseTime];
+            cSensorChannels = SensorChannels(find(cLick,1,'first'));
+            if ~isempty(cSensorChannels)
+              cLickSensorInd = find(cLick,1,'first');
+              cLickSensor = SensorNames{SensorChannels(cLickSensorInd)}; % CORRECT FOR BOTH 'ON' AND 'OFF' RESULTS
+              cLickSensorNot = setdiff(SensorNames(SensorChannels),cLickSensor);
+            else
+              cLickSensor = 'None'; cLickSensorNot = 'None';
+            end
+            
+            %           Events = AddEvent(Events,['OUTCOME,',Outcome],TrialIndex,ResponseTime,[]);
+            %           [Events] = ProcessLick(Outcome,Events,HW,O,TH,globalparams,exptparams,LEDfeedback,RewardAmount,IncrementRewardAmount,TrialIndex,...
+            %             cLickSensor,MaxIncrementRewardNb);
+            %
+            %           if strcmp(Outcome,'HIT'); Outcome2Display = [Outcome ', RT = ' num2str(ResponseTime-TarWindow(1))]; else Outcome2Display = Outcome; end
+            %           fprintf(['\t [ ',Outcome2Display,' ] ... ']);
+            %           fprintf(['\t Lick detected [ ',cLickSensor,', at ',n2s(ResponseTime,3),'s ] ... ']);
+            
+            QuitLoop = 1;
+            break
+          end
+        end
       end
     end
     CurrentTime = toc+InitialTime;
@@ -330,7 +423,7 @@ while CurrentTime < (TimingLastChange+RespWinDur)
   % Move to Target if no lick during the reference
   if ~AddTar && ~LickOccured
     AddTar = 1;
-  elseif AddTar && ~LickOccured
+  elseif AddTar && ~LickOccured && TargetPartCounter==TargetPartNb
     if ~CatchTrial
       Outcome = 'SNOOZE';
     else
@@ -345,7 +438,7 @@ end
 TarWindow = [TimingLastChange TimingLastChange+RespWinDur];
 
 % IF NO RESPONSE OCCURED
-if ~LickOccured; ResponseTime = inf; end
+if ~LickOccured || strcmp(Outcome,'SNOOZE'); ResponseTime = inf; end
 
 if LickOccured
   fprintf(['\n Lick detected [ ',cLickSensor,', at ',n2s(ResponseTime,3),'s ] ... ']);
@@ -414,7 +507,7 @@ switch Outcome
     StopEvent = IOStopSound(HW);
     Events = AddEvent(Events, StopEvent, TrialIndex);
     % 14/02/20-YB: Patched to change LED/pump structure + Duration2Play (cf. lab notebook)
-    Duration2Play = 0.5; LEDposition = {'left'};
+    Duration2Play = 0; LEDposition = {'left'}; % 16/01-YB: put to 0 because is after <IOStopSound>
     % Stop Dbis sound when <Duration2Play> is elapsed
     if ~CatchTrial; pause(max([0 , (TarWindow(1)+Duration2Play)-IOGetTimeStamp(HW) ])); end
     
@@ -433,7 +526,7 @@ switch Outcome
     NbContiguousLastHits = find(strcmp(LastOutcomes,'EARLY'),1,'first')-1;   % Only Early are taken into account
     if isempty(NbContiguousLastHits), NbContiguousLastHits = length( find(strcmp(LastOutcomes,'HIT')) );
     else NbContiguousLastHits = NbContiguousLastHits - length( find(strcmp(LastOutcomes(1:(NbContiguousLastHits+1)),'SNOOZE')) ); end  % But Snoozes don't give bonus
-    MinToC = str2double(get(get(exptparams.TrialObject,'TargetHandle'),'MinToC')); MaxToC = str2double(get(get(exptparams.TrialObject,'TargetHandle'),'MaxToC'));
+%     MinToC = str2double(get(get(exptparams.TrialObject,'TargetHandle'),'MinToC')); MaxToC = str2double(get(get(exptparams.TrialObject,'TargetHandle'),'MaxToC'));
     if CatchTrial
       if ~(RewardSnooze); RewardAmount = 0; else RewardAmount = (randi(2,1)-1)*RewardAmount/2; pause(0.2); end
     end
@@ -458,7 +551,7 @@ switch Outcome
     % Turn LED ON
     LightNames = IOMatchPosition2Light(HW,LEDposition);
     [State,LightEvent] = IOLightSwitch(HW,1,0,[],[],[],LightNames{1});
-    Events = AddEvent([],LightEvent,TrialIndex);
+%     Events = AddEvent([],LightEvent,TrialIndex);
     
     pause(PumpDuration/2);
     PumpEvent = IOControlPump(HW,'stop',0,PumpName);
@@ -467,7 +560,7 @@ switch Outcome
     
     % Turn LED OFF
     [State,LightEvent] = IOLightSwitch(HW,0,0,[],[],[],LightNames{1});
-    Events = AddEvent([],LightEvent,TrialIndex);
+%     Events = AddEvent([],LightEvent,TrialIndex);
   case 'SNOOZE';  % STOP SOUND
     StopEvent = IOStopSound(HW);
     Events = AddEvent(Events, StopEvent, TrialIndex);
@@ -487,7 +580,7 @@ switch Outcome
       % Turn LED ON
       LightNames = IOMatchPosition2Light(HW,LEDposition);
       [State,LightEvent] = IOLightSwitch(HW,1,0,[],[],[],LightNames{1});
-      Events = AddEvent([],LightEvent,TrialIndex);
+%       Events = AddEvent([],LightEvent,TrialIndex);
       
       pause(PumpDuration/2);
       PumpEvent = IOControlPump(HW,'stop',0,PumpName);
@@ -507,7 +600,7 @@ exptparams.wAccu = wAccu;
 exptparams.Performance(TrialIndex).ReferenceIndices = ReferenceIndices;
 exptparams.Performance(TrialIndex).RefSliceCounter = RefSliceCounter;
 exptparams.Performance(TrialIndex).IndexRefSlice = IndexRefSlice;
-exptparams.Performance(TrialIndex).ToC = TargetSliceToC;
+exptparams.Performance(TrialIndex).ToC = TarWin1;
 exptparams.Performance(TrialIndex).TargetIndices = TargetIndices;
 exptparams.Performance(TrialIndex).Outcome = Outcome;
 exptparams.Performance(TrialIndex).TarWindow = TarWindow;
@@ -523,7 +616,7 @@ exptparams.Performance(TrialIndex).DetectType = DetectType;
 
 %% WAIT AFTER RESPONSE TO RECORD POST-DATA
 if ~strcmp(Outcome,'SNOOZE')
-  while CurrentTime < ResponseTime + get(O,'AfterResponseDuration');
+  while CurrentTime < (ResponseTime + get(O,'AfterResponseDuration'));
     CurrentTime = toc+InitialTime; pause(0.05);
   end
 else

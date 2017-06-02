@@ -27,3 +27,4 @@ while etime(clock,LastTime)<get(o,'NoResponseTime') && ~StopExperiment
     end
     drawnow;
 end
+drawnow;

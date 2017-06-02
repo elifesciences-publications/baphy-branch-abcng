@@ -22,6 +22,11 @@ BehaveObject = exptparams.BehaveObject;
 % Initialize psychtoolbox for eyetracker JL 17/05/03
 if isfield(HW,'PsychoVisualDisplay') && HW.PsychoVisualDisplay; InitializeHW_VisualExperiment; end
 
+% START PSYTOOLBOX FOR VISUAL EXPERIMENT
+if ~isempty(strfind(class(BehaveObject),'Eye'))
+  InitializeHW_VisualExperiment;
+end
+
 if strcmpi(exptparams.BehaveObjectClass,'MriPassive') && ...
         get(BehaveObject,'DelayAfterScanTTL')==0,
    disp('MriPassive: press a key to synchronize with start of MRI scan ...');
@@ -60,6 +65,7 @@ while ContinueExp == 1
     exptparams = RandomizeSequence(exptparams.TrialObject, exptparams, globalparams, iRep, 1);
     
     iTrial=0;
+    exptparams.NoTargetInTrialCount = [];%Added by CB 10/11/15
     while iTrial<get(exptparams.TrialObject,'NumberOfTrials') % TRIAL LOOP
       TrialIndex = TrialIndex + 1; % MAIN TRIAL COUNTER
       iTrial = iTrial+1;  % TRIAL COUNTER WITHIN REPETITION
@@ -137,9 +143,9 @@ while ContinueExp == 1
       end
       
       %% MAIN ACQUISITION SECTION
-      if ~strcmp( class(BehaveObject) , 'RewardTargetContinuous' )  % Acquisition starts within BehaviorControl.m
+      if all(~strcmp( class(BehaveObject) , {'RewardTargetContinuous'} ))
         [StartEvent,HW] = IOStartAcquisition(HW);
-      else
+      else  % Acquisition starts within BehaviorControl.m
         StartEvent.Note = 'TRIALSTART'; StartEvent.StartTime = 0; StartEvent.StopTime = 0;
       end
       

@@ -41,6 +41,7 @@ switch nargin
     o.AttenuationLevels=0;     
     o.PipSet=[];
     o.Frequencies=[];
+     o.RunClass = 'PIP';
     
     o = class(o,'PipSequence',s);
     o = ObjUpdate(o);

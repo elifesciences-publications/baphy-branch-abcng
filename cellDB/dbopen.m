@@ -24,10 +24,10 @@ end
 
 % set defaults on first call
 if isempty(DB_SERVER),
-   DB_SERVER='bhangra.isr.umd.edu';
+%    DB_SERVER='bhangra.isr.umd.edu';
    %DB_SERVER='128.8.140.174';
    %DB_SERVER='polka.isr.umd.edu';
-   %DB_SERVER='metal.isr.umd.edu';
+   DB_SERVER='metal.isr.umd.edu';
 end
 if isempty(DB_USER),
    DB_USER='david';

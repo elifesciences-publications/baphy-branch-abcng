@@ -9,7 +9,7 @@ function varargout = BaphyMainGuiItems (field,globalparams)
 switch field
   % Tester:
   case 'Tester'
-    varargout{1} = {'Sundeep','Jasmina','Jennifer','Celian','Thibaut','Yves','Austin Powers'};
+    varargout{1} = {'Jennifer','Celian','Thibaut','Yves','Rupesh','Anna','Austin Powers'};
     % Ferret Names:
   case 'Ferret'
     if dbopen,

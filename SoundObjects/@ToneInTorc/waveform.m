@@ -44,17 +44,16 @@ if ~isempty(exptparams_Copy)
 end
 if globalparams.HWSetup== 1 | globalparams.HWSetup== 3 | globalparams.HWSetup== 5   
     wTone= 5*(wTone/max(abs(wTone)));
-    disp(['tone: ' num2str(max(abs(wTone)))])
+%     disp(['tone: ' num2str(max(abs(wTone)))])
     wTorc= 5*(wTorc/max(abs(wTorc)));
-    disp(['torc: ' num2str(max(abs(wTorc)))])
+%     disp(['torc: ' num2str(max(abs(wTorc)))])
     wTone = wTone * 10^(get(o,'SNR')/20);
-    disp(['toneMan: ' num2str(max(abs(wTone)))])
+%     disp(['toneMan: ' num2str(max(abs(wTone)))])
     w = wTorc + wTone;
 
     % disp(10^(get(o,'SNR')/20))
 end
 if ~isempty(w)
-    disp(max(abs(w)))
+%     disp(max(abs(w)))
 end
-    events = [eTorc eTone];
-    
+events = eTone;

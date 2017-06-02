@@ -38,7 +38,7 @@ switch IODriver(HW)
             disp('starting sound');
             play(HW.AO);  % AO is an audio player object, which gives control on the sound.
             disp('starting lick');
-            start(HW.AI);  % AO is an audio player object, which gives control on the sound.
+            start(HW.AI(1));  % AO is an audio player object, which gives control on the sound.
         end
         %if ~isempty(HW.AI),
         %    disp('starting AI');
@@ -84,13 +84,15 @@ switch IODriver(HW)
             end
         end
         
-        niStop(HW.AI);
+        for AInum=1%:length(HW.AI(1)),
+          niStop(HW.AI(AInum));
+        end
         
         HW=niStart(HW);
-        % make sure not triggering
+%        make sure not triggering
         niPutValue(HW.DIO(TriggerDIO),vstop);
         
-        % now actually trigger
+%        now actually trigger
         niPutValue(HW.DIO(TriggerDIO),v);
     end
 
@@ -105,15 +107,15 @@ switch IODriver(HW)
         
       otherwise
         %% WAIT UNTIL INPUT AND OUTPUT BECOME AVAILABLE (if daq is still running)
-        if isrunning(HW.AO) || isrunning(HW.AI),
+        if isrunning(HW.AO) || isrunning(HW.AI(1)),
           warning('IOStartAcquisition: Device is not ready');end
-        while isrunning(HW.AO) || isrunning(HW.AI); pause(0.01); end
+        while isrunning(HW.AO) || isrunning(HW.AI(1)); pause(0.01); end
         
         %% ANALOG INPUT
         TrigIndexAI=IOGetIndex(HW.DIO,'TrigAI');
-        TrigValAI = IOGetTriggerValue(HW.AI,'TRIGGER');
+        TrigValAI = IOGetTriggerValue(HW.AI(1),'TRIGGER');
         TrigIndices = TrigIndexAI; TrigVals = TrigValAI;
-        set(HW.AI,'BufferingMode','Auto');
+        set(HW.AI(1),'BufferingMode','Auto');
         
         %% ALPHA OMEGA
         TrigIndexFile=find(strcmp(HW.DIO.Line.LineName,'FileSave'));
@@ -124,14 +126,14 @@ switch IODriver(HW)
         
         %% ANALOG OUTPUT
         if strcmpi(get(HW.AO,'TriggerType'),'HwDigital') % TRIGGER ONLY FOR DAQ BASED SOUND OUT
-          stop([HW.AO HW.AI]);
+          stop([HW.AO HW.AI(1)]);
           TrigIndexAO=IOGetIndex(HW.DIO,'TrigAO');
           TrigValAO = IOGetTriggerValue(HW.AO,'TRIGGER');
           TrigIndices(end+1) = TrigIndexAO;
           TrigVals(end+1) = TrigValAO;
-          start([HW.AO HW.AI]);
+          start([HW.AO HW.AI(1)]);
         else
-          start([HW.AI]);
+          start([HW.AI(1)]);
         end
         
         %% RESET ALL LINES

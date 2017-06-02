@@ -32,6 +32,7 @@ TargetF([2 3 1]) ;...
 TargetF(2)*2^(-2/12) TargetF([2 3]) ;... 
 TargetF([1 2]) TargetF(2)*2^(-1/12)]);
 
+Names = cell(get(o,'MaxIndex'),1); o = set(o,'Names',Names);
 
 if isempty(get(o,'Key'))  % First trial
   KeyNum = round(prod(clock)*5/10000);

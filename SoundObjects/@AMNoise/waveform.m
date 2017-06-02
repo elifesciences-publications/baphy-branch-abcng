@@ -19,6 +19,9 @@ PreStimSilence = get(o,'PreStimSilence');
 PostStimSilence = get(o,'PostStimSilence');
 TonesPerOctave=get(o,'TonesPerOctave');
 Names = get(o,'Names');
+Square=get(o,'Square');
+SquareDuration=get(o,'SquareDuration'); %Everything linked to square added by CB 17/12/15
+SquareDuty = SquareDuration*AM*100;
 
 Frequencies=round(exp(linspace(log(LowFreq),log(HighFreq),Count+1)));
 logfreq=log(Frequencies);
@@ -76,10 +79,9 @@ w0=zeros(size(w));
 TonesPerBurst=ceil(Frequencies(i1freq+1)./Frequencies(i1freq) .* TonesPerOctave);
 
 if TonesPerBurst==0,
-   
-   f1 = Frequencies(i1freq);
-   f2 = Frequencies(i1freq+1);
-   w0=BandpassNoise(f1,f2,Duration,SamplingRate);
+  f1 = Frequencies(i1freq);
+  f2 = Frequencies(i1freq+1);
+  w0=BandpassNoise(f1,f2,Duration,SamplingRate);
       
 else
     lfrange=linspace(logfreq(i1freq),logfreq(i1freq+1),TonesPerBurst.*2+1);
@@ -95,8 +97,13 @@ end
 % normalize each w0 before adding
 w0=w0./max(abs(w0(:)));
 if AM(i1AM)>0,
-   w0=w0.*(1-ModDepth(i1AM) + ModDepth(i1AM) .* ...
-           abs(sin(pi*AM(i1AM)*timesamples)) ./ 0.4053);
+  if Square
+    w0=w0.*(1-ModDepth(i1AM) + ModDepth(i1AM) .* ...
+      abs((square(2*pi*AM(i1AM)*timesamples,SquareDuty)+1)/2) ./ 0.4053);
+  else  
+    w0=w0.*(1-ModDepth(i1AM) + ModDepth(i1AM) .* ...
+      abs(sin(pi*AM(i1AM)*timesamples)) ./ 0.4053);
+  end  
 end
 w=w+w0;
 

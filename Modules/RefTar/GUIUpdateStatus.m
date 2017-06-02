@@ -90,7 +90,7 @@ if isfield(exptparams,'TrialObject')
             end
         end
         %
-        for cnt1 = 1:length(fields)/2   % length(fields) should be always a multiple of 2, because it
+        for cnt1 = 1:min(32,length(fields)/2)   % length(fields) should be always a multiple of 2, because it
             % had the field name, its style
             field = fields((cnt1-1)*2+1:cnt1*2);
             exptparams = ShowOnGui (exptparams, field{1}, [pos-[135 19*(cnt1-1)+0] 125 15], ...

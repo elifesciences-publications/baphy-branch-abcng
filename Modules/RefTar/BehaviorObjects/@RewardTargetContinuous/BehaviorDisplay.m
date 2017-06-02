@@ -56,6 +56,9 @@ set(PH.Licks.RespWindow,'XData',TarRegion(1,:),'YData',TarRegion(2,:),...
 if ~isempty(ResponseData)  
   axes(AH.Licks);
   TimeR = 0 : (1/SRin) : ((size(ResponseData,1)-1)/SRin);
+  % to make sure to see even very short licks
+  LickInd = find(ResponseData(:,1));
+  for ln = 1:length(LickInd); ResponseData(LickInd(ln):(LickInd(ln)+12))=1; end
   set(PH.Licks.Image,'XData',TimeR,'YData',1:length(RespInds),'CData',ResponseData(:,RespInds)');
 else TimeR = 0;  
 end
@@ -129,7 +132,7 @@ if ~isempty(ResponseData)
       %         end
       %         axis([Bins([1,end]),0,max(cHist(:))+1]);
       %       end
-      Bins = -3:0.1:3; i =1;
+      Bins = -2:0.1:1; i =1;
       cHist(i,:) = hist(Licks,Bins); ForAxisHist(iO,:,:) = cHist(i,:);
       set(PH.TarTiming.RespHist(iO,i),'xdata',Bins,'ydata',cHist(i,:)+iO*0.05);
       axis([Bins([1,end]),0,max(ForAxisHist(:))+1]);
@@ -140,6 +143,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% HELPER FUNCTION FOR SETTING UP THE DISPLAY
 function [FIG,AH,PH,Conditions,PlotOutcomes,exptparams] = LF_prepareFigure(exptparams,DC,TrialIndex)
+SO = get(exptparams.TrialObject,'TargetHandle');
 
 if ~isfield(exptparams,'ResultsFigure') ...
   || isempty(exptparams.ResultsFigure) ...
@@ -201,7 +205,12 @@ else % CREATE A NEW SET OF HANDLES
   text(0.01,0.9,'Hit','Color',Colors.Hit,Opts{:});
   text(0.01,0.8,'Early','Color',Colors.Early,Opts{:});
   text(0.01,0.7,'Snooze','Color',Colors.Snooze,Opts{:});
-  text(0.01,0.6,'Discrimination','Color',Colors.Discrimination,Opts{:});
+  switch get(SO,'descriptor')
+    case 'TextureMorphing'
+      text(0.01,0.6,'NbExtraRefSlice','Color',Colors.Discrimination,Opts{:});
+    case 'RandSeqTorc'
+      text(0.01,0.6,'d''','Color',Colors.Discrimination,Opts{:});
+  end
   set(AH.Performance,'XLim',[0.5,10],'YLim',[-.05,1.05],'YTick',[0:0.25:1]);
   
 %% TARGET DISTRIBUTION
@@ -243,16 +252,17 @@ else % CREATE A NEW SET OF HANDLES
   xlabel('Diffi. lvl',AxisLabelOpt{:});
   PlotOutcomes = {'Hit','Snooze','Early'};
 %   DiffiNb = length(unique(get(get(exptparams.TrialObject,'TargetHandle'),'DifficultyLvlByInd')));
-  UniqueDiffiLvl_D1 = unique( str2num(get(get(exptparams.TrialObject,'TargetHandle'),'DifficultyLvl_D1')) ,'stable');
   DiffiMat = exptparams.Performance(end).DiffiMat; UniqueDiffiNb = size(DiffiMat,1);
+  UniqueDiffiLvl_D1 = UniqueDiffiNb;%unique( str2num(get(get(exptparams.TrialObject,'TargetHandle'),'DifficultyLvl_D1')) ,'stable');
   for PlotNum = 1:length(PlotOutcomes)
       for DiffiNum = 1:UniqueDiffiNb
           PH.DiffiDistri.Bar(DiffiNum,PlotNum) = plot( repmat(DiffiNum+0.22*(PlotNum-2),2,1) , zeros(2,1),...
               '-','Linewidth',6,'Color',Colors.(PlotOutcomes{PlotNum}));
-          NewXaxisStr{DiffiNum} = ['+' num2str(UniqueDiffiLvl_D1(DiffiNum)) '%'];
+%           NewXaxisStr{DiffiNum} = ['+' num2str(UniqueDiffiLvl_D1(DiffiNum)) '%'];
       end
   end
-  set(gca, 'XTick',1:DiffiNum); xt = get(gca, 'XTick'); set (gca, 'XTickLabel', NewXaxisStr);
+  set(gca, 'XTick',1:DiffiNum); xt = get(gca, 'XTick');
+%   set (gca, 'XTickLabel', NewXaxisStr);
   PH.DiffiDistrib.Title = title('');
   axis([0,UniqueDiffiNb+1,0,1]);
   
