@@ -10,7 +10,7 @@ elseif TrialIndex==1   % Initialize
     %% SCREEN POSITION
     mp = get(0, 'MonitorPositions');
     SecondScreen = figure('MenuBar','none','ToolBar','none','OuterPosition',[mp(2,1) mp(2,2)+10 mp(2,3)-mp(1,3) mp(1,4)+10]);
-    set(SecondScreen, 'color', [.5 .5 .5])
+    set(SecondScreen, 'color', Colors.GREY)
     SecondScreenAxis = gca;
     hold all;
     VisualDispGrey = fill([-10 10 10 -10],[-10 -10 10 10],[.5 .5 .5],'EdgeColor',[.5 .5 .5]);

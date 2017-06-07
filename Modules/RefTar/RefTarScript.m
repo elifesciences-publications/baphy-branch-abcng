@@ -13,11 +13,14 @@ function varargout = RefTarScript (globalparams, exptparams, HW)
 % BE, modified & polished, 2011/7
 % SVD, added NIDAQMX support 2012/05
 
+
 global StopExperiment; StopExperiment = 0; % Corresponds to User button
 global exptparams_Copy; exptparams_Copy = exptparams; % some code needs exptparams
 global BAPHY_LAB LoudnessAdjusted
 
 BehaveObject = exptparams.BehaveObject;
+% Initialize psychtoolbox for eyetracker JL 17/05/03
+if isfield(HW,'PsychoVisualDisplay') && HW.PsychoVisualDisplay; InitializeHW_VisualExperiment; end
 
 % START PSYTOOLBOX FOR VISUAL EXPERIMENT
 if ~isempty(strfind(class(BehaveObject),'Eye'))
@@ -71,9 +74,8 @@ while ContinueExp == 1
       
       %% PREPARE TRIAL
       TrialObject = get(exptparams.TrialObject);
-%       % 2013/12 YB: VISUAL DISPLAY--Back to grey screen on the second monitor if we are in a psychophysics experiment
-%       if isfield(TrialObject,'VisualDisplay') && TrialObject.VisualDisplay; 	[VisualDispColor,exptparams] = VisualDisplay(TrialIndex,'GREY',exptparams); end
-        
+      % 2013/12 YB: VISUAL DISPLAY--Back to grey screen on the second monitor if we are in a psychophysics experiment
+      if isfield(TrialObject,'VisualDisplay') && TrialObject.VisualDisplay; 	[exptparams] = VisualDisplayEyeTracking(TrialIndex,'GREY',exptparams); end% VisualDisplayEyeTracking instead of VisualDisplay JL 01/05/17        
       %Create pump control
       if isfield(TrialObject,'PumpProfile')
           PumpProfile = TrialObject.PumpProfile;
@@ -81,6 +83,7 @@ while ContinueExp == 1
           PumpProfile = str2num(get(handles.edit1,'string'));
           exptparams.TrialObject = set(exptparams.TrialObject,'PumpProfile',PumpProfile);
       end
+      
       
       % Yves; 2013/11: I added an input to 'waveform' methods
       if any(strcmp(fieldnames(exptparams.TrialObject),'TrialIndexLst'))

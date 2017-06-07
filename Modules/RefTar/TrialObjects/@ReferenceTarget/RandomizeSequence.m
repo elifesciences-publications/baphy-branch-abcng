@@ -41,7 +41,7 @@ if IsLookup
         case 2 % Ratio Ref/Tar = 1.5
           LookupTable = [1 2 2 1 2 1 1 1 1 0 0];
         case 1 % Ratio Ref/Tar = 1
-          LookupTable = [0 1 1 0 0 1];
+          LookupTable = [0 1 1 0 0 1 0 1 0 0 1 1];
       end
 % Rt = sum(LookupTable)/(length(LookupTable)-length(find(LookupTable==ii))); disp([ii Rt]);
 % clear w; for kk=1:ii; w(kk)=length(find(LookupTable==kk)); end; disp(w)

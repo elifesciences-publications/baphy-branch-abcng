@@ -61,9 +61,11 @@ switch HW.params.HWSetup
       for SpeakerNum = 1:SpeakerNb
         switch HW.Calibration(SpeakerNum).Loudness.Method
           case 'MaxLocalStd';
-            Duration = HW.Calibration(SpeakerNum).Loudness.Parameters.Duration;
-            Val = maxLocalStd(stim(:,SpeakerNum),HW.params.fsAO,Duration);
-            stim(:,SpeakerNum) =  HW.Calibration(SpeakerNum).Loudness.Parameters.SignalMatlab80dB*stim(:,SpeakerNum)/Val;
+            if std(stim)~=0
+              Duration = HW.Calibration(SpeakerNum).Loudness.Parameters.Duration;
+              Val = maxLocalStd(stim(:,SpeakerNum),HW.params.fsAO,Duration);
+              stim(:,SpeakerNum) =  HW.Calibration(SpeakerNum).Loudness.Parameters.SignalMatlab80dB*stim(:,SpeakerNum)/Val;
+            end
         end
       end
     end
