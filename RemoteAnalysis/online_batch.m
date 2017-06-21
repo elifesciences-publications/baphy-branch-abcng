@@ -143,10 +143,11 @@ for ii=1:NElectrodes
     SortedUnits = options.unit(ElectrodesUnits{ii});
     disp(['Sorted Units on Electrode ', num2str(Electrode), ': ',num2str(SortedUnits)]);
     if length(SortedUnits) > 1   unit = input('Choose a unit: ');
-    else                                         unit=SortedUnits;     end
+    else unit=SortedUnits;     end
     options.sortedunit = unit;
   end
   
+  if ~options.usesorted || (options.usesorted && (length(SortedUnits)>1 || SortedUnits~=0))
   %% PLOT DIFFERENT ANALYSES
   switch analysis_name,
     case 'strf'
@@ -225,7 +226,7 @@ for ii=1:NElectrodes
                   spikefile = [spkpath,'sorted/',filename,'.spk.mat'];
               end
               
-              [strf,snr(ii)]=strf_offline2(mfilename,spikefile,Electrode,options.sortedunit);
+              [strf,snr(ii)]=strf_offline2(mfilename,spikefile,Electrode,options.sortedunit,AH(ii));
           end
       end
       
@@ -243,6 +244,8 @@ for ii=1:NElectrodes
     'NH = copyobj(H,NFig); set(NH,''Position'',[0.15,0.1,0.8,0.85]); xlabel(''Time [s]'')'])
   drawnow;
   if exist('snr','var') fprintf('Electrode %d snr=%.3f\n',ii,snr(ii)); end
+  
+  end
 end
 
 if isfield(globalparams,'ExperimentComplete'),

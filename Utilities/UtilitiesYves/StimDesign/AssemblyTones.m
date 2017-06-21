@@ -23,8 +23,8 @@ X = X(max(1,find(CumDistri>0,1,'first')-1):end);
 CumDistri = CumDistri(max(1,find(CumDistri>0,1,'first')-1):end);
 % Remove doublons in the CumDistri to allow interpolation
 % and avoid boundary effects
-[FirstCumDistri,FirstUniIndex] = unique(CumDistri,'first');
-[LastCumDistri,LastUniIndex] = unique(CumDistri,'last');
+[FirstCumDistri,FirstUniIndex] = unique(CumDistri,'first','legacy');
+[LastCumDistri,LastUniIndex] = unique(CumDistri,'last','legacy');
 MidIndex = round(length(LastUniIndex)/2);
 UniIndex(1:MidIndex) = max([FirstUniIndex(1:MidIndex) ; LastUniIndex(1:MidIndex)]);
 UniIndex(MidIndex+1:length(LastUniIndex)) = min([FirstUniIndex(MidIndex+1:length(LastUniIndex)) ; LastUniIndex(MidIndex+1:length(LastUniIndex))]);
@@ -35,6 +35,14 @@ ToneFrequencies = interp1(CumDistri,UniX,Rgenerator.rand(1,N));
 TonePhases = Rgenerator.randi(360,[1 N])-1;   % Phase belongs to [0 359]
 % Tones are replaced in binned frequency axis (<FrequencySpace> binnned by <Par.ToneInterval>)
 [mimi,MinInd] = min( abs( repmat(FrequencySpace',1,size(ToneFrequencies,2))-repmat(ToneFrequencies,size(FrequencySpace,2),1) ) ,[], 1 );
+% For melodies in different keys:
+% [r,c] = find( ( repmat(FrequencySpace',1,size(ToneFrequencies,2))-repmat(ToneFrequencies,size(FrequencySpace,2),1) )> 0);
+% for Col = 1:length(ToneFrequencies)
+%     if isempty(find(c==Col)); MinInd(Col) = length(FrequencySpace);
+%     else
+%         MinInd(Col) = min(r(c==Col));
+%     end
+% end
 ToneFrequencies = FrequencySpace(MinInd');
 
 if PlotMe

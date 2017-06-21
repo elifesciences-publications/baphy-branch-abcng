@@ -4,8 +4,9 @@ function [Stimuli,ChangeTime,options,Behavior] = TMG_ResynthesizeStim(mFile,vara
 %- Stimuli
 
 P = parsePairs(varargin);
-checkField(P,'RootAdress','/auto/data');
+checkField(P,'RootAdress','/auto/data/');
 checkField(P,'TrialLst',[]);
+checkField(P,'CutWaveform',1);
 
 IndPenetration = min([find(mFile=='0',1,'first') find(mFile=='1',1,'first')]);
 Animal = mFile(1:(IndPenetration-2));
@@ -109,8 +110,11 @@ for TrialNum = P.TrialLst
 %             else   % problem of Hit events absent in Hit trials in a large batch of sessions (fixed now)
 %                 StopSoundT = exptparams.Performance(TrialNum).LickTime;
 %             end
-            StopSoundT = min( (StopSoundT-TotalPreStimSilence+get(TH,'PreStimSilence')), length(w)/SoundSF);
-            w = w(1:floor(StopSoundT*SoundSF));
+            if P.CutWaveform
+                StopSoundT = min( (StopSoundT-TotalPreStimSilence+...
+                    get(TH,'PreStimSilence')), length(w)/SoundSF);
+                w = w(1:floor(StopSoundT*SoundSF));
+            end
             %                 exptparams(1).Performance(1).RefSliceCounter = 2;
             %                 exptparams(1).Performance(1).IndexRefSlice = [86 22];
             %
