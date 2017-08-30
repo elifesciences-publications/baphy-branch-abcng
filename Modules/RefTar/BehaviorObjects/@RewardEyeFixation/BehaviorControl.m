@@ -73,15 +73,39 @@ switch o.StimType
         angleGrating = 0;
         colorModulation = [255 255 255];
         
-    case 'approxRFlfp' 
+    case 'SFTuning' 
+         load (HW.VisionHW.stimfile, 'parametersTuning','orderTuning', 'order_ind');
+         parametersTuning = parametersTuning(parametersTuning(2) == 1);
+         order = orderTuning;
+         waitframes = 1;
+         fps = Screen('FrameRate',HW.VisionHW.ScreenID);      % frames per second
+         ifi = Screen('GetFlipInterval', HW.VisionHW.ScreenID);
+         if fps == 0,
+           fps = 1/ifi;
+         end
+   %      timesTuning = cell(length(fix_sf_list),length(fix_orient_list), length(fix_Speed_list));
+   case 'OrientationTuning'
+         load (HW.VisionHW.stimfile, 'parametersTuning','orderTuning', 'order_ind');
+         parametersTuning = parametersTuning(parametersTuning(1) == 1);
+         order = orderTuning;
+         waitframes = 1;
+         fps = Screen('FrameRate',HW.VisionHW.ScreenID);      % frames per second
+         ifi = Screen('GetFlipInterval', HW.VisionHW.ScreenID);
+         if fps == 0,
+           fps = 1/ifi;
+         end
+        
+    case 'Flicker'
+         freqFlicker = 2; %Hz
          order_ind = 1;
          order(order_ind) = 1;
-         fix_sf_list = [50];
-         fix_orient_list = [90];
-         fix_phaseSpeed_list = [0.4];
+         waitframes = 1;
+         fps = Screen('FrameRate',HW.VisionHW.ScreenID);      % frames per second
          ifi = Screen('GetFlipInterval', HW.VisionHW.ScreenID);
-          waitframes = 1;
-         
+         if fps == 0,
+           fps = 1/ifi;
+         end
+                       
     case 'Training'
          order_ind = 1;
          order(order_ind) = 1;
@@ -89,16 +113,28 @@ switch o.StimType
           
     case 'MseqMono'
         
-         imageRect = [664.67905      309.39094      1920     1080];         
+         imageRect = [960   120    1920     1080];         
          load (HW.VisionHW.stimfile, 'Mseqorder', 'order_ind');
          order = Mseqorder;
+         waitframes = 1;
+         fps = Screen('FrameRate',HW.VisionHW.ScreenID);      % frames per second
          ifi = Screen('GetFlipInterval', HW.VisionHW.ScreenID);
-                 
+         if fps == 0,
+           fps = 1/ifi;
+         end
+                
     case 'HartleyMono'
         
         imageRect = [664.67905      309.39094      1920      1080];
         load (HW.VisionHW.stimfile, 'Hartleyorder', 'order_ind');
         order = Hartleyorder;
+        waitframes = 1;
+        fps = Screen('FrameRate',HW.VisionHW.ScreenID);      % frames per second
+        ifi = Screen('GetFlipInterval', HW.VisionHW.ScreenID);
+        if fps == 0,
+          fps = 1/ifi;
+        end
+
 end      
       
 switch get(o,'Calibration')
@@ -110,7 +146,16 @@ switch get(o,'Calibration')
     
   case 0
     %% BEHAVIOR
-    while IOEyeFixate(HW,AllowedRadius) && (CurrentTime < exptparams.LogDuration) && ~isempty(order(order_ind))
+    
+   Screen('FillRect', HW.VisionHW.ScreenID, 180,[]);
+   Screen('FillRect', HW.VisionHW.ScreenID, [0 0 0], HW.VisionHW.rectRefrL);
+   vbl = Screen('Flip', HW.VisionHW.ScreenID);          
+    
+    while IOEyeFixate(HW,AllowedRadius) && (CurrentTime < exptparams.LogDuration) 
+        if isempty(order(order_ind))
+            fprintf('Sequence of stimulations finished');
+            break;
+        end;    
            
 switch o.StimType
     case 'approxRFbar'
@@ -186,7 +231,78 @@ switch o.StimType
         end; 
        end;
   end; 
-      
+  
+    case 'OrientationTuning'
+        
+  sf = HW.VisionHW.parametersTuning(order(order_ind),1);
+  orien = HW.VisionHW.parametersTuning(order(order_ind),2);
+  Sp = HW.VisionHW.parametersTuning(order(order_ind),3);
+  Screen('FillRect', HW.VisionHW.ScreenID, [0 0 0], HW.VisionHW.rectRefrL);
+  vbl = Screen('Flip', HW.VisionHW.ScreenID);
+        if IOEyeFixate(HW,AllowedRadius)
+         time0 = IOGetTimeStamp(HW);
+         for time_ind=1:10
+             Screen('PutImage', HW.VisionHW.ScreenID,  HW.VisionHW.grating{time_ind, sf, orien, Sp}.*256, [0 0 1920 1080]);
+             Screen('FillRect', HW.VisionHW.ScreenID, [255 255 255], HW.VisionHW.rectRefrL);
+             vbl = Screen('Flip', HW.VisionHW.ScreenID, vbl + 2.5*ifi); %% it gives precisely half a second of each stimulation
+         end;
+         time1 = IOGetTimeStamp(HW);
+         Events = AddEvent(Events, 'StimulusShown', TrialIndex, time0, time1); 
+         Events(end).Rove = order(order_ind);
+         order_ind=order_ind+1;
+        else 
+         Screen('FillRect', HW.VisionHW.ScreenID, 180,[]);
+         Screen('FillRect', HW.VisionHW.ScreenID, [125 125 125], HW.VisionHW.rectRefrL);
+         Screen('Flip', HW.VisionHW.ScreenID);               
+       end; 
+       
+    case 'SFTuning'
+        
+  sf = HW.VisionHW.parametersTuning(order(order_ind),1);
+  orien = HW.VisionHW.parametersTuning(order(order_ind),2);
+  Sp = HW.VisionHW.parametersTuning(order(order_ind),3);      
+  Screen('FillRect', HW.VisionHW.ScreenID, [255 255 255], HW.VisionHW.rectRefrL);
+  vbl = Screen('Flip', HW.VisionHW.ScreenID, vbl+(60-0.5)*ifi);
+        if IOEyeFixate(HW,AllowedRadius)
+         time0 = IOGetTimeStamp(HW);
+         for time_ind=1:10
+             Screen('PutImage', HW.VisionHW.ScreenID, HW.VisionHW.grating{time_ind, sf, orien, Sp}.*256, [0 0 1920 1080]);
+             Screen('FillRect', HW.VisionHW.ScreenID, [0 0 0], HW.VisionHW.rectRefrL);
+             vbl = Screen('Flip', HW.VisionHW.ScreenID, vbl + 0.5*ifi);
+         end;
+         vbltime=IOGetTimeStamp(HW);
+         Events = AddEvent(Events, 'StimulusShown', TrialIndex, vbltime, vbltime+0.5); 
+         Events(end).Rove = order(order_ind);
+         order_ind=order_ind+1;
+        else 
+         Screen('FillRect', HW.VisionHW.ScreenID, 180,[]);
+         Screen('FillRect', HW.VisionHW.ScreenID, [125 125 125], HW.VisionHW.rectRefrL);
+         Screen('Flip', HW.VisionHW.ScreenID);               
+       end;     
+    
+    case 'Flicker'
+        
+           Screen('FillRect', HW.VisionHW.ScreenID,[0 0 0],[]);
+           vbl = Screen('Flip', HW.VisionHW.ScreenID, vbl+(90-0.5)*ifi);
+        for time_ind=1:100 
+            if IOEyeFixate(HW,AllowedRadius) 
+                Screen('FillRect', HW.VisionHW.ScreenID, [255 255 255],[HW.VisionHW.ScreenSize(1)/2 0 HW.VisionHW.ScreenSize(1) HW.VisionHW.ScreenSize(2)]); 
+                Screen('FillRect', HW.VisionHW.ScreenID, [255 255 255], HW.VisionHW.rectRefrL);
+                vbl = Screen('Flip', HW.VisionHW.ScreenID, vbl + (8-0.5)*ifi); %grey screen for 60 frames
+                vbltime = IOGetTimeStamp(HW);
+                Events = AddEvent(Events, 'StimulusShown', TrialIndex, vbltime, vbltime+0.1336); 
+                Events(end).Rove = 'Flicker';  
+                Screen('FillRect', HW.VisionHW.ScreenID, [0 0 0],[HW.VisionHW.ScreenSize(1)/2 0 HW.VisionHW.ScreenSize(1) HW.VisionHW.ScreenSize(2)]);
+                Screen('FillRect', HW.VisionHW.ScreenID, [0 0 0], HW.VisionHW.rectRefrL);
+                vbl = Screen('Flip', HW.VisionHW.ScreenID, vbl + (8-0.5)*ifi);  %flicker frequency 2Hz
+            else 
+                Screen('FillRect', HW.VisionHW.ScreenID, 180,[]);
+                Screen('FillRect', HW.VisionHW.ScreenID, [125 125 125], HW.VisionHW.rectRefrL);
+                Screen('Flip', HW.VisionHW.ScreenID); 
+           
+            end
+        end;  
+       
     case 'Training'
         Screen('FillRect', HW.VisionHW.ScreenID, 180,[]);
         Screen('FillRect', HW.VisionHW.ScreenID, [0 0 0], HW.VisionHW.rectRefrL);
@@ -270,66 +386,74 @@ switch o.StimType
         
     case 'MseqMono' 
                 
-   vbltime(1:2)=0;  
-   Screen('FillRect', HW.VisionHW.ScreenID, 180,[]);
-   Screen('FillRect', HW.VisionHW.ScreenID, [255 255 255], HW.VisionHW.rectRefrL);
-   Screen('Flip', HW.VisionHW.ScreenID);
-   image(1:HW.VisionHW.NumPix, 1:HW.VisionHW.NumPix) = HW.VisionHW.Mseq(order(order_ind),:,:);
+   vbltime=[]; 
+   image(1:HW.VisionHW.NumPix, 1:HW.VisionHW.NumPix) = HW.VisionHW.Mseq(:,:, order(order_ind));
    image = image.*256;
    Screen('PutImage', HW.VisionHW.ScreenID, image, imageRect);
-   for time_ind=1:2
-        if IOEyeFixate(HW,AllowedRadius)
+   if IOEyeFixate(HW,AllowedRadius)
                 Screen('FillRect', HW.VisionHW.ScreenID, [0 0 0], HW.VisionHW.rectRefrL);
-      %         Screen('FillRect', HW.VisionHW.ScreenID, [0 0 0], HW.VisionHW.rectRefrR);
-                Screen('Flip', HW.VisionHW.ScreenID); 
-                vbltime(time_ind) = IOGetTimeStamp(HW);         
-       end;
-   end;
-  
-   Screen('FillRect', HW.VisionHW.ScreenID, [255 255 255], HW.VisionHW.rectRefrL);
-%  Screen('FillRect', HW.VisionHW.ScreenID, [255 255 255], HW.VisionHW.rectRefrR);
-   Screen('Flip', HW.VisionHW.ScreenID);
-   time1 = IOGetTimeStamp(HW);
-   if  time1-vbltime(end)>=0.0167 && vbltime(end)>0
-      Events = AddEvent(Events, 'StimulusShown', TrialIndex, vbltime(1), time1); 
-      Events(end).Rove = Mseqorder(order_ind);      
-   else       
-       Mseqorder(end+1) = Mseqorder(order_ind); 
-       Mseqorder(order_ind) = 0;
-   end
-   order_ind = order_ind+1;
+%                 Screen('FillRect', HW.VisionHW.ScreenID, [0 0 0], HW.VisionHW.rectRefrR);
+                vbl = Screen('Flip', HW.VisionHW.ScreenID, vbl + (waitframes-0.5)*ifi);
+                vbltime(1) = IOGetTimeStamp(HW);   
+                Events = AddEvent(Events, 'StimulusShown', TrialIndex, vbltime(1), vbltime(1)+0.0167); 
+                Events(end).Rove = Mseqorder(order_ind); 
+                order_ind = order_ind+1; 
+                image(1:HW.VisionHW.NumPix, 1:HW.VisionHW.NumPix) = HW.VisionHW.Mseq(:,:,order(order_ind));
+                image = image.*256;
+                Screen('PutImage', HW.VisionHW.ScreenID, image, imageRect);
+                if IOEyeFixate(HW,AllowedRadius)
+                   Screen('FillRect', HW.VisionHW.ScreenID, [255 255 255], HW.VisionHW.rectRefrL);
+%                    Screen('FillRect', HW.VisionHW.ScreenID, [255 255 255], HW.VisionHW.rectRefrR);
+                   vbl = Screen('Flip', HW.VisionHW.ScreenID, vbl + (waitframes-0.5)*ifi);
+                   vbltime(2) = IOGetTimeStamp(HW);
+                   Events = AddEvent(Events, 'StimulusShown', TrialIndex, vbltime(2), vbltime(2)+0.0167); 
+                   Events(end).Rove = Mseqorder(order_ind); 
+                   order_ind = order_ind+1;
+                else
+                     Screen('FillRect', HW.VisionHW.ScreenID, 180,[]);
+                     Screen('FillRect', HW.VisionHW.ScreenID, [125 125 125], HW.VisionHW.rectRefrL);
+                     Screen('Flip', HW.VisionHW.ScreenID);   
+                end;
+   else Screen('FillRect', HW.VisionHW.ScreenID, 180,[]);
+        Screen('FillRect', HW.VisionHW.ScreenID, [125 125 125], HW.VisionHW.rectRefrL);
+        Screen('Flip', HW.VisionHW.ScreenID);            
+   end; 
    
     case 'HartleyMono'
         
-   vbltime(1:2)=0;  
-   Screen('FillRect', HW.VisionHW.ScreenID, 180,[]);
-   Screen('FillRect', HW.VisionHW.ScreenID, [255 255 255], HW.VisionHW.rectRefrL);
-   Screen('Flip', HW.VisionHW.ScreenID);
+   vbltime=[];  
    image(1:HW.VisionHW.SizeHar, 1:HW.VisionHW.SizeHar) = HW.VisionHW.Hartley(order(order_ind),:,:);
    image = image.*256;
    Screen('PutImage', HW.VisionHW.ScreenID, image, imageRect);  
-   for time_ind=1:2
-        if IOEyeFixate(HW,AllowedRadius)
-            Screen('FillRect', HW.VisionHW.ScreenID, [0 0 0], HW.VisionHW.rectRefrL);
- %          Screen('FillRect', HW.VisionHW.ScreenID, [0 0 0], HW.VisionHW.rectRefrR);
-            Screen('Flip', HW.VisionHW.ScreenID);
-            vbltime(time_ind) = IOGetTimeStamp(HW);                       
-       end;
-   end;
-   
-   Screen('FillRect', HW.VisionHW.ScreenID, [255 255 255], HW.VisionHW.rectRefrL);
-%  Screen('FillRect', HW.VisionHW.ScreenID, [255 255 255], HW.VisionHW.rectRefrR);
-   Screen('Flip', HW.VisionHW.ScreenID);
-   time1 = IOGetTimeStamp(HW);
-   if time1 - vbltime(end)>= 0.0167 && vbltime(end)>0
-      Events = AddEvent(Events, 'StimulusShown', TrialIndex, vbltime(1), time1); 
-      Events(end).Rove = Hartleyorder(order_ind);      
-   else       
-       Hartleyorder(end+1) = Hartleyorder(order_ind); 
-       Hartleyorder(order_ind) = 0;
-   end   
-   order_ind = order_ind+1; 
-        
+   if IOEyeFixate(HW,AllowedRadius)
+                Screen('FillRect', HW.VisionHW.ScreenID, [0 0 0], HW.VisionHW.rectRefrL);
+      %         Screen('FillRect', HW.VisionHW.ScreenID, [0 0 0], HW.VisionHW.rectRefrR);
+                vbl = Screen('Flip', HW.VisionHW.ScreenID, vbl + (waitframes-0.5)*ifi);
+                vbltime(1) = IOGetTimeStamp(HW);
+                Events = AddEvent(Events, 'StimulusShown', TrialIndex, vbltime(1), vbltime(1)+0.033); 
+                Events(end).Rove = Hartleyorder(order_ind); 
+                order_ind = order_ind+1; 
+                image(1:HW.VisionHW.NumPix, 1:HW.VisionHW.NumPix) = HW.VisionHW.Hartley(order(order_ind),:,:);
+                image = image.*256;
+                Screen('PutImage', HW.VisionHW.ScreenID, image, imageRect);
+                if IOEyeFixate(HW,AllowedRadius)
+                   Screen('FillRect', HW.VisionHW.ScreenID, [255 255 255], HW.VisionHW.rectRefrL);
+         %         Screen('FillRect', HW.VisionHW.ScreenID, [0 0 0], HW.VisionHW.rectRefrR);
+                   vbl = Screen('Flip', HW.VisionHW.ScreenID, vbl + (waitframes-0.5)*ifi);
+                   vbltime(2) = IOGetTimeStamp(HW);
+                   Events = AddEvent(Events, 'StimulusShown', TrialIndex, vbltime(2), vbltime(2)+0.033); 
+                   Events(end).Rove = Hartleyorder(order_ind); 
+                   order_ind = order_ind+1;
+                else
+                     Screen('FillRect', HW.VisionHW.ScreenID, 180,[]);
+                     Screen('FillRect', HW.VisionHW.ScreenID, [125 125 125], HW.VisionHW.rectRefrL);
+                     Screen('Flip', HW.VisionHW.ScreenID);   
+                end;
+   else Screen('FillRect', HW.VisionHW.ScreenID, 180,[]);
+        Screen('FillRect', HW.VisionHW.ScreenID, [125 125 125], HW.VisionHW.rectRefrL);
+        Screen('Flip', HW.VisionHW.ScreenID);            
+   end;               
+       
 end 
 
        if RewardOccured
@@ -369,12 +493,19 @@ end
     ev = IOEyeSignal(HW,0);
     Events = AddEvent(Events, ev, TrialIndex);
     drawnow;
+    Screen('FillRect', HW.VisionHW.ScreenID, 180,[]);
+    Screen('FillRect', HW.VisionHW.ScreenID, [125 125 125], HW.VisionHW.rectRefrL);
+    Screen('Flip', HW.VisionHW.ScreenID); 
     switch o.StimType
     
     case 'MseqMono'
      save(HW.VisionHW.stimfile, 'Mseqorder', 'order_ind');
     case 'HartleyMono'
      save(HW.VisionHW.stimfile, 'Hartleyorder', 'order_ind'); 
+    case 'SFtuning'
+     save(HW.VisionHW.stimfile, 'parametersTuning', 'orderTuning','order_ind');    
+    case 'OrientationTuning'
+     save(HW.VisionHW.stimfile, 'parametersTuning', 'orderTuning','order_ind');    
     end    
     
 end

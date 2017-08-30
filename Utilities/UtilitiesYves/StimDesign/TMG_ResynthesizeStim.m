@@ -110,7 +110,7 @@ for TrialNum = P.TrialLst
 %                 StopSoundT = exptparams.Performance(TrialNum).LickTime;
 %             end
             StopSoundT = min( (StopSoundT-TotalPreStimSilence+get(TH,'PreStimSilence')), length(w)/SoundSF);
-            w = w(1:floor(StopSoundT*SoundSF));
+%             w = w(1:floor(StopSoundT*SoundSF));
             %                 exptparams(1).Performance(1).RefSliceCounter = 2;
             %                 exptparams(1).Performance(1).IndexRefSlice = [86 22];
             %

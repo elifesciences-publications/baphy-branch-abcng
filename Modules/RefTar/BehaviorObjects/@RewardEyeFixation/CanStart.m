@@ -106,13 +106,29 @@ Screen('FillRect', HW.VisionHW.ScreenID, [255 0 0 0.1], HW.VisionHW.rectFixHR);
 % Screen('FillRect', HW.VisionHW.ScreenID, [255 0 0 0.1], HW.VisionHW.rectFixHR);      
         Screen('FillRect', HW.VisionHW.ScreenID, [255 0 0 0.1], HW.VisionHW.rectFixV);
         Screen('FillRect', HW.VisionHW.ScreenID, [255 0 0 0.1], HW.VisionHW.rectFixH);
-
+        Screen('FillRect', HW.VisionHW.ScreenID, [125 125 125], HW.VisionHW.rectRefrL);
 
 
      case 'HartleyMono'
              Screen('FillRect', HW.VisionHW.ScreenID, [255 0 0 0.1], HW.VisionHW.rectFixV);
         Screen('FillRect', HW.VisionHW.ScreenID, [255 0 0 0.1], HW.VisionHW.rectFixH);
+        Screen('FillRect', HW.VisionHW.ScreenID, [125 125 125], HW.VisionHW.rectRefrL);
      
+    case 'Flicker'
+        Screen('FillRect', HW.VisionHW.ScreenID, [255 0 0 0.1], HW.VisionHW.rectFixV);
+        Screen('FillRect', HW.VisionHW.ScreenID, [255 0 0 0.1], HW.VisionHW.rectFixH);
+        Screen('FillRect', HW.VisionHW.ScreenID, [125 125 125], HW.VisionHW.rectRefrL);
+        
+    case 'SFtuning'    
+        Screen('FillRect', HW.VisionHW.ScreenID, [255 0 0 0.1], HW.VisionHW.rectFixV);
+        Screen('FillRect', HW.VisionHW.ScreenID, [255 0 0 0.1], HW.VisionHW.rectFixH);
+        Screen('FillRect', HW.VisionHW.ScreenID, [125 125 125], HW.VisionHW.rectRefrL);
+        
+    case 'OrientationTuning'
+        Screen('FillRect', HW.VisionHW.ScreenID, [255 0 0 0.1], HW.VisionHW.rectFixV);
+        Screen('FillRect', HW.VisionHW.ScreenID, [255 0 0 0.1], HW.VisionHW.rectFixH);
+        Screen('FillRect', HW.VisionHW.ScreenID, [125 125 125], HW.VisionHW.rectRefrL);
+        
      
 end
 Screen('Flip', HW.VisionHW.ScreenID);
