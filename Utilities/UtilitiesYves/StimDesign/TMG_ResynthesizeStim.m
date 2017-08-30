@@ -60,7 +60,6 @@ if ~strcmpi(exptparams(1).BehaveObjectClass,'Passive')
     THcatch = set(THcatch,'MinToC',RefSliceDuration+2*ChordDuration); THcatch = set(THcatch,'MaxToC',RefSliceDuration+2*ChordDuration);
     THcatch = ObjUpdate(THcatch);
     
-    
     EVPname = [mFile '.evp'];
     [Behavior] = TMG_CleanBehavior(exptparams,exptevents,FileDateStr,EVPname);
 else
@@ -72,7 +71,7 @@ for TrialNum = P.TrialLst
     num = find(TrialNum==P.TrialLst);
     Index =  cell2mat(T.Index(TrialNum));
     switch exptparams(1).BehaveObjectClass
-        case 'Passive'
+        case {'RewardTargetCont';'Passive'}
             [ w , ev , TH , D0 , ChangeD , Parameters] = waveform(TH,Index,[],[],TrialNum);
             ToneMatrixTot = Parameters.ToneMatrix{1};
         case 'RewardTargetContinuous'
@@ -120,7 +119,7 @@ for TrialNum = P.TrialLst
             %
             %                 [ w , ev , o , D0 , ChangeD , Parameters] = waveform(o,Index,[],[],TrialNum);
     end
-    D0information{TrialNum} = Parameters.D0information;
+    D0information{num} = Parameters.D0information;
     ToC = Parameters.ToC;
 
     TrialMaxDuration = ToC;
@@ -129,6 +128,7 @@ for TrialNum = P.TrialLst
     Stimuli.PreChangeToneMatrix{num} = ToneMatrixTot;
     Stimuli.PostChangeToneMatrix{num} = Parameters.ToneMatrix{2};
     Stimuli.SoundStatistics = D0information;
+    Behavior.SoundStatistics(TrialNum,:) = Parameters.D0information;
     Stimuli.waveform{num} = w( round(get(TH,'PreStimSilence')*SoundSF+1) : end ); %round((get(o,'PreStimSilence')+ToC)*SoundSF) );
     ChangeTime(num) = ToC;
 end
