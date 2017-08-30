@@ -16,13 +16,21 @@ function [Behavior,Bits,LickData] = TMG_CleanBehavior(exptparams,exptevents,File
     SilenceBeforeDur = exptparams.TrialObject.ReferenceHandle.Duration+exptparams.TrialObject.TargetHandle.PreStimSilence;
     MinimalDelayResponse = exptparams.BehaveObject.MinimalDelayResponse;
     ResponseWindow = exptparams.BehaveObject.ResponseWindow;
+
     ConsecutiveSnoozeNb = 0;
     [SnoozeBits,EarlyBits,HitBits,IndicesLst,IntegrationTimes,LickTimes,OutcomeArray,ToCLst,RefSliceNbLst] =...
         TMG_DissectBehaOutcomes(exptparams,ConsecutiveSnoozeNb);
+    if isempty(RefSliceNbLst)
+        RefSliceNbLst = zeros(1,length(IntegrationTimes));
+    end
     TrialNb = exptevents(end).Trial;
     OutcomeLst = zeros(1,TrialNb);
     DiffLst = Par.DifficultyLvl_D1( DifficultyLvlByInd(IndicesLst) );
-    FreqPosLst = Par.D1param( MorphingTypeByInd(IndicesLst) );
+    if isempty(Par.D1param)
+        FreqPosLst = MorphingTypeByInd(IndicesLst);
+    else
+        FreqPosLst = Par.D1param( MorphingTypeByInd(IndicesLst) );
+    end
     RefSliceDuration = min(IntegrationTimes-ToCLst);
     AltLickTimes = LickTimes;
     LongAltLickTimes = AltLickTimes; AltLickTimes = AltLickTimes-RefSliceNbLst*RefSliceDuration;
@@ -141,8 +149,8 @@ function [Behavior,Bits,LickData] = TMG_CleanBehavior(exptparams,exptevents,File
         InTrial_Change = ind(1)+round(  (SilenceBeforeDur+RefSliceNbLst(tN)*RefSliceDuration+IntegrationTimes(tN)) * AuxSF);
         l = [l ; find(rAtot(InTrial_Change+(0:Dur)))];
     end
-    Penetration = num2str(FileDateStr(1:3)); Depth = num2str(FileDateStr(4));
-    if Penetration>=39%1%num2str(FileDateStr(1:3))<=40%(length(find(l>=935 & l<=970))/length(l)) > 0.03 % (length(find(l>=925 & l<=975))/length(l)) > 0.035
+    if ~isempty(FileDateStr); Recording = str2num(FileDateStr(5:6)); Penetration = num2str(FileDateStr(1:3)); Depth = num2str(FileDateStr(4));else Penetration=[]; Depth=[]; Recording=[]; end
+    if strcmpi(EVPname(1:7),'morbier')&&str2num(Penetration)>=39%1%num2str(FileDateStr(1:3))<=40%(length(find(l>=935 & l<=970))/length(l)) > 0.03 % (length(find(l>=925 & l<=975))/length(l)) > 0.035
         RemoveArt = 1;
         disp('--> extra licks @ 9.7s removed')
     else
@@ -301,10 +309,9 @@ function [Behavior,Bits,LickData] = TMG_CleanBehavior(exptparams,exptevents,File
     LongIntegrationTimes = LongIntegrationTimes+SilenceBeforeDur;
     
     %% STRUCTURE
-    Penetration = str2num(FileDateStr(1:3)); Depth = FileDateStr(4);
     % BEHAVIOR
     Behavior.Name = FileDateStr;
-    Behavior.Recording = str2num(FileDateStr(5:6));
+    Behavior.Recording = Recording;
     Behavior.Penetration = Penetration;
     Behavior.Depth = Depth;
     Behavior.RefSliceDuration = RefSliceDuration;
@@ -326,6 +333,10 @@ function [Behavior,Bits,LickData] = TMG_CleanBehavior(exptparams,exptevents,File
     Behavior.RefSlice_LickTime = RefSlice_LickTime;
     Behavior.RefSliceNb = RefSliceNbLst;
     Behavior.TrashTrial = zeros(1,TrialNb); Behavior.TrashTrial(NotUsableTrials) = 1;
+    if isfield(Par,'ChangeTimeBlocks')
+        Behavior.ChangeTimeBlocks = Par.ChangeTimeBlocks;
+        Behavior.BlockOrderCT = Par.BlockOrderCT;
+    end
     % BOOLEAN
     Bits.HitBits = HitBits;
     Bits.EarlyBits = EarlyBits;

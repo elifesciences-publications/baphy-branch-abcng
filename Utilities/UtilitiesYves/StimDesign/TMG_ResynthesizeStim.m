@@ -4,8 +4,9 @@ function [Stimuli,ChangeTime,options,Behavior] = TMG_ResynthesizeStim(mFile,vara
 %- Stimuli
 
 P = parsePairs(varargin);
-checkField(P,'RootAdress','/auto/data');
+checkField(P,'RootAdress','/auto/data/');
 checkField(P,'TrialLst',[]);
+checkField(P,'CutWaveform',1);
 
 IndPenetration = min([find(mFile=='0',1,'first') find(mFile=='1',1,'first')]);
 Animal = mFile(1:(IndPenetration-2));
@@ -59,7 +60,6 @@ if ~strcmpi(exptparams(1).BehaveObjectClass,'Passive')
     THcatch = set(THcatch,'MinToC',RefSliceDuration+2*ChordDuration); THcatch = set(THcatch,'MaxToC',RefSliceDuration+2*ChordDuration);
     THcatch = ObjUpdate(THcatch);
     
-    
     EVPname = [mFile '.evp'];
     [Behavior] = TMG_CleanBehavior(exptparams,exptevents,FileDateStr,EVPname);
 else
@@ -71,7 +71,7 @@ for TrialNum = P.TrialLst
     num = find(TrialNum==P.TrialLst);
     Index =  cell2mat(T.Index(TrialNum));
     switch exptparams(1).BehaveObjectClass
-        case 'Passive'
+        case {'RewardTargetCont';'Passive'}
             [ w , ev , TH , D0 , ChangeD , Parameters] = waveform(TH,Index,[],[],TrialNum);
             ToneMatrixTot = Parameters.ToneMatrix{1};
         case 'RewardTargetContinuous'
@@ -109,14 +109,17 @@ for TrialNum = P.TrialLst
 %             else   % problem of Hit events absent in Hit trials in a large batch of sessions (fixed now)
 %                 StopSoundT = exptparams.Performance(TrialNum).LickTime;
 %             end
-            StopSoundT = min( (StopSoundT-TotalPreStimSilence+get(TH,'PreStimSilence')), length(w)/SoundSF);
-%             w = w(1:floor(StopSoundT*SoundSF));
+            if P.CutWaveform
+                StopSoundT = min( (StopSoundT-TotalPreStimSilence+...
+                    get(TH,'PreStimSilence')), length(w)/SoundSF);
+                w = w(1:floor(StopSoundT*SoundSF));
+            end
             %                 exptparams(1).Performance(1).RefSliceCounter = 2;
             %                 exptparams(1).Performance(1).IndexRefSlice = [86 22];
             %
             %                 [ w , ev , o , D0 , ChangeD , Parameters] = waveform(o,Index,[],[],TrialNum);
     end
-    D0information{TrialNum} = Parameters.D0information;
+    D0information{num} = Parameters.D0information;
     ToC = Parameters.ToC;
 
     TrialMaxDuration = ToC;
@@ -125,6 +128,7 @@ for TrialNum = P.TrialLst
     Stimuli.PreChangeToneMatrix{num} = ToneMatrixTot;
     Stimuli.PostChangeToneMatrix{num} = Parameters.ToneMatrix{2};
     Stimuli.SoundStatistics = D0information;
+    Behavior.SoundStatistics(TrialNum,:) = Parameters.D0information;
     Stimuli.waveform{num} = w( round(get(TH,'PreStimSilence')*SoundSF+1) : end ); %round((get(o,'PreStimSilence')+ToC)*SoundSF) );
     ChangeTime(num) = ToC;
 end
