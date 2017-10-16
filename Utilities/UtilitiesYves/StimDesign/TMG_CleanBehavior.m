@@ -2,6 +2,9 @@ function [Behavior,Bits,LickData] = TMG_CleanBehavior(exptparams,exptevents,File
 % cd /auto/data/Morbier/morbier081; run('/auto/data/Morbier/morbier081/morbier081d03_a_TMG.m')
 % [Behavior,Bits,LickData] = TMG_CleanBehavior(exptparams,exptevents,'081d03','morbier081d03_a_TMG.evp');
     AuxSF = 1000;
+    AnticipatedLoadingDuration = 0.300;
+    SafeDelay = 0.8;
+    DealWithLick = 'detectFA';
     [~,~,rAtot,ATrialIdxtot] = evpread(EVPname,'auxchans',1);
     ATrialIdxtot = [ATrialIdxtot ; length(rAtot)];
 
@@ -25,6 +28,7 @@ function [Behavior,Bits,LickData] = TMG_CleanBehavior(exptparams,exptevents,File
     end
     TrialNb = exptevents(end).Trial;
     OutcomeLst = zeros(1,TrialNb);
+    detectedFAtime = nan(2,TrialNb);
     DiffLst = Par.DifficultyLvl_D1( DifficultyLvlByInd(IndicesLst) );
     if isempty(Par.D1param)
         FreqPosLst = MorphingTypeByInd(IndicesLst);
@@ -32,8 +36,7 @@ function [Behavior,Bits,LickData] = TMG_CleanBehavior(exptparams,exptevents,File
         FreqPosLst = Par.D1param( MorphingTypeByInd(IndicesLst) );
     end
     RefSliceDuration = min(IntegrationTimes-ToCLst);
-    AltLickTimes = LickTimes;
-    LongAltLickTimes = AltLickTimes; AltLickTimes = AltLickTimes-RefSliceNbLst*RefSliceDuration;
+    LongAltLickTimes = LickTimes; AltLickTimes = LickTimes-RefSliceNbLst*RefSliceDuration;
     LTInd = find(~cellfun(@isempty,cellfun(@strfind,{exptevents.Note},repmat({'LICK,Touch'},1,length(exptevents)),'UniformOutput',0)));
     LickTimes = nan*ones(1,TrialNb);
     LickTimes([exptevents(LTInd).Trial]) = [exptevents(LTInd).StartTime]-SilenceBeforeDur;
@@ -93,7 +96,7 @@ function [Behavior,Bits,LickData] = TMG_CleanBehavior(exptparams,exptevents,File
     OffsetNoteInd = find(~cellfun(@isempty,cellfun(@strfind,{exptevents.Note},repmat({'STIM,OFF'},1,length(exptevents)),'UniformOutput',0)));
     SoundOffsetsT = [exptevents(OffsetNoteInd).StartTime];
     SoundOffsetsTrials = [exptevents(OffsetNoteInd).Trial];
-    SoundOffsetsTimes = zeros(1,TrialNb); SoundOffsetsTimes(SoundOffsetsTrials) = SoundOffsetsT;
+    SoundOffsetsTimes = zeros(1,TrialNb); SoundOffsetsTimes(SoundOffsetsTrials) = SoundOffsetsT-SilenceBeforeDur;
     % TRIAL STOPS from EVENTS
     TrialStopNoteInd = find(~cellfun(@isempty,cellfun(@strfind,{exptevents.Note},repmat({'TRIALSTOP'},1,length(exptevents)),'UniformOutput',0)));
     TrialStopTimes = [exptevents(TrialStopNoteInd).StartTime];
@@ -105,6 +108,13 @@ function [Behavior,Bits,LickData] = TMG_CleanBehavior(exptparams,exptevents,File
     OutcomeLst(HitBits) = 2;
     IND = find( (LickTimes(HitBits)-ToCLst(HitBits)) < MinimalDelayResponse  |...
         (LickTimes(HitBits)-ToCLst(HitBits)) > ResponseWindow | isnan(LickTimes(HitBits)) );
+    % Backup with sound offsets
+    AltIND_t = find( SoundOffsetsTimes(HITIND)==0 );    
+    DiffIND = setdiff(IND,AltIND_t);
+    disp([num2str(length(DiffIND)) ' Hit taken from sound offset events']);
+    LongLickTimes(HITIND(DiffIND)) = SoundOffsetsTimes(HITIND(DiffIND));
+    LickTimes(HITIND(DiffIND)) = SoundOffsetsTimes(HITIND(DiffIND))-RefSliceNbLst(HITIND(DiffIND))*RefSliceDuration;
+    IND = intersect(IND,AltIND_t);
     % Backup with first licks
     AltIND = find( (AltLickTimes(HitBits)-ToCLst(HitBits)) < MinimalDelayResponse  |...
         (AltLickTimes(HitBits)-ToCLst(HitBits)) > ResponseWindow | isnan(AltLickTimes(HitBits)) );
@@ -113,13 +123,6 @@ function [Behavior,Bits,LickData] = TMG_CleanBehavior(exptparams,exptevents,File
     LongLickTimes(HITIND(DiffIND)) = LongAltLickTimes(HITIND(DiffIND));
     LickTimes(HITIND(DiffIND)) = LongAltLickTimes(HITIND(DiffIND))-RefSliceNbLst(HITIND(DiffIND))*RefSliceDuration;
     IND = intersect(IND,AltIND);
-    % Backup with sound offsets
-    AltIND_t = find( SoundOffsetsTimes~=0 );    
-    DiffIND = setdiff(IND,AltIND_t);
-    disp([num2str(length(DiffIND)) ' Hit taken from sound offset events']);
-    LongLickTimes(HITIND(DiffIND)) = LongAltLickTimes(HITIND(DiffIND));
-    LickTimes(HITIND(DiffIND)) = LongAltLickTimes(HITIND(DiffIND))-RefSliceNbLst(HITIND(DiffIND))*RefSliceDuration;
-    IND = intersect(IND,AltIND_t);
     
     IND = HITIND(IND);
     if ~isempty(IND)
@@ -143,12 +146,6 @@ function [Behavior,Bits,LickData] = TMG_CleanBehavior(exptparams,exptevents,File
     end
     % 2) CLEAN ANALOG CHANNELS
     % Check for artefacts
-    Dur = 1.1*AuxSF; l = [];
-    for tN = HITIND
-        ind = ATrialIdxtot(tN:(tN+1));
-        InTrial_Change = ind(1)+round(  (SilenceBeforeDur+RefSliceNbLst(tN)*RefSliceDuration+IntegrationTimes(tN)) * AuxSF);
-        l = [l ; find(rAtot(InTrial_Change+(0:Dur)))];
-    end
     if ~isempty(FileDateStr); Recording = str2num(FileDateStr(5:6)); Penetration = num2str(FileDateStr(1:3)); Depth = num2str(FileDateStr(4));else Penetration=[]; Depth=[]; Recording=[]; end
     if strcmpi(EVPname(1:7),'morbier')&&str2num(Penetration)>=39%1%num2str(FileDateStr(1:3))<=40%(length(find(l>=935 & l<=970))/length(l)) > 0.03 % (length(find(l>=925 & l<=975))/length(l)) > 0.035
         RemoveArt = 1;
@@ -156,12 +153,24 @@ function [Behavior,Bits,LickData] = TMG_CleanBehavior(exptparams,exptevents,File
     else
         RemoveArt = 0;
     end
-	for tN = setdiff(HITIND,NotUsableTrials)
+    for tN = setdiff(HITIND,NotUsableTrials)
         ind = ATrialIdxtot(tN:(tN+1));
         TrialData = rAtot(ind(1):(ind(2)-1));
-        InTrial_BeforeChange = round([ (SilenceBeforeDur+RefSliceNbLst(tN)*RefSliceDuration) ,...
-            (SilenceBeforeDur+LongLickTimes(tN)) ]* AuxSF);
-        TrialData(InTrial_BeforeChange(1):InTrial_BeforeChange(2)) = 0;
+        switch DealWithLick
+            case 'oldschool'
+                InTrial_BeforeChange = round([ (SilenceBeforeDur+RefSliceNbLst(tN)*RefSliceDuration) ,...
+                    (SilenceBeforeDur+LongLickTimes(tN)) ]* AuxSF);
+                TrialData(InTrial_BeforeChange(1):InTrial_BeforeChange(2)) = 0;
+            case 'detectFA'
+                InTrial_BeforeChange = round([ ...
+                    (SilenceBeforeDur-AnticipatedLoadingDuration+RefSliceNbLst(tN)*RefSliceDuration) ,...
+                    (SilenceBeforeDur-SafeDelay+RefSliceNbLst(tN)*RefSliceDuration+IntegrationTimes(tN)) ]* AuxSF);
+                if any(TrialData(InTrial_BeforeChange(1):InTrial_BeforeChange(2)))
+%                     OutcomeLst(tN) = 6;  % FA-HIT
+                    detectedFAtime(1,tN) = find(TrialData(InTrial_BeforeChange(1):InTrial_BeforeChange(2)),1,'first')/AuxSF+...
+                        (SilenceBeforeDur-AnticipatedLoadingDuration+RefSliceNbLst(tN)*RefSliceDuration);
+                end
+        end
         if RemoveArt
             TrialData(round((SilenceBeforeDur+LongIntegrationTimes(tN))* AuxSF)+(937:974)) = 0;
         end
@@ -181,13 +190,25 @@ function [Behavior,Bits,LickData] = TMG_CleanBehavior(exptparams,exptevents,File
         SoundOffsetsTimes(CatchHitBits) = SilenceBeforeDur+RefSliceNbLst(CatchHitBits)*RefSliceDuration+IntegrationTimes(CatchHitBits);
     end
     % 2) CLEAN ANALOG CHANNELS
-	for tN = HITIND
+    for tN = HITIND
         ind = ATrialIdxtot(tN:(tN+1));
         TrialData = rAtot(ind(1):(ind(2)-1));
-        InTrial_BeforeChange = round([ (SilenceBeforeDur+RefSliceNbLst(tN)*RefSliceDuration) ,...
-            (SilenceBeforeDur+RefSliceNbLst(tN)*RefSliceDuration+IntegrationTimes(tN)) ]* AuxSF);
-        TrialData(InTrial_BeforeChange(1):InTrial_BeforeChange(2)) = 0;
-        rAtot(ind(1):(ind(2)-1)) = TrialData;
+        switch DealWithLick
+            case 'oldschool'
+                InTrial_BeforeChange = round([ (SilenceBeforeDur+RefSliceNbLst(tN)*RefSliceDuration) ,...
+                    (SilenceBeforeDur+RefSliceNbLst(tN)*RefSliceDuration+IntegrationTimes(tN)) ]* AuxSF);
+                TrialData(InTrial_BeforeChange(1):InTrial_BeforeChange(2)) = 0;
+                rAtot(ind(1):(ind(2)-1)) = TrialData;
+            case 'detectFA'
+                InTrial_BeforeChange = round([ ...
+                    (SilenceBeforeDur-AnticipatedLoadingDuration+RefSliceNbLst(tN)*RefSliceDuration) ,...
+                    (SilenceBeforeDur-SafeDelay+RefSliceNbLst(tN)*RefSliceDuration+IntegrationTimes(tN)-ResponseWindow) ]* AuxSF);
+                if any(TrialData(InTrial_BeforeChange(1):InTrial_BeforeChange(2)))
+%                     OutcomeLst(tN) = 8;  % FA-CR
+                    detectedFAtime(1,tN) = find(TrialData(InTrial_BeforeChange(1):InTrial_BeforeChange(2)),1,'first')/AuxSF+...
+                        (SilenceBeforeDur-AnticipatedLoadingDuration+RefSliceNbLst(tN)*RefSliceDuration);
+                end                
+        end
     end
     
     %% MISS    
@@ -201,13 +222,25 @@ function [Behavior,Bits,LickData] = TMG_CleanBehavior(exptparams,exptevents,File
         LongLickTimes(SnoozeBits) = nan; LickTimes(SnoozeBits) = nan;
     end
     % 2) CLEAN ANALOG CHANNELS
-	for tN = MISSIND
+    for tN = MISSIND
         ind = ATrialIdxtot(tN:(tN+1));
         TrialData = rAtot(ind(1):(ind(2)-1));
-        InTrial_BeforeChange = round([ (SilenceBeforeDur+RefSliceNbLst(tN)*RefSliceDuration) ,...
-            (SilenceBeforeDur+LongIntegrationTimes(tN)+ResponseWindow) ]* AuxSF);
-        TrialData(InTrial_BeforeChange(1):InTrial_BeforeChange(2)) = 0;
-        rAtot(ind(1):(ind(2)-1)) = TrialData;
+        switch DealWithLick
+            case 'oldschool'
+                InTrial_BeforeChange = round([ (SilenceBeforeDur+RefSliceNbLst(tN)*RefSliceDuration) ,...
+                    (SilenceBeforeDur+LongIntegrationTimes(tN)+ResponseWindow) ]* AuxSF);
+                TrialData(InTrial_BeforeChange(1):InTrial_BeforeChange(2)) = 0;
+                rAtot(ind(1):(ind(2)-1)) = TrialData;
+            case 'detectFA'
+                InTrial_BeforeChange = round([ ...
+                    (SilenceBeforeDur-AnticipatedLoadingDuration+RefSliceNbLst(tN)*RefSliceDuration) ,...
+                    (SilenceBeforeDur-SafeDelay+RefSliceNbLst(tN)*RefSliceDuration+IntegrationTimes(tN)) ]* AuxSF);
+                if any(TrialData(InTrial_BeforeChange(1):InTrial_BeforeChange(2)))
+%                     OutcomeLst(tN) = 7;  % FA-MISS
+                    detectedFAtime(1,tN) = find(TrialData(InTrial_BeforeChange(1):InTrial_BeforeChange(2)),1,'first')/AuxSF+...
+                        (SilenceBeforeDur-AnticipatedLoadingDuration+RefSliceNbLst(tN)*RefSliceDuration);
+                end                
+        end
     end
 
     %% EARLY
@@ -216,6 +249,12 @@ function [Behavior,Bits,LickData] = TMG_CleanBehavior(exptparams,exptevents,File
     OutcomeLst(EarlyBits) = 1;
     IND = find( (LickTimes(EarlyBits)-ToCLst(EarlyBits)) >= MinimalDelayResponse  |...
         isnan(LickTimes(EarlyBits)) );
+    % Backup with sound offsets
+    AltIND_t = find( SoundOffsetsTimes(EARLYIND)==0 );    
+    DiffIND = setdiff(IND,AltIND_t);
+    LongLickTimes(EARLYIND(DiffIND)) = SoundOffsetsTimes(EARLYIND(DiffIND));
+    LickTimes(EARLYIND(DiffIND)) = SoundOffsetsTimes(EARLYIND(DiffIND))-RefSliceNbLst(EARLYIND(DiffIND))*RefSliceDuration;
+    IND = intersect(IND,AltIND_t);
     % Backup with first licks
     AltIND = find( (AltLickTimes(EarlyBits)-ToCLst(EarlyBits)) >= MinimalDelayResponse  |...
         isnan(AltLickTimes(EarlyBits)) );
@@ -223,12 +262,6 @@ function [Behavior,Bits,LickData] = TMG_CleanBehavior(exptparams,exptevents,File
     LongLickTimes(EARLYIND(DiffIND)) = LongAltLickTimes(EARLYIND(DiffIND));
     LickTimes(EARLYIND(DiffIND)) = LongAltLickTimes(EARLYIND(DiffIND))-RefSliceNbLst(EARLYIND(DiffIND))*RefSliceDuration;
     IND = intersect(IND,AltIND);
-    % Backup with sound offsets
-    AltIND_t = find( SoundOffsetsTimes~=0 );    
-    DiffIND = setdiff(IND,AltIND_t);
-    LongLickTimes(EARLYIND(DiffIND)) = LongAltLickTimes(EARLYIND(DiffIND));
-    LickTimes(EARLYIND(DiffIND)) = LongAltLickTimes(EARLYIND(DiffIND))-RefSliceNbLst(EARLYIND(DiffIND))*RefSliceDuration;
-    IND = intersect(IND,AltIND_t);
     
     IND = EARLYIND(IND);
     if ~isempty(IND)
@@ -249,13 +282,27 @@ function [Behavior,Bits,LickData] = TMG_CleanBehavior(exptparams,exptevents,File
         end
     end
     % 2) CLEAN ANALOG CHANNELS
-	for tN = setdiff(EARLYIND,NotUsableTrials)
+    for tN = setdiff(EARLYIND,NotUsableTrials)
+        detectedFAtime(2,tN) = LongLickTimes(tn)+SilenceBeforeDur;
         ind = ATrialIdxtot(tN:(tN+1));
         TrialData = rAtot(ind(1):(ind(2)-1));
-        InTrial_BeforeChange = round([ (SilenceBeforeDur+RefSliceNbLst(tN)*RefSliceDuration) ,...
-            (SilenceBeforeDur+LongLickTimes(tN)) ]* AuxSF);
-        TrialData(InTrial_BeforeChange(1):InTrial_BeforeChange(2)) = 0;
-        rAtot(ind(1):(ind(2)-1)) = TrialData;
+        switch DealWithLick
+            case 'oldschool'
+                InTrial_BeforeChange = round([ (SilenceBeforeDur+RefSliceNbLst(tN)*RefSliceDuration) ,...
+                    (SilenceBeforeDur+LongLickTimes(tN)) ]* AuxSF);
+                TrialData(InTrial_BeforeChange(1):InTrial_BeforeChange(2)) = 0;
+                rAtot(ind(1):(ind(2)-1)) = TrialData;
+            case 'detectFA'
+                InTrial_BeforeChange = round([ ...
+                    (SilenceBeforeDur-AnticipatedLoadingDuration+RefSliceNbLst(tN)*RefSliceDuration) ,...
+                    (SilenceBeforeDur+LongLickTimes(tN)-.1) ]* AuxSF);
+%                     (SilenceBeforeDur-SafeDelay+RefSliceNbLst(tN)*RefSliceDuration+IntegrationTimes(tN)) ]* AuxSF);
+                if any(TrialData(InTrial_BeforeChange(1):InTrial_BeforeChange(2)))
+%                     OutcomeLst(tN) = 5;  % FA-EARLY
+                    detectedFAtime(1,tN) = find(TrialData(InTrial_BeforeChange(1):InTrial_BeforeChange(2)),1,'first')/AuxSF+...
+                        (SilenceBeforeDur-AnticipatedLoadingDuration+RefSliceNbLst(tN)*RefSliceDuration);
+                end                
+        end
     end
     
     %% EARLY-NO CHANGE
@@ -263,6 +310,12 @@ function [Behavior,Bits,LickData] = TMG_CleanBehavior(exptparams,exptevents,File
     OutcomeLst(CatchEarlyBits) = 1;
     IND = find( LickTimes(CatchEarlyBits) >= IntegrationTimes(CatchEarlyBits)  |...
         isnan(LickTimes(CatchEarlyBits)) );
+    % Backup with sound offsets
+    AltIND_t = find( SoundOffsetsTimes(EARLYIND)==0 );
+    DiffIND = setdiff(IND,AltIND_t);
+    LongLickTimes(EARLYIND(DiffIND)) = SoundOffsetsTimes(EARLYIND(DiffIND));
+    LickTimes(EARLYIND(DiffIND)) = SoundOffsetsTimes(EARLYIND(DiffIND))-RefSliceNbLst(EARLYIND(DiffIND))*RefSliceDuration;
+    IND = intersect(IND,AltIND_t);
     % Backup with first licks
     AltIND = find( AltLickTimes(CatchEarlyBits) >= IntegrationTimes(CatchEarlyBits)  |...
         isnan(AltLickTimes(CatchEarlyBits)) );
@@ -270,12 +323,6 @@ function [Behavior,Bits,LickData] = TMG_CleanBehavior(exptparams,exptevents,File
     LongLickTimes(EARLYIND(DiffIND)) = LongAltLickTimes(EARLYIND(DiffIND));
     LickTimes(EARLYIND(DiffIND)) = LongAltLickTimes(EARLYIND(DiffIND))-RefSliceNbLst(EARLYIND(DiffIND))*RefSliceDuration;
     IND = intersect(IND,AltIND);
-    % Backup with sound offsets
-    AltIND_t = find( SoundOffsetsTimes~=0 );
-    DiffIND = setdiff(IND,AltIND_t);
-    LongLickTimes(EARLYIND(DiffIND)) = LongAltLickTimes(EARLYIND(DiffIND));
-    LickTimes(EARLYIND(DiffIND)) = LongAltLickTimes(EARLYIND(DiffIND))-RefSliceNbLst(EARLYIND(DiffIND))*RefSliceDuration;
-    IND = intersect(IND,AltIND_t);
     
     IND = EARLYIND(IND);
     if ~isempty(IND)
@@ -296,17 +343,32 @@ function [Behavior,Bits,LickData] = TMG_CleanBehavior(exptparams,exptevents,File
         end
     end
     % 2) CLEAN ANALOG CHANNELS
-	for tN = setdiff(EARLYIND,NotUsableTrials)
+    for tN = setdiff(EARLYIND,NotUsableTrials)
+        detectedFAtime(2,tN) = LongLickTimes(tn)+SilenceBeforeDur;
         ind = ATrialIdxtot(tN:(tN+1));
         TrialData = rAtot(ind(1):(ind(2)-1));
-        InTrial_BeforeChange = round([ (SilenceBeforeDur+RefSliceNbLst(tN)*RefSliceDuration) ,...
-            (SilenceBeforeDur+LongLickTimes(tN)) ]* AuxSF);
-        TrialData(InTrial_BeforeChange(1):InTrial_BeforeChange(2)) = 0;
-        rAtot(ind(1):(ind(2)-1)) = TrialData;
+        switch DealWithLick
+            case 'oldschool'
+                InTrial_BeforeChange = round([ (SilenceBeforeDur+RefSliceNbLst(tN)*RefSliceDuration) ,...
+                    (SilenceBeforeDur+LongLickTimes(tN)) ]* AuxSF);
+                TrialData(InTrial_BeforeChange(1):InTrial_BeforeChange(2)) = 0;
+                rAtot(ind(1):(ind(2)-1)) = TrialData;
+            case 'detectFA'
+                InTrial_BeforeChange = round([ ...
+                    (SilenceBeforeDur-AnticipatedLoadingDuration+RefSliceNbLst(tN)*RefSliceDuration) ,...
+                    (SilenceBeforeDur+LongLickTimes(tN)-.1) ]* AuxSF);
+%                     (SilenceBeforeDur-SafeDelay+RefSliceNbLst(tN)*RefSliceDuration+IntegrationTimes(tN)-ResponseWindow) ]* AuxSF);
+                if any(TrialData(InTrial_BeforeChange(1):InTrial_BeforeChange(2)))
+%                     OutcomeLst(tN) = 5;  % FA-EARLY
+                    detectedFAtime(1,tN) = find(TrialData(InTrial_BeforeChange(1):InTrial_BeforeChange(2)),1,'first')/AuxSF+...
+                        (SilenceBeforeDur-AnticipatedLoadingDuration+RefSliceNbLst(tN)*RefSliceDuration);
+                end                
+        end
     end
     
     LongLickTimes = LongLickTimes+SilenceBeforeDur;
     LongIntegrationTimes = LongIntegrationTimes+SilenceBeforeDur;
+    SoundOffsetsTimes = SoundOffsetsTimes+SilenceBeforeDur;
     
     %% STRUCTURE
     % BEHAVIOR
@@ -326,6 +388,10 @@ function [Behavior,Bits,LickData] = TMG_CleanBehavior(exptparams,exptevents,File
     Behavior.ShortLickTime = LongLickTimes-SilenceBeforeDur-RefSliceNbLst*RefSliceDuration;
     Behavior.SoundOffsetTime = SoundOffsetsTimes;
     Behavior.ChangeTime = LongIntegrationTimes;
+    Behavior.FAtimings = detectedFAtime;
+    if any(LongIntegrationTimes<0)
+        pause;
+    end
 %     Behavior.ChangeTime(CatchBit|CatchEarlyBits) = nan;
     Behavior.ShortChangeTime = IntegrationTimes;
 %     Behavior.ShortChangeTime(CatchBit|CatchEarlyBits) = nan;
@@ -334,8 +400,15 @@ function [Behavior,Bits,LickData] = TMG_CleanBehavior(exptparams,exptevents,File
     Behavior.RefSliceNb = RefSliceNbLst;
     Behavior.TrashTrial = zeros(1,TrialNb); Behavior.TrashTrial(NotUsableTrials) = 1;
     if isfield(Par,'ChangeTimeBlocks')
+        BlockNb = length(Par.ChangeTimeBlocks);
+        TrialNbPerBlock = round(TrialNb/3);
+        Behavior.ChangeTimeBlock = [];
         Behavior.ChangeTimeBlocks = Par.ChangeTimeBlocks;
         Behavior.BlockOrderCT = Par.BlockOrderCT;
+        for BlockNum = 1:BlockNb
+            Behavior.ChangeTimeBlock = [Behavior.ChangeTimeBlock ...
+                Behavior.ChangeTimeBlocks(Behavior.BlockOrderCT(BlockNum))*ones(1,TrialNbPerBlock)];
+        end
     end
     % BOOLEAN
     Bits.HitBits = HitBits;
