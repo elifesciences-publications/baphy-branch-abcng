@@ -1,4 +1,4 @@
-function [Behavior,Bits,LickData] = TMG_CleanBehavior(exptparams,exptevents,FileDateStr,EVPname)
+function [Behavior,Bits,LickData] = TMG_CleanBehavior_bu(exptparams,exptevents,FileDateStr,EVPname)
 % cd /auto/data/Morbier/morbier081; run('/auto/data/Morbier/morbier081/morbier081d03_a_TMG.m')
 % [Behavior,Bits,LickData] = TMG_CleanBehavior(exptparams,exptevents,'081d03','morbier081d03_a_TMG.evp');
     AuxSF = 1000;
@@ -19,10 +19,18 @@ function [Behavior,Bits,LickData] = TMG_CleanBehavior(exptparams,exptevents,File
     ConsecutiveSnoozeNb = 0;
     [SnoozeBits,EarlyBits,HitBits,IndicesLst,IntegrationTimes,LickTimes,OutcomeArray,ToCLst,RefSliceNbLst] =...
         TMG_DissectBehaOutcomes(exptparams,ConsecutiveSnoozeNb);
+    if isempty(RefSliceNbLst)
+        RefSliceNbLst = zeros(1,length(IntegrationTimes));
+    end    
     TrialNb = exptevents(end).Trial;
     OutcomeLst = zeros(1,TrialNb);
     DiffLst = Par.DifficultyLvl_D1( DifficultyLvlByInd(IndicesLst) );
-    FreqPosLst = Par.D1param( MorphingTypeByInd(IndicesLst) );
+%     FreqPosLst = Par.D1param( MorphingTypeByInd(IndicesLst) );
+    if isempty(Par.D1param)
+        FreqPosLst = MorphingTypeByInd(IndicesLst);
+    else
+        FreqPosLst = Par.D1param( MorphingTypeByInd(IndicesLst) );
+    end    
     RefSliceDuration = min(IntegrationTimes-ToCLst);
     AltLickTimes = LickTimes;
     LongAltLickTimes = AltLickTimes; AltLickTimes = AltLickTimes-RefSliceNbLst*RefSliceDuration;
@@ -295,7 +303,8 @@ function [Behavior,Bits,LickData] = TMG_CleanBehavior(exptparams,exptevents,File
     Behavior.ChangeSize = DiffLst;
     Behavior.PreStimSilence = SilenceBeforeDur;
     Behavior.ChangeFreq = FreqPosLst;
-    Behavior.LickTimes = LongLickTimes;  
+    Behavior.LickTimes = LongLickTimes; 
+    Behavior.ShortLickTime = LongLickTimes-SilenceBeforeDur-RefSliceNbLst*RefSliceDuration; 
     Behavior.LickOnRefSlice = LickOnRefSlice;
     Behavior.SoundOffsetTimes = SoundOffsetsTimes;
     Behavior.ChangeTimes = LongIntegrationTimes;
