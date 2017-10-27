@@ -99,7 +99,7 @@ function [Behavior,Bits,LickData] = TMG_CleanBehavior(exptparams,exptevents,File
     SoundOffsetsTimes = zeros(1,TrialNb); SoundOffsetsTimes(SoundOffsetsTrials) = SoundOffsetsT-SilenceBeforeDur;
     % TRIAL STOPS from EVENTS
     TrialStopNoteInd = find(~cellfun(@isempty,cellfun(@strfind,{exptevents.Note},repmat({'TRIALSTOP'},1,length(exptevents)),'UniformOutput',0)));
-    TrialStopTimes = [exptevents(TrialStopNoteInd).StartTime];
+    TrialStopTimes([exptevents(TrialStopNoteInd).Trial]) = [exptevents(TrialStopNoteInd).StartTime];
     
     NotUsableTrials = TrialNb;
     %% HIT-CHANGE
@@ -142,7 +142,7 @@ function [Behavior,Bits,LickData] = TMG_CleanBehavior(exptparams,exptevents,File
         end
     end
     if length(SoundOffsetsTrials)<TrialNb % First sessions missed events
-        SoundOffsetsTimes(HitBits) = LongLickTimes(HitBits)+SilenceBeforeDur;
+        SoundOffsetsTimes(HitBits) = LongLickTimes(HitBits);
     end
     % 2) CLEAN ANALOG CHANNELS
     % Check for artefacts
