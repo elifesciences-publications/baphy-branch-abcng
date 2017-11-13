@@ -21,8 +21,8 @@ if (m > 1)
   error('Input cannot be a padded string matrix.');
 end
 
-if strncmp(name, xlate('built-in'), size(xlate('built-in'),2))
-    fname = xlate('built-in');
+if strncmp(name, 'built-in', size('built-in',2))
+    fname = 'built-in';
     return;
 end
 
