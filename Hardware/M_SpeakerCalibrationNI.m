@@ -4,6 +4,7 @@ function R  = M_SpeakerCalibrationNI(varargin)
 % see also: SpeakerCalib, findAmplitudeAndDelay, VolumeConversion, StimConversion
 % 
 % This file is part of MANTA licensed under the GPL. See MANTA.m for details.
+% M_SpeakerCalibrationNI('Speaker','SHIE800SB1','SR',100000,'DeviceIn','Dev1','DeviceOut','D0');
 
 Dirs = setgetDirs;
 

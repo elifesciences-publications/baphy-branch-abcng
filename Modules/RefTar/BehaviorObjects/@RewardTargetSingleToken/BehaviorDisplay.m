@@ -4,7 +4,7 @@ function exptparams = BehaviorDisplay (o, HW, StimEvents, globalparams, exptpara
 % Main duties of this method is to display a figure with:
 %  Title that has the info about ferret, ref, tar, date, time
 %  plot of Hit and False Alarm rate
-%  a plot of lick in the last trial with correct labling
+%  a plot of lick in the last trial with correct labeling
 %  a histogram of first lick for ref and tar
 %  Hit and False Alarm for each position
 %  after each TrialBlock, display the performance data
@@ -108,15 +108,15 @@ plot(cat(1,exptparams.Performance(1:end-1).FaRate),'<-','LineWidth',2,...
     'MarkerFaceColor',[.1 .5 .1],'MarkerSize',5,'color',[.1 .5 .1]);
 plot(cat(1,exptparams.Performance(1:end-1).DiscriminationRate),'x-','LineWidth',2,...
     'MarkerFaceColor',[.1 .1 .1],'MarkerSize',5,'color',[.1 .1 .1]);
-plot(cat(1,exptparams.Performance(1:end-1).IneffectiveRate),':','LineWidth',2,...
+plot(cat(1,exptparams.Performance(1:end-1).EarlyRate),':','LineWidth',2,...
     'MarkerFaceColor',[.8 .8 .8],'MarkerSize',5,'color',[.8 .8 .8]);
-% also, show which trials were Ineffective:
-AllIneffective = cat(1,exptparams.Performance(1:TrialIndex).Ineffective);
-AllIneffective(find(AllIneffective==0))=nan;
-plot(1.1*AllIneffective,'r*','markersize',10);
+% also, show which trials were Early:
+AllEarly = cat(1,exptparams.Performance(1:TrialIndex).EarlyTrial);
+AllEarly(find(AllEarly==0))=nan;
+plot(1.1*AllEarly,'r*','markersize',10);
 axis ([0 (TrialIndex+1) 0 1.15]);
 title(titleMes,'FontWeight','bold','interpreter','none');
-h=legend({'HR','FAR','d''','Inef'},'Location','SouthWest');
+h=legend({'HR','FAR','d''','Early'},'Location','SouthWest');
 LegPos = get(h,'position');
 set(h,'fontsize',8);
 LegPos(1) = 0.005; % put the legend on the far left of the screen
@@ -150,6 +150,7 @@ for cnt1 = 1:2:length(exptparams.RefResponseWin)
         'color','k','LineStyle','-','LineWidth',2);
     text(fs*(mean(exptparams.RefResponseWin(cnt1:cnt1+1))), 1.15, 'Res','Color',[.1 .5 .1],...
         'HorizontalAlignment','center');
+    RW = exptparams.RefResponseWin;
 end
 if ~isempty(exptparams.TarResponseWin)   %skip for sham trial (no target) by pb%9/16/2012
     line([fs*exptparams.TarResponseWin(1) fs*exptparams.TarResponseWin(2)],[1.1 1.1],...
@@ -160,16 +161,23 @@ if ~isempty(exptparams.TarResponseWin)   %skip for sham trial (no target) by pb%
         'color','k','LineStyle','-','LineWidth',2);
     text(fs*(mean(exptparams.TarEarlyWin)), 1.35, 'Erl','Color',c,...
         'HorizontalAlignment','center');
+    RW = exptparams.TarResponseWin;
+end
+if exptparams.BehaveObject.MotorLapse>0
+    hold all; fill(fs*(RW(1)+[0 exptparams.BehaveObject.MotorLapse exptparams.BehaveObject.MotorLapse 0]),...
+        [0.05 0.05 1 1],[.9 .9 .9],'EdgeColor',[1 1 1]);
+    hold off;
 end
 % First lick Histogram for target and reference
 subplot(4,4,9:10)
 hold off;
 BinSize = 0.04;
 h1=hist(exptparams.FirstLick.Tar,0:BinSize:max(exptparams.FirstLick.Tar));
+fill([RW(1) RW(2) RW(2) RW(1)],[0.05 0.05 max([max(h1),0]) max([max(h1),0])],[.9 .9 .9],'EdgeColor',[1 1 1]);
+hold on;
 if ~isempty(h1)
     h1=h1/sum(h1); % normalize by sum, so it becomes the probability of lick
     h1=stairs(0:BinSize:max(exptparams.FirstLick.Tar),h1,'color',[1 .5 .5],'linewidth',2);
-    hold on;
 end
 h1=hist(exptparams.FirstLick.Ref,0:BinSize:max(exptparams.FirstLick.Ref));
 if ~isempty(h1)

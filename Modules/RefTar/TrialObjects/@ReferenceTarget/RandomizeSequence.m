@@ -41,7 +41,11 @@ if IsLookup
         case 2 % Ratio Ref/Tar = 1.5
           LookupTable = [1 2 2 1 2 1 1 1 1 0 0];
         case 1 % Ratio Ref/Tar = 1
-          LookupTable = [0 1 1 0 0 1 0 1 0 0 1 1];
+          if par.ReferenceMaxIndex==par.TargetMaxIndex
+            LookupTable = [ones(1,par.ReferenceMaxIndex) zeros(1,par.TargetMaxIndex)];
+          else
+            LookupTable = [0 1 1 0 0 1 0 1 0 0 1 1];
+          end
       end
 % Rt = sum(LookupTable)/(length(LookupTable)-length(find(LookupTable==ii))); disp([ii Rt]);
 % clear w; for kk=1:ii; w(kk)=length(find(LookupTable==kk)); end; disp(w)
@@ -108,6 +112,26 @@ for cnt1=1:length(RefNumTemp)
     RefTrialIndex {cnt1} = RandIndex (1:RefNumTemp(cnt1));
     RandIndex (1:RefNumTemp(cnt1)) = [];
 end
+
+if par.ReferenceMaxIndex==par.TargetMaxIndex
+    temp = LookupTable(randperm(length(LookupTable)));
+    TotalTrials = length(temp);
+    ShuffledTarIndex = randperm(par.TargetMaxIndex);
+    ShuffledRefIndex = randperm(par.ReferenceMaxIndex);
+    TargetIndex = cell(1,2*par.TargetMaxIndex);
+    c = 0;
+    for tn = find(temp==0)
+        c = c+1;
+        TargetIndex{tn} = ShuffledTarIndex(c);
+    end
+    RefTrialIndex = cell(1,2*par.ReferenceMaxIndex);
+    c = 0;
+    for tn = find(temp==1)
+        c = c+1;
+        RefTrialIndex{tn} = ShuffledRefIndex(c);
+    end 
+end
+
 o = set(o,'ReferenceIndices',RefTrialIndex);
 o = set(o,'TargetIndices',TargetIndex);
 o = set(o,'NumberOfTrials',TotalTrials);

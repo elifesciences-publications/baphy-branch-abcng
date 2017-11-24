@@ -10,7 +10,9 @@ TarLightWin = [];
 RefFlag=[];
 TarFlag=[];
 FalseAlarm = 0;
-LEDTurnedOn = 0; ll = 0;
+LEDTurnedOn = 0;
+PumpDuration = 0;
+MotorOn = 0; MotorLapse = get(o,'MotorLapse');
 StopTargetFA = get(o,'StopTargetFA');
 RewardAmount = get(o,'RewardAmount');
 EarlyWindow = get(o,'EarlyWindow');
@@ -79,6 +81,7 @@ end
 
 [LightStateR, ev] = IOLightSwitch(HW,1,0,[],0,0,'LightR');
 % we monitor the lick until the end plus response time and postargetlick
+Noted_EarlyLickInRef = 0;
 LastLick = 0;
 TimeOutFlag=0;
 tarcnt = 1;
@@ -90,7 +93,7 @@ Events = [];
 CurrentTime = IOGetTimeStamp(HW);
 
 while CurrentTime < exptparams.LogDuration % BE removed +0.05 here (which screws up acquisition termination)
-    if TrialLongerThanSound == 1 & CurrentTime > IniLogDuration & SoundStopped==0
+    if TrialLongerThanSound == 1 && CurrentTime > IniLogDuration && SoundStopped == 0
         ev = IOStopSound(HW); SoundStopped = 1;
         TrialLongerThanSound = 0;
     end
@@ -104,6 +107,7 @@ while CurrentTime < exptparams.LogDuration % BE removed +0.05 here (which screws
     
     ThisLick = IOLickRead(HW);
     Lick = ThisLick && ~LastLick;
+    LickEV.StartTime=IOGetTimeStamp(HW); LickEV.StopTime=[];
     LastLick = ThisLick;
     if ~isempty(RefResponseWin) && CurrentTime>(RefResponseWin(end)-0.2)
         % this is to fix the problem of stopping in the begining of the target
@@ -115,7 +119,7 @@ while CurrentTime < exptparams.LogDuration % BE removed +0.05 here (which screws
         StopFlag = 1;
     end
     
-    if ~isempty(RefResponseWin) && CurrentTime<RefResponseWin(end)   % find out if we are in the reference or target part
+    if ~isempty(RefResponseWin) %&& CurrentTime<RefResponseWin(end)   % find out if we are in the reference or target part
         StimPos = length(find(RefResponseWin<CurrentTime)); % stim pos tells us whether we
         % are "IN" the windows calculated above or outside of it
         Ref = 1;  % we are in reference part of the sound
@@ -134,6 +138,8 @@ while CurrentTime < exptparams.LogDuration % BE removed +0.05 here (which screws
         LickEvents = AddEvent(LickEvents, ev, TrialIndex);
         ThisTime = clock;
         TimeOutFlag=1;
+        LickEV.Note = 'LICK,FA';
+        LickEvents = AddEvent(LickEvents, LickEV, TrialIndex);
         break;
     end
     if (Lick) && Ref && mod(StimPos,2) && ~isequal(RefFlag,StimPos) %% for including licks in the ref early window:% & (Ref && mod(EarlyPos,2))
@@ -142,52 +148,65 @@ while CurrentTime < exptparams.LogDuration % BE removed +0.05 here (which screws
         RefFlag = StimPos;
         FalseAlarm = 1;
     end
-    if (Lick) && (~Ref && mod(EarlyPos,2))
+    if get(o,'StopOnEarly') && (Lick)
         % if she licks in early window, terminate the trial immediately, and
         % give her timeout.
-        if ~SoundStopped
-            ev = IOStopSound(HW); SoundStopped = 1;
+        if  (~Ref && mod(EarlyPos,2))
+            LickEV.Note = 'LICK,EARLY';
+            LickEvents = AddEvent(LickEvents, LickEV, TrialIndex);
+            if ~SoundStopped
+                ev = IOStopSound(HW); SoundStopped = 1;
+            end
+            LickEvents = AddEvent(LickEvents, ev, TrialIndex);
+            TimeOutFlag = 1;
+            break;
+        elseif Ref && ~Noted_EarlyLickInRef
+            LickEV.Note = 'LICK,EARLY';
+            LickEvents = AddEvent(LickEvents, LickEV, TrialIndex);
+            Noted_EarlyLickInRef = 1;
         end
-        LickEvents = AddEvent(LickEvents, ev, TrialIndex);
-        TimeOutFlag = 1;
-        break;
     end
     
-    if ~LEDTurnedOn && strcmpi(get(o,'TurnOnLight'),'ResponseWindow') && mod(StimPos,2) && ~isequal(TarFlag,StimPos) % turn on LED when in RespWin
-        [ll,ev] = IOLightSwitch (HW, 1, 0);%get(o,'ResponseWindow'));
+    if ~LEDTurnedOn && strcmpi(get(o,'TurnOnLight'),'SoundDelay') && mod(EarlyPos,2) % turn on LED when in RespWin
+        [LEDTurnedOn,ev] = IOLightSwitch (HW, 1, 0);%get(o,'ResponseWindow'));
         LickEvents = AddEvent(LickEvents, ev, TrialIndex);
         LEDTurnedOn = 1;
     end
     
-    if (Lick || AutomaticReward) && mod(StimPos,2) && ~isequal(TarFlag,StimPos) && ~Ref
+    if ~LEDTurnedOn && strcmpi(get(o,'TurnOnLight'),'ResponseWindow') && mod(StimPos,2) && ~isequal(TarFlag,StimPos) % turn on LED when in RespWin
+        [LEDTurnedOn,ev] = IOLightSwitch (HW, 1, 0);%get(o,'ResponseWindow'));
+        LickEvents = AddEvent(LickEvents, ev, TrialIndex);
+        LEDTurnedOn = 1;
+    elseif LEDTurnedOn && strcmpi(get(o,'TurnOnLight'),'SoundDelay') && mod(StimPos,2) && ~isequal(TarFlag,StimPos) % turn off
+        [LEDTurnedOn,ev] = IOLightSwitch (HW, 0, 0);
+        LEDTurnedOn = 0;
+    end
+    if MotorLapse>0 && ~MotorOn && mod(StimPos,2) && ~isequal(TarFlag,StimPos) % turn on Motor when in RespWin
+        [MotorOn, MotorEv] = IOLightSwitch(HW,1,[],[],[],[],'PumpMotor');
+        pause(MotorLapse)
+        MotorOn = 1;
+    end
+    
+    if ~Ref && ( Lick || (AutomaticReward&&(CurrentTime>(TarResponseWin(1)+AutomaticReward))) ) &&...
+            mod(StimPos,2) && ~isequal(TarFlag,StimPos)
         % if she licks in target response window
         TimeOutFlag = 0;
-        if StopTargetFA<1
-            WaterFraction = 1-FalseAlarm;
-        else
-            WaterFraction = 1-FalseAlarm;
-%          WaterFraction = 1;
+        if Lick
+            LickEV.Note = 'LICK,HIT';
+            PumpDuration = RewardAmount/globalparams.PumpMlPerSec.Pump;
+        elseif AutomaticReward
+            LickEV.Note = 'AUTOMATIC REWARD';
+            PumpDuration = (1/2)*RewardAmount/globalparams.PumpMlPerSec.Pump;
         end
-        PumpDuration = RewardAmount* WaterFraction/globalparams.PumpMlPerSec.Pump;
-%         PumpDuration = get(o,'PumpDuration') * WaterFraction;
-        if PumpDuration > 0
-            ev = IOControlPump (HW,'start',PumpDuration);
-            LickEvents = AddEvent(LickEvents, ev, TrialIndex);
-            exptparams.Water = exptparams.Water+RewardAmount* WaterFraction;
-            if ~isempty(RefResponseWin) 
-              fprintf(['\t Lick on Target detected @ ',num2str(CurrentTime-RefResponseWin(end)),'s ... ']);
-            else
-              fprintf(['\t Lick on Target detected @ ',num2str(CurrentTime),'s ... ']);
-            end
-        end
-        TarFlag = StimPos;
+        LickEvents = AddEvent(LickEvents, LickEV, TrialIndex);
+        break;
     end
     
     %CurrentTime = IOGetTimeStamp(HW);
     tmp = IOGetTimeStamp(HW);
     
     % leave it here in case something goes wrong
-    if tmp > (CurrentTime+0.030)
+    if tmp > (CurrentTime+0.020) && ~MotorOn
       disp('***')
       disp('Problem with trig interval.')
       disp('***')
@@ -196,14 +215,33 @@ while CurrentTime < exptparams.LogDuration % BE removed +0.05 here (which screws
     
 end
 
+% STOP SOUND
 if ~SoundStopped
   evStopSound = IOStopSound(HW);
 end
-if LEDTurnedOn || ll
-    [ll,evLED] = IOLightSwitch (HW, 0, 0);
+% DELIVER WATER
+if PumpDuration > 0
+    ev = IOControlPump (HW,'start',PumpDuration);
+    LickEvents = AddEvent(LickEvents, ev, TrialIndex);
+    exptparams.Water = exptparams.Water+RewardAmount;
+    if ~isempty(RefResponseWin)
+        fprintf(['\t Lick on Target detected @ ',num2str(CurrentTime-RefResponseWin(end)),'s ... ']);
+    else
+        fprintf(['\t Lick on Target detected @ ',num2str(CurrentTime),'s ... ']);
+    end
 end
-
-% added by YB and CB 12/12/2016
+% LEAVE THE SPOUT IN FRONT OF THE SNOUT
+% IF WATER IS DELIVERED AND MOTOR ON
+if MotorOn
+    if exist('PumpDuration')
+        pause(PumpDuration*2); % wait for water to be given
+    end
+    [MotorOn, MotorEv] = IOLightSwitch(HW,0,[],[],[],[],'PumpMotor');
+end
+if LEDTurnedOn && (~TimeOutFlag || strcmp(get(o,'TurnOffLight'),'Always'))
+    [LEDTurnedOn,evLED] = IOLightSwitch (HW, 0, 0);
+end
+% Added by YB and CB 12/12/2016
 if ExtraDuration~=0
   while CurrentTime < (exptparams.LogDuration+ExtraDuration)
     if (mod(CurrentTime,1) < 0.005) && ( (exptparams.LogDuration+ExtraDuration-3)>CurrentTime ) && (LightStateR == 0)

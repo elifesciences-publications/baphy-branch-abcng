@@ -66,10 +66,14 @@ exptparams.TarResponseWin = TarResponseWin;
 exptparams.TarEarlyWin = TarEarlyWin;
 % change the lick to positive edge only:
 LickData = max(0,diff(LickData));
+MotorLapse = get(o,'MotorLapse');
+if MotorLapse>0
+    if ~isempty(RefResponseWin); LickData(round(RefResponseWin(1)*fs)+(0:round(MotorLapse*fs))) = 0; end
+    if ~isempty(TarResponseWin); LickData(round(TarResponseWin(1)*fs)+(0:round(MotorLapse*fs))) = 0; end
+end
 % what we need to procude here are:
 %  1) histogram of first lick for each reference and target
 %  2) false alarm for each reference, and hit for target at different positions
-%
 % first, extract the relevant lick data:
 RefFalseAlarm = 0;RefFirstLick = NaN; FaTrial = 0;
 for cnt2 = 1:NumRef
@@ -83,6 +87,7 @@ for cnt2 = 1:NumRef
         FaTrial = 1;
     end
 end
+
 if isempty(TarResponseWin)   %for no target (sham trial)  by py&9/6/2012
     TarResponseLick=[];
 else
@@ -153,7 +158,7 @@ perf(cnt2).Hit          = double(perf(cnt2).WarningTrial && ~perf(cnt2).EarlyTri
 perf(cnt2).Miss         = double(perf(cnt2).WarningTrial && ~perf(cnt2).EarlyTrial && ~perf(cnt2).Hit && perf(cnt2).TarTrial);
 perf(cnt2).CR         = double(perf(cnt2).WarningTrial && ~perf(cnt2).FaTrial && ~perf(cnt2).TarTrial);
 MaxRef = get(exptparams.TrialObject,'MaxRef');
-if MaxRef == 1   % specific case zhere lick post REF and lick during TAR are counted as ineffective
+if MaxRef == 1   % specific case where lick post REF and lick during TAR are counted as ineffective
     perf(cnt2).Catch         = double((get(exptparams.TrialObject,'MaxRef'))==NumRef);
 else
     perf(cnt2).Catch         = double((get(exptparams.TrialObject,'MaxRef')+1)==NumRef);
@@ -198,9 +203,9 @@ perf(cnt2).RecentDiscriminationRate = perf(cnt2).RecentHitRate * (1-perf(cnt2).R
 if perf(cnt2).Hit, perf(cnt2).ThisTrial = 'Hit';end
 if perf(cnt2).Miss, perf(cnt2).ThisTrial = 'Miss';end
 if perf(cnt2).CR, perf(cnt2).ThisTrial = 'Correct Rejection';end
-if perf(cnt2).EarlyTrial, perf(cnt2).ThisTrial = 'Early';end
 if perf(cnt2).FaTrial, perf(cnt2).ThisTrial = 'False Alarm';end
 if perf(cnt2).Ineffective, perf(cnt2).ThisTrial = 'Ineffective';end
+if perf(cnt2).EarlyTrial, perf(cnt2).ThisTrial = 'Early';end
 fprintf(['d''=' num2str(perf(cnt2).DiscriminationRate) '  /  ' upper( perf(cnt2).ThisTrial ) '  '])
 % change all rates to percentage. If its not rate, put the sum and
 % 'out of' at the end

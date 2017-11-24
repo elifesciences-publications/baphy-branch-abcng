@@ -25,7 +25,7 @@ for cnt1    = 1:length(Cindex)
 end
 % Now, put it in the silence:
 Names = Names(index);
-w = [zeros(PreStimSilence*SamplingRate,1) ; w(:) ;zeros(PostStimSilence*SamplingRate,1)];
+w = [zeros(round(PreStimSilence*SamplingRate),1) ; w(:) ;zeros(round(PostStimSilence*SamplingRate),1)];
 % and generate the event structure:
 events = struct('Note',['PreStimSilence , ' Names{:}],...
     'StartTime',0,'StopTime',PreStimSilence,'Trial',[]);

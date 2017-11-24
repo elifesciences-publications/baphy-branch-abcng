@@ -27,13 +27,14 @@ if length(PostStimSilence)>1
 end
 
 object_spec = what(class(o));
-soundpath = [object_spec.path filesep 'Sounds'];
+soundpath = ['M:\Lab\AudioFiles\@PsycholinguisticStimuli' filesep 'Sounds'];
 files = get(o,'Names');
 [w,fs] = wavread([soundpath filesep files{index}]);
 % Check the sampling rate:
 if fs~=SamplingRate    w = resample(w, SamplingRate, fs);  end
 
 Duration = length(w) / SamplingRate;
+o = set(o,'Duration',PreStimSilence+Duration+PostStimSilence);
 % Now, put it in the silence:
 w = [zeros(ceil(PreStimSilence*SamplingRate),1) ; w(:) ;zeros(ceil(PostStimSilence*SamplingRate),1)];
 % and generate the event structure:
