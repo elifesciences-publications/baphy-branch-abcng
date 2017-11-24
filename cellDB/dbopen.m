@@ -84,7 +84,7 @@ if force || strcmp(computer,'GLNX86'),
    end
 end
 
- [str,status] = urlread('http://www.google.fr');
+[str,status] = urlread('http://www.google.fr');
 if ~status
     DBISOPEN=0;
 elseif isempty(DBISOPEN) || ~DBISOPEN || force==1,

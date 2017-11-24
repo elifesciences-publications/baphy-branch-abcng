@@ -198,7 +198,7 @@ for ii=1:length(RecsDB),
     if exist(MFileRemote,'file')
     
       [MFileRemoteName,MFileRemotePath]=basename(MFileRemote);
-     EVPFileBase=basename(RecsDB(ii).respfileevp);
+      EVPFileBase=basename(RecsDB(ii).respfileevp);
       if VERBOSE disp('Moving Location in CellDB'); end
       SQL=['UPDATE gDataRaw SET resppath="',MFileRemotePath,'",',...
         'parmfile="',MFileRemoteName,'",',...

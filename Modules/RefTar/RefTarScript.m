@@ -20,7 +20,7 @@ global BAPHY_LAB LoudnessAdjusted
 
 BehaveObject = exptparams.BehaveObject;
 % Initialize psychtoolbox for eyetracker JL 17/05/03
-if isfield(HW,'PsychoVisualDisplay') && HW.PsychoVisualDisplay; InitializeHW_VisualExperiment; end
+if isfield(HW,'PsychoVisualDisplay') && HW.PsychoVisualDisplay; InitializeHW_PsychophysicsVisualExperiment; end
 
 % START PSYTOOLBOX FOR VISUAL EXPERIMENT
 if ~isempty(strfind(class(BehaveObject),'Eye'))
