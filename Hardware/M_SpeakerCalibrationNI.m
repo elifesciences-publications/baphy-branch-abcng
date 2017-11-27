@@ -4,6 +4,11 @@ function R  = M_SpeakerCalibrationNI(varargin)
 % see also: SpeakerCalib, findAmplitudeAndDelay, VolumeConversion, StimConversion
 % 
 % This file is part of MANTA licensed under the GPL. See MANTA.m for details.
+% TWO PHOTON
+% Calibration on 1 NI card:
+% M_SpeakerCalibrationNI46('Speaker','Tweeter_2P','DeviceIn','Dev4','DeviceOut','Dev4','ChOut',0:1,'SR',500000,'LowFreq',1000,'HighFreq',75000);
+% Calibration on 2 NI cards:
+% M_SpeakerCalibrationNI46('Speaker','Tweeter_2P','DeviceIn','D4','DeviceOut','Dev4','ChOut',0,'SR',500000,'LowFreq',1000,'HighFreq',75000);
 
 Dirs = setgetDirs;
 
@@ -13,10 +18,11 @@ if length(varargin)==1 P = varargin{1}; else P = parsePairs(varargin); end
 % MODE 
 if ~isfield(P,'TestMode') P.TestMode = 0; end
 
-% HARD WARE PARAMETERS
+% HARDWARE PARAMETERS
 if ~isfield(P,'Speaker') 
   P.Speaker = input('Type Speaker Abbreviation: ','s');
 end
+if ~isfield(P,'Speaker') P.Speaker = 'SHIE800'; end
 if ~isfield(P,'Microphone') P.Microphone = 'GRAS46BE';  end
 if ~isfield(P,'DeviceIn') P.DeviceIn='D20'; end
 if ~isfield(P,'DeviceOut') P.DeviceOut='D0'; end
@@ -57,6 +63,7 @@ fprintf(['\n === Calibrating Speaker [ ',P.Speaker,' ] on DAQ Devices ',...
   '(IN : ',P.DeviceIn,' Ch. ',n2s(P.ChIn),', OUT : ',P.DeviceOut,' Ch. ',n2s(P.ChOut),' at SR=',n2s(P.SR),') ===\n']);
 
 P.SameDevice = strcmp(P.DeviceIn,P.DeviceOut);
+if P.SameDevice P.Device = P.DeviceIn; end
 
 P = LF_loudnessParameters(P);
 
@@ -130,7 +137,7 @@ end
 function A = LF_signalAmplitude(S,P)
 
 switch P.LoudnessMethod
-  case 'MaxLocalStd';    A = maxLocalStd(S,P.LoudnessParameters.Duration,P.SR);
+  case 'MaxLocalStd';    A = maxLocalStd(S,P.SR,P.LoudnessParameters.Duration);
   case 'GlobalStd';         A = std(S);
   case 'MinMax';            A = max(abs(S));
   otherwise error('Error : Method for measuring Signal Amplitude not known.');
@@ -151,13 +158,13 @@ switch P.SameDevice
     % CHECK AND SET SAMPLING RATES
     SRactualIN = setverify(AI,'SampleRate',P.SR);
     SRactualOUT = setverify(AO,'SampleRate',P.SR);
-    if SRactualIN~=P.SR
-      if SRactualIN==SRactualOUT
-        P.SR = SRactualIN; fprintf(['Note: Sampling Rate changed to ',n2s(P.SR)])
-      else
-        error('No common sampling rate for the chosen sampling rate between the cards.');
-      end
-    end
+%     if SRactualIN~=P.SR
+%       if SRactualIN==SRactualOUT
+%         P.SR = SRactualIN; fprintf(['Note: Sampling Rate changed to ',n2s(P.SR)])
+%       else
+%         error('No common sampling rate for the chosen sampling rate between the cards.');
+%       end
+%     end
     set([AI,AO],'SampleRate',P.SR);
     
   case 0 % SEPARATE DEVICES, SERVICED BY NIDAQmx DIRECT CALLS
@@ -256,7 +263,9 @@ switch P.SameDevice
     Response = Response - mean(Response(round(P.PreSteps/2):P.PreSteps));
     Range = [P.PreSteps:P.PreSteps+size(Signal,1)];
     Signal = FinalSignal(Range,:); Response = Response(Range);
-
+    D.SignalsCut = Signal; D.ResponseCut = Response;
+    D.ResponseCut = D.ResponseCut/0.004; % 17/07-YB: doc from GRAS46BE mike
+    
   case 0; % SEPARATE DEVICES, SERVICED BY NIDAQmx DRIVER
    
     S = DAQmxCfgSampClkTiming(AI,'',...
@@ -317,7 +326,6 @@ switch P.SameDevice
     Range = [P.PreSteps:P.PreSteps+length(Signal)+P.PostSteps];
     D.SignalsCut = D.RecordedSignals(Range,:); 
     D.ResponseCut = D.RecordedResponse(Range,1);
-    
     % STOP TASKS
     S = DAQmxStopTask(AI);    if S NI_MSG(S); end
     S = DAQmxStopTask(AO);  if S NI_MSG(S); end
@@ -657,7 +665,7 @@ set(AX,'XLim',[P.LowFreq,P.HighFreq]); grid on
 xlabel('Frequency [Hz]');
 
 figure(1000);
-[S,F,T] = spectrogram(ZAPResponseF,1024,512,1024,102400); imagesc(T,F,abs(S)); set(gca,'YDir','normal')
+[S,F,T] = spectrogram(ZAPResponseF,1024,512,1024,P.SR); imagesc(T,F,abs(S)); set(gca,'YDir','normal')
 
 function LF_saveResults(Rall,P);
 % GET BAPHY PATH

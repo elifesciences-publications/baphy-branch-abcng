@@ -16,6 +16,8 @@ HW=HWDefaultNidaq(globalparams);
 
 Physiology = ~strcmp(globalparams.Physiology,'No');
 
+SetupNames = {'SB1','SB2','LB1','TwoP','SB2Earphones','ePhy','','','','','HP1'};
+globalparams.HWSetupName = SetupNames{globalparams.HWSetup};
 
 % Based on the hardware setup, start the initialization:
 switch globalparams.HWSetup
@@ -61,10 +63,7 @@ switch globalparams.HWSetup
     if Physiology  [HW,globalparams] = IOConnectWithManta(HW,globalparams); end
     
     
-  case {1,2,3,5} % ALL RECORDING BOOTHS SHOULD REMAIN IDENTICAL AS LONG AS POSSIBLE
-    SetupNames = {'SB1','SB2','LB1',[],'SB2Earphones'};
-    globalparams.HWSetupName = SetupNames{globalparams.HWSetup};
-    
+  case {1,2,3,5} % ALL RECORDING BOOTHS SHOULD REMAIN IDENTICAL AS LONG AS POSSIBLE    
     DAQID = 'D0'; % NI BOARD ID WHICH CONTROLS STIMULUS & BEHAVIOR
     niResetDevice(DAQID);
     
@@ -102,23 +101,46 @@ switch globalparams.HWSetup
     %% COMMUNICATE WITH MANTA
     if Physiology  [HW,globalparams] = IOConnectWithManta(HW,globalparams); end
     
-  case 4 % TWO PHOTON BOOTH IN BIOLOGY
-    DAQID = 'D5'; % NI BOARD ID WHICH CONTROLS STIMULUS & BEHAVIOR
+  case {4,6} % TWO PHOTON and ePHY BOOTHS IN BIOLOGY
+%     DAQID = 'D5'; % NI BOARD ID WHICH CONTROLS STIMULUS & BEHAVIOR
+%     version with USB 6259 board
+    DAQID = 'Dev4'; % NI BOARD ID WHICH CONTROLS STIMULUS & BEHAVIOR 
+ %    version with PCIe 6259 board
+    HW.params.fsAO = 500000;
+
     niResetDevice(DAQID);
     
     %% DIGITAL IO
     HW=niCreateDO(HW,DAQID,'port0/line0:1','TrigAI,TrigAO','InitState',[0,0]);
-    HW=niCreateDO(HW,DAQID,'port0/line2','Light','InitState',0);
-    HW=niCreateDO(HW,DAQID,'port0/line3','Pump','InitState',0);
-    HW=niCreateDO(HW,DAQID,'port0/line4','Shock','InitState',0);
-    
+    HW=niCreateDO(HW,DAQID,'port2/line3','Light','InitState',0);
+    HW=niCreateDO(HW,DAQID,'port0/line7','LightR','InitState',0);
+    HW=niCreateDO(HW,DAQID,'port0/line4','LightL','InitState',0);
+    HW=niCreateDO(HW,DAQID,'port1/line5','Pump','InitState',0);
+    HW=niCreateDO(HW,DAQID,'port0/line6','Shock','InitState',0);
+    HW=niCreateDI(HW,DAQID,'port0/line5','Touch');
+%    HW=niCreateDO(HW,DAQID,'port1/line0:1','TrigAI,TrigAO','InitState',[0,0]);
+%    HW=niCreateDO(HW,DAQID,'port0/line6:7','TrigAI,TrigAO','InitState',[0,0]);
+ %   version with PCIe 6259 board
+ 
+
     %% ANALOG INPUT
     HW=niCreateAI(HW,DAQID,'ai0:1','Touch,Microphone',['/',DAQID,'/PFI8']);
     
     %% ANALOG OUTPUT
+%     HW=niCreateAO(HW,DAQID,'ao2:3','SoundOut1,SoundOut2',['/',DAQID,'/PFI9']);
     HW=niCreateAO(HW,DAQID,'ao0:1','SoundOut1,SoundOut2',['/',DAQID,'/PFI9']);
+ %    version with PCIe 6259 board
+ 
+    % In this setup, TrigAO is NOT connected to PFI9 because Labview starts
+    %the stim (via the frame trig sent on PFI9), in synchronization with the image acquisition.
+    % Instead, TrigAO is recorded in LabView, registering the frame before
+    %the trial starts.    
+    HW.OPTICAL = struct([]);     
     
-    HW.OPTICAL = struct([]);
+    %% SETUP SPEAKER CALIBRATION
+    HW.Calibration.Speaker = ['Tweeter',globalparams.HWSetupName];
+    HW.Calibration.Microphone = 'GRAS46BE';
+    HW.Calibration = IOLoadCalibration(HW.Calibration);    
     
   case {11} % Psychophysics Booth
     DAQID = 'D0'; % NI BOARD ID WHICH CONTROLS STIMULUS & BEHAVIOR
