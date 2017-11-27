@@ -4,6 +4,7 @@ function R  = M_SpeakerCalibrationNI(varargin)
 % see also: SpeakerCalib, findAmplitudeAndDelay, VolumeConversion, StimConversion
 % 
 % This file is part of MANTA licensed under the GPL. See MANTA.m for details.
+% M_SpeakerCalibrationNI('Speaker','SHIE800SB1','SR',100000,'DeviceIn','Dev1','DeviceOut','D0');
 % TWO PHOTON
 % Calibration on 1 NI card:
 % M_SpeakerCalibrationNI46('Speaker','Tweeter_2P','DeviceIn','Dev4','DeviceOut','Dev4','ChOut',0:1,'SR',500000,'LowFreq',1000,'HighFreq',75000);

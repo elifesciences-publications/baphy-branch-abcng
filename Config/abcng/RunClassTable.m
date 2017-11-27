@@ -118,6 +118,10 @@ elseif isempty(tar),
       runclass = 'FNS';
     case 'MEMONOISE'
       runclass = 'MMN';
+    case 'PSYCHOLINGUISTICSTIMULI'
+      runclass = 'PLS';
+	case 'NATURALSOUNDS'
+      runclass = 'NSD';
 otherwise
       runclass = '';
   end
@@ -236,6 +240,8 @@ else
       runclass = 'STC';
     case 'PIPSEQUENCE'
       runclass = 'PIP';
+	case 'NATURALSOUNDS'
+      runclass = 'NSD';
     otherwise
       error('Enter a runclass into RunClassTable.m to avoid later confusion!');
   end

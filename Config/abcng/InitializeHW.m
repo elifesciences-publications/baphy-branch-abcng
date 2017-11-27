@@ -76,6 +76,7 @@ switch globalparams.HWSetup
     HW=niCreateDO(HW,DAQID,'port0/line7','LightR','InitState',0);
     HW=niCreateDO(HW,DAQID,'port0/line4','LightL','InitState',0);
     HW=niCreateDO(HW,DAQID,'port1/line5','Pump','InitState',0);
+    HW=niCreateDO(HW,DAQID,'port1/line7','PumpMotor','InitState',0);
     HW=niCreateDI(HW,DAQID,'port0/line5','Touch');
     HW=niCreateDI(HW,DAQID,'port1/line6','Fixation');
     

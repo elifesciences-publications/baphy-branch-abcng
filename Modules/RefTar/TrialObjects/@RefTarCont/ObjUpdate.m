@@ -6,14 +6,14 @@ function O = ObjUpdate (O)
 Ref = get(O,'ReferenceHandle');
 Tar = get(O,'TargetHandle');
 
-if ( ( isstr( get(O,'ReplaySession') ) && ~strcmp(get(O,'ReplaySession'),'') ) || ~isempty( get(O,'ReplaySession') ) ) &&...
-    ( ( isstr(get(O,'TrialIndexLst')) && strcmp(get(O,'TrialIndexLst'),'[]') ) || isempty(get(O,'TrialIndexLst')) )
+if ( ( isstr( get(O,'ReplaySession') ) && ~strcmp(get(O,'ReplaySession'),'') ) || ~isempty( get(O,'ReplaySession') ) )...
+%         && ( ( isstr(get(O,'TrialIndexLst')) && strcmp(get(O,'TrialIndexLst'),'[]') ) || isempty(get(O,'TrialIndexLst')) )
   if get(O,'ReinsertTrials')~=0
     error('Conflict ReinsertTrials vs. ReplaySession')
   else
     global globalparams
     globalparamsBU = globalparams;
-    if isfield(globalparams,'mfilename')      
+    if isfield(globalparams,'mfilename')
       Path2PreviousM = globalparamsBU.mfilename;
       LastSlashIndex = findstr(Path2PreviousM,'\'); LastSlashIndex = LastSlashIndex(end);
       Path2PreviousM = Path2PreviousM(1:LastSlashIndex);
@@ -23,8 +23,8 @@ if ( ( isstr( get(O,'ReplaySession') ) && ~strcmp(get(O,'ReplaySession'),'') ) |
       cd(CurPath);
       IniSeed = exptparams.TrialObject.TargetHandle.IniSeed;
       Tar = set(Tar,'IniSeed',IniSeed);
-      TrialIndexLst = exptparams.TrialObject.TrialIndexLst;
-      O = set(O,'TrialIndexLst',TrialIndexLst);
+%       TrialIndexLst = exptparams.TrialObject.TrialIndexLst;
+%       O = set(O,'TrialIndexLst',TrialIndexLst);
       if ~isempty( strfind('_a_' , globalparams.mfilename) )
         O = set(O,'PreviousSessionIndex',[exptparams(1).Performance(:).TargetIndices]);
       else

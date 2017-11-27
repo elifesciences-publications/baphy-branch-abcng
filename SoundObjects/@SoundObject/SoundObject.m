@@ -10,13 +10,13 @@ switch nargin
 case 0
     % if no input arguments, create a default object
     s.descriptor = 'none';
-    s.SamplingRate = 40000;
+    s.SamplingRate = 100000;
     s.Loudness = 0;
     s.PreStimSilence = 0;
     s.PostStimSilence = 0;
     s.Names = {'none'};
     s.MaxIndex = 1;
-    s.UserDefinableFields = {'SamplingRate','edit',40000,'PreStimSilence','edit',0,'PostStimSilence','edit',0};
+    s.UserDefinableFields = {'SamplingRate','edit',100000,'PreStimSilence','edit',0,'PostStimSilence','edit',0};
     s = class(s,'SoundObject');
     s = ObjUpdate (s);
 case 1

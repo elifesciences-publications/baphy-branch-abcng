@@ -28,4 +28,10 @@ for Index=1:MaxIndex
   Durations(Index) = PreStimSilence + PostStimSilence + 120; % INSERT DURATIONS HERE 
 end
 
+[p, ~, ~] = fileparts(mfilename('fullpath'));
+data = load([p filesep sprintf('sounds_list_session%s_part%s.mat',get(O,'Session'),get(O,'Part'))]);
+sounds = data.sounds;
+O = set(O,'MaxIndex',numel(sounds));
+O = set(O,'Names',sounds);
+
 O = set(O,'Duration',Durations);

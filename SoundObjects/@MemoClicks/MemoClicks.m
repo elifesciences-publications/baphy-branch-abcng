@@ -21,13 +21,16 @@ switch nargin
       'TorcRates','popupmenu','1:1:8|4:4:24|4:4:48|8:8:48|8:8:96',...
       'OctaveRange','edit',[0 1],...
       'OctaveStep','edit',0.25,...
-      'MaxIndex','edit', 3});
+      'MaxIndex','edit',3,...
+      'MemoClickNb','edit',1,...
+      'MemoClickRepetition','edit',25});
   
 %       'key','edit',99999,...
     
     % Clicks
     o.RateRCPercent           = 25;
     o.RateRefRCPercent      = 25;
+    o.MemoClickRepetition      = 25;
     o.maxgap                     = 0.1; % [0.025 0.05 0.1 0.2 0.4]
     o.mingap                      = 0.01;
     o.highfreq                     = 2000;
@@ -35,19 +38,20 @@ switch nargin
     o.ClickTrainDur              = 0.5;
     o.ClickTimes                  = {};
     o.nreps                         = 3;
+    o.MemoClickNb             = 1;
     
     % Torc
     o.OctaveRange              = [0 1];      % contour move up/down tange in octave
-    o.OctaveStep                = 0.25;        % step in octave
-    o.SequenceGap             = [0.25];
-    o.TorcDuration              = [0.5];
-    o.FrequencyRange         = 'H:250-8000 Hz';
-    o.TorcRates                  = '4:4:48';
-    o.IntroduceTORC           = 'no';
+    o.OctaveStep               = 0.25;        % step in octave
+    o.SequenceGap              = [0.25];
+    o.TorcDuration             = [0.5];
+    o.FrequencyRange           = 'H:250-8000 Hz';
+    o.TorcRates                = '4:4:48';
+    o.IntroduceTORC            = 'no';
     
     % Stim conditions
-    o.MaxIndex                  = 1;  % no. of conditions
-    o.Key                           = []; 
+    o.MaxIndex                   = 1;  % no. of conditions
+    o.Key                        = []; 
     o.ReSeed                     = [];% replace seed no. of earlier block for re-test
     o.Seeds                       = [];
     o.PastRef                     = [];
