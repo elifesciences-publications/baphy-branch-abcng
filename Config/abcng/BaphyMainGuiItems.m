@@ -9,7 +9,7 @@ function varargout = BaphyMainGuiItems (field,globalparams)
 switch field
   % Tester:
   case 'Tester'
-    varargout{1} = {'Jennifer','Jonatan','Celian','Thibaut','Yves','Rupesh','Anna','Austin Powers'};
+    varargout{1} = {'Jennifer','Celian','Thibaut','Jonatan','Yves','Rupesh','Anna','Jeff','Xinhe','Austin Powers'};
     % Ferret Names:
   case 'Ferret'
     if dbopen,
@@ -51,7 +51,7 @@ switch field
     varargout{1} = {''};
   case 'HWSetup'
     % Sound Proof rooms:
-    varargout{1} = {'0: Test', '1: SB1', '2: SB2','3: LB1','11:HP1','5:SB2Earphones','6:LB1multiSpeakers'};
+    varargout{1} = {'0: Test', '1: SB1', '2: SB2','3: LB1','4: TwoP','11:HP1','5:SB2Earphones','6:LB1multiSpeakers','7:ePhy'};
     % number of electrodes
   case 'NumberOfElectrodes'
     varargout{1} = '1';
@@ -66,9 +66,9 @@ switch field
          else
             varargout{1}=fileparts(tempname);
          end
-      case {1,2,3,5,6} % PHYSIOLOGY SETUPS
+      case {1,2,3,4,5,6} % PHYSIOLOGY SETUPS
         varargout{1}='D:\Data\';
-      case {4,11} % PSYCHOPHYSICSSETUP
+      case {11} % PSYCHOPHYSICSSETUP
         varargout = {'C:\Data\'};
     end
   case 'PumpMlPerSec',

@@ -11,16 +11,19 @@ switch nargin
     [p, ~, ~] = fileparts(mfilename('fullpath'));
     data = load([p filesep sprintf('sounds_list_session%s_part%s.mat',Fields{3},Fields{6})]);
     sounds = data.sounds;
-    S = SoundObject ('PsycholinguisticStimuli', 40000, 0, 0.4, 0.4, sounds, numel(sounds), Fields);
+    S = SoundObject ('PsycholinguisticStimuli', 100000, 0, 0.4, 0.4, sounds, numel(sounds), Fields);
     O.Fields = Fields;
     O.FieldNames = Fields(1:3:end-2); 
     O.FieldTypes = Fields(2:3:end-1);
-    O.FieldVals =  Fields(2:3:end-1);
-    O.MaxIndex =  numel(sounds);
+    O.FieldVals =  Fields(3:3:end-1);
+%     O.MaxIndex =  numel(sounds);
+    O.MaxIndex =  [];
     for i=1:length(Fields)/3 O.(Fields{(i-1)*3+1}) = Fields{i*3}; end    
-    O.Names = sounds; O.Duration = NaN;
+%     O.Names = sounds;
+    O.Names = [];
+    O.Duration = NaN;
     O.VarFieldNames = {};  O.VarFieldInds = []; O.Par = [];
-    O.RunClass = 'PSL'; 
+    O.RunClass = 'PLS'; 
     O = class(O, 'PsycholinguisticStimuli', S);
     O = ObjUpdate(O);
     

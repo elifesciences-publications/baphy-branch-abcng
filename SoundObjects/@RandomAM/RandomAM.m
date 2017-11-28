@@ -17,7 +17,8 @@ case 0
         'Duration','edit',1,...
         'AMFreq','edit',40,...
         'AMDepth','edit',1,...
-        'NumOfHarmonics','edit',0}); % is the harmonic really necessary
+        'NumOfHarmonics','edit',0,...
+        'SamplingRate','edit',100000}); % is the harmonic really necessary
     
     
     o.BaseFundamental = 1000;
@@ -25,8 +26,8 @@ case 0
     o.OctaveAbove = 3;
     o.TonesPerOctave = 6;
     o.Duration = 1;  %ms
-    o.AMFreq = 40;  % Amplitude Modulation frquency
-    o.AMDepth = 0.5;  % Amplitude modulation depth
+    o.AMFreq = 40;  % Amplitude Modulation frequency
+    o.AMDepth = 0.5;  % Amplitude Modulation depth
     o.NumOfHarmonics = 0;
     o = class(o,'RandomAM',s);
     o = ObjUpdate (o);

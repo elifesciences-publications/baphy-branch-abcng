@@ -78,7 +78,7 @@ switch RepOrTrial
           if strcmpi(exptparams.Performance(end).Outcome,'EARLY') || strcmpi(exptparams.Performance(end).Outcome,'FA')    % 2014/02-YB: SNOOZE is not considered
             % 2014/02-YB: reinsertion (in the next <P.ReinsertTrials>) of TrialIndex sent to <waveform> (in order to re-generate the same ToC)
             RndNextInd = R.randperm(P.ReinsertTrials);
-            P.TrialIndexLst(TrialIndex+RndNextInd(1)) = P.TrialIndexLst(TrialIndex);
+%             P.TrialIndexLst(TrialIndex+RndNextInd(1)) = P.TrialIndexLst(TrialIndex);
             
             CurrentTrial = Counter;
             P.ReferenceIndices(CurrentTrial+RndNextInd) =  P.ReferenceIndices(CurrentTrial);
@@ -97,7 +97,7 @@ O = set(O,'ReferenceIndices',P.ReferenceIndices);
 O = set(O,'TargetIndices',P.TargetIndices);
 O = set(O,'NumberOfTrials',P.NumberOfTrials);
 O = set(O,'TrialTags',P.TrialTags);
-O = set(O,'TrialIndexLst',P.TrialIndexLst);
+% O = set(O,'TrialIndexLst',P.TrialIndexLst);
 exptparams.TrialObject = O;
 
 

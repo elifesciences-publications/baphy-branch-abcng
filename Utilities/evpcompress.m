@@ -72,7 +72,7 @@ elseif spikechancount>0,
       cachefile=cacheevpspikes(evpfile,channel,unique([sigthreshold -4 4 -3.8 3.8 -3.5 3.5]));
     else
       % also cache with threshold of 3.7 for array recordings.
-      cachefile=cacheevpspikes(evpfile,channel,unique([sigthreshold 4 3.7]));
+      cachefile=cacheevpspikes(evpfile,channel,unique([sigthreshold 4 3.7 -4]));
     end
   end
 else

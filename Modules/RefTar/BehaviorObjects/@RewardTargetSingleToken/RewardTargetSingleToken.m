@@ -18,21 +18,24 @@ switch nargin
         o.TimeOut           = 4;
         o.RewardSound       = 'None';
         o.TurnOnLight       = 'Never';
-        o.TurnOffLight      = 'Never';
+        o.TurnOffLight      = 'Always';
         o.Shock             = 'Never';
         o.StopStim          = 'Target';
-        o.StopTargetFA = 1;
+        o.StopTargetFA      = 1;
         o.PumpDuration      = 1;
-        o.AutomaticReward      = 0;
-        o.LightOnFreq = 0;
-        o.RewardAmount = 0.2;
+        o.AutomaticReward   = 0;
+        o.RewardAmount      = 0.2;
         o.NoRecExtraDuration = 0;
-        o.ExtraDuration = 0;
+        o.ExtraDuration     = 0;
+        o.StopOnEarly       = 1;
+        o.MotorLapse        = 0;
         o.UserDefinableFields = {'NoResponseTime','edit',0.2, 'EarlyWindow', ...
             'edit',0.2, 'ResponseWindow','edit',1,'TimeOut','edit',4,...
-            'TurnOnLight','popupmenu','Never|ResponseWindow',...
+            'TurnOnLight','popupmenu','Never|ResponseWindow|SoundDelay',...
+            'TurnOffLight','popupmenu','Always|NeverForEarly',...
             'StopStim','popupmenu','Target|Immediately','StopTargetFA','edit',1,...
-            'AutomaticReward','edit',0,'RewardAmount','edit',0.2,'ExtraDuration','edit',0};
+            'AutomaticReward','edit',0,'RewardAmount','edit',0.2,'ExtraDuration','edit',0,...
+            'StopOnEarly','edit',1,'MotorLapse','edit',0};
         o = class(o,'RewardTargetSingleToken');
         o = ObjUpdate(o);
     case 1

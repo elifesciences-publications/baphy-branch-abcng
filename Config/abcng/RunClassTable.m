@@ -118,6 +118,10 @@ elseif isempty(tar),
       runclass = 'FNS';
     case 'MEMONOISE'
       runclass = 'MMN';
+    case 'PSYCHOLINGUISTICSTIMULI'
+      runclass = 'PLS';
+	case 'NATURALSOUNDS'
+      runclass = 'NSD';
     case 'CLICKCLOUDTARGET'
       runclass = 'CCT';
 otherwise
@@ -238,6 +242,8 @@ else
       runclass = 'STC';
     case 'PIPSEQUENCE'
       runclass = 'PIP';
+	case 'NATURALSOUNDS'
+      runclass = 'NSD';
     case 'CLICKCLOUDTARGET'
       runclass = 'CCT';
     otherwise
