@@ -1,4 +1,4 @@
-function o = Click (varargin);
+function o = Click (varargin)
 % Click is the constructor for the object Click which is a child of  
 %       SoundObject class
 %

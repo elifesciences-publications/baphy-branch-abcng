@@ -118,6 +118,8 @@ elseif isempty(tar),
       runclass = 'FNS';
     case 'MEMONOISE'
       runclass = 'MMN';
+    case 'CLICKCLOUDTARGET'
+      runclass = 'CCT';
 otherwise
       runclass = '';
   end
@@ -236,6 +238,8 @@ else
       runclass = 'STC';
     case 'PIPSEQUENCE'
       runclass = 'PIP';
+    case 'CLICKCLOUDTARGET'
+      runclass = 'CCT';
     otherwise
       error('Enter a runclass into RunClassTable.m to avoid later confusion!');
   end

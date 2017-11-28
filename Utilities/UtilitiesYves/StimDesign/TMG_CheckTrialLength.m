@@ -25,7 +25,8 @@ if CheckTrial
     % events
     TrialStopEventsInd = strcmpi({exptevents.Note},'TRIALSTOP');
     % lfp
-    cd(['raw/' mFile(1:13)]);
+    EndRecInd = find(~isletter(mFile),1,'first')+5;
+    cd(['raw/' mFile(1:EndRecInd)]);
     evpfiles = dir([mFile(1:end-2) '*']);
     [~,~,~,~,rL,LTrialIdx] = evpread(evpfiles(1).name,'lfpchans',1);
     cd ..; cd ..;

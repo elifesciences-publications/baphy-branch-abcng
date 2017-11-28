@@ -60,11 +60,10 @@ switch globalparams.HWSetup
     %% COMMUNICATE WITH MANTA
     if Physiology  [HW,globalparams] = IOConnectWithManta(HW,globalparams); end
     
-    
-  case {1,2,3,5} % ALL RECORDING BOOTHS SHOULD REMAIN IDENTICAL AS LONG AS POSSIBLE
-    SetupNames = {'SB1','SB2','LB1',[],'SB2Earphones'};
+  case {1,2,3,5,6} % ALL RECORDING BOOTHS SHOULD REMAIN IDENTICAL AS LONG AS POSSIBLE
+    SetupNames = {'SB1','SB2','LB1',[],'SB2Earphones','LB1multiSpeakers'};
     globalparams.HWSetupName = SetupNames{globalparams.HWSetup};
-    
+    if globalparams.HWSetup==6; HW.TwoSpeakers = 1; end
     DAQID = 'D0'; % NI BOARD ID WHICH CONTROLS STIMULUS & BEHAVIOR
     niResetDevice(DAQID);
     
@@ -86,7 +85,7 @@ switch globalparams.HWSetup
     %HW2 =niCreateAIOnline(HW2,'Dev1','ai0:1','OnlineEyeX,OnlineEyeY',['/','Dev1','/PFI0']);  % monitor eye position online; triggered by 'TrigOnlineAI'
     
     %% ANALOG OUTPUT % 14/09-YB: rmv independant audio channels for introducing Opto
-    HW=niCreateAO(HW,DAQID,'ao0:1','SoundOut,OptTrig',['/',DAQID,'/PFI1']);
+    HW=niCreateAO(HW,DAQID,'ao0:1','SoundOut1,SoundOut2',['/',DAQID,'/PFI1']);
     
     %% SETUP SPEAKER CALIBRATION    
     switch globalparams.HWSetup
@@ -95,8 +94,12 @@ switch globalparams.HWSetup
       case 2
 %         HW=niCreateAO(HW,DAQID,'ao1','SoundOut,OptTrig',['/',DAQID,'/PFI1']);
         HW.Calibration.Speaker = ['RS',globalparams.HWSetupName];
+      case {6}
+        HW.Calibration(1).Speaker = ['VISATON59',globalparams.HWSetupName];
+        HW.Calibration(2).Speaker = ['VISATON59',globalparams.HWSetupName];
+        HW.Calibration(2).Microphone = 'GRAS46BE';
     end
-    HW.Calibration.Microphone = 'GRAS46BE';
+    HW.Calibration(1).Microphone = 'GRAS46BE';
     HW.Calibration = IOLoadCalibration(HW.Calibration);
     
     %% COMMUNICATE WITH MANTA

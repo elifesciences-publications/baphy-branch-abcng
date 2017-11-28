@@ -19,6 +19,7 @@ P = get(O); % Get parameters
 
 switch RepOrTrial
   case 1 % REPETITION CALL (GENERATE FULL INITIAL SET)
+    Pstore = P;  
     CurrentRepetition = Counter;
     k=0; tmp = cell(P.TargetMaxIndex*P.ReferenceMaxIndex,1);
     P.TrialTags = tmp; P.ReferenceIndices = tmp; P.TargetIndices = tmp;
@@ -43,6 +44,12 @@ switch RepOrTrial
       P.TargetIndices = P.TargetIndices(RandInd);
     end
     P.TrialTags = P.TrialTags(RandInd);
+    if Counter>1 && isfield(exptparams,'Performance') &&...
+            (strcmpi(exptparams.Performance(end).Outcome,'EARLY') || strcmpi(exptparams.Performance(end).Outcome,'FA'))
+        P.TrialTags{1} = Pstore.TrialTags{end};
+        P.TargetIndices{1} = Pstore.TargetIndices{end};
+        P.ReferenceIndices{1} = Pstore.ReferenceIndices{end};
+    end
     
   case 0 % TRIAL CALL (MODIFY SET BASED ON PERFORMANCE)
     if P.ReinsertTrials~=0
@@ -68,7 +75,7 @@ switch RepOrTrial
         case 0
           TrialIndex = exptparams.TotalTrials;
           R = RandStream('mt19937ar','Seed',TrialIndex);
-          if strcmpi(exptparams.Performance(end).Outcome,'EARLY')    % 2014/02-YB: SNOOZE is not considered
+          if strcmpi(exptparams.Performance(end).Outcome,'EARLY') || strcmpi(exptparams.Performance(end).Outcome,'FA')    % 2014/02-YB: SNOOZE is not considered
             % 2014/02-YB: reinsertion (in the next <P.ReinsertTrials>) of TrialIndex sent to <waveform> (in order to re-generate the same ToC)
             RndNextInd = R.randperm(P.ReinsertTrials);
             P.TrialIndexLst(TrialIndex+RndNextInd(1)) = P.TrialIndexLst(TrialIndex);

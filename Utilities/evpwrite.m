@@ -16,7 +16,7 @@
 % created SVD 2005-11-07
 % modified SVD 2006-08-01 : EVP V4 includes optional LFP data
 %
-function evpwrite(filename,spikedata,auxdata,fs,fsaux,lfpdata,fslfp);
+function evpwrite(filename,spikedata,auxdata,fs,fsaux,lfpdata,fslfp)
 
 if isempty(filename),
     disp('not saving evp data');
