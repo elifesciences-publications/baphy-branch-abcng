@@ -206,7 +206,7 @@ while CurrentTime < exptparams.LogDuration % BE removed +0.05 here (which screws
     tmp = IOGetTimeStamp(HW);
     
     % leave it here in case something goes wrong
-    if tmp > (CurrentTime+0.020) && ~MotorOn
+    if tmp > (CurrentTime+0.050) && ~MotorOn
       disp('***')
       disp('Problem with trig interval.')
       disp('***')

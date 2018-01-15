@@ -113,7 +113,7 @@ for cnt1=1:length(RefNumTemp)
     RandIndex (1:RefNumTemp(cnt1)) = [];
 end
 
-if par.ReferenceMaxIndex==par.TargetMaxIndex
+if par.ReferenceMaxIndex==par.TargetMaxIndex && par.MaxRef==1
     temp = LookupTable(randperm(length(LookupTable)));
     TotalTrials = length(temp);
     ShuffledTarIndex = randperm(par.TargetMaxIndex);
