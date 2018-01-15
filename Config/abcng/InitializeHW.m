@@ -98,8 +98,10 @@ switch globalparams.HWSetup
 %         HW=niCreateAO(HW,DAQID,'ao1','SoundOut,OptTrig',['/',DAQID,'/PFI1']);
         HW.Calibration.Speaker = ['RS',globalparams.HWSetupName];
       case {6}
-        HW.Calibration(1).Speaker = ['VISATON59',globalparams.HWSetupName];
-        HW.Calibration(2).Speaker = ['VISATON59',globalparams.HWSetupName];
+%         HW.Calibration(1).Speaker = ['VISATON59',globalparams.HWSetupName,'Right'];
+%         HW.Calibration(2).Speaker = ['VISATON59',globalparams.HWSetupName,'Left'];
+        HW.Calibration(1).Speaker = 'SHIE800LB1';
+        HW.Calibration(2).Speaker = 'SHIE800LB1';
         HW.Calibration(2).Microphone = 'GRAS46BE';
     end
     HW.Calibration(1).Microphone = 'GRAS46BE';

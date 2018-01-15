@@ -27,11 +27,11 @@ case 0
     % if no input arguments, create a default object
     s = SoundObject ('Tone', 100000, 0, 0, 0, ...
         {''}, 1, {'Frequencies','edit',1000,...        
-        'Duration','edit',1,'Gap','edit',[0]},...
-        'SamplingRate','edit',200000);
+        'Duration','edit',1,'Gap','edit',[0],...
+        'SamplingRate','edit',200000});
     o.Frequencies = 1000;
     o.Duration = 1;  %
-    o.Gap=[0];  %gapdur in the middle, or [st et] in the tone if 2 elements
+    o.Gap = [0];  %gapdur in the middle, or [st et] in the tone if 2 elements
     o.SamplingRate = 200000;    
     o = class(o,'Tone',s);
     o = ObjUpdate (o);
