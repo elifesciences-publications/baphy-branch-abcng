@@ -31,7 +31,11 @@ for SpeakerNum = 1:SpeakerNb
       tstim = conv(stim(:,SpeakerNum),cIIR)*CalSR/HW.params.fsAO;
       % UNDO SHIFT DUE TO CALIBRATION
       cDelaySteps = round(HW.Calibration(SpeakerNum).Delay*HW.params.fsAO);
-      stim(:,SpeakerNum) = [tstim(cDelaySteps:end-length(cIIR)+1);zeros(cDelaySteps-1,1)];
+      tstim = [tstim(cDelaySteps:end-length(cIIR)+1);zeros(cDelaySteps-1,1)];
+      Non0ind = tstim~=0 & stim(:,SpeakerNum)~=0;
+      LvlFactor(SpeakerNum) = mean(stim(Non0ind,SpeakerNum)./tstim(Non0ind));
+      stim(:,SpeakerNum) = tstim;
+    else LvlFactor = 1;
     end
   end
 end
@@ -68,6 +72,10 @@ switch HW.params.HWSetup
             end
         end
       end
+    else
+        for SpeakerNum = 1:SpeakerNb
+            stim(:,SpeakerNum) = LvlFactor(SpeakerNum)*stim(:,SpeakerNum)*HW.Calibration(SpeakerNum).Loudness.Parameters.SignalMatlab80dB;
+        end
     end
     LoudnessAdjusted = 0;
     
@@ -86,7 +94,7 @@ switch HW.params.HWSetup
     
     %% 2 SPEAKERS and Loudness are not been adjusted in the waveform of the SO
     if isfield(HW,'TwoSpeakers') && HW.TwoSpeakers && (isempty(LoudnessAdjusted) || ~LoudnessAdjusted)
-      stim(:,1:SpeakerNb) = stim(:,1:SpeakerNb) * 0.5;
+%       stim(:,1:SpeakerNb) = stim(:,1:SpeakerNb) * 0.5;
     end
     
     %% ADD STIMULATION
@@ -122,7 +130,7 @@ switch HW.params.HWSetup
         stim(:,2) = stim(:,1);
       % fill in empty AO channels with zeros %14/09-YB: from Steve' code
       elseif  ~isempty(SecondChannelAO) && ~SecondChannelAO && size(stim,2)<HW.AO(1).NumChannels  
-        stim=cat(2,stim,zeros(size(stim,1),HW.AO(1).NumChannels-size(stim,2)));
+        stim = cat(2,stim,zeros(size(stim,1),HW.AO(1).NumChannels-size(stim,2)));
       end
       % actually load the samples
       SamplesLoaded=niLoadAOData(HW.AO(1),stim);

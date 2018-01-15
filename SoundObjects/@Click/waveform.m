@@ -1,6 +1,5 @@
-function [w, events] = waveform(o,index,IsRef);
+function [w, events] = waveform(o,index,IsRef)
 %
-
 % Nima, dec 2005
 PreStimSilence = get(o,'PreStimSilence');
 PostStimSilence = get(o,'PostStimSilence');

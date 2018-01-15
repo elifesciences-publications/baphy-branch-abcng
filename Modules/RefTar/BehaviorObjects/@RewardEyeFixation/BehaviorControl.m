@@ -1,10 +1,10 @@
-function [Events, exptparams] = BehaviorControl(o, HW, StimEvents, ...
+function [Events, exptparams, StopExperiment] = BehaviorControl(o, HW, StimEvents, ...
   globalparams, exptparams, TrialIndex)
 % Behavior Object for RewardEyeFixation
 % Once trial is initiated (see CanStart), then
 
 % Yves, December 2015, Paris
-global data    
+global data StopExperiment   
 RewardAmount = get(o,'RewardAmount');
 RewardInterval = get(o,'RewardInterval');
 RewardIntervalStd = get(o,'RewardIntervalStd');
@@ -152,8 +152,12 @@ switch get(o,'Calibration')
    vbl = Screen('Flip', HW.VisionHW.ScreenID);          
     
     while IOEyeFixate(HW,AllowedRadius) && (CurrentTime < exptparams.LogDuration) 
-        if isempty(order(order_ind))
+        if  length(order)<order_ind
             fprintf('Sequence of stimulations finished');
+            stop(s);
+            Priority(0);
+            ShowCursor;
+            StopExperiment = 1;
             break;
         end;    
            
@@ -328,7 +332,7 @@ switch o.StimType
 %            display(data);           
 %            d = niReadAIData(HW.AI(2));            
 %            display(IOGetTimeStamp(HW)-time0); 
-            Screen('FillRect', HW.VisionHW.ScreenID, [0 0 0], posCurrent);
+              Screen('FillRect', HW.VisionHW.ScreenID, [0 0 0], posCurrent);
             Screen('Flip', HW.VisionHW.ScreenID);
             time1(time_ind) = IOGetTimeStamp(HW);
         end; 
@@ -509,13 +513,11 @@ end
     end    
     
 end
-stop(s);
-switch o.StimType
-    case 'approxRFbar'
+    stop(s);
     Priority(0);
     ShowCursor;
-    Screen('Close', HW.VisionHW.ScreenID2);
-end    
+%     Screen('CloseAll');
+ 
 end
 
 

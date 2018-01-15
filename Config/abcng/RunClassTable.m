@@ -122,6 +122,10 @@ elseif isempty(tar),
       runclass = 'PLS';
 	case 'NATURALSOUNDS'
       runclass = 'NSD';
+    case 'CLICKCLOUDTARGET'
+      runclass = 'CCT';
+	case 'MULTIPLELOCATIONSO'
+      runclass = 'MSO';
 otherwise
       runclass = '';
   end
@@ -242,6 +246,10 @@ else
       runclass = 'PIP';
 	case 'NATURALSOUNDS'
       runclass = 'NSD';
+    case 'CLICKCLOUDTARGET'
+      runclass = 'CCT';
+	case 'MULTIPLELOCATIONSO'
+      runclass = 'MSO';
     otherwise
       error('Enter a runclass into RunClassTable.m to avoid later confusion!');
   end

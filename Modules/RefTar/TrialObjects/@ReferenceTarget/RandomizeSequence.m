@@ -76,6 +76,9 @@ while sum(temp) < ReferenceMaxIndex      % while not all the references are cove
     elseif sum(temp)+NumRef(1) <= ReferenceMaxIndex % can we add NumRef(1)?
         temp = [temp NumRef(1)]; % if so, add it and circle NumRef
         NumRef = circshift (NumRef, -1);
+    elseif ReferenceMaxIndex==1  % case of Noise or WN for instance
+        temp = [temp NumRef(1)]; % if so, add it and circle NumRef
+        NumRef = circshift (NumRef, -1);
     else
         NumRef(1)=[]; % otherwise remove this number from NumRef
     end
@@ -109,8 +112,12 @@ end
 % Now generate random sequences for each trial
 RandIndex = randperm(par.ReferenceMaxIndex);
 for cnt1=1:length(RefNumTemp)
-    RefTrialIndex {cnt1} = RandIndex (1:RefNumTemp(cnt1));
-    RandIndex (1:RefNumTemp(cnt1)) = [];
+    if ~ReferenceMaxIndex==1
+        RefTrialIndex {cnt1} = RandIndex (1:RefNumTemp(cnt1));
+        RandIndex (1:RefNumTemp(cnt1)) = [];
+    else
+        RefTrialIndex {cnt1} = ones(1,RefNumTemp(cnt1));
+    end
 end
 
 if par.ReferenceMaxIndex==par.TargetMaxIndex && par.MaxRef==1
