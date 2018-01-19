@@ -33,7 +33,8 @@ case 0
         'ProbeDuration','edit',1,...
         'CuedChannel','edit',[],...
         'TargetChannel','edit',[],...
-        'RefTarRel_dB','edit','0'});
+        'RefTarRel_dB','edit','0',...
+        'BlockCondition','edit',0});
     o.ClickWidth = .001;
     o.MeanICI = 0.30;
     o.StdICI = 0.10;
@@ -47,6 +48,7 @@ case 0
     o.CuedChannel = [];
     o.TargetChannel = [];
     o.RefTarRel_dB = [];
+    o.BlockCondition = 0;
     o.MaxIndex = o.ChannelNumber;
     o = class(o,'ClickCloudTarget',s);
     o = ObjUpdate (o);

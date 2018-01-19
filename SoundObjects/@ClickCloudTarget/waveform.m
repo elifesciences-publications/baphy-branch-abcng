@@ -1,4 +1,4 @@
-function [w,ev] = waveform(o,index,IsRef)
+function [w,ev,o] = waveform(o,index,IsRef,Mode,TrialTotal)
 % index = [Tar or Ref] = channel where to put the probe
 % YB/JN, 2017/09
 PreStimSilence = get(o,'PreStimSilence');
@@ -11,9 +11,16 @@ ClickCloudMinDuration = get(o,'ClickCloudMinDuration');
 ClickCloudMaxDuration    = get(o,'ClickCloudMaxDuration');
 ClickCloudMeanDuration    = get(o,'ClickCloudMeanDuration');
 CCDurationBin    = get(o,'CCDurationBin');
+BlockCondition    = get(o,'BlockCondition');
 
 if ~isempty(get(o,'CuedChannel'))
     index = str2num(get(o,'CuedChannel'));
+elseif BlockCondition~=0
+    if mod( ceil(TrialTotal/BlockCondition) ,2) == 1
+        index = str2num(get(o,'TargetChannel'));
+    else
+        index = mod(str2num(get(o,'TargetChannel')),2)+1;
+    end
 end
 ev = [];
 w = zeros(round(PreStimSilence * SamplingRate),ChannelNb);
@@ -30,11 +37,13 @@ else
 end
 % Click timings
 wAllChannels = [];
+flag = -1;
 for ChannelNum = 1:ChannelNb
     wSingleChannel = zeros(round(CCDuration*SamplingRate),1);
     CT = max([0.03 normrnd(MeanICI,StdICI)]);
     while CT < (CCDuration-ClickWidth)
-        wSingleChannel( round(CT*SamplingRate) + (1:round(ClickWidth*SamplingRate))) = 1;
+        if flag==-1; flag = 1; else flag = -1; end
+        wSingleChannel( round(CT*SamplingRate) + (1:round(ClickWidth*SamplingRate))) = flag;
         ev = AddEvent(ev,['Click - ' num2str(ChannelNum)],[],PreStimSilence+CT,PreStimSilence+CT+ClickWidth);
         CT = CT+normrnd(MeanICI,StdICI);
     end

@@ -6,233 +6,253 @@ function [Events, exptparams] = BehaviorControl(O, HW, StimEvents, globalparams,
 %  - ERROR      : Lick during response window at wrong spout
 %  - SNOOZE                : No Lick until after response window
 %
-% YB/JN 2017/09
+% YB 2018/01
 
 Events = [ ];
-
 %% INITIALIZE WATER (in units of ml, necessary for )
 exptparams.WaterUnits = 'milliliter';
-RewardAmount = get(O,'RewardAmount');
-AutomaticReward = get(O,'AutomaticReward');
+if ~isfield(exptparams,'Water'), exptparams.Water = 0;end
+AutomaticReward = get(o,'AutomaticReward');
+DelayAutomaticReward = 0.05;
 
-%% GET TARGET & REFERENCE INDICES
-tmp = get(exptparams.TrialObject,'ReferenceIndices'); ReferenceIndices = tmp{exptparams.InRepTrials};
-tmp = get(exptparams.TrialObject,'TargetIndices'); TargetIndices = tmp{exptparams.InRepTrials};
+%% SPATIALIZATION
 TargetChannel = get(O,'TargetChannel');
-SoundSR = get(get(exptparams.TrialObject,'TargetHandle'),'SamplingRate');
-
-%% COMPUTE RESPONSE WINDOWS
 LastEv = StimEvents(end).Note;
 Index = str2num(LastEv( (find(LastEv=='-',1,'first')+1):(find(LastEv==',',1,'first')-1) ));
 TAR = ismember(Index,TargetChannel);
-EarlyWindow = StimEvents(end-1).StartTime;
 
-RW(1) = EarlyWindow + get(O,'MinimalDelayResponse');
-RW(2) = RW(1) + get(O,'ResponseWindow');
-
-%% PREPARE FOR LIGHT CUE
-LightCueDuration = get(O,'LightCueDuration'); LightCued = 0; cPositions = {'center'};
-LightNames = IOMatchPosition2Light(HW,cPositions);
-
-%% WAIT FOR THE CLICK AND RECORD POSITION AND TIME
+%% TIME-WINDOW INITIALIZATION
 SensorNames = {HW.Didx.Name}; 
 TouchType = IOMatchPosition2Sensor('center',HW); TouchType = TouchType{1};
-SensorChannels = find(strcmp(SensorNames,TouchType));
-AllLickSensorNames = SensorNames(~cellfun(@isempty,strfind(SensorNames,TouchType)));
 
-% SYNCHRONIZE COMPUTER CLOCK WITH DAQ TIME
-tic; CurrentTime = IOGetTimeStamp(HW); InitialTime = CurrentTime;
-while CurrentTime < exptparams.LogDuration
-  DetectType = 'ON'; LickOccured = 0;
-  %CurrentTime = IOGetTimeStamp(HW); % INACCURATE WITH DISCRETE STEPS
-  CurrentTime = toc+InitialTime;
-  % READ LICKS FROM ALL SENSORS
-  cLick = IOLickRead(HW,SensorChannels);
-  switch DetectType
-      case 'ON'; if any(cLick); LickOccured = 1; end;
-      case 'OFF'; if any(~cLick); LickOccured = 1; end;
+RefResponseWin = [];
+TarResponseWin = [];
+TarEarlyWin    = [];
+RefEarlyWin    = [];
+RefLightWin = [];
+TarLightWin = [];
+NumRef = 0;
+RefFlag=[];
+TarFlag=[];
+FalseAlarm = 0;
+LEDTurnedOn = 0;
+StopTargetFA = get(o,'StopTargetFA');
+RewardAmount = get(o,'RewardAmount');
+EarlyWindow = get(o,'EarlyWindow');
+RH = get(exptparams.TrialObject,'ReferenceHandle'); TH = get(exptparams.TrialObject,'TargetHandle');
+LickEvents = [];
+SoundStopped = 0;
+
+for cnt1 = 1:length(StimEvents)
+  [Type, StimName, StimRefOrTar] = ParseStimEvent (StimEvents(cnt1));
+  if strcmpi(Type,'Stim') %&& ~isempty(strfind(StimName,'$'))  % 15/06: YB (condition never filled in for TORC/Tone at least)
+    
+    if ~isempty(RefResponseWin) %&& ~strcmpi(class(RH),'TorcToneDiscrim') % the response window should not go to the next sound!
+      RefResponseWin(end) = min(RefResponseWin(end), StimEvents(cnt1).StartTime);
+%     elseif strcmpi(class(RH),'TorcToneDiscrim') && ...
+%         ( (get(o,'ResponseWindow') + EarlyWindow) > get(RH,'PreStimSilence')+get(RH,'TorcDuration')+max(get(RH,'TorcToneGap'))+get(RH,'ToneDuration')+get(RH,'PostStimSilence') )
+%       error('Response window too long: overlaps next sound')
+    end
+    
+    if strcmpi(StimRefOrTar,'Reference')
+      if ~strcmpi(class(RH),'TorcToneDiscrim') || ( strcmpi(class(RH),'TorcToneDiscrim') && isempty(strfind(upper(StimName),'TORC')) )
+        RefResponseWin = [RefResponseWin StimEvents(cnt1).StartTime + EarlyWindow ...
+          StimEvents(cnt1).StartTime + EarlyWindow + get(o,'ResponseWindow')];
+        NumRef = NumRef + 1;
+        RefLightWin = [RefLightWin StimEvents(cnt1).StartTime StimEvents(cnt1).StartTime+tardur];
+        RefEarlyWin = [RefEarlyWin StimEvents(cnt1).StartTime ...
+          StimEvents(cnt1).StartTime + EarlyWindow];
+      end
+    elseif strcmpi(StimRefOrTar,'Target')
+      if ~strcmpi(class(TH),'TorcToneDiscrim') || ( strcmpi(class(TH),'TorcToneDiscrim') && isempty(strfind(upper(StimName),'TORC')) )
+        TarResponseWin = [TarResponseWin StimEvents(cnt1).StartTime + EarlyWindow ...
+          StimEvents(cnt1).StartTime + EarlyWindow + get(o,'ResponseWindow')];
+        TarEarlyWin = [TarEarlyWin StimEvents(cnt1).StartTime ...
+          StimEvents(cnt1).StartTime + EarlyWindow];
+        TarLightWin = [TarLightWin StimEvents(cnt1).StartTime StimEvents(cnt1).StartTime+tardur];
+      end
+    end
+    
   end
-  
-  % PROCESS LICK GENERALLY
-  if LickOccured
-    LickTime = CurrentTime;
-    cSensorChannels = SensorChannels(find(cLick,1,'first'));
-    if ~isempty(cSensorChannels)
-      cLickSensorInd = find(cLick,1,'first');
-      cLickSensor = SensorNames{SensorChannels(cLickSensorInd)}; % CORRECT FOR BOTH 'ON' AND 'OFF' RESULTS
-      cLickSensorNot = setdiff(SensorNames(SensorChannels),cLickSensor);
+end
+
+[LightStateR, ev] = IOLightSwitch(HW,1,0,[],0,0,'LightR');
+LastLick = 0;
+ll = 0;
+TimeOutFlag=1;
+fprintf(['\nRunning Trial [ <=',n2s(exptparams.LogDuration),'s -- ' num2str(NumRef) 'ref & ' num2str(~strcmpi(StimRefOrTar,'Reference')) 'tar] ... ']);
+fprintf(['LogDuration = ' num2str(exptparams.LogDuration) 's.    '])
+ExtraDuration = get(o,'ExtraDuration');
+CurrentTime = IOGetTimeStamp(HW);
+
+%% GO
+while CurrentTime < exptparams.LogDuration % BE removed +0.05 here (which screws up acquisition termination)
+    % added by YB and CB 01/12/2016
+    % send trig every second
+    if (LightStateR == 0) && (mod(CurrentTime,1) < 0.005)
+      [LightStateR, ev] = IOLightSwitch(HW,1,0,[],0,0,'LightR');
+    elseif LightStateR == 1
+      [LightStateR, ev] = IOLightSwitch(HW,0,0,[],0,0,'LightR');
+    end
+    
+    ThisLick = IOLickRead(HW);
+    Lick = ThisLick && ~LastLick;
+    LastLick = ThisLick;
+    if ~isempty(RefResponseWin) && CurrentTime>(RefResponseWin(end)-0.2)
+        % this is to fix the problem of stopping in the begining of the target
+        StopFlag = 1;
     else
-      cLickSensor = 'None'; cLickSensorNot = 'None';
+        StopFlag = 0;
+    end
+    if strcmpi(get(o,'StopStim'),'Immediately'),
+        StopFlag = 1;
     end
     
-    Events = AddEvent(Events,['LICK,',cLickSensor],TrialIndex,LickTime,[]);
-    break
-  end
-  
-  % GIVE LIGHT CUE ON REWARD SIDE
-  if ~LightCued && LightCueDuration && (CurrentTime > RW(1)-(LightCueDuration+0.05))
-    fprintf('Light Cued ');
-    [State,LightEvent] = IOLightSwitch(HW,1,LightCueDuration,[],[],[],LightName);
-    fprintf('\b ... '); LightCued = 1;
-    Events = AddEvent(Events, LightEvent, TrialIndex);
-  end
-end
-StopEvent = IOStopSound(HW);
-Events = AddEvent(Events, StopEvent, TrialIndex);
-
-% IF NO RESPONSE OCCURED
-if ~LickOccured; LickTime = inf; end
-
-if LickOccured
-  fprintf(['\t Lick detected [ ',cLickSensor,', at ',n2s(LickTime,3),'s ] ... ']);
-else
-  fprintf(['\t No Lick detected ... ']); cLickSensor = ''; 
-end
-
-%%  PROCESS LICK
-if LickTime < RW(1)
-  Outcome = 'EARLY';
-elseif LickTime>RW(1) && LickTime<RW(2) % HIT OR ERROR
-  switch TAR
-    case 1; Outcome = 'HIT';
-    case 0; Outcome = 'FA';
-  end  
-else
-  switch TAR
-    case 1; Outcome = 'MISS';
-    case 0; Outcome = 'CR';
-  end
-end
-Events = AddEvent(Events,['OUTCOME,',Outcome],TrialIndex,LickTime,[]);
-if strcmp(Outcome,'HIT'); Outcome2Display = [Outcome ', RT = ' num2str(LickTime-RW(1))]; else Outcome2Display = Outcome; end
-fprintf(['\t [ ',Outcome2Display,' ] ... ']);
-
-%% AUTOMATIC REWARD
-if AutomaticReward>0 && strcmp(Outcome,'MISS')
-    PumpDuration = AutomaticReward/globalparams.PumpMlPerSec.Pump;
-    PumpName = IOMatchPosition2Pump('center',HW); PumpName = PumpName{1};
-    PumpEvent = IOControlPump(HW,'Start',PumpDuration,PumpName);
-    PumpEvent.Note = [PumpEvent.Note ',AUTOMATICREWARD'];
-    Events = AddEvent(Events, PumpEvent, TrialIndex);
-    exptparams.Water = exptparams.Water+AutomaticReward;
-    % MAKE SURE PUMPS ARE OFF (BECOMES A PROBLEM WHEN TWO PUMP EVENTS TOO CLOSE)
-    pause(PumpDuration);
-    PumpEvent = IOControlPump(HW,'stop',0,PumpName);
-    PumpEvent.Note = [PumpEvent.Note ',AUTOMATICREWARD'];
-    Events = AddEvent(Events, PumpEvent, TrialIndex);
-    IOControlPump(HW,'stop',0,'Pump');
-end
-
-%% TAKE ACTION BASED ON OUTCOME
-switch Outcome
-  case 'EARLY'; % TIME OUT
-    if strcmp(get(O,'PunishSound'),'EarlyBuzz') || strcmp(get(O,'PunishSound'),'Buzz') 
-      BuzzDuration = 0.3;
-      Tbuzz = 0:(1/SoundSR):BuzzDuration; Xbuzz = sin(2.*pi.*110.*Tbuzz);
-      Ybuzz = square(2*pi*1000*Tbuzz +2*Xbuzz);
-      IOStartSound(HW,Ybuzz*15); pause(BuzzDuration); IOStopSound(HW);
+%     lightdur0 = [lightonfreq;tardur];
+    if ~isempty(RefResponseWin) && CurrentTime<RefResponseWin(end)   % find out if we are in the reference or target part
+        StimPos = length(find(RefResponseWin<CurrentTime)); % stim pos tells us whether we
+        % are "IN" the windows calculated above or outside of it
+        Ref = 1;  % we are in reference part of the sound
+        EarlyPos = length(find(RefEarlyWin<CurrentTime)); % not used so far since early exists only for tar
+    else % if we are in target part
+        StimPos = length(find(TarResponseWin<CurrentTime));
+        EarlyPos = length(find(TarEarlyWin<CurrentTime));
+        LightPos = length(find(TarLightWin<CurrentTime));
+        Ref = 0;
     end
-    LightEvents = LF_TimeOut(HW,get(O,'TimeOutEarly'),0,TrialIndex,Outcome);
-    Events = AddEvent(Events, LightEvents, TrialIndex);
-    
-  case 'FA'; % TIME OUT
-    if strcmp(get(O,'PunishSound'),'FABuzz') || strcmp(get(O,'PunishSound'),'Buzz') 
-      BuzzDuration = 0.7;
-      Tbuzz = 0:(1/SoundSR):BuzzDuration; Xbuzz = sin(2.*pi.*110.*Tbuzz);
-      Ybuzz = square(2*pi*1000*Tbuzz +2*Xbuzz);
-      IOStartSound(HW,Ybuzz*15); pause(BuzzDuration); IOStopSound(HW);
+    if StopFlag && (FalseAlarm>=StopTargetFA)
+        % ineffective sound:
+        ev = IOStopSound(HW);
+        SoundStopped = 1;
+        LickEvents = AddEvent(LickEvents, ev, TrialIndex);
+        ThisTime = clock;
+        if strcmpi(get(o,'TurnOffLight'),'Ineffective')
+            ev = IOLightSwitch(HW,0);
+        end
+        break;
+%         while etime(clock,ThisTime) < (get(o,'TimeOut')+exptparams.LogDuration-CurrentTime)
+%             drawnow;
+%         end
+%         while(IOGetTimeStamp(HW)<exptparams.LogDuration), end;
+%         break;
     end
-    if isstr(get(O,'TimeOutError')); TimeOut = str2num(get(O,'TimeOutError'));
-    else  TimeOut = get(O,'TimeOutError'); end
-    LightEvents = LF_TimeOut(HW,TimeOut,0,TrialIndex,Outcome);
-    Events = AddEvent(Events, LightEvents, TrialIndex);
-  
-  case 'HIT'; % PROVIDE REWARD AT CORRECT SPOUT
-    if length(RewardAmount)>1 % ASYMMETRIC REWARD SCHEDULE ACROSS SPOUTS
-      RewardAmount = RewardAmount(cLickSensorInd);
-    end    
-    if ~globalparams.PumpMlPerSec.Pump
-      globalparams.PumpMlPerSec.Pump = inf;
-    end    
-    PumpDuration = RewardAmount/globalparams.PumpMlPerSec.Pump;
-    PumpName = IOMatchPosition2Pump('center',HW); PumpName = PumpName{1};
-    PumpEvent = IOControlPump(HW,'Start',PumpDuration,PumpName);
-    Events = AddEvent(Events, PumpEvent, TrialIndex);
-    exptparams.Water = exptparams.Water+RewardAmount;
-    % MAKE SURE PUMPS ARE OFF (BECOMES A PROBLEM WHEN TWO PUMP EVENTS TOO CLOSE)
-    pause(PumpDuration);
-    PumpEvent = IOControlPump(HW,'stop',0,PumpName);
-    Events = AddEvent(Events, PumpEvent, TrialIndex);
-    IOControlPump(HW,'stop',0,'Pump');
+    if (Lick) && Ref && mod(StimPos,2) && ~isequal(RefFlag,StimPos) %% for including licks in the ref early window:% & (Ref && mod(EarlyPos,2))
+        % RefFlag: we want to add to the FalseAlarm only once for each
+        % reference.
+        % if she licks in reference response window, add to the false alarm
+        % rate
+        if strcmpi(get(o,'TurnOnLight'),'FalseAlarm')
+            [ll,ev] = IOLightSwitch (HW, 1, .2);
+            LickEvents = AddEvent(LickEvents, ev, TrialIndex);
+        end
+        if strcmpi(get(o,'Shock'),'FalseAlarm') && StimPos>length(StimIndex)-2 %apply only to last ref
+            ev = IOControlShock (HW, .2, 'Start');
+            LickEvents = AddEvent(LickEvents, ev, TrialIndex);
+        end
+        
+        RefFlag = StimPos;
+        FalseAlarm = FalseAlarm + 1/NumRef;
+    end
+    if (Lick) && (~Ref && mod(EarlyPos,2))
+        % if she licks in early window, terminate the trial immediately, and
+        % give her timeout.
+        ev = IOStopSound(HW); SoundStopped = 1;
+        LickEvents = AddEvent(LickEvents, ev, TrialIndex);
+        TimeOutFlag = 1;
+        break;
+%         ThisTime = clock;
+%         while etime(clock,ThisTime) < (get(o,'TimeOut')+exptparams.LogDuration-CurrentTime)
+%             drawnow;
+%         end
+%         while(IOGetTimeStamp(HW)<exptparams.LogDuration), end;
+%         break;
+    end
     
-    % Turn LED OFF
-    [State,LightEvent] = IOLightSwitch(HW,0,0,[],[],[],LightNames{1});
-    Events = AddEvent(Events,LightEvent,TrialIndex);
-    pause(3);
-  case {'MISS';'CR'}
-    cLickSensor = 'None'; cLickSensorNot = 'None';
-    pause(0.1); % TO AVOID EMPTY LICKSIGNAL
-  otherwise error(['Unknown outcome ''',Outcome,'''!']);
+    if ~LEDTurnedOn && strcmpi(get(o,'TurnOnLight'),'ResponseWindow') && mod(StimPos,2) && ~isequal(TarFlag,StimPos) % turn on LED when in RespWin
+        [ll,ev] = IOLightSwitch (HW, 1, 0);%get(o,'ResponseWindow'));
+        LickEvents = AddEvent(LickEvents, ev, TrialIndex);
+        LEDTurnedOn = 1;
+    end
+    
+    if (Lick || (AutomaticReward&&(CurrentTime>(TarResponseWin(1)+DelayAutomaticReward)))) &&...
+            mod(StimPos,2) && ~isequal(TarFlag,StimPos) && ~Ref
+        % if she licks in target response window
+        TimeOutFlag = 0;
+        if StopTargetFA<1
+            WaterFraction = 1-FalseAlarm;
+        else
+            WaterFraction = 1-FalseAlarm;
+%             WaterFraction = 1;
+        end
+        PumpDuration = RewardAmount* WaterFraction/globalparams.PumpMlPerSec.Pump;
+%         PumpDuration = get(o,'PumpDuration') * WaterFraction;
+        if PumpDuration > 0
+            ev = IOControlPump (HW,'start',PumpDuration);
+            LickEvents = AddEvent(LickEvents, ev, TrialIndex);
+            exptparams.Water = exptparams.Water+RewardAmount* WaterFraction;
+            if strcmpi(get(exptparams.BehaveObject,'RewardSound'),'Click') && PumpDuration
+                ClickSend (PumpDuration/2);
+            end
+            if strcmpi(get(exptparams.BehaveObject,'TurnOnLight'),'Reward')
+                tic;
+                [ll,ev] = IOLightSwitch (HW, 1, 0);
+                while toc<get(o,'PumpDuration')
+                    pause(0.05)
+                end
+                [ll] = IOLightSwitch (HW, 0, 0);
+                LickEvents = AddEvent(LickEvents, ev, TrialIndex);
+            end
+            if ~isempty(RefResponseWin) 
+              fprintf(['\t Lick on Target detected @ ',num2str(CurrentTime-RefResponseWin(end)),'s ... ']);
+            else
+              fprintf(['\t Lick on Target detected @ ',num2str(CurrentTime),'s ... ']);
+            end
+        end
+        TarFlag = StimPos;
+    end
+    
+    %CurrentTime = IOGetTimeStamp(HW);
+    tmp = IOGetTimeStamp(HW);
+    
+    % leave it here in case something goes wrong
+    if tmp > (CurrentTime+0.05)
+      disp('***')
+      disp('Problem with interval.')
+      disp('***')
+    end
+    CurrentTime = tmp;
+    
 end
 
-fprintf('\n');
-if strcmp(Outcome,'CR') || strcmp(Outcome,'MISS'); LickTime = NaN; end
-exptparams.Performance(TrialIndex).ReferenceIndices = ReferenceIndices;
-exptparams.Performance(TrialIndex).TargetIndices = TargetIndices;
-exptparams.Performance(TrialIndex).Outcome = Outcome;
-exptparams.Performance(TrialIndex).TarWindow = RW;
-exptparams.Performance(TrialIndex).RefWindow = RW;
-exptparams.Performance(TrialIndex).LickTime = LickTime;
-exptparams.Performance(TrialIndex).LickSensor = cLickSensor; 
-exptparams.Performance(TrialIndex).LickSensorInd = find(strcmp(cLickSensor,AllLickSensorNames));
-if isempty(exptparams.Performance(TrialIndex).LickSensorInd) exptparams.Performance(TrialIndex).LickSensorInd = NaN; end 
-exptparams.Performance(TrialIndex).LickSensorNot = cLickSensorNot;
-exptparams.Performance(TrialIndex).LickSensorNotInd = find(strcmp(cLickSensorNot,AllLickSensorNames));
-if isempty(exptparams.Performance(TrialIndex).LickSensorNotInd) exptparams.Performance(TrialIndex).LickSensorNotInd = NaN; end 
-exptparams.Performance(TrialIndex).DetectType = DetectType;
+if ~SoundStopped
+  evStopSound = IOStopSound(HW);
+end
+if LEDTurnedOn || ll
+    [ll,evLED] = IOLightSwitch (HW, 0, 0);
+end
 
-%% WAIT AFTER RESPONSE TO RECORD POST-DATA
-if ~strcmp(Outcome,'CR') && ~strcmp(Outcome,'MISS')
-  while CurrentTime < LickTime + get(O,'AfterResponseDuration');
-    CurrentTime = toc+InitialTime; pause(0.05);
+% added by YB and CB 12/12/2016
+if ExtraDuration~=0
+  Events = AddEvent(Events, ev, TrialIndex);
+  while CurrentTime < (exptparams.LogDuration+ExtraDuration)
+    if (mod(CurrentTime,1) < 0.005) && ( (exptparams.LogDuration+ExtraDuration-3)>CurrentTime ) && (LightStateR == 0)
+      [LightStateR, ev] = IOLightSwitch(HW,1,0,[],0,0,'LightR');
+    elseif LightStateR == 1
+      [LightStateR, ev] = IOLightSwitch(HW,0,0,[],0,0,'LightR');
+    end
+    CurrentTime = IOGetTimeStamp(HW);
   end
 end
 
-function Events = LF_TimeOut(HW,TimeOut,Light,cTrial,Outcome)
-% 14/02/20-YB: adapted to give a visual feedback for EARLY (we don't want TimeOut for HIT)
-
-if strcmpi(Outcome,'Early'); 
-  Positions = {'right'}; fprintf(['\t Timeout [ ',n2s(TimeOut),'s ]']); 
-elseif strcmpi(Outcome,'Hit')
-  Positions = {'left'};
+if LightStateR
+    [LightStateR,evLED] = IOLightSwitch (HW, 0, 0,[],0,0,'LightR');
 end
 
-if Light % TURN LIGHT ON DURING TIMEOUT
-    LightNames = IOMatchPosition2Light(HW,Positions);
-    [State,LightEvent] = IOLightSwitch(HW,1,TimeOut,[],[],[],LightNames{1});
-    Events = AddEvent([],LightEvent,cTrial);
+if TimeOutFlag>0
+    ThisTime = clock;
+    TimeOut = ifstr2num(get(o,'TimeOut'));
+%     TimeOut = TimeOut * (1+2*FalseAlarm);  % 16/10-YB
+    while etime(clock,ThisTime) < (TimeOut+exptparams.LogDuration+ExtraDuration-CurrentTime)
+        drawnow;
+    end
 end
-
-% TIME OUT
-ThisTime = clock; StartTime = IOGetTimeStamp(HW);
-while etime(clock,ThisTime) < TimeOut; drawnow;  end
-StopTime = IOGetTimeStamp(HW);
-if strcmpi(Outcome,'Early')||strcmpi(Outcome,'FA'); TimeOutEvent = struct('Note',['TIMEOUT,',n2s(TimeOut,4),' seconds'],'StartTime',StartTime,'StopTime',StartTime + TimeOut); end
-
-  % TURN LIGHT OFF AFTER TIMEOUT
-if Light
-    LightNames = IOMatchPosition2Light(HW,Positions);
-    [State,LightEvent] = IOLightSwitch(HW,0,[],[],[],[],LightNames{1});
-    Events.StopTime = LightEvent.StartTime;
-end
-
-% ADD TIME OUT EVENT
-if strcmpi(Outcome,'Early') || strcmpi(Outcome,'FA') 
-  if ~exist('Events','var')
-    Events = TimeOutEvent;
-  else
-    Events = AddEvent(Events,TimeOutEvent,cTrial);
-  end
-end
-
-%% ACTUALIZE VISUAL FEEDBACK FOR THE SUBJECT

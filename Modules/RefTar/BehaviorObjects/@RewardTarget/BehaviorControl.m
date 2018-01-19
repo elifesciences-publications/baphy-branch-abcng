@@ -44,6 +44,7 @@ EarlyWindow = get(o,'EarlyWindow');
 %   EarlyWindow = EarlyWindow + get(StimEvents(end-2).StartTime);
 % end
 AutomaticReward = get(o,'AutomaticReward');
+DelayAutomaticReward = 0.2;
 RH = get(exptparams.TrialObject,'ReferenceHandle'); TH = get(exptparams.TrialObject,'TargetHandle');
 FirstRef = 1;
 LickEvents = [];
@@ -99,6 +100,7 @@ end
 [LightStateR, ev] = IOLightSwitch(HW,1,0,[],0,0,'LightR');
 % we monitor the lick until the end plus response time and postargetlick
 LastLick = 0;
+ll = 0;
 TimeOutFlag=1;
 lightonfreq = get(o,'LightOnFreq');
 tarcnt = 1;
@@ -213,7 +215,8 @@ while CurrentTime < exptparams.LogDuration % BE removed +0.05 here (which screws
         LEDTurnedOn = 1;
     end
     
-    if (Lick || AutomaticReward) && mod(StimPos,2) && ~isequal(TarFlag,StimPos) && ~Ref
+    if mod(StimPos,2) && ~Ref && (Lick || (AutomaticReward&&(CurrentTime>(TarResponseWin(1)+DelayAutomaticReward)))) && ...
+            ~isequal(TarFlag,StimPos)
         % if she licks in target response window
         TimeOutFlag = 0;
         if StopTargetFA<1
@@ -225,7 +228,10 @@ while CurrentTime < exptparams.LogDuration % BE removed +0.05 here (which screws
         PumpDuration = RewardAmount* WaterFraction/globalparams.PumpMlPerSec.Pump;
 %         PumpDuration = get(o,'PumpDuration') * WaterFraction;
         if PumpDuration > 0
-            ev = IOControlPump (HW,'start',PumpDuration);
+            ev = IOControlPump (HW,'start',PumpDuration);     
+            if (AutomaticReward&&(CurrentTime>(TarResponseWin(1)+DelayAutomaticReward)))
+                ev.Note = [ev.Note ',AUTOMATICREWARD'];
+            end
             LickEvents = AddEvent(LickEvents, ev, TrialIndex);
             exptparams.Water = exptparams.Water+RewardAmount* WaterFraction;
             if strcmpi(get(exptparams.BehaveObject,'RewardSound'),'Click') && PumpDuration
@@ -253,9 +259,9 @@ while CurrentTime < exptparams.LogDuration % BE removed +0.05 here (which screws
     tmp = IOGetTimeStamp(HW);
     
     % leave it here in case something goes wrong
-    if tmp > (CurrentTime+0.015)
+    if tmp > (CurrentTime+0.05)
       disp('***')
-      disp('Problem with trig interval.')
+      disp('Problem with interval.')
       disp('***')
     end
     CurrentTime = tmp;
