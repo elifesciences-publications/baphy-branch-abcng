@@ -35,7 +35,7 @@ if strcmpi(globalparams.Module,'Reference Target')
     exptparams.BehaveObject = BehaveObject;
 end
 if isfield(exptparams,'Performance'),
-    exptparams = rmfield(exptparams,'Performance');
+%     exptparams = rmfield(exptparams,'Performance');
 end
 exptparams.OfflineAnalysis = 1;
 
