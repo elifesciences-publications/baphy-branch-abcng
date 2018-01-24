@@ -8,11 +8,14 @@ function o = ToneInTorc (varargin)
 switch nargin
     case 0
         % if no input arguments, create a default object
-        s = SoundObject ('ToneInTorc', 40000, 0, .4, .8, {}, 1, ...
+        s = SoundObject ('ToneInTorc', 100000, 0, .4, .8, {}, 1, ...
             {'TorcRates','popupmenu','4:4:24|4:4:48|8:8:48|8:8:96',...
             'TorcFreqRange','popupmenu','L:125-4000 Hz|H:250-8000 Hz|V:500-16000 Hz',...
-            'TorcDuration','edit',1.5,'ToneFreqs','edit',1000,'ToneStart','edit',0,...
-            'ToneStop','edit',1.5,'SNR','edit',0});
+            'TorcDuration','edit',1.5,...
+            'BaseFrequency','edit',1000,'OctaveBelow','edit',2,...
+            'OctaveAbove','edit',3,'TonesPerOctave','edit',5,...
+            'ToneStart','edit',0,'ToneStop','edit',1.5,'SNR','edit',0,...
+            'NoiseType','popupmenu','TORC|Noise'});
         % generate the torc fields first::
         o.TorcDuration = 1.5;
         o.TorcFreqRange = 'H:250-8000';
@@ -30,10 +33,14 @@ switch nargin
         o.Params.Rates = {8:8:48};
         o.Params.Phase = {0 0 0 0 0 0};
         % now tone properties:
-        o.ToneFreqs = 1000;
+        o.BaseFrequency = 2000;
+        o.OctaveBelow = 2;
+        o.OctaveAbove = 2;
+        o.TonesPerOctave = 5;
         o.ToneStart = 0;    %
         o.ToneStop  = 1.5;  %
         o.SNR = 0;
+        o.NoiseType = 'TORC';
         o.ShamNorm = 0;
         o.Loudness= 0;
         o.BasedB= 70;

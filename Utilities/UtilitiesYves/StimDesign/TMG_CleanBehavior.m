@@ -4,6 +4,8 @@ function [Behavior,Bits,LickData] = TMG_CleanBehavior(exptparams,exptevents,File
     AuxSF = 1000;
     AnticipatedLoadingDuration = 0.300;
     SafeDelay = 0.8;
+    PickUpLick = 1;
+    LickTimeW{1} = [-.02 .12]; LickTimeW{2} = [.15 .6];
     DealWithLick = 'detectFA';
     [~,~,rAtot,ATrialIdxtot] = evpread(EVPname,'auxchans',1);
     ATrialIdxtot = [ATrialIdxtot ; length(rAtot)];
@@ -176,6 +178,10 @@ function [Behavior,Bits,LickData] = TMG_CleanBehavior(exptparams,exptevents,File
         end
         rAtot(ind(1):(ind(2)-1)) = TrialData;
     end
+    if PickUpLick
+        TrialLst = setdiff(HITIND,NotUsableTrials);
+        LickCount.Hit = LickDurationAroundEvent(EVPname,TrialLst,LongLickTimes(TrialLst)+SilenceBeforeDur,LickTimeW);
+    end
     
     %% HIT-NO CHANGE = CORRECT REJECTION
     % For Catch, IntegrationTime = SoundDuration = 4.11+0.85 (excepted some longer sessions like <morbier046a02_a_TMG>)
@@ -187,7 +193,7 @@ function [Behavior,Bits,LickData] = TMG_CleanBehavior(exptparams,exptevents,File
         LongLickTimes(CatchHitBits) = nan; LickTimes(CatchHitBits) = nan; % Fake lick added during experiment
     end
     if length(SoundOffsetsTrials)<TrialNb % First sessions missed events
-        SoundOffsetsTimes(CatchHitBits) = SilenceBeforeDur+RefSliceNbLst(CatchHitBits)*RefSliceDuration+IntegrationTimes(CatchHitBits);
+        SoundOffsetsTimes(CatchHitBits) = RefSliceNbLst(CatchHitBits)*RefSliceDuration+IntegrationTimes(CatchHitBits);
     end
     % 2) CLEAN ANALOG CHANNELS
     for tN = HITIND
@@ -202,13 +208,18 @@ function [Behavior,Bits,LickData] = TMG_CleanBehavior(exptparams,exptevents,File
             case 'detectFA'
                 InTrial_BeforeChange = round([ ...
                     (SilenceBeforeDur-AnticipatedLoadingDuration+RefSliceNbLst(tN)*RefSliceDuration) ,...
-                    (SilenceBeforeDur-SafeDelay+RefSliceNbLst(tN)*RefSliceDuration+IntegrationTimes(tN)-ResponseWindow) ]* AuxSF);
+                    (SilenceBeforeDur-SafeDelay+RefSliceNbLst(tN)*RefSliceDuration+IntegrationTimes(tN)) ]* AuxSF);
                 if any(TrialData(InTrial_BeforeChange(1):InTrial_BeforeChange(2)))
 %                     OutcomeLst(tN) = 8;  % FA-CR
                     detectedFAtime(1,tN) = find(TrialData(InTrial_BeforeChange(1):InTrial_BeforeChange(2)),1,'first')/AuxSF+...
                         (SilenceBeforeDur-AnticipatedLoadingDuration+RefSliceNbLst(tN)*RefSliceDuration);
                 end                
         end
+        % Remove piezo movement due to ultrashort solenoid opening
+        InTrial_BeforeChange = round( ((SilenceBeforeDur+RefSliceNbLst(tN)*RefSliceDuration+IntegrationTimes(tN))+...
+            [-.020 .050])* AuxSF);
+        TrialData(InTrial_BeforeChange(1):InTrial_BeforeChange(2)) = 0;
+        rAtot(ind(1):(ind(2)-1)) = TrialData;
     end
     
     %% MISS    
@@ -304,6 +315,9 @@ function [Behavior,Bits,LickData] = TMG_CleanBehavior(exptparams,exptevents,File
                 end                
         end
     end
+    if PickUpLick
+        EARLYINDt= EARLYIND;
+    end
     
     %% EARLY-NO CHANGE
     EARLYIND = find(CatchEarlyBits);
@@ -365,12 +379,22 @@ function [Behavior,Bits,LickData] = TMG_CleanBehavior(exptparams,exptevents,File
                 end                
         end
     end
+    if PickUpLick
+        TrialLst = setdiff([EARLYINDt EARLYIND],NotUsableTrials);
+        LickCount.FA = LickDurationAroundEvent(EVPname,TrialLst,LongLickTimes(TrialLst)+SilenceBeforeDur,LickTimeW);
+    end
     
+    %% Non-detected FA = early
+	if PickUpLick
+        TrialLst = find(~isnan(detectedFAtime(1,:))&(detectedFAtime(1,:)~=0));
+        LickCount.Early = LickDurationAroundEvent(EVPname,TrialLst,detectedFAtime(1,TrialLst),LickTimeW);
+    end
+
+    
+    %% STRUCTURE
     LongLickTimes = LongLickTimes+SilenceBeforeDur;
     LongIntegrationTimes = LongIntegrationTimes+SilenceBeforeDur;
     SoundOffsetsTimes = SoundOffsetsTimes+SilenceBeforeDur;
-    
-    %% STRUCTURE
     % BEHAVIOR
     Behavior.Name = FileDateStr;
     Behavior.Recording = Recording;
@@ -389,6 +413,7 @@ function [Behavior,Bits,LickData] = TMG_CleanBehavior(exptparams,exptevents,File
     Behavior.SoundOffsetTime = SoundOffsetsTimes;
     Behavior.ChangeTime = LongIntegrationTimes;
     Behavior.FAtimings = detectedFAtime;
+    Behavior.LickCount = LickCount;
     if any(LongIntegrationTimes<0)
         pause;
     end
