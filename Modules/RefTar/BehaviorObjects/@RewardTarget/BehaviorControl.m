@@ -44,7 +44,7 @@ EarlyWindow = get(o,'EarlyWindow');
 %   EarlyWindow = EarlyWindow + get(StimEvents(end-2).StartTime);
 % end
 AutomaticReward = get(o,'AutomaticReward');
-DelayAutomaticReward = 0.2;
+DelayAutomaticReward = 0.25;
 RH = get(exptparams.TrialObject,'ReferenceHandle'); TH = get(exptparams.TrialObject,'TargetHandle');
 FirstRef = 1;
 LickEvents = [];
