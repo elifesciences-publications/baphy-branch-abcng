@@ -228,7 +228,10 @@ while CurrentTime < exptparams.LogDuration % BE removed +0.05 here (which screws
         PumpDuration = RewardAmount* WaterFraction/globalparams.PumpMlPerSec.Pump;
 %         PumpDuration = get(o,'PumpDuration') * WaterFraction;
         if PumpDuration > 0
-            ev = IOControlPump (HW,'start',PumpDuration);     
+            SoundStopped = 1;
+            evStopSound = IOStopSound(HW);
+            LickEvents = AddEvent(LickEvents, evStopSound, TrialIndex);
+            ev = IOControlPump (HW,'start',PumpDuration);   
             if (AutomaticReward&&(CurrentTime>(TarResponseWin(1)+DelayAutomaticReward)))
                 ev.Note = [ev.Note ',AUTOMATICREWARD'];
             end

@@ -1,4 +1,4 @@
-function [w, event ,o]=waveform(o,index,IsRef);
+function [w, event ,o]=waveform(o,index,IsRef)
 % function w=waveform(t);
 % this function is the waveform generator for object NoiseBurst
 %
@@ -14,7 +14,7 @@ Duration=get(o,'Duration');
 PostStimSilence=get(o,'PostStimSilence');
 f_bp=get(o,'Filter');
 Names=get(o,'Names');
-Frozen=str2num(get(o,'Frozen'));
+Frozen=get(o,'Frozen');
 
 TotalBins=round(SamplingRate.*(PreStimSilence+Duration+PostStimSilence));
 
@@ -25,7 +25,7 @@ if strcmpi(NoiseType,'white'),
   if isempty(Frozen)
     w = randn(TotalBins,1);
   else
-    Key = Frozen;
+    Key = str2num(Frozen);
     TrialKey = RandStream('mrg32k3a','Seed',Key);
     w = TrialKey.randn(TotalBins,1);
   end
