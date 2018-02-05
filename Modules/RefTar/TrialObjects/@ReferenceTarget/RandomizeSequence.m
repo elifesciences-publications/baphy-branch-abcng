@@ -46,6 +46,8 @@ if IsLookup
           else
             LookupTable = [0 1 1 0 0 1 0 1 0 0 1 1];
           end
+        case 0
+            LookupTable = 0;
       end
 % Rt = sum(LookupTable)/(length(LookupTable)-length(find(LookupTable==ii))); disp([ii Rt]);
 % clear w; for kk=1:ii; w(kk)=length(find(LookupTable==kk)); end; disp(w)
@@ -73,6 +75,8 @@ while sum(temp) < ReferenceMaxIndex      % while not all the references are cove
     if isempty(NumRef)  % if not and if NumRef is empty just finish it
         temp = [temp ReferenceMaxIndex-sum(temp)]; % temp holds the number of references in each trial
 %     elseif sum(temp)+NumRef(1)+(IsDiscrim & ~IsSham(1)) <= ReferenceMaxIndex % can we add NumRef(1)?
+    elseif all(LookupTable==0) % only references
+        temp = []; break;
     elseif sum(temp)+NumRef(1) <= ReferenceMaxIndex % can we add NumRef(1)?
         temp = [temp NumRef(1)]; % if so, add it and circle NumRef
         NumRef = circshift (NumRef, -1);
@@ -90,7 +94,9 @@ else
 end
 % Lets specify which trials are sham:
 TotalTrials = length(RefNumTemp);
-if (get(o,'NumberOfTarPerTrial') ~= 0) && (~strcmpi(get(o,'TargetClass'),'None')) 
+if isempty(RefNumTemp)
+    TargetIndex{1} = 1;
+elseif(get(o,'NumberOfTarPerTrial') ~= 0) && (~strcmpi(get(o,'TargetClass'),'None')) 
     if ~IsLookup
         NotShamNumber = floor((100-par.ShamPercentage) * TotalTrials / 100); % how many shams do we have??
         allTrials  = randperm(TotalTrials); %
@@ -137,6 +143,8 @@ if par.ReferenceMaxIndex==par.TargetMaxIndex && par.MaxRef==1
         c = c+1;
         RefTrialIndex{tn} = ShuffledRefIndex(c);
     end 
+elseif par.MaxRef==0
+    TotalTrials = 1; RefTrialIndex{1} = [];
 end
 
 o = set(o,'ReferenceIndices',RefTrialIndex);
