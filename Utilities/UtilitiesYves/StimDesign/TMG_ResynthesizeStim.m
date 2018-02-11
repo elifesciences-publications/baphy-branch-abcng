@@ -61,7 +61,7 @@ if ~strcmpi(exptparams(1).BehaveObjectClass,'Passive')
     THcatch = ObjUpdate(THcatch);
     
     EVPname = [mFile '.evp'];
-    [Behavior] = TMG_CleanBehavior(exptparams,exptevents,FileDateStr,EVPname);
+    [Behavior] = TMG_CleanBehavior(globalparams,exptparams,exptevents,FileDateStr,EVPname);
 else
     Behavior = [];
 end
