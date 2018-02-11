@@ -90,7 +90,6 @@ while ContinueExp == 1
           exptparams.TrialObject = set(exptparams.TrialObject,'PumpProfile',PumpProfile);
       end
       
-      
       % Yves; 2013/11: I added an input to 'waveform' methods
       if any(strcmp(fieldnames(exptparams.TrialObject),'TrialIndexLst'))
         [TrialSound, StimEvents, exptparams.TrialObject] = waveform(exptparams.TrialObject, iTrial,TrialIndexLst(TrialIndex));

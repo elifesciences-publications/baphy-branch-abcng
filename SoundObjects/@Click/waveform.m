@@ -12,11 +12,23 @@ duration        = get(o,'Duration');
 width           = get(o,'ClickWidth');
 rate            = str2num(Names{index});
 SamplingRate    = get(o,'SamplingRate');
+IrregularCT     = get(o,'IrregularCT');
+IrregularCT(find(IrregularCT==' ',1,'first'):end) = [];
 %
 w           = zeros(1, round(duration * SamplingRate));
 rateSamples = SamplingRate / rate;
-Cindex       = 1:rateSamples:length(w);
-OnSamples   = width * SamplingRate / 2;
+switch IrregularCT
+    case 'no'
+        Cindex = 1:rateSamples:length(w);
+    case 'uniform'
+        MinICI = get(o,'MinICI');
+        ClickNb = ceil(length(w)/rateSamples)-1;
+        Cindex = [1 ; randsample(length(w),ClickNb)];
+        while any(diff(sort(Cindex))<round(MinICI*SamplingRate))
+            Cindex = [1 ; randsample(length(w),ClickNb)];
+        end
+end
+OnSamples = width * SamplingRate / 2;
 flag = 1;
 for cnt1    = 1:length(Cindex)
     if flag==1; flag =-1;else flag = 1;end
@@ -27,11 +39,11 @@ Names = Names(index);
 w = [zeros(round(PreStimSilence*SamplingRate),1) ; w(:) ;zeros(round(PostStimSilence*SamplingRate),1)];
 % and generate the event structure:
 events = struct('Note',['PreStimSilence , ' Names{:}],...
-    'StartTime',0,'StopTime',PreStimSilence,'Trial',[]);
+    'StartTime',0,'StopTime',PreStimSilence,'Trial',[],'Rove',[]);
 events(2) = struct('Note',['Stim , ' Names{:}],'StartTime'...
-    ,PreStimSilence, 'StopTime', PreStimSilence+duration,'Trial',[]);
+    ,PreStimSilence, 'StopTime', PreStimSilence+duration,'Trial',[],'Rove',Cindex);
 events(3) = struct('Note',['PostStimSilence , ' Names{:}],...
-    'StartTime',PreStimSilence+duration, 'StopTime',PreStimSilence+duration+PostStimSilence,'Trial',[]);
+    'StartTime',PreStimSilence+duration, 'StopTime',PreStimSilence+duration+PostStimSilence,'Trial',[],'Rove',[]);
 if max(abs(w))>0
     w = 5 * w/max(abs(w));
 end

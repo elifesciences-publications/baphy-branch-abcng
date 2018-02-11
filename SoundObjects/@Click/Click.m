@@ -23,10 +23,13 @@ case 0
     % if no input arguments, create a default object
     s = SoundObject ('Click', 100000, 0, 0, 0, ...
         {''}, 1, {'ClickWidth','edit',0.001,'ClickRate','edit',10,...        
-        'Duration','edit',1});
+        'Duration','edit',1,...
+        'IrregularCT','popupmenu','no|uniform'});
     o.ClickWidth = .001;
     o.ClickRate = 10;
     o.Duration = 1;  %
+    o.IrregularCT = 'no';  %
+    o.MinICI = 0.005;  %
     o = class(o,'Click',s);
     o = ObjUpdate (o);
 case 1

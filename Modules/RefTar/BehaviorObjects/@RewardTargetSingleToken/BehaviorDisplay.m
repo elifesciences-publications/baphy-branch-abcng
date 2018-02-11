@@ -173,10 +173,12 @@ subplot(4,4,9:10)
 hold off;
 BinSize = 0.04;
 h1=hist(exptparams.FirstLick.Tar,0:BinSize:max(exptparams.FirstLick.Tar));
+if ~isempty(h1)
+    h1=h1/sum(h1); % normalize by sum, so it becomes the probability of lick
+end
 fill([RW(1) RW(2) RW(2) RW(1)],[0.05 0.05 max([max(h1),0]) max([max(h1),0])],[.9 .9 .9],'EdgeColor',[1 1 1]);
 hold on;
 if ~isempty(h1)
-    h1=h1/sum(h1); % normalize by sum, so it becomes the probability of lick
     h1=stairs(0:BinSize:max(exptparams.FirstLick.Tar),h1,'color',[1 .5 .5],'linewidth',2);
 end
 h1=hist(exptparams.FirstLick.Ref,0:BinSize:max(exptparams.FirstLick.Ref));
