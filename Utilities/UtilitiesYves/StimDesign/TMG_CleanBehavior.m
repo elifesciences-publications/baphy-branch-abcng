@@ -174,6 +174,7 @@ function [Behavior,Bits,LickData] = TMG_CleanBehavior(globalparams,exptparams,ex
         end
         
         PumpDuration = round(exptparams(1).BehaveObject(1).RewardAmount*1000/globalparams(1).PumpMlPerSec(1).Pump);
+        if ~isinf(PumpDuration)
         if Duration2Play&&(LongLickTimes(tN)-LongIntegrationTimes(tN))<=0.5  % sound was player for 0.5s before aborting in these sessions
             TrialData(round((SilenceBeforeDur+LongIntegrationTimes(tN))* AuxSF)+(494:515)) = 0;
             TrialData(round((SilenceBeforeDur+LongIntegrationTimes(tN))* AuxSF)+500+PumpDuration+(-20:20)) = 0;
@@ -182,6 +183,7 @@ function [Behavior,Bits,LickData] = TMG_CleanBehavior(globalparams,exptparams,ex
     %       TrialData(round((SilenceBeforeDur+LongIntegrationTimes(tN))* AuxSF)+(937:974)) = 0;
             TrialData(round((SilenceBeforeDur+LongLickTimes(tN))* AuxSF)+15+(-5:5)) = 0;
             TrialData(round((SilenceBeforeDur+LongLickTimes(tN))* AuxSF)+15+PumpDuration+(-15:15)) = 0;
+        end
         end
         rAtot(ind(1):(ind(2)-1)) = TrialData;
     end
