@@ -8,13 +8,17 @@ function HW = IOLoadSound(HW, stim)
 %% MAKE SURE THE STIMULUS IS VERTICAL
  if size(stim,1)<size(stim,2)  stim=stim'; end;
  
- if isfield(HW,'TwoSpeakers') && HW.TwoSpeakers
-   SpeakerNb = 2;
+ if isfield(HW,'SpeakerNb') && HW.SpeakerNb>1
+   SpeakerNb = HW.SpeakerNb;
    if size(stim,2)==1
-     stim(:,2) = stim(:,1);
+     stim = repmat(stim,1,SpeakerNb);
+     SpreadLvlBetweenSpeakers = 1;
+   else
+	 SpreadLvlBetweenSpeakers = 0;
    end
  else
    SpeakerNb = 1;%size(stim,2);
+   SpreadLvlBetweenSpeakers = 0;
  end
 
 %% CALIBRATE SPECTRUM AND VOLUME FOR SOME SETUPS
@@ -81,7 +85,7 @@ switch HW.params.HWSetup
     
     %% Apply software attenuation if specified
     % Only change level of channels named "Sound*":
-    AudioChannels=IOGetAudioChannels(HW);
+    AudioChannels = IOGetAudioChannels(HW);
     if isfield(HW,'SoftwareAttendB')
       attend_db=HW.SoftwareAttendB;
     elseif isfield(HW.params,'SoftwareEqz') && any(HW.params.SoftwareEqz),
@@ -89,12 +93,12 @@ switch HW.params.HWSetup
     else
       atten_db = 0;
     end
-    level_scale=10.^(-attend_db./20);
-    stim(:,AudioChannels)=stim(:,AudioChannels).*level_scale;
+    level_scale = 10.^(-attend_db./20);
+    stim(:,AudioChannels) = stim(:,AudioChannels).*level_scale;
     
-    %% 2 SPEAKERS and Loudness are not been adjusted in the waveform of the SO
-    if isfield(HW,'TwoSpeakers') && HW.TwoSpeakers && (isempty(LoudnessAdjusted) || ~LoudnessAdjusted)
-%       stim(:,1:SpeakerNb) = stim(:,1:SpeakerNb) * 0.5;
+    %% SPEAKERS and Loudness are not been adjusted in the waveform of the SO (same sound between all channels)
+    if SpreadLvlBetweenSpeakers%isfield(HW,'SpeakerNb') && HW.SpeakerNb>1 && (isempty(LoudnessAdjusted) || ~LoudnessAdjusted)
+      stim(:,1:SpeakerNb) = stim(:,1:SpeakerNb)/SpeakerNb;
     end
     
     %% ADD STIMULATION

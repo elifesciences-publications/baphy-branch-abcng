@@ -92,7 +92,12 @@ for ChangedD_Num = 1:ChangedD_Nb
     Dtype = getfield(Par,['D' num2str(ChangedD_Num) 'shape']);   
     switch Dtype
         case 'contig_increm'
-            MorphingNb(ChangedD_Num) = MaxMorphingNb;
+            D1param{ChangedD_Num} = Par.(['D' num2str(ChangedD_Num) 'param']);
+            if ~isempty(D1param{ChangedD_Num})
+                MorphingNb(ChangedD_Num) = length(D1param{ChangedD_Num});
+            else
+                MorphingNb(ChangedD_Num) = MaxMorphingNb;
+            end
             ChannelDistance = 1;
             ChannelDistancesByMorphing{ChangedD_Num} = ones(1,MaxMorphingNb)*ChannelDistance;
             Bins2Change{ChangedD_Num} = repmat([1 2],MaxMorphingNb,1) + repmat((0:2:((MaxMorphingNb-1)*2))',1,2);  %[1:2 ; 3:4 ; 5:6 ; 7:8]; 

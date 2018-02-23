@@ -65,6 +65,9 @@ if IsLookup
 end
 temp = [];
 ReferenceMaxIndex = par.ReferenceMaxIndex;
+if IsLookup
+    ReferenceMaxIndex = sum(LookupTable);
+end
 % here, we try to specify the real number of references per trial, and
 % determine how many trials are needed to cover all the references. If its
 % a detect case, its easy. Add from NumRef to trials until the sum of
@@ -117,7 +120,10 @@ end
 % them in the trial. But in discrim case, we put one index in the target
 % also, if its not a sham. 
 % Now generate random sequences for each trial
-RandIndex = randperm(par.ReferenceMaxIndex);
+
+% RandIndex = randperm(par.ReferenceMaxIndex);
+RandIndex = repmat(1:par.ReferenceMaxIndex,1,ceil(sum(LookupTable)/par.ReferenceMaxIndex));
+RandIndex = RandIndex(randperm(length(RandIndex)));
 for cnt1=1:length(RefNumTemp)
     if ~(ReferenceMaxIndex==1)
         RefTrialIndex {cnt1} = RandIndex (1:RefNumTemp(cnt1));

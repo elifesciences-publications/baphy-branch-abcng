@@ -41,6 +41,11 @@ switch get(o,'NoiseType')
         TorcObj = ObjUpdate(TorcObj);
 end
 TorcLen = length(get(TorcObj, 'Names'));
+ToneLen = length(get(ToneObj, 'Names'));
+SnrLst = get(o,'SNR');
+SnrInd = floor((index-1)/(TorcLen*ToneLen))+1;
+SNR = SnrLst(SnrInd);
+index = index - (SnrInd-1)*ToneLen*TorcLen;
 ToneIndex = floor((index-1)/TorcLen)+1;
 TORCindex = index-TorcLen*(ToneIndex-1);
 [wTorc,eTorc] = waveform(TorcObj, TORCindex);
@@ -59,21 +64,28 @@ if ~isempty(exptparams_Copy)
         disp(['tone: ' num2str(max(abs(wTone)))])
         wTorc= OutVoltage*(wTorc/max(abs(wTorc)));
         disp(['torc: ' num2str(max(abs(wTorc)))])
-        wTone = wTone * 10^(get(o,'SNR')/20);
+        wTone = wTone * 10^(SNR/20);
         disp(['toneMan: ' num2str(max(abs(wTone)))])
         w = wTorc + wTone;
     end
 end
-if globalparams.HWSetup== 1 | globalparams.HWSetup== 3 | globalparams.HWSetup== 5   
+if globalparams.HWSetup== 1 | globalparams.HWSetup== 3 | globalparams.HWSetup== 5 | globalparams.HWSetup== 6
+    if 0 %18/02-JN/YB
     wTone= 5*(wTone/max(abs(wTone)));
 %     disp(['tone: ' num2str(max(abs(wTone)))])
     wTorc= 5*(wTorc/max(abs(wTorc)));
 %     disp(['torc: ' num2str(max(abs(wTorc)))])
-    wTone = wTone * 10^(get(o,'SNR')/20);
+    else
+    wTone= 5*(wTone/std(wTone(wTorc~=0)));
+    wTorc= 5*(wTorc/std(wTorc(wTorc~=0)));
+    end
+    
+    wTone = wTone * 10^(SNR/20);
 %     disp(['toneMan: ' num2str(max(abs(wTone)))])
     w = wTorc + wTone;
-
+    w = 5*(w/std(w(wTorc~=0)));
     % disp(10^(get(o,'SNR')/20))
+    eTone(2).Note = [eTone(2).Note ' SNR ' num2str(SNR)];
 end
 if ~isempty(w)
 %     disp(max(abs(w)))

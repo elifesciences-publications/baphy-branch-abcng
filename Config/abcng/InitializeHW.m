@@ -65,7 +65,7 @@ switch globalparams.HWSetup
   case {1,2,3,5,6} % ALL RECORDING BOOTHS SHOULD REMAIN IDENTICAL AS LONG AS POSSIBLE
     SetupNames = {'SB1','SB2','LB1',[],'SB2Earphones','LB1multiSpeakers'};
     globalparams.HWSetupName = SetupNames{globalparams.HWSetup};
-    if globalparams.HWSetup==6; HW.TwoSpeakers = 1; end
+    if globalparams.HWSetup==6; HW.SpeakerNb = 4; end
     DAQID = 'D0'; % NI BOARD ID WHICH CONTROLS STIMULUS & BEHAVIOR
     niResetDevice(DAQID);
     
@@ -87,22 +87,27 @@ switch globalparams.HWSetup
     % 16/08-YB: was before HW=niCreateAI(HW,DAQID,'ai0:7','Touch,Microphone,EyeX,EyeY,Diode,PsyTriggers,PupilD',['/',DAQID,'/PFI0'])
     %HW2 =niCreateAIOnline(HW2,'Dev1','ai0:1','OnlineEyeX,OnlineEyeY',['/','Dev1','/PFI0']);  % monitor eye position online; triggered by 'TrigOnlineAI'
     
-    %% ANALOG OUTPUT % 14/09-YB: rmv independant audio channels for introducing Opto
-    HW=niCreateAO(HW,DAQID,'ao0:1','SoundOut1,SoundOut2',['/',DAQID,'/PFI1']);
-    
     %% SETUP SPEAKER CALIBRATION    
     switch globalparams.HWSetup
       case {1,3,5}
+          %% ANALOG OUTPUT % 14/09-YB: rmv independant audio channels for introducing Opto
+        HW=niCreateAO(HW,DAQID,'ao0:1','SoundOut1,SoundOut2',['/',DAQID,'/PFI1']);
         HW.Calibration.Speaker = ['SHIE800',globalparams.HWSetupName];
       case 2
 %         HW=niCreateAO(HW,DAQID,'ao1','SoundOut,OptTrig',['/',DAQID,'/PFI1']);
+        HW=niCreateAO(HW,DAQID,'ao0:1','SoundOut1,SoundOut2',['/',DAQID,'/PFI1']);
         HW.Calibration.Speaker = ['RS',globalparams.HWSetupName];
       case {6}
+        HW=niCreateAO(HW,DAQID,'ao0:3','SoundOut1,SoundOut2,SoundOut3,SoundOut4',['/',DAQID,'/PFI1']);          
 %         HW.Calibration(1).Speaker = ['VISATON59',globalparams.HWSetupName,'Right'];
 %         HW.Calibration(2).Speaker = ['VISATON59',globalparams.HWSetupName,'Left'];
-        HW.Calibration(1).Speaker = 'SHIE800LB1';
-        HW.Calibration(2).Speaker = 'SHIE800LB1';
+        HW.Calibration(1).Speaker = ['VISATON59',globalparams.HWSetupName,'_ch00'];
+        HW.Calibration(2).Speaker = ['VISATON59',globalparams.HWSetupName,'_ch01'];
         HW.Calibration(2).Microphone = 'GRAS46BE';
+        HW.Calibration(3).Speaker = ['VISATON59',globalparams.HWSetupName,'_ch02'];
+        HW.Calibration(3).Microphone = 'GRAS46BE';
+        HW.Calibration(4).Speaker = ['VISATON59',globalparams.HWSetupName,'_ch03'];
+        HW.Calibration(4).Microphone = 'GRAS46BE';
     end
     HW.Calibration(1).Microphone = 'GRAS46BE';
     HW.Calibration = IOLoadCalibration(HW.Calibration);
