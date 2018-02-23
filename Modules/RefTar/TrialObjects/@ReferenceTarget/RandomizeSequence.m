@@ -95,7 +95,8 @@ end
 % Lets specify which trials are sham:
 TotalTrials = length(RefNumTemp);
 if isempty(RefNumTemp)
-    TargetIndex{1} = 1;
+    TargetIndex = 1:par.TargetMaxIndex;
+    TargetIndex = mat2cell(TargetIndex(randperm(par.TargetMaxIndex)),1,ones(1,par.TargetMaxIndex));
 elseif(get(o,'NumberOfTarPerTrial') ~= 0) && (~strcmpi(get(o,'TargetClass'),'None')) 
     if ~IsLookup
         NotShamNumber = floor((100-par.ShamPercentage) * TotalTrials / 100); % how many shams do we have??
@@ -118,7 +119,7 @@ end
 % Now generate random sequences for each trial
 RandIndex = randperm(par.ReferenceMaxIndex);
 for cnt1=1:length(RefNumTemp)
-    if ~ReferenceMaxIndex==1
+    if ~(ReferenceMaxIndex==1)
         RefTrialIndex {cnt1} = RandIndex (1:RefNumTemp(cnt1));
         RandIndex (1:RefNumTemp(cnt1)) = [];
     else
