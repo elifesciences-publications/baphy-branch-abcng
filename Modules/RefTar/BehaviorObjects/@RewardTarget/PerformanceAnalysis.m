@@ -167,9 +167,9 @@ elseif perf(cnt2).FaRate==0
   perf(cnt2).DiscriminationRate = 0;
 elseif perf(cnt2).HitRate==1
   HitRate = (sum(cat(1,perf.Hit))-1) / TotalWarnAndNoCatch;
-  perf(cnt2).DiscriminationRate =  erfinv(HitRate)-erfinv(perf(cnt2).FaRate);
+  perf(cnt2).DiscriminationRate =  norminv(HitRate)-norminv(perf(cnt2).FaRate);
 else
-  perf(cnt2).DiscriminationRate =  erfinv(perf(cnt2).HitRate)-erfinv(perf(cnt2).FaRate);
+  perf(cnt2).DiscriminationRate =  norminv(perf(cnt2).HitRate)-norminv(perf(cnt2).FaRate);
 end
 %also, calculate the stuff for this trial block:
 RecentIndex = max(1 , TrialIndex-exptparams.TrialBlock+1):TrialIndex;

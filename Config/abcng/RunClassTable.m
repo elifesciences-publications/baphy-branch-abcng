@@ -236,6 +236,8 @@ else
       runclass = 'STC';
     case 'PIPSEQUENCE'
       runclass = 'PIP';
+    case 'MEMONOISE'
+      runclass = 'MMN';
     otherwise
       error('Enter a runclass into RunClassTable.m to avoid later confusion!');
   end

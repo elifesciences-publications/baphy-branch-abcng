@@ -105,7 +105,7 @@ tarcnt = 1;
 refcnt = 1;
 fprintf(['\nRunning Trial [ <=',n2s(exptparams.LogDuration),'s -- ' num2str(NumRef) 'ref & ' num2str(~strcmpi(StimRefOrTar,'Reference')) 'tar] ... ']);
 exptparams.LogDuration
-ExtraDuration = str2num(get(o,'ExtraDuration'));
+ExtraDuration = get(o,'ExtraDuration');
 Events = [];
 
 while CurrentTime < exptparams.LogDuration % BE removed +0.05 here (which screws up acquisition termination)
