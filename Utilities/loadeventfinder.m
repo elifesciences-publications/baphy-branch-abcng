@@ -149,8 +149,8 @@ elseif ~isempty(tag_masks) && length(tag_masks{1})>=16 && strcmp(tag_masks{1}(1:
         end
         [btar,~,jjtar]=unique(evtrials(find(tarstim)));
         dd=eventtimeoff-xx;
-        if ~isempty(btar) && ( length(jjtar)==length(btar).*2 ||... 
-                (sum(dd(1:2:end)>0)==0 & sum(dd(2:2:end)==0)==0) )
+        if ~isempty(btar) && ( length(jjtar)==length(btar).*2 )%||... 
+                %(sum(dd(1:2:end)>0)==0 & sum(dd(2:2:end)==0)==0) ) % 17/11-YB
             % ie, two targets per trial or funny case of 0 gap
             % between pairs of stimuli
             eventtime=eventtime(1:2:end);
@@ -256,7 +256,7 @@ else
     tgoodidx=zeros(size(tags));
     for ii=1:length(tags),
         b=strsep(tags{ii},',',1);
-        if isempty(findstr(b{2},'StimSilence')),
+        if length(b)>2 && isempty(findstr(b{2},'StimSilence')),
             tgoodidx(ii)=1;
         end
     end

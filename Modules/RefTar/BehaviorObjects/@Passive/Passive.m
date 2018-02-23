@@ -6,6 +6,7 @@ switch nargin
         % if no input arguments, create a default object
         % this is the constructor:
         o.descriptor = 'Passive';
+        o.CalibrationPupil   = 0;
         o.RandomReward = 0;
         o.RewardAmount = 0.2;
         o.RewardInterval = 1;                  % in s
@@ -17,7 +18,8 @@ switch nargin
           'RewardInterval','edit',1,...
           'RewardIntervalStd','edit',50,...
           'RewardAmount','edit',0.2,...
-          'ExtraDuration','edit',0};
+          'ExtraDuration','edit',0,...
+          'CalibrationPupil','edit',0};
         o = class(o,'Passive');
         o = ObjUpdate(o);
     case 1

@@ -41,7 +41,13 @@ if IsLookup
         case 2 % Ratio Ref/Tar = 1.5
           LookupTable = [1 2 2 1 2 1 1 1 1 0 0];
         case 1 % Ratio Ref/Tar = 1
-          LookupTable = [0 1 1 0 0 1];
+          if par.ReferenceMaxIndex==par.TargetMaxIndex
+            LookupTable = [ones(1,par.ReferenceMaxIndex) zeros(1,par.TargetMaxIndex)];
+          else
+            LookupTable = [0 1 1 0 0 1 0 1 0 0 1 1];
+          end
+        case 0
+            LookupTable = 0;
       end
 % Rt = sum(LookupTable)/(length(LookupTable)-length(find(LookupTable==ii))); disp([ii Rt]);
 % clear w; for kk=1:ii; w(kk)=length(find(LookupTable==kk)); end; disp(w)
@@ -59,6 +65,9 @@ if IsLookup
 end
 temp = [];
 ReferenceMaxIndex = par.ReferenceMaxIndex;
+if IsLookup
+    ReferenceMaxIndex = sum(LookupTable);
+end
 % here, we try to specify the real number of references per trial, and
 % determine how many trials are needed to cover all the references. If its
 % a detect case, its easy. Add from NumRef to trials until the sum of
@@ -69,7 +78,12 @@ while sum(temp) < ReferenceMaxIndex      % while not all the references are cove
     if isempty(NumRef)  % if not and if NumRef is empty just finish it
         temp = [temp ReferenceMaxIndex-sum(temp)]; % temp holds the number of references in each trial
 %     elseif sum(temp)+NumRef(1)+(IsDiscrim & ~IsSham(1)) <= ReferenceMaxIndex % can we add NumRef(1)?
+    elseif all(LookupTable==0) % only references
+        temp = []; break;
     elseif sum(temp)+NumRef(1) <= ReferenceMaxIndex % can we add NumRef(1)?
+        temp = [temp NumRef(1)]; % if so, add it and circle NumRef
+        NumRef = circshift (NumRef, -1);
+    elseif ReferenceMaxIndex==1  % case of Noise or WN for instance
         temp = [temp NumRef(1)]; % if so, add it and circle NumRef
         NumRef = circshift (NumRef, -1);
     else
@@ -83,7 +97,10 @@ else
 end
 % Lets specify which trials are sham:
 TotalTrials = length(RefNumTemp);
-if (get(o,'NumberOfTarPerTrial') ~= 0) && (~strcmpi(get(o,'TargetClass'),'None')) 
+if isempty(RefNumTemp)
+    TargetIndex = 1:par.TargetMaxIndex;
+    TargetIndex = mat2cell(TargetIndex(randperm(par.TargetMaxIndex)),1,ones(1,par.TargetMaxIndex));
+elseif(get(o,'NumberOfTarPerTrial') ~= 0) && (~strcmpi(get(o,'TargetClass'),'None')) 
     if ~IsLookup
         NotShamNumber = floor((100-par.ShamPercentage) * TotalTrials / 100); % how many shams do we have??
         allTrials  = randperm(TotalTrials); %
@@ -103,11 +120,40 @@ end
 % them in the trial. But in discrim case, we put one index in the target
 % also, if its not a sham. 
 % Now generate random sequences for each trial
-RandIndex = randperm(par.ReferenceMaxIndex);
+
+% RandIndex = randperm(par.ReferenceMaxIndex);
+RandIndex = repmat(1:par.ReferenceMaxIndex,1,ceil(sum(LookupTable)/par.ReferenceMaxIndex));
+RandIndex = RandIndex(randperm(length(RandIndex)));
 for cnt1=1:length(RefNumTemp)
-    RefTrialIndex {cnt1} = RandIndex (1:RefNumTemp(cnt1));
-    RandIndex (1:RefNumTemp(cnt1)) = [];
+    if ~(ReferenceMaxIndex==1)
+        RefTrialIndex {cnt1} = RandIndex (1:RefNumTemp(cnt1));
+        RandIndex (1:RefNumTemp(cnt1)) = [];
+    else
+        RefTrialIndex {cnt1} = ones(1,RefNumTemp(cnt1));
+    end
 end
+
+if par.ReferenceMaxIndex==par.TargetMaxIndex && par.MaxRef==1
+    temp = LookupTable(randperm(length(LookupTable)));
+    TotalTrials = length(temp);
+    ShuffledTarIndex = randperm(par.TargetMaxIndex);
+    ShuffledRefIndex = randperm(par.ReferenceMaxIndex);
+    TargetIndex = cell(1,2*par.TargetMaxIndex);
+    c = 0;
+    for tn = find(temp==0)
+        c = c+1;
+        TargetIndex{tn} = ShuffledTarIndex(c);
+    end
+    RefTrialIndex = cell(1,2*par.ReferenceMaxIndex);
+    c = 0;
+    for tn = find(temp==1)
+        c = c+1;
+        RefTrialIndex{tn} = ShuffledRefIndex(c);
+    end 
+elseif par.MaxRef==0
+    TotalTrials = 1; RefTrialIndex{1} = [];
+end
+
 o = set(o,'ReferenceIndices',RefTrialIndex);
 o = set(o,'TargetIndices',TargetIndex);
 o = set(o,'NumberOfTrials',TotalTrials);

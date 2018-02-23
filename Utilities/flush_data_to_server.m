@@ -65,6 +65,11 @@ for ii=1:length(RecsDB),
   MFile=strrep(MFile,[Sep Sep],Sep);
   MFileRemote=strrep(MFile,MFile(1:length(sFrom)),sTo);
   
+  [bdest,DestPath]=basename(MFileRemote);
+  if ~exist(DestPath,'dir')  mkdir(DestPath); end
+  if strcmp(MFileBase(end-4:end-2),'TMG')
+      TMG_CheckTrialLength(strrep(RecsDB(ii).resppath,'/',Sep),MFileBase,sTo)
+  end
   %% TRY TO CONVERT ALPHA DATA TO EVP
   try
     if exist(MFile,'file') && length(MFileBase)>=1 && (MFile(1)<'0' || MFileBase(1)>'9'),
@@ -94,8 +99,6 @@ for ii=1:length(RecsDB),
   if ~ErrorOccured % continue to end if error already occured
     if exist(MFile,'file')
       if VERBOSE fprintf('transferring %s --> %s\n',MFile,MFileRemote); end
-      [bdest,DestPath]=basename(MFileRemote);
-      if ~exist(DestPath,'dir')  mkdir(DestPath); end
       if ~exist([DestPath Sep 'tmp'],'dir'),
         mkdir([DestPath Sep 'tmp']);
       end
@@ -195,7 +198,7 @@ for ii=1:length(RecsDB),
     if exist(MFileRemote,'file')
     
       [MFileRemoteName,MFileRemotePath]=basename(MFileRemote);
-     EVPFileBase=basename(RecsDB(ii).respfileevp);
+      EVPFileBase=basename(RecsDB(ii).respfileevp);
       if VERBOSE disp('Moving Location in CellDB'); end
       SQL=['UPDATE gDataRaw SET resppath="',MFileRemotePath,'",',...
         'parmfile="',MFileRemoteName,'",',...

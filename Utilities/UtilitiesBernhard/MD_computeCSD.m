@@ -55,8 +55,8 @@ OLDREF = USECOMMONREFERENCE; USECOMMONREFERENCE = 0;
 %% LOAD AND PREPARE DATA FOR CLASSICAL ELECTRODES
 Path = MD_getDir('Identifier',P.Identifier,'Kind','raw');
 GivenTrials = P.Trials;
-GivenElectrode = P.Electrodes
-LFP = []
+GivenElectrode = P.Electrodes;
+LFP = [];
 if exist([Path, P.Identifier(1:end-3),'.xls'],'file') == 2 
   O = MD_dataFormat('Mode','Operator');
   [Depths, Files] = xlsread([Path, P.Identifier(1:end-3),'.xls']);
@@ -138,11 +138,13 @@ else
   end
   LFP = nanmean(LFP,3)';
   
-  %% COLLECT DEPTHS
+  %% COLLECT DEPTHS % 18/01-YB: modified to map the corrected versions
   Electrodes = [I.ElectrodesByChannel.Electrode];
-  [tmp,Inds] = intersect(Electrodes,P.Electrodes);
-  Positions = reshape([I.ElectrodesByChannel(Inds).ElecPos],3,length(Inds))';
-  Depths = Positions(:,3);
+%   [tmp,Inds] = intersect(Electrodes,P.Electrodes);
+%   Positions = reshape([I.ElectrodesByChannel(Inds).ElecPos],3,length(Inds))';
+% %   Depths = Positions(:,3);
+  ElecPos = reshape([I.ElectrodesByChannel.ElecPos],3,length(Electrodes))';
+  Depths = ElecPos(P.Electrodes,2);
 end
 
 %% LOAD STIMULUS MFILE
@@ -193,7 +195,7 @@ switch lower(Method)
     
     % electrode parameters:
     Depths = Depths*1e-3; % mm -> m
-    %AverageSeparation = mean(diff(Depths));
+    AverageSeparation = mean(diff(Depths));
     cLFP = LFP;
     
     % compute standard CSD with vaknin el.
@@ -203,8 +205,8 @@ switch lower(Method)
       cLFP = LFP([1,1:end,end],:);
     end;
     
-    CSD = -Conductance*SecondDeriv_irreg(Depths)*cLFP;
-    %CSD = -Conductance*SecondDeriv(length(cLFP(:,1)),AverageSeparation)*cLFP;
+%     CSD = -Conductance*SecondDeriv_irreg(Depths)*cLFP;
+    CSD = -Conductance*SecondDeriv(length(cLFP(:,1)),AverageSeparation)*cLFP;
     
     if wNeighbor~=0 %filter iCSD (does not change size of CSD matrix)
       [n1,n2]=size(CSD);

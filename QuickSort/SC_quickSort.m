@@ -107,7 +107,7 @@ end
 
 
 % SPIKESORT THE SET OF RECORDINGS
-quickSort('FIG',FIG,'TrialIndices',idx,'StimStart',P.StimStart,'StimStop',P.StimStop,...
+quickSort('FIG',FIG,'TrialIndices',idx(1:length(T.Indices)),'StimStart',P.StimStart,'StimStop',P.StimStop,...
     'PermInd',T.SortInd,'Indices',T.Indices,'Animal',P.Animal,'Penetration',P.Penetration,...
     'Depth',P.Depth,'Recordings',P.Recordings,'Behavior',I.Behavior,...
     'Runclass',I.Runclass,'Electrode',P.Electrode,'Sorter',P.Sorter,'Identifier',I.IdentifierFull,...
@@ -122,18 +122,21 @@ fprintf(['Loading Cells from ']);
 for i=1:length(M)
     Info{i} = getRecInfo('Identifier',M(i).parmfile(1:end-8),'Quick',1);
     if exist(Info{i}.SpikeFile,'file')
-      fprintf([M(i).parmfile(1:end-8),' ']);
-      cSortInfo = load(Info{i}.SpikeFile);
-      C  = mysql(['SELECT * FROM sCellFile WHERE rawid=',n2s(Info{i}.ID)]);
-      % LOAD SORTINFO IF AVAILABLE
-      if ~length(C)==0 % 15/03-YB: in case a sorting has been deleted
-        Inds = find([C.channum]==P.Electrode);
-        cUnits{i} = sort([C(Inds).unit],'ascend');
+        fprintf([M(i).parmfile(1:end-8),' ']);
+        cSortInfo = load(Info{i}.SpikeFile);
+        C  = mysql(['SELECT * FROM sCellFile WHERE rawid=',n2s(Info{i}.ID)]);
+        % LOAD SORTINFO IF AVAILABLE
+        if ~length(C)==0 % 15/03-YB: in case a sorting has been deleted
+            Inds = find([C.channum]==P.Electrode);
+            cUnits{i} = sort([C(Inds).unit],'ascend');
+        else
+            disp('No sCellFile in database, but a sorting file was found.')
+            cUnits{i} = length(cSortInfo.sortinfo{P.Electrode}{1});
+        end
         for iU = 1:length(cUnits{i})
             if length(mWavesC)<cUnits{i}(iU) mWavesC{cUnits{i}(iU)} = []; end
             mWavesC{cUnits{i}(iU)}(:,end+1) = cSortInfo.sortinfo{P.Electrode}{1}(iU).Template(:,iU);
         end
-      end
     end
 end
 for iS = 1:length(mWavesC)

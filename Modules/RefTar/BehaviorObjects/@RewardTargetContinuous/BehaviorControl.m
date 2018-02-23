@@ -328,6 +328,8 @@ while CurrentTime < (TimingLastChange+RespWinDur)
     CalibrationIIRBU = HW.Calibration.IIR;
     HW.Calibration.IIR = zeros(1,length(NewSlice)+1);
     HW = IOLoadSound(HW, NewSlice);
+%     if AddTar;toc
+%     end
     LoudnessAdjusted = 1;
     HW.Calibration.IIR = CalibrationIIRBU;
 %   else
@@ -423,6 +425,7 @@ while CurrentTime < (TimingLastChange+RespWinDur)
   % Move to Target if no lick during the reference
   if ~AddTar && ~LickOccured
     AddTar = 1;
+%     tic
   elseif AddTar && ~LickOccured && TargetPartCounter==TargetPartNb
     if ~CatchTrial
       Outcome = 'SNOOZE';
@@ -616,7 +619,7 @@ exptparams.Performance(TrialIndex).DetectType = DetectType;
 
 %% WAIT AFTER RESPONSE TO RECORD POST-DATA
 if ~strcmp(Outcome,'SNOOZE')
-  while CurrentTime < ResponseTime + get(O,'AfterResponseDuration');
+  while CurrentTime < (ResponseTime + get(O,'AfterResponseDuration'));
     CurrentTime = toc+InitialTime; pause(0.05);
   end
 else

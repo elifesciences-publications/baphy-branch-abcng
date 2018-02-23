@@ -1,8 +1,7 @@
 function [w, ev,o] = waveform (o,index,IsRef,Mode,TrialNum)
 % 14/05-TP/YB
 % index is the Nb of CT
-% function w=waveform(t);
-% this function is the waveform generator for objectMemoClicks
+% this function is the waveform generator for object MemoClicks
 % Sundeep, Dec. 2014 -fix #CT=1
 
 index           = 1;
@@ -14,11 +13,13 @@ PostStimSilence = get(o,'PostStimSilence');
 
 RateRC    = get(o,'RateRCPercent');
 RateRefRC = get(o,'RateRefRCPercent');
+MemoClickRepetition = get(o,'MemoClickRepetition');
 prestim   = zeros(round(PreStimSilence*fs),1);
 poststim  = zeros(round(PostStimSilence*fs),1);
 SeqGap    = get(o,'SequenceGap');  % duration in second
 w         = [];
 ev        = [];
+MemoClickNb    = get(o,'MemoClickNb');
 
 %% INITIALIZE Daniel's click train OBJECT
 
@@ -50,10 +51,10 @@ end
 
 %% RANDOM NUMBER GENERATOR
 
-Key      = get(o,'Key')
-TrialKey = RandStream('mrg32k3a','Seed',Key);
+Key      = get(o,'Key');
+TrialKey = RandStream('mrg32k3a','Seed',Key(1));
 PastRef  = get(o,'PastRef');
-sP.seed  = Key;
+% sP.seed  = Key;
 
 %% Pointer to the position in RandSequence
 % PastRef STORES THE PREVIOUS INDEX
@@ -71,12 +72,32 @@ elseif length(PastRef) > TrialNum && index ~= PastRef(TrialNum)
 end
 
 %% Sequences of 0 1 2 (stimtype)
-
-RandSequence = [ones(1,floor(RateRC)) 2*ones(1,floor(RateRefRC)) zeros(1,floor((100-RateRC - RateRefRC)))];
-RandPick     = [];
-for i = 1:4
-    RandPick = [RandPick TrialKey.randperm(100)];
+% RandSequence = [ones(1,floor(RateRC)) 2*ones(1,floor(RateRefRC)) zeros(1,floor((100-RateRC - RateRefRC)))];
+% RandPick     = [];
+% tmpRefRCpatterns = repmat(1:MemoClickNb,1,(floor(RateRefRC/MemoClickNb)));
+% tmpRefRCpatterns = [tmpRefRCpatterns 1:(floor(RateRefRC)-length(tmpRefRCpatterns))];
+% RefRCpatterns = zeros(1,length(RandSequence));
+% RefRCpatterns(RandSequence==2) = tmpRefRCpatterns;
+% for i = 1:4
+%     RandPick = [RandPick TrialKey.randperm(100)];
+% end
+if MemoClickNb==1
+    PermNb = 4;
+elseif MemoClickNb>1
+    PermNb = 1;
 end
+RandPick = []; RandSequence = []; tmpRefRCpatterns = [];
+for MemoClickNum = 1:MemoClickNb
+    RS = [ones(1,floor(MemoClickRepetition*RateRC/RateRefRC)) 2*ones(1,MemoClickRepetition)...
+        zeros(1,floor(MemoClickRepetition*(100-RateRC-RateRefRC)/RateRefRC))];
+    RandSequence = [RandSequence RS];
+    tmpRefRCpatterns = [tmpRefRCpatterns ones(1,MemoClickRepetition)*MemoClickNum];
+    for i = 1:PermNb
+        RandPick = [RandPick TrialKey.randperm(length(RS))+(MemoClickNum-1)*length(RS)];
+    end
+end
+RefRCpatterns = zeros(1,length(RandSequence));
+RefRCpatterns(RandSequence==2) = tmpRefRCpatterns;
 
 gapSeq = zeros(round(SeqGap*fs),1);
 ev     = AddEvent(ev,'PreStimSilence',[],0,PreStimSilence);
@@ -86,14 +107,15 @@ w      = [w ; prestim(:)];
 
 for j = (RefNow+1) : (RefNow+index)
     
-    sP.stimtype  = RandSequence(RandPick(j)); % stimulus type: 0 is C, 1 is RC, 2 is RefRC
+    sP.stimtype  = RandSequence(RandPick(j));      % stimulus type: 0 is C, 1 is RC, 2 is RefRC
     StimulusType = get(o,'Stimulus');
     o = set(o,'Stimulus',[StimulusType sP.stimtype]);
     
     if sP.stimtype == 2
-        sP.seed = Key;
+        RefRCpatternNum = RefRCpatterns(RandPick(j));
+        sP.seed = Key(RefRCpatternNum);
     else
-        sP.seed = Key*(RefNow+j);
+        sP.seed = Key(1)*(RefNow+j);
     end
     
     Seed = get(o,'Seeds');
@@ -109,7 +131,7 @@ for j = (RefNow+1) : (RefNow+index)
     MSeq = maxLocalStd(wSeq(:),fs,length(wSeq(:))/fs);
     w = [w ; wSeq(:)/MSeq ; gapSeq(:)];
     
-    ev = AddEvent(ev,  ['ClickSequence',  num2str(TrialNum),  'Type: ' num2str(sP.stimtype) '; Seed: ' num2str(sP.seed)],  [ ] , ev(end).StopTime,  ev(end).StopTime + length([wSeq(:) ; gapSeq(:)])/fs );
+    ev = AddEvent(ev,  ['ClickSequence',  num2str(TrialNum),  '; Type: ' num2str(sP.stimtype) '; Seed: ' num2str(sP.seed)],  [ ] , ev(end).StopTime,  ev(end).StopTime + length([wSeq(:) ; gapSeq(:)])/fs );
     
 end
 
@@ -129,8 +151,9 @@ else
     w = w*50/max(w);
 end
     
-    w = [w ; poststim(:)];
-    ev = AddEvent(ev, 'PostSilence', [], ev(end).StopTime, ev(end).StopTime + PostStimSilence);
-    
-    if exist('Mode','var') && strcmp(Mode,'Simulation'); return; end
-    
+%%
+w = [w ; poststim(:)];
+ev = AddEvent(ev, 'PostSilence', [], ev(end).StopTime, ev(end).StopTime + PostStimSilence);
+
+if exist('Mode','var') && strcmp(Mode,'Simulation'); return; end
+

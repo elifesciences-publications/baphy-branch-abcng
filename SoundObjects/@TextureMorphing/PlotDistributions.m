@@ -4,7 +4,7 @@ function [] = PlotDistributions(o,PlotDbis,DistributionType,Global_TrialNb)
 if nargin<4; Global_TrialNb = 1; end
 Par = get(o,'Par');
 if nargin<2; PlotDbis = 0; end
-NicePlotConfig;
+% NicePlotConfig;
 
 %% CREATION OF THE SOUND OBJECT
 MaxIndex = get(o,'MaxIndex');

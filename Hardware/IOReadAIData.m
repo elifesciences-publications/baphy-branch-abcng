@@ -1,4 +1,4 @@
-function [Aux, Spike, names] = IOReadAIData(HW)
+function [Aux, Spike, names, NonThresholdedLick] = IOReadAIData(HW)
 % function d = IOReadAIData(HW);
 %
 % Read the analog data from Daq card.
@@ -13,7 +13,7 @@ function [Aux, Spike, names] = IOReadAIData(HW)
 % SVD update 2012-05-30 : added Nidaqmx support
 
 % Nima, April 2006
-names = []; Aux = []; Spike = [];
+names = []; Aux = []; Spike = []; NonThresholdedLick = [];
 
 if HW.params.HWSetup==0,
     return
@@ -27,7 +27,9 @@ if strcmpi(IODriver(HW),'NIDAQMX'),
   % Also, if touch exists threshold it here:
   touchchannels = find(~cellfun(@isempty,strfind(names,'Touch')));
   if ~isempty(touchchannels) & size(d,2) >= max(touchchannels)
+      NonThresholdedLick = d(:,touchchannels);
       d(:,touchchannels) = (d(:,touchchannels)>0.75); % threshold analog signal
+      % CB 06 Oct. - want the whole signal for heartbeat and respiration
       if isfield(HW.params,'LickSign') && HW.params.LickSign == -1 % invert the signal
           d(:,touchchannels)=~d(:,touchchannels);
       end
@@ -71,7 +73,8 @@ switch HW.params.HWSetup
         end
         % Also, if touch exists threshold it here:
         touchchannels = find(~cellfun(@isempty,strfind(names,'Touch')));
-        if ~isempty(touchchannels) & size(d,2) >= max(touchchannels)
+        if ~isempty(touchchannels) && size(d,2) >= max(touchchannels)
+            NonThresholdedLick = d(:,touchchannels);
             d(:,touchchannels) = (d(:,touchchannels)>0.75); % threshold analog signal
             if isfield(HW.params,'LickSign') && HW.params.LickSign == -1 % invert the signal
                 d(:,touchchannels)=~d(:,touchchannels);

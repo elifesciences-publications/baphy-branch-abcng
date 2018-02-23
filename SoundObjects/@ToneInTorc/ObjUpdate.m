@@ -5,24 +5,44 @@ function o = ObjUpdate (o)
 
 global exptparams_Copy;
 global globalparams;
-
+NoiseType = get(o,'NoiseType');
+o = set(o,'NoiseType',NoiseType(1:(find(isletter(NoiseType),1,'last'))));
 % Create a torc object with correct fields:
-TorcObj = Torc(get(o,'SamplingRate'),...
-    0, ...               % No Loudness
-    get(o,'PreStimSilence'), ...        % Put the PreStimSilence before torc.
-    get(o,'PostStimSilence'), ...       % 
-    get(o,'TorcDuration'), get(o,'TorcFreqRange'), get(o,'TorcRates'));
+switch get(o,'NoiseType')
+    case 'TORC'
+        TorcObj = Torc(get(o,'SamplingRate'),...
+            0, ...               % No Loudness
+            get(o,'PreStimSilence'), ...        % Put the PreStimSilence before torc.
+            get(o,'PostStimSilence'), ...       %
+            get(o,'TorcDuration'), get(o,'TorcFreqRange'), get(o,'TorcRates'));
+    case 'Noise'
+        TorcObj = Noise();
+        TorcObj = set(TorcObj,'LowFreq',1000);
+        TorcObj = set(TorcObj,'HighFreq',16000);
+        TorcObj = set(TorcObj,'TonesPerBurst',20);
+        TorcObj = set(TorcObj ,'Duration',get(o,'TorcDuration'));   
+        TorcObj = ObjUpdate(TorcObj);
+end
 % now generate the tone object:
-ToneObj = Tone(get(o,'SamplingRate'),...
-    0, ...                   % No Loudness
-    get(o, 'PreStimSilence'),...        % PreStimSilence is the same as TORC
-    0,...                               % PostStimSilence is zero for ToneInTorc
-    get(o, 'ToneFreqs'),...
-    1);
+ToneObj = RandomTone();
+ToneObj = set(ToneObj,'SamplingRate',get(o,'SamplingRate'));
+ToneObj = set(ToneObj,'PreStimSilence',get(o,'PreStimSilence'));
+ToneObj = set(ToneObj,'PostStimSilence',get(o,'PostStimSilence'));
+ToneObj = set(ToneObj,'BaseFrequency',get(o,'BaseFrequency'));
+ToneObj = set(ToneObj,'OctaveBelow',get(o,'OctaveBelow'));
+ToneObj = set(ToneObj,'OctaveAbove',get(o,'OctaveAbove'));
+ToneObj = set(ToneObj,'TonesPerOctave',get(o,'TonesPerOctave'));
+ToneObj = ObjUpdate(ToneObj);
 % now merge the names:
 Torcnames = get(TorcObj, 'Names');
 Tonenames = get(ToneObj, 'Names');
-Names = strcat(Torcnames, ' | ', Tonenames, '|', 'SNR: ', num2str(get(o,'SNR')));
+Names = cell(0,0);
+SnrLst = get(o,'SNR');
+for SnrNum = 1:length(SnrLst)
+    for ToneNum = 1:length(Tonenames)
+        Names(length(Names)+(1:length(Torcnames))) = strcat(Torcnames, ' | ', Tonenames{ToneNum}, '|', 'SNR: ', num2str(SnrLst(SnrNum)));
+    end
+end
 o = set(o,'Names',Names);
 o = set(o,'MaxIndex', length(Names));
 

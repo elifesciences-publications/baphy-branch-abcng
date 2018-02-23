@@ -8,13 +8,17 @@ function HW = IOLoadSound(HW, stim)
 %% MAKE SURE THE STIMULUS IS VERTICAL
  if size(stim,1)<size(stim,2)  stim=stim'; end;
  
- if isfield(HW,'TwoSpeakers') && HW.TwoSpeakers
-   SpeakerNb = 2;
+ if isfield(HW,'SpeakerNb') && HW.SpeakerNb>1
+   SpeakerNb = HW.SpeakerNb;
    if size(stim,2)==1
-     stim(:,2) = stim(:,1);
+     stim = repmat(stim,1,SpeakerNb);
+     SpreadLvlBetweenSpeakers = 1;
+   else
+	 SpreadLvlBetweenSpeakers = 0;
    end
  else
    SpeakerNb = 1;%size(stim,2);
+   SpreadLvlBetweenSpeakers = 0;
  end
 
 %% CALIBRATE SPECTRUM AND VOLUME FOR SOME SETUPS
@@ -31,7 +35,11 @@ for SpeakerNum = 1:SpeakerNb
       tstim = conv(stim(:,SpeakerNum),cIIR)*CalSR/HW.params.fsAO;
       % UNDO SHIFT DUE TO CALIBRATION
       cDelaySteps = round(HW.Calibration(SpeakerNum).Delay*HW.params.fsAO);
-      stim(:,SpeakerNum) = [tstim(cDelaySteps:end-length(cIIR)+1);zeros(cDelaySteps-1,1)];
+      tstim = [tstim(cDelaySteps:end-length(cIIR)+1);zeros(cDelaySteps-1,1)];
+      Non0ind = tstim~=0 & stim(:,SpeakerNum)~=0;
+      LvlFactor(SpeakerNum) = mean(stim(Non0ind,SpeakerNum)./tstim(Non0ind));
+      stim(:,SpeakerNum) = tstim;
+    else LvlFactor = 1;
     end
   end
 end
@@ -61,17 +69,23 @@ switch HW.params.HWSetup
       for SpeakerNum = 1:SpeakerNb
         switch HW.Calibration(SpeakerNum).Loudness.Method
           case 'MaxLocalStd';
-            Duration = HW.Calibration(SpeakerNum).Loudness.Parameters.Duration;
-            Val = maxLocalStd(stim(:,SpeakerNum),HW.params.fsAO,Duration);
-            stim(:,SpeakerNum) =  HW.Calibration(SpeakerNum).Loudness.Parameters.SignalMatlab80dB*stim(:,SpeakerNum)/Val;
+            if std(stim(:,SpeakerNum))~=0
+              Duration = HW.Calibration(SpeakerNum).Loudness.Parameters.Duration;
+              Val = maxLocalStd(stim(:,SpeakerNum),HW.params.fsAO,Duration);
+              stim(:,SpeakerNum) =  HW.Calibration(SpeakerNum).Loudness.Parameters.SignalMatlab80dB*stim(:,SpeakerNum)/Val;
+            end
         end
       end
+    else
+        for SpeakerNum = 1:SpeakerNb
+            stim(:,SpeakerNum) = LvlFactor(SpeakerNum)*stim(:,SpeakerNum)*HW.Calibration(SpeakerNum).Loudness.Parameters.SignalMatlab80dB;
+        end
     end
     LoudnessAdjusted = 0;
     
     %% Apply software attenuation if specified
     % Only change level of channels named "Sound*":
-    AudioChannels=IOGetAudioChannels(HW);
+    AudioChannels = IOGetAudioChannels(HW);
     if isfield(HW,'SoftwareAttendB')
       attend_db=HW.SoftwareAttendB;
     elseif isfield(HW.params,'SoftwareEqz') && any(HW.params.SoftwareEqz),
@@ -79,12 +93,12 @@ switch HW.params.HWSetup
     else
       atten_db = 0;
     end
-    level_scale=10.^(-attend_db./20);
-    stim(:,AudioChannels)=stim(:,AudioChannels).*level_scale;
+    level_scale = 10.^(-attend_db./20);
+    stim(:,AudioChannels) = stim(:,AudioChannels).*level_scale;
     
-    %% 2 SPEAKERS and Loudness are not been adjusted in the waveform of the SO
-    if isfield(HW,'TwoSpeakers') && HW.TwoSpeakers && (isempty(LoudnessAdjusted) || ~LoudnessAdjusted)
-      stim(:,1:SpeakerNb) = stim(:,1:SpeakerNb) * 0.5;
+    %% SPEAKERS and Loudness are not been adjusted in the waveform of the SO (same sound between all channels)
+    if SpreadLvlBetweenSpeakers%isfield(HW,'SpeakerNb') && HW.SpeakerNb>1 && (isempty(LoudnessAdjusted) || ~LoudnessAdjusted)
+      stim(:,1:SpeakerNb) = stim(:,1:SpeakerNb)/SpeakerNb;
     end
     
     %% ADD STIMULATION
@@ -114,13 +128,13 @@ switch HW.params.HWSetup
       % HW.params.fsAO
       HW=niSetAOSamplingRate(HW);
      
-      % dulicate sound on the 2 channels if no analog stim on the 2nd one
+      % duplicate sound on the 2 channels if no analog stim on the 2nd one
       global SecondChannelAO;
       if ~isempty(SecondChannelAO) && ~SecondChannelAO && SpeakerNb == 1
         stim(:,2) = stim(:,1);
       % fill in empty AO channels with zeros %14/09-YB: from Steve' code
       elseif  ~isempty(SecondChannelAO) && ~SecondChannelAO && size(stim,2)<HW.AO(1).NumChannels  
-        stim=cat(2,stim,zeros(size(stim,1),HW.AO(1).NumChannels-size(stim,2)));
+        stim = cat(2,stim,zeros(size(stim,1),HW.AO(1).NumChannels-size(stim,2)));
       end
       % actually load the samples
       SamplesLoaded=niLoadAOData(HW.AO(1),stim);

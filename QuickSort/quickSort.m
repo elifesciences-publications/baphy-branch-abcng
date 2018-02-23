@@ -580,6 +580,41 @@ for i=1:NVec
         QG.(FID).PreSteps+1+QG.(FID).ForwardSteps),1);
     Strengths(i)=std(Means(i,:))*length(Inds{i});
 end;
+
+CellLen = cellfun(@length,Inds);
+TooSmallCluster = find(CellLen<=10);
+if length(TooSmallCluster)>1    
+    disp(['Merged ' num2str(length(TooSmallCluster)) ' clusters too small'])
+    for CluNum = 2:length(TooSmallCluster)
+        Inds{TooSmallCluster(1)} = [Inds{TooSmallCluster(1)};Inds{TooSmallCluster(CluNum)}];
+        WInds{TooSmallCluster(1)} = [WInds{TooSmallCluster(1)};WInds{TooSmallCluster(CluNum)}];
+    end
+    StoreOutlier.Inds = Inds{TooSmallCluster(1)};
+    StoreOutlier.WInds = WInds{TooSmallCluster(1)};
+    TempPCAInd = setdiff(QG.(FID).PCAInd,StoreOutlier.WInds);
+    % RECLUSTERING (faster than clustvec)
+    Distances = pdist(PCProj(:,TempPCAInd)','euclid');
+    BinTree = linkage(Distances,QG.(FID).Linkages{QG.(FID).LinkageInd});
+    ClustVec = cluster(BinTree,'maxclust',NVec-1);
+    
+    Means = zeros(NVec,QG.(FID).ForwardSteps*2+1);
+    Strengths = zeros(NVec,1);
+    for i=1:(NVec-1)
+        Inds{i}=find(ClustVec==i); WInds{i} = TempPCAInd(Inds{i})';
+        Means(i,:)=mean(QG.(FID).Waves(WInds{i},...
+            QG.(FID).PreSteps+1-QG.(FID).ForwardSteps:...
+            QG.(FID).PreSteps+1+QG.(FID).ForwardSteps),1);
+        Strengths(i)=std(Means(i,:))*length(Inds{i});
+    end;
+    i = NVec;
+    Inds{i} = StoreOutlier.Inds;
+    WInds{i} = StoreOutlier.WInds;
+    Means(i,:)=mean(QG.(FID).Waves(WInds{i},...
+        QG.(FID).PreSteps+1-QG.(FID).ForwardSteps:...
+        QG.(FID).PreSteps+1+QG.(FID).ForwardSteps),1);
+    Strengths(i)=std(Means(i,:))*length(Inds{i});
+end
+
 [Strengths,SInd] = sort(Strengths,'descend');
 Inds = Inds(SInd); WInds = WInds(SInd);
 
@@ -765,18 +800,28 @@ switch button
         OtherInd = setdiff([1:length(QG.(FID).GUI.hSet)],Index);
         QG.(FID).GUI.ShowState(:) = 0;
         QG.(FID).GUI.ShowState(Index) = 1;
-        h = cell2mat(QG.(FID).GUI.hSet(OtherInd));
-        set(h,'Visible','off');
+        if verLessThan('matlab','8.4.0')
+            h = cell2mat(QG.(FID).GUI.hSet(OtherInd));
+            set(h,'Visible','off');
+        else
+            tt = QG.(FID).GUI.hSet(OtherInd);
+            cellfun(@(x)set(x,'Visible','off'),tt);
+        end
         set(QG.(FID).GUI.ClusterLabels,'BackgroundColor',QG.Colors.ColorOff);
         h = QG.(FID).GUI.hSet{Index};
-        set(h,'Visible','on');set(obj,'BackgroundColor',[1,1,1]);
+        set(h,'Visible','on'); set(obj,'BackgroundColor',[1,1,1]);
         LF_showSeparation(obj,event,FID,Index)
 end
 
 % Hide all merged ISIs
 NVec = QG.(FID).NVec;
 OtherInd = (NVec+1):QG.(FID).extNVec;
-h = cell2mat(QG.(FID).GUI.hISI(OtherInd)); set(h,'Visible','off');
+if verLessThan('matlab','8.4.0')
+    h = cell2mat(QG.(FID).GUI.hISI(OtherInd)); set(h,'Visible','off');
+else
+    tt = QG.(FID).GUI.hISI(OtherInd);
+    cellfun(@(x)set(x,'Visible','off'),tt);
+end
 % Show ISI of all displayed clusters merged together
 ActiveClusterLst = find(QG.(FID).GUI.ShowState);
 ActiveClusterLst = [ActiveClusterLst ; zeros(NVec-length(ActiveClusterLst),1)];
@@ -784,15 +829,31 @@ Cluster_extNVec_Table = QG.(FID).extNVec_Table;
 a = bsxfun(@eq,Cluster_extNVec_Table,ActiveClusterLst);
 b = sum(a);
 ActiveMergeLst = find(b==NVec);
-h = cell2mat(QG.(FID).GUI.hISI(ActiveMergeLst)); set(h,'Visible','on');
+if verLessThan('matlab','8.4.0')
+    h = cell2mat(QG.(FID).GUI.hISI(ActiveMergeLst)); set(h,'Visible','on');
+else
+    tt = QG.(FID).GUI.hISI(ActiveMergeLst);
+    cellfun(@(x)set(x,'Visible','on'),tt);
+end
 
 % Hide all CC
-h = cell2mat(QG.(FID).GUI.hCC(:)); set(h,'Visible','off');
+if verLessThan('matlab','8.4.0')
+    h = cell2mat(QG.(FID).GUI.hCC(:)); set(h,'Visible','off');
+else
+    tt = QG.(FID).GUI.hCC(:);
+    cellfun(@(x)set(x,'Visible','off'),tt);
+end
 % Show CC when pair
 if length(find(ActiveClusterLst))==2
     inddAct = find(ActiveClusterLst);
     PairNum = ( QG.(FID).NPair_Table(1,:)==ActiveClusterLst(inddAct(1)) & QG.(FID).NPair_Table(2,:)==ActiveClusterLst(inddAct(2)) );
-    h = cell2mat(QG.(FID).GUI.hCC(PairNum)); set(h,'Visible','on');
+   
+    if verLessThan('matlab','8.4.0')
+        h = cell2mat(QG.(FID).GUI.hCC(PairNum)); set(h,'Visible','on');
+    else
+        tt = QG.(FID).GUI.hCC(PairNum);
+        cellfun(@(x)set(x,'Visible','on'),tt);
+    end
     
     xdata = get(QG.(FID).GUI.hCC{PairNum},'XData');
     ydata = get(QG.(FID).GUI.hCC{PairNum},'YData');
@@ -1061,7 +1122,11 @@ function LF_CBF_SliderPos(obj,event,FID)
 global QG U
 
 cAxis = QG.(FID).GUI.Clusters;
-set(cell2mat(QG.(FID).GUI.hCluster),'Visible','off');
+if verLessThan('matlab','8.4.0')
+    set(cell2mat(QG.(FID).GUI.hCluster),'Visible','off');
+else
+    cellfun(@(x)set(x,'Visible','on'),QG.(FID).GUI.hCluster);
+end
 SliderVal = get(obj,'Value');
 NVec = QG.(FID).NVec;
 if isfield(QG.(FID).GUI,'hClusterTime') try delete(QG.(FID).GUI.hClusterTime); end; end
@@ -1090,7 +1155,12 @@ global QG U
 NVec = QG.(FID).NVec; cAxis = QG.(FID).GUI.Waves;
 NewPlot = 0; Toggle = 0;
 if ~isfield(QG.(FID).GUI,'hWaves') | QG.(FID).WaveToggle
-    try delete(cell2mat(QG.(FID).GUI.hWaves)); end
+    try; if verLessThan('matlab','8.4.0')
+            delete(cell2mat(QG.(FID).GUI.hWaves));
+        else
+            cellfun(@(x)delete(x),QG.(FID).GUI.hWaves);
+        end
+    end
     if ~QG.(FID).WaveToggle
         NewPlot = 1;
         QG.(FID).GUI.hmWave = cell(NVec,1);
@@ -1108,8 +1178,13 @@ if ~isfield(QG.(FID).GUI,'hWaves') | QG.(FID).WaveToggle
     QG.(FID).GUI.hWaves = cell(NVec,1);
 else % Newplot = 0; Toggle = 0;
     if NVec < size(QG.(FID).GUI.hWaves,1)
-        delete(cell2mat(QG.(FID).GUI.hWaves(NVec+1:end)));
-        delete(cell2mat(QG.(FID).GUI.hmWave(NVec+1:end)));
+        if verLessThan('matlab','8.4.0')
+            delete(cell2mat(QG.(FID).GUI.hWaves(NVec+1:end)));
+            delete(cell2mat(QG.(FID).GUI.hmWave(NVec+1:end)));
+        else
+            cellfun(@(x)delete(x),QG.(FID).GUI.hWaves(NVec+1:end));
+            cellfun(@(x)delete(x),QG.(FID).GUI.hmWave(NVec+1:end));
+        end
         QG.(FID).GUI.hWaves = vertical(QG.(FID).GUI.hWaves(1:NVec));
         QG.(FID).GUI.hmWave = vertical(QG.(FID).GUI.hmWave(1:NVec));
     end
@@ -1171,7 +1246,7 @@ if NewPlot
         cWaveTime = [-QG.(FID).P.PreDur/U.ms:(1./QG.(FID).P.SR)/U.ms:((size(mWaves,1)-1)/QG.(FID).P.SR)/U.ms-QG.(FID).P.PreDur/U.ms]';
         if ~isempty(Units)
             for i=1:length(Units) % LOOP OVER CELLS IN OTHER RECORDING
-                plot(cAxis,cWaveTime,mWaves(:,i),'k');
+                plot(cAxis,cWaveTime,mWaves(:,Units(i)),'k');  % 17/03-YB: plot(cAxis,cWaveTime,mWaves(:,i),'k','linewidth',5);
                 [MAX,Pos] = max(mWaves(:,i));
                 text(cWaveTime(Pos),double(1.2*MAX),n2s(Units(i)));
             end
@@ -1181,8 +1256,15 @@ end
 
 % BRING MWAVES IN FRONT OF REST
 Children = get(cAxis,'Children');
-Plots = [QG.(FID).GUI.hWavesStat;cell2mat(QG.(FID).GUI.hmWave);cell2mat(QG.(FID).GUI.hWaves)];
-set(cAxis,'Children',[setdiff(Children,Plots);Plots])
+if verLessThan('matlab','8.4.0')
+    Plots = [QG.(FID).GUI.hWavesStat;cell2mat(QG.(FID).GUI.hmWave);cell2mat(QG.(FID).GUI.hWaves)];
+    set(cAxis,'Children',[setdiff(Children,Plots);Plots])
+else
+%     tt = QG.(FID).GUI.hWaves{:};
+%     Plots = [QG.(FID).GUI.hWavesStat;...
+%         [QG.(FID).GUI.hmWave{:}]';...
+%         [tt]];
+end
 
 function LF_plotClusters(FID)
 % PLOT PROJECTIONS ONTO EIGENVECTORS

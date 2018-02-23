@@ -45,7 +45,6 @@ end
 if ~isfield(options,'unit') options.unit=ones(size(Electrodes)); end
 
 %% GET ARRAY OR PLOTTING GEOMETRY
-NElectrodes = length(Electrodes); % Number of Electrodes to plot
 
 if isempty(options.ElectrodeMatrix) % IF USER HAS NOT SPECIFIED A DIFFERENT GRID
   try,
@@ -64,6 +63,9 @@ else % ELECTRODE MATRIX HAS BEEN SPECIFIED AS GRID
     [cY,cX] = find(EM==Electrodes(i)); ElectrodesXY(Electrodes(i),1:2) = [cX,cY];
   end
 end
+
+NElectrodes = length(Electrodes); % Number of Electrodes to plot
+
 Tiling  = max(ElectrodesXY,[],1); 
 if length(ElectrodesXY)<4,
     Tiling(end)=size(ElectrodesXY,1);
@@ -141,10 +143,11 @@ for ii=1:NElectrodes
     SortedUnits = options.unit(ElectrodesUnits{ii});
     disp(['Sorted Units on Electrode ', num2str(Electrode), ': ',num2str(SortedUnits)]);
     if length(SortedUnits) > 1   unit = input('Choose a unit: ');
-    else                                         unit=SortedUnits;     end
+    else unit=SortedUnits;     end
     options.sortedunit = unit;
   end
   
+  if ~options.usesorted || (options.usesorted && (length(SortedUnits)>1 || SortedUnits~=0))
   %% PLOT DIFFERENT ANALYSES
   switch analysis_name,
     case 'strf'
@@ -205,23 +208,26 @@ for ii=1:NElectrodes
       elseif strcmpi(options.runclass,'tst')  %for multi-level tuning
         mltc_online(mfile,Electrode,unit,AH(ii),options);
       else
-        if ~options.usesorted
-          % standard TORC strf
-          options.usefirstcycle=0;
-          options.tfrac = 1;
-          [strf,snr(ii)]=strf_online(mfile,Electrode,AH(ii),options,DC{ii});
-        else
-          mfilename = [mfile,'.m'];
-          spkpath = mfile(1:strfind(mfile,filename)-1);
-          
-          if strcmp(computer,'PCWIN') || strcmp(computer,'PCWIN64')
-            spikefile = [spkpath,'sorted\',filename,'.spk.mat'];
+          if strcmpi(exptparams.BehaveObjectClass,'RewardEyeFixation')   
+            online_VisualSTRF('MFile',mfile,'Electrode',Electrode,'Unit',unit,...
+              'Axis',AH(ii),'SigmaThreshold',options.sigthreshold,'LFP',options.lfp);
+          elseif ~options.usesorted
+              % standard TORC strf
+              options.usefirstcycle=0;
+              options.tfrac = 1;
+              [strf,snr(ii)]=strf_online(mfile,Electrode,AH(ii),options,DC{ii});
           else
-            spikefile = [spkpath,'sorted/',filename,'.spk.mat'];
+              mfilename = [mfile,'.m'];
+              spkpath = mfile(1:strfind(mfile,filename)-1);
+              
+              if strcmp(computer,'PCWIN') || strcmp(computer,'PCWIN64')
+                  spikefile = [spkpath,'sorted\',filename,'.spk.mat'];
+              else
+                  spikefile = [spkpath,'sorted/',filename,'.spk.mat'];
+              end
+              
+              [strf,snr(ii)]=strf_offline2(mfilename,spikefile,Electrode,options.sortedunit,AH(ii));
           end
-          
-          [strf,snr(ii)]=strf_offline2(mfilename,spikefile,Electrode,options.sortedunit);
-        end
       end
       
     case 'raster',
@@ -238,6 +244,8 @@ for ii=1:NElectrodes
     'NH = copyobj(H,NFig); set(NH,''Position'',[0.15,0.1,0.8,0.85]); xlabel(''Time [s]'')'])
   drawnow;
   if exist('snr','var') fprintf('Electrode %d snr=%.3f\n',ii,snr(ii)); end
+  
+  end
 end
 
 if isfield(globalparams,'ExperimentComplete'),

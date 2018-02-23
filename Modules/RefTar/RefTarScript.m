@@ -13,22 +13,18 @@ function varargout = RefTarScript (globalparams, exptparams, HW)
 % BE, modified & polished, 2011/7
 % SVD, added NIDAQMX support 2012/05
 
+
 global StopExperiment; StopExperiment = 0; % Corresponds to User button
 global exptparams_Copy; exptparams_Copy = exptparams; % some code needs exptparams
 global BAPHY_LAB LoudnessAdjusted
 
 BehaveObject = exptparams.BehaveObject;
+% Initialize psychtoolbox for eyetracker JL 17/05/03
+if isfield(HW,'PsychoVisualDisplay') && HW.PsychoVisualDisplay; InitializeHW_PsychophysicsVisualExperiment; end
 
 % START PSYTOOLBOX FOR VISUAL EXPERIMENT
 if ~isempty(strfind(class(BehaveObject),'Eye'))
-  AssertOpenGL;
-  Screen('Preference', 'SkipSyncTests', 1);
-  screens = Screen('Screens');
-  if size(screens,2)>1
-    screenNumber = max(screens);
-    [winPtr, winRect] = Screen('OpenWindow', screenNumber, 180);
-  end
-  HW.VisionHW.ScreenID = winPtr;
+  InitializeHW_VisualExperiment;
 end
 
 if strcmpi(exptparams.BehaveObjectClass,'MriPassive') && ...
@@ -52,12 +48,17 @@ exptparams.comment = [...
 while ContinueExp == 1
   if exist('iRep')==0
     exptparams.TrialObject = ObjUpdate(exptparams.TrialObject);
-    TrialIndexLst = 1:(exptparams.TrialBlock*exptparams.Repetition);    % List of trial nb sent to <waveform>; modified during reinsertion
-     if (isfield(struct(exptparams.TrialObject),'TrialIndexLst') && isempty(get(exptparams.TrialObject,'TrialIndexLst'))); exptparams.TrialObject = set(exptparams.TrialObject,'TrialIndexLst',TrialIndexLst); end
-  elseif isfield(struct(exptparams.TrialObject),'TrialIndexLst')
-    TrialIndexLst = get(exptparams.TrialObject,'TrialIndexLst');
-    TrialIndexLst = [ TrialIndexLst , max(TrialIndexLst) + (1:(exptparams.TrialBlock*exptparams.Repetition)) ];    % List of trial nb sent to <waveform>; modified during reinsertion
-     exptparams.TrialObject = set(exptparams.TrialObject,'TrialIndexLst',TrialIndexLst);
+    TrialIndexLst = 1;
+%     TrialIndexLst = 1:(exptparams.TrialBlock*exptparams.Repetition);    % List of trial nb sent to <waveform>; modified during reinsertion
+%      if (isfield(struct(exptparams.TrialObject),'TrialIndexLst') && isempty(get(exptparams.TrialObject,'TrialIndexLst')))
+%          TrialIndexLst = 1:2;
+%          exptparams.TrialObject = set(exptparams.TrialObject,'TrialIndexLst',TrialIndexLst);         
+%      end
+%   elseif isfield(struct(exptparams.TrialObject),'TrialIndexLst')
+%     TrialIndexLst = get(exptparams.TrialObject,'TrialIndexLst');
+%     TrialIndexLst = [ TrialIndexLst , max(TrialIndexLst) + (1:(exptparams.TrialBlock*exptparams.Repetition)) ];    % List of trial nb sent to <waveform>; modified during reinsertion
+%      exptparams.TrialObject = set(exptparams.TrialObject,'TrialIndexLst',TrialIndexLst);
+    
   end  
  
   iRep = 0;
@@ -71,6 +72,7 @@ while ContinueExp == 1
     iTrial=0;
     exptparams.NoTargetInTrialCount = [];%Added by CB 10/11/15
     while iTrial<get(exptparams.TrialObject,'NumberOfTrials') % TRIAL LOOP
+      TrialIndexLst(end+1) = TrialIndexLst(end)+1;
       TrialIndex = TrialIndex + 1; % MAIN TRIAL COUNTER
       iTrial = iTrial+1;  % TRIAL COUNTER WITHIN REPETITION
       exptparams.InRepTrials = iTrial;
@@ -78,9 +80,8 @@ while ContinueExp == 1
       
       %% PREPARE TRIAL
       TrialObject = get(exptparams.TrialObject);
-%       % 2013/12 YB: VISUAL DISPLAY--Back to grey screen on the second monitor if we are in a psychophysics experiment
-%       if isfield(TrialObject,'VisualDisplay') && TrialObject.VisualDisplay; 	[VisualDispColor,exptparams] = VisualDisplay(TrialIndex,'GREY',exptparams); end
-        
+      % 2013/12 YB: VISUAL DISPLAY--Back to grey screen on the second monitor if we are in a psychophysics experiment
+      if isfield(TrialObject,'VisualDisplay') && TrialObject.VisualDisplay; 	[exptparams] = VisualDisplayEyeTracking(TrialIndex,'GREY',exptparams); end% VisualDisplayEyeTracking instead of VisualDisplay JL 01/05/17        
       %Create pump control
       if isfield(TrialObject,'PumpProfile')
           PumpProfile = TrialObject.PumpProfile;
@@ -159,6 +160,7 @@ while ContinueExp == 1
       
       % STOP ACQUISITION
       [TrialStopEvent,HW] = IOStopAcquisition(HW);
+
       % IF THERE WAS A PROBLEM ON THE ACQUISITION SIDE, RERUN LAST TRIAL
       if strcmp(HW.params.DAQSystem,'MANTA') &&...
           isfield(HW.MANTA,'RepeatLast') && HW.MANTA.RepeatLast
@@ -205,6 +207,7 @@ while ContinueExp == 1
           %disp('Stopping AI task');
           niStop(HW);
       end
+
       % IF COMMUNICATING WITH MANTA
       if strcmp(HW.params.DAQSystem,'MANTA')
           MSG = ['STOP',HW.MANTA.COMterm,HW.MANTA.MSGterm];
@@ -242,8 +245,8 @@ while ContinueExp == 1
       %% RANDOMIZE WITH FLAG 0 (TRIAL CALL)
       % Used in adaptive schemes, where trialset is modified based on animals performance
       % Needs to change NumberOfTrials and Modify the IndexSets
-      exptparams = RandomizeSequence(exptparams.TrialObject, exptparams, globalparams, iTrial, 0);
-      if any(strcmp(fieldnames(exptparams.TrialObject),'TrialIndexLst')); TrialIndexLst = get(exptparams.TrialObject,'TrialIndexLst'); end
+%       exptparams = RandomizeSequence(exptparams.TrialObject, exptparams, globalparams, iTrial, 0);
+%       if any(strcmp(fieldnames(exptparams.TrialObject),'TrialIndexLst')); TrialIndexLst = get(exptparams.TrialObject,'TrialIndexLst'); end
       
     end % END OF TRIAL LOOP
     exptparams.TotalRepetitions = exptparams.TotalRepetitions + 1;

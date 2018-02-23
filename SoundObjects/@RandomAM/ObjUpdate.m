@@ -1,8 +1,7 @@
-function o = ObjUpdate (o);
+function o = ObjUpdate (o)
 %
 
 % Nima, november 2005
-
 BaseFundamental = ifstr2num(get(o,'BaseFundamental'));
 OctaveBelow = ifstr2num(get(o,'OctaveBelow'));
 OctaveAbove = ifstr2num(get(o,'OctaveAbove'));

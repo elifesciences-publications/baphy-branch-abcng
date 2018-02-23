@@ -14,7 +14,7 @@ Names = get(o,'Names');
 % if its a multiple tone (not simultaneous), generate them here:
 NumberOfTones = get(o,'NumberOfTones');
 switch get(o,'RandomSequence')
-  case 'no '  % one frequency per trial
+  case {'no';'no '}  % one frequency per trial
     Frequency = ifstr2num(Names{index});
     if NumberOfTones==1,
       % now generate a tone with specified frequency:
