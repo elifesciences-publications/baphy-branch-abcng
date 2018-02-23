@@ -4,7 +4,7 @@ function [Behavior,Bits,LickData] = TMG_CleanBehavior(exptparams,exptevents,File
     AuxSF = 1000;
     AnticipatedLoadingDuration = 0.300;
     SafeDelay = 0.8;
-    PickUpLick = 1;
+    PickUpLick = 0;
     LickTimeW{1} = [-.02 .12]; LickTimeW{2} = [.15 .6];
     DealWithLick = 'detectFA';
     [~,~,rAtot,ATrialIdxtot] = evpread(EVPname,'auxchans',1);
@@ -388,8 +388,9 @@ function [Behavior,Bits,LickData] = TMG_CleanBehavior(exptparams,exptevents,File
 	if PickUpLick
         TrialLst = find(~isnan(detectedFAtime(1,:))&(detectedFAtime(1,:)~=0));
         LickCount.Early = LickDurationAroundEvent(EVPname,TrialLst,detectedFAtime(1,TrialLst),LickTimeW);
+    else
+        LickCount = [];
     end
-
     
     %% STRUCTURE
     LongLickTimes = LongLickTimes+SilenceBeforeDur;

@@ -59,8 +59,7 @@ if ~strcmpi(exptparams(1).BehaveObjectClass,'Passive')
     SliceDuration = RefSliceDuration;
     THcatch = set(THcatch,'MinToC',RefSliceDuration+2*ChordDuration); THcatch = set(THcatch,'MaxToC',RefSliceDuration+2*ChordDuration);
     THcatch = ObjUpdate(THcatch);
-    
-    EVPname = [mFile '.evp'];
+    EVPname = [P.RootAdress mFile '.evp'];
     [Behavior] = TMG_CleanBehavior(exptparams,exptevents,FileDateStr,EVPname);
 else
     Behavior = [];
@@ -102,7 +101,7 @@ for TrialNum = P.TrialLst
             stim = stim/NormFactor;
             y = stim(round(PreStimSilence*SoundSF)+(1:round(TarSliceDuration*SoundSF)));
             wTot = [wTot y']; w = wTot;
-            StopSoundT = Behavior.SoundOffsetTime(TrialNum);
+            
 %             StopSoundT_ind = find( (cellfun(@strcmp,{exptevents.Note},repmat({'STIM,OFF'},size({exptevents.Note})))) & ([exptevents.Trial] == TrialNum) );
 %             if ~isempty(StopSoundT_ind)
 %                 StopSoundT = exptevents(StopSoundT_ind).StartTime;
@@ -110,6 +109,7 @@ for TrialNum = P.TrialLst
 %                 StopSoundT = exptparams.Performance(TrialNum).LickTime;
 %             end
             if P.CutWaveform
+                StopSoundT = Behavior.SoundOffsetTime(TrialNum);
                 StopSoundT = min( (StopSoundT-TotalPreStimSilence+...
                     get(TH,'PreStimSilence')), length(w)/SoundSF);
                 w = w(1:floor(StopSoundT*SoundSF));

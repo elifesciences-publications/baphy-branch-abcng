@@ -17,6 +17,9 @@ switch get(o,'NoiseType')
             get(o,'TorcDuration'), get(o,'TorcFreqRange'), get(o,'TorcRates'));
     case 'Noise'
         TorcObj = Noise();
+        TorcObj = set(TorcObj,'LowFreq',1000);
+        TorcObj = set(TorcObj,'HighFreq',16000);
+        TorcObj = set(TorcObj,'TonesPerBurst',20);
         TorcObj = set(TorcObj ,'Duration',get(o,'TorcDuration'));   
         TorcObj = ObjUpdate(TorcObj);
 end
@@ -34,8 +37,11 @@ ToneObj = ObjUpdate(ToneObj);
 Torcnames = get(TorcObj, 'Names');
 Tonenames = get(ToneObj, 'Names');
 Names = cell(0,0);
-for ToneNum = 1:length(Tonenames)
-    Names(length(Names)+(1:length(Torcnames))) = strcat(Torcnames, ' | ', Tonenames{ToneNum}, '|', 'SNR: ', num2str(get(o,'SNR')));
+SnrLst = get(o,'SNR');
+for SnrNum = 1:length(SnrLst)
+    for ToneNum = 1:length(Tonenames)
+        Names(length(Names)+(1:length(Torcnames))) = strcat(Torcnames, ' | ', Tonenames{ToneNum}, '|', 'SNR: ', num2str(SnrLst(SnrNum)));
+    end
 end
 o = set(o,'Names',Names);
 o = set(o,'MaxIndex', length(Names));

@@ -65,6 +65,9 @@ if IsLookup
 end
 temp = [];
 ReferenceMaxIndex = par.ReferenceMaxIndex;
+if IsLookup
+    ReferenceMaxIndex = sum(LookupTable);
+end
 % here, we try to specify the real number of references per trial, and
 % determine how many trials are needed to cover all the references. If its
 % a detect case, its easy. Add from NumRef to trials until the sum of
@@ -95,7 +98,8 @@ end
 % Lets specify which trials are sham:
 TotalTrials = length(RefNumTemp);
 if isempty(RefNumTemp)
-    TargetIndex{1} = 1;
+    TargetIndex = 1:par.TargetMaxIndex;
+    TargetIndex = mat2cell(TargetIndex(randperm(par.TargetMaxIndex)),1,ones(1,par.TargetMaxIndex));
 elseif(get(o,'NumberOfTarPerTrial') ~= 0) && (~strcmpi(get(o,'TargetClass'),'None')) 
     if ~IsLookup
         NotShamNumber = floor((100-par.ShamPercentage) * TotalTrials / 100); % how many shams do we have??
@@ -116,9 +120,12 @@ end
 % them in the trial. But in discrim case, we put one index in the target
 % also, if its not a sham. 
 % Now generate random sequences for each trial
-RandIndex = randperm(par.ReferenceMaxIndex);
+
+% RandIndex = randperm(par.ReferenceMaxIndex);
+RandIndex = repmat(1:par.ReferenceMaxIndex,1,ceil(sum(LookupTable)/par.ReferenceMaxIndex));
+RandIndex = RandIndex(randperm(length(RandIndex)));
 for cnt1=1:length(RefNumTemp)
-    if ~ReferenceMaxIndex==1
+    if ~(ReferenceMaxIndex==1)
         RefTrialIndex {cnt1} = RandIndex (1:RefNumTemp(cnt1));
         RandIndex (1:RefNumTemp(cnt1)) = [];
     else

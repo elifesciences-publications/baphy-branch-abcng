@@ -31,8 +31,8 @@ case 0
     o.Duration = 3;
     o.Frozen = [];
     o.Count = 30;
-    o.LowFreq = 250;
-    o.HighFreq = 8000;
+    o.LowFreq = 1000;
+    o.HighFreq = 16000;
     o.TonesPerBurst=20;
     o.Filter=[];
     o.SoundPath='';
