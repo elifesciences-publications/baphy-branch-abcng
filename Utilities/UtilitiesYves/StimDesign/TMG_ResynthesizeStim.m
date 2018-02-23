@@ -60,7 +60,7 @@ if ~strcmpi(exptparams(1).BehaveObjectClass,'Passive')
     THcatch = set(THcatch,'MinToC',RefSliceDuration+2*ChordDuration); THcatch = set(THcatch,'MaxToC',RefSliceDuration+2*ChordDuration);
     THcatch = ObjUpdate(THcatch);
     EVPname = [P.RootAdress mFile '.evp'];
-    [Behavior] = TMG_CleanBehavior(exptparams,exptevents,FileDateStr,EVPname);
+    [Behavior] = TMG_CleanBehavior(globalparams,exptparams,exptevents,FileDateStr,EVPname);
 else
     Behavior = [];
 end
