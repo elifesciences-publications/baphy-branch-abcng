@@ -16,10 +16,7 @@ function [Events, exptparams] = BehaviorControl(O, HW, StimEvents, globalparams,
 % If a SNOOZE occurs :
 %  - just continue 
 %
-% Options (future)
-% - Decrease reward if too many early responses
-%
-% BE 2013/10
+% YB-BE 2013/10
 
 Events = [ ];
 
@@ -30,39 +27,55 @@ PrewardAmount = get(O,'PrewardAmount');
 MinRewardAmount = get(O,'MinRewardAmount');
 IncrementRewardAmount = get(O,'IncrementRewardAmount');
 MaxIncrementRewardNb = get(O,'MaxIncrementRewardNb');
+AutomaticReward = get(O,'AutomaticReward');
 
 %% GET TARGET & REFERENCE INDICES
 tmp = get(exptparams.TrialObject,'ReferenceIndices'); ReferenceIndices = tmp{exptparams.InRepTrials};
 tmp = get(exptparams.TrialObject,'TargetIndices'); TargetIndices = tmp{exptparams.InRepTrials};
 
 %% COMPUTE RESPONSE WINDOWS
-str1ind = strfind(StimEvents(end).Note,' '); str2ind = strfind(StimEvents(end).Note,'-')-1;
-Index = str2num(StimEvents(end).Note(str1ind(3):str2ind(1)));
-DistributionTypeByInd = get(get(exptparams.TrialObject,'TargetHandle'),'DistributionTypeByInd');
 PreSoundSilence = get(get(exptparams.TrialObject,'ReferenceHandle'),'PreStimSilence') + get(get(exptparams.TrialObject,'ReferenceHandle'),'Duration') + get(get(exptparams.TrialObject,'ReferenceHandle'),'PostStimSilence') + get(get(exptparams.TrialObject,'TargetHandle'),'PreStimSilence');
-DistributionTypeNow = DistributionTypeByInd(Index); 
-DifficultyLvl = str2num(get(get(exptparams.TrialObject,'TargetHandle'),['DifficultyLvl_D' num2str(DistributionTypeNow)]));
-DifficultyLvlByInd = get(get(exptparams.TrialObject,'TargetHandle'),'DifficultyLvlByInd');
-DifficultyNow = DifficultyLvl( DifficultyLvlByInd(Index) );
-
-TarInd = find(~cellfun(@isempty,strfind({StimEvents.Note},'Target')));
-EarlyWindow = StimEvents(end-1).StartTime;        % include 0.4s PreStimSilence / 2s Frozen / ToC (without response window)
-TargetStartTime = 0; %StimEvents(TarInd(1)).StartTime;
-if DifficultyNow~=0 % not a catch trial
-  CatchTrial = 0;
-  TarWindow(1) = TargetStartTime + EarlyWindow;
-  TarWindow(2) = TarWindow(1) + get(O,'ResponseWindow');
-  CatchStr = '';
-else
-  CatchTrial = 1;
-  TarWindow(1) = TargetStartTime + EarlyWindow  + get(O,'ResponseWindow');
-  TarWindow(2) = TarWindow(1);
-  CatchStr = 'Catch ';
+TarInd = find(~cellfun(@isempty,strfind({StimEvents.Note},'Target')) &...
+  ~cellfun(@isempty,strfind({StimEvents.Note},'Stim,')));
+if length(TarInd)<2 % Classical TMG
+  str1ind = strfind(StimEvents(end).Note,' '); str2ind = strfind(StimEvents(end).Note,'-')-1;
+  Index = str2num(StimEvents(end).Note(str1ind(3):str2ind(1)));
+  DistributionTypeByInd = get(get(exptparams.TrialObject,'TargetHandle'),'DistributionTypeByInd');
+  DistributionTypeNow = DistributionTypeByInd(Index);
+  DifficultyLvl = str2num(get(get(exptparams.TrialObject,'TargetHandle'),['DifficultyLvl_D' num2str(DistributionTypeNow)]));
+  DifficultyLvlByInd = get(get(exptparams.TrialObject,'TargetHandle'),'DifficultyLvlByInd');
+  DifficultyNow = DifficultyLvl( DifficultyLvlByInd(Index) );
+  EarlyWindow = StimEvents(end-1).StartTime;        % include 0.4s PreStimSilence / 2s Frozen / ToC (without response window)
+  TargetStartTime = 0; %StimEvents(TarInd(1)).StartTime;
+  if DifficultyNow~=0 % not a catch trial
+    CatchTrial = 0;
+    TarWindow(1) = TargetStartTime + EarlyWindow;
+    TarWindow(2) = TarWindow(1) + get(O,'ResponseWindow');
+    CatchStr = '';
+  else
+    CatchTrial = 1;
+    TarWindow(1) = TargetStartTime + EarlyWindow  + get(O,'ResponseWindow');
+    TarWindow(2) = TarWindow(1);
+    CatchStr = 'Catch ';
+  end
+  TimeBin = 3; MaxTimeBin = floor(TarWindow(1)/TimeBin);
+  RefWindow = [0,TarWindow(1)];
+  Objects.Tar = get(exptparams.TrialObject,'TargetHandle');
+else % MMN: for now, we just give water if ferret licks in one of the RW, period. 
+  TarCount = 0;
+  for TarWinNum = 1:length(TarInd)
+    str2ind = strfind(StimEvents(TarInd(TarWinNum)).Note,',');
+    RefType = str2num(StimEvents(TarInd(TarWinNum)).Note((str2ind(2)+1):(str2ind(3)-1)));
+    if RefType==3
+      TarCount = TarCount + 1;
+      TarWindowLst{TarCount}(1) = StimEvents(TarInd(TarWinNum)).StartTime;
+      TarWindowLst{TarCount}(2) = TarWindowLst{TarCount}(1) + get(O,'ResponseWindow');
+    end
+  end
+  TarCount = 1;
+  TarWindow = TarWindowLst{1};
+  CatchStr = ''; CatchTrial = 0; RefWindow = [];
 end
-TimeBin = 3; MaxTimeBin = floor(TarWindow(1)/TimeBin);
-RefWindow = [0,TarWindow(1)];
-Objects.Tar = get(exptparams.TrialObject,'TargetHandle');
-Simulick = get(O,'Simulick'); if Simulick; LickTime = rand*(TarWindow(2)+1); end
 MinimalDelayResponse = get(O,'MinimalDelayResponse');
 
 TrialObject = get(exptparams.TrialObject);
@@ -92,32 +105,53 @@ TouchType = IOMatchPosition2Sensor('center',HW); TouchType = TouchType{1};
 SensorChannels=find(strcmp(SensorNames,TouchType));
 
 AllLickSensorNames = SensorNames(~cellfun(@isempty,strfind(SensorNames,TouchType)));
-
+[LightStateR, ev] = IOLightSwitch(HW,1,0,[],0,0,'LightR');
+PreviousTimeLEDon = 0;
 % SYNCHRONIZE COMPUTER CLOCK WITH DAQ TIME
 CountingLicks = [];
 tic; CurrentTime = IOGetTimeStamp(HW); InitialTime = CurrentTime;
 fprintf(['Running Trial [' CatchStr 'ToC=' num2str(TarWindow(1)) 's] [ <=',n2s(exptparams.LogDuration),'s ] ... ']);
 while CurrentTime < exptparams.LogDuration
 
-DetectType = 'ON'; LickOccured = 0;
+  % update TarWindow timings if multiple targets
+  if length(TarInd)>1 && CurrentTime>TarWindow(2) && TarCount<length(TarWindowLst)
+    TarCount = TarCount+1;
+    TarWindow = TarWindowLst{TarCount};
+    disp(['Running Trial [' CatchStr 'ToC=' num2str(TarWindow(1)) 's] [ <=',n2s(exptparams.LogDuration),'s ] ... ']);
+  elseif length(TarInd)>1 && CurrentTime>TarWindow(2) && TarCount==length(TarWindowLst)
+    TarWindow = [0 0];
+  end
+  
+  % send trig every second
+  if (LightStateR == 0) && (PreviousTimeLEDon+1)<=CurrentTime %(mod(CurrentTime,1) < 0.005) %
+      [LightStateR, ev] = IOLightSwitch(HW,1,0,[],0,0,'LightR');
+      PreviousTimeLEDon = floor(CurrentTime);
+  elseif LightStateR == 1
+      [LightStateR, ev] = IOLightSwitch(HW,0,0,[],0,0,'LightR');
+  end
+  
+  DetectType = 'ON'; LickOccured = 0;
   %CurrentTime = IOGetTimeStamp(HW); % INACCURATE WITH DISCRETE STEPS
   CurrentTime = toc+InitialTime;
-  % READ LICKS FROM ALL SENSORS
-  if ~Simulick;   cLick = IOLickRead(HW,SensorChannels);
-  else cLick = ones(size(SensorChannels)); 
-    if CurrentTime>= LickTime; cLick(ceil(length(cLick)*rand)) = 0; end
-  end
+  % READ LICKS FROM ALL SENSORScLick = ones(size(SensorChannels)); 
+  cLick = IOLickRead(HW,SensorChannels);
   if ~LickTargetOnly
     switch DetectType
       case 'ON'; if any(cLick); LickOccured = 1; end;
       case 'OFF'; if any(~cLick); LickOccured = 1; end;
     end
   else  % Only licks in Target window stop the trial
-    InTarget = CurrentTime > (TarWindow(1) +MinimalDelayResponse);
+    InTarget = CurrentTime > (TarWindow(1)+MinimalDelayResponse);
     switch DetectType
       case 'ON'; if any(cLick) && InTarget; LickOccured = 1; end;
       case 'OFF'; if any(~cLick) && InTarget; LickOccured = 1; end;
     end    
+  end
+  
+  if ~LickOccured && length(TarInd)>1 && AutomaticReward
+    if CurrentTime>(TarWindow(1) + MinimalDelayResponse + .4)
+      LickOccured = 1;
+    end
   end
   
   % PROCESS LICK GENERALLY
@@ -132,16 +166,35 @@ DetectType = 'ON'; LickOccured = 0;
     else
       cLickSensor = 'None'; cLickSensorNot = 'None';
     end
-   
-    Events = AddEvent(Events,['LICK,',cLickSensor],TrialIndex,ResponseTime,[]);
-    if ~get(O,'GradualResponse') && ResponseTime >  PreSoundSilence
-      break
-    elseif  ~get(O,'GradualResponse') && ResponseTime <= PreSoundSilence
-      LickOccured = 0;
-    elseif get(O,'GradualResponse') && ResponseTime > (TarWindow(1) + MinimalDelayResponse) && ResponseTime<TarWindow(2)
-      break
-    elseif  get(O,'GradualResponse')
-      LickOccured = 0;
+
+    if length(TarInd)<2 % TMG
+      Events = AddEvent(Events,['LICK,',cLickSensor],TrialIndex,ResponseTime,[]);
+      if ~get(O,'GradualResponse') && (ResponseTime >  PreSoundSilence)
+        break
+      elseif  ~get(O,'GradualResponse') && (ResponseTime <= PreSoundSilence)
+        LickOccured = 0;
+      elseif get(O,'GradualResponse') && ResponseTime > (TarWindow(1) + MinimalDelayResponse) && ResponseTime<TarWindow(2)
+        break
+      elseif  get(O,'GradualResponse')
+        LickOccured = 0;
+      end
+    else                % MMN
+      if ResponseTime>(TarWindow(1) + MinimalDelayResponse) && ResponseTime<TarWindow(2)
+        Events = AddEvent(Events,['LICK,',cLickSensor],TrialIndex,ResponseTime,[]);
+        PumpDuration = RewardAmount/globalparams.PumpMlPerSec.Pump;
+        PumpName = IOMatchPosition2Pump('center',HW); PumpName = PumpName{1};
+        PumpEvent = IOControlPump(HW,'Start',PumpDuration,PumpName);
+        Events = AddEvent(Events, PumpEvent, TrialIndex);
+        if TarCount<length(TarWindowLst)
+          TarCount = TarCount+1;
+          TarWindow = TarWindowLst{TarCount};
+          disp(['HIT / next TarWin [ToC=' num2str(TarWindow(1)) 's] [ <=',n2s(exptparams.LogDuration),'s ] ... ']);
+        else
+          TarWindow = [0 0];
+        end
+      else
+          LickOccured = 0;
+      end
     end
   end
   
@@ -189,7 +242,9 @@ else
 end
 
 %%  PROCESS LICK
-if ~isempty(CountingLicks) && all( CountingLicks < (TarWindow(1) + MinimalDelayResponse) )
+if length(TarInd)>1
+  Outcome = 'SNOOZE';
+elseif ~isempty(CountingLicks) && all( CountingLicks < (TarWindow(1) + MinimalDelayResponse) )
   Outcome = 'EARLY';
   ResponseTime = CountingLicks(1);
 elseif ~isempty(CountingLicks) && any( CountingLicks>(TarWindow(1) + MinimalDelayResponse) & CountingLicks<TarWindow(2) ) % HIT OR ERROR
@@ -281,9 +336,9 @@ switch Outcome
     % MAKE SURE PUMPS ARE OFF (BECOMES A PROBLEM WHEN TWO PUMP EVENTS TOO CLOSE)
     pause(PumpDuration/2);
     % Turn LED ON
-    LightNames = IOMatchPosition2Light(HW,LEDposition);
-    [State,LightEvent] = IOLightSwitch(HW,1,0,[],[],[],LightNames{1});
-    Events = AddEvent([],LightEvent,TrialIndex);
+%     LightNames = IOMatchPosition2Light(HW,LEDposition);
+%     [State,LightEvent] = IOLightSwitch(HW,1,0,[],[],[],LightNames{1});
+%     Events = AddEvent([],LightEvent,TrialIndex);
     
     pause(PumpDuration/2);
     PumpEvent = IOControlPump(HW,'stop',0,PumpName);
@@ -291,9 +346,9 @@ switch Outcome
     IOControlPump(HW,'stop',0,'Pump');
     
     % Turn LED OFF
-    [State,LightEvent] = IOLightSwitch(HW,0,0,[],[],[],LightNames{1});
-    Events = AddEvent([],LightEvent,TrialIndex);
-  case 'SNOOZE';  % STOP SOUND
+%     [State,LightEvent] = IOLightSwitch(HW,0,0,[],[],[],LightNames{1});
+%     Events = AddEvent([],LightEvent,TrialIndex);
+  case 'SNOOZE'  % STOP SOUND
     StopEvent = IOStopSound(HW);
     Events = AddEvent(Events, StopEvent, TrialIndex);
     
@@ -352,6 +407,19 @@ exptparams.Performance(TrialIndex).DetectType = DetectType;
 if ~strcmp(Outcome,'SNOOZE')
   while CurrentTime < ResponseTime + get(O,'AfterResponseDuration');
     CurrentTime = toc+InitialTime; pause(0.05);
+  end
+end
+
+%% EXTRA DURATION WITH NO TRIG
+if exptparams.BehaveObject.ExtraDuration~=0
+  Events = AddEvent(Events, ev, TrialIndex);
+  while CurrentTime < (exptparams.LogDuration+exptparams.BehaveObject.ExtraDuration)
+    if (mod(CurrentTime,1) < 0.005) && ( (exptparams.LogDuration+exptparams.BehaveObject.ExtraDuration-3)>CurrentTime ) && (LightStateR == 0)
+      [LightStateR, ev] = IOLightSwitch(HW,1,0,[],0,0,'LightR');
+    elseif LightStateR == 1
+      [LightStateR, ev] = IOLightSwitch(HW,0,0,[],0,0,'LightR');
+    end
+    CurrentTime = IOGetTimeStamp(HW);
   end
 end
 

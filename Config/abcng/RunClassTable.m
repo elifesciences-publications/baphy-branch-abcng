@@ -250,6 +250,8 @@ else
       runclass = 'CCT';
 	case 'MULTIPLELOCATIONSO'
       runclass = 'MSO';
+    case 'MEMONOISE'
+      runclass = 'MMN';
     otherwise
       error('Enter a runclass into RunClassTable.m to avoid later confusion!');
   end

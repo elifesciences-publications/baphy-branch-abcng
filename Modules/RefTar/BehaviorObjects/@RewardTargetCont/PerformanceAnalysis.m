@@ -6,6 +6,8 @@ function exptparams = PerformanceAnalysis(O, HW, StimEvents, globalparams, exptp
 %
 %  DISCRIMINATION RATE := HITRATELEFT * HITRATERIGHT \in [0,1]
 
+if ~strcmp( get(get(exptparams.TrialObject,'TargetHandle'),'descriptor') , 'MemoNoise' )
+  
 AllPerf = exptparams.Performance;
 
 %% CURRENT PERFORMANCE
@@ -113,4 +115,6 @@ if TrialIndex == 1
   exptparams.DBfields.Performance = {'DiscriminationRate','HitRate','SnoozeRate','EarlyRate','ErrorRate','Trials'};
 else
   exptparams.Performance(TrialIndex) = cP;
+end
+
 end

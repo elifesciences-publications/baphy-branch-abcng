@@ -97,8 +97,7 @@ elseif isempty(DBISOPEN) || ~DBISOPEN || force==1,
             else
                 mysql('open',dbserver,dbuser,dbpassword);
             end
-        end
-        
+        end    
         mysql(['use ',dbname]);  % ie, cell
         DBISOPEN=1;
     catch
