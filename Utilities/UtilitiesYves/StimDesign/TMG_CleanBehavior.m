@@ -4,7 +4,7 @@ function [Behavior,Bits,LickData] = TMG_CleanBehavior(globalparams,exptparams,ex
     AuxSF = 1000;
     AnticipatedLoadingDuration = 0.300;
     SafeDelay = 0.8;
-    PickUpLick = 1;
+    PickUpLick = 0;
     LickTimeW{1} = [-.02 .12]; LickTimeW{2} = [.15 .6];
     DealWithLick = 'detectFA';
     [~,~,rAtot,ATrialIdxtot] = evpread(EVPname,'auxchans',1);
