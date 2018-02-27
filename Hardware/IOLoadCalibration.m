@@ -16,8 +16,7 @@ Path = [Path(1:find(Path==Sep,1,'last')),'Hardware',Sep,'Speakers',Sep];
 
 if length(P)==1
   SpeakerNb = 1;
-elseif length(P)==2
-  SpeakerNb = 2;
+else SpeakerNb = length(P);
 end
 
 for SpeakerNum = 1:SpeakerNb

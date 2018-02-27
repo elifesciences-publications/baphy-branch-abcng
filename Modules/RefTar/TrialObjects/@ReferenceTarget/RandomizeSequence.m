@@ -29,7 +29,7 @@ if IsLookup
     else
       switch par.MaxRef
         case 7 % Ratio Ref/Tar = 5  % Initial LookupTable in the UMD paradigm
-          LookupTable = [3 4 7 3 2 7 3 1 4 1 5 7 2 1 6 4 7 2 1 7 2 5 1 3 2 1 7 4 7 5 6];
+          LookupTable = [3 4 7 3 2 3 1 4 1 5 2 1 6 4 7 2 1 2 5 1 3 2 1 4 5 6];  % 18/02/26-YB: 22% [7/31] of catch before!
         case 6 % Ratio Ref/Tar = 4
           LookupTable = [3 1 4 6 2 6 2 1 3 1 3 6 4 2 5 1 1 5 2 6];
         case 5 % Ratio Ref/Tar = 3
@@ -65,6 +65,9 @@ if IsLookup
 end
 temp = [];
 ReferenceMaxIndex = par.ReferenceMaxIndex;
+if IsLookup
+    ReferenceMaxIndex = sum(LookupTable);
+end
 % here, we try to specify the real number of references per trial, and
 % determine how many trials are needed to cover all the references. If its
 % a detect case, its easy. Add from NumRef to trials until the sum of
@@ -95,7 +98,8 @@ end
 % Lets specify which trials are sham:
 TotalTrials = length(RefNumTemp);
 if isempty(RefNumTemp)
-    TargetIndex{1} = 1;
+    TargetIndex = 1:par.TargetMaxIndex;
+    TargetIndex = mat2cell(TargetIndex(randperm(par.TargetMaxIndex)),1,ones(1,par.TargetMaxIndex));
 elseif(get(o,'NumberOfTarPerTrial') ~= 0) && (~strcmpi(get(o,'TargetClass'),'None')) 
     if ~IsLookup
         NotShamNumber = floor((100-par.ShamPercentage) * TotalTrials / 100); % how many shams do we have??
@@ -116,9 +120,12 @@ end
 % them in the trial. But in discrim case, we put one index in the target
 % also, if its not a sham. 
 % Now generate random sequences for each trial
-RandIndex = randperm(par.ReferenceMaxIndex);
+
+% RandIndex = randperm(par.ReferenceMaxIndex);
+RandIndex = repmat(1:par.ReferenceMaxIndex,1,ceil(sum(LookupTable)/par.ReferenceMaxIndex));
+RandIndex = RandIndex(randperm(length(RandIndex)));
 for cnt1=1:length(RefNumTemp)
-    if ~ReferenceMaxIndex==1
+    if ~(ReferenceMaxIndex==1)
         RefTrialIndex {cnt1} = RandIndex (1:RefNumTemp(cnt1));
         RandIndex (1:RefNumTemp(cnt1)) = [];
     else

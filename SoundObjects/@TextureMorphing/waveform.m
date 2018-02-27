@@ -46,7 +46,9 @@ PlotDistributions = 0;
 D0type = Par.D0shape;
 
 % D0/D1/D2 -- DRAW DISTRIBUTIONS FOR EACH CHANGED DISTRIBUTION
-Dtype = getfield(Par,['D' num2str(ChangedD_Num) 'shape']);   
+Dtype = getfield(Par,['D' num2str(ChangedD_Num) 'shape']);
+MorphingLst = getfield(Par,['D' num2str(ChangedD_Num) 'param']);
+MorphingN = MorphingLst(MorphingNum);
 DifficultyLvl = getfield(Par,['DifficultyLvl_D' num2str(ChangedD_Num)]);
 DiffLvl = DifficultyLvl(DifficultyNum);       % given in %
 Quantal_Delta = getfield(Par,'QuantalDelta');       % given in %
@@ -76,8 +78,8 @@ end
 ToC = round(ToC/ChordDuration)*ChordDuration;
     
 D0param = [FO OctaveNb Par.IniSeed Global_TrialNb Quantal_Delta];
-Dparam = [D0param(1:end-3) Bins2Change{ChangedD_Num}(MorphingNum,:)];    % We don't need a Seed to modify the original distribution
-[D0,ChangeD,D0information] = BuildMorphing(D0type,Dtype,D0param,Dparam,DistriBinNb,XDistri,MorphingNum,DiffLvl,PlotDistributions,sF,FrequencySpace);
+Dparam = [D0param(1:end-3) Bins2Change{ChangedD_Num}(MorphingN,:)];    % We don't need a Seed to modify the original distribution
+[D0,ChangeD,D0information] = BuildMorphing(D0type,Dtype,D0param,Dparam,DistriBinNb,XDistri,MorphingN,DiffLvl,PlotDistributions,sF,FrequencySpace);
 
 % REVERSE S0 AND Sbis
 if Reverse            % Rem.: 'NoFrozen' is compulsory when 'Inverse_D0Dbis'==1

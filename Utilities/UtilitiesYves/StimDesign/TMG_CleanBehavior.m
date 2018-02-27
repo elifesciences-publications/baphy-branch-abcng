@@ -397,8 +397,9 @@ function [Behavior,Bits,LickData] = TMG_CleanBehavior(globalparams,exptparams,ex
 	if PickUpLick
         TrialLst = find(~isnan(detectedFAtime(1,:))&(detectedFAtime(1,:)~=0));
         LickCount.Early = LickDurationAroundEvent(EVPname,TrialLst,detectedFAtime(1,TrialLst),LickTimeW);
+    else
+        LickCount = [];
     end
-
     
     %% STRUCTURE
     LongLickTimes = LongLickTimes+SilenceBeforeDur;

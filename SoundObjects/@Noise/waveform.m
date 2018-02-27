@@ -61,7 +61,8 @@ w(1:length(ramp)) = w(1:length(ramp)) .* ramp;
 w(end-length(ramp)+1:end) = w(end-length(ramp)+1:end) .* flipud(ramp);
 
 % normalize min/max +/-5
-w = 5 ./ max(abs(w(:))) .* w;
+% w = 5 ./ max(abs(w(:))) .* w;
+w = 5 .* w ./ std(w(w~=0));
 
 % Now, put it in the silence:
 w = [zeros(PreStimSilence*SamplingRate,1) ; w(:) ;zeros(PostStimSilence*SamplingRate,1)];
