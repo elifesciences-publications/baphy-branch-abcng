@@ -20,11 +20,11 @@ IsLookUp = 1;
 %
 if IsLookup
     if strcmpi(par.TargetClass,'none'),
-        tr=get(get(exptparams.TrialObject,'ReferenceHandle'));
+        tr = get(get(exptparams.TrialObject,'ReferenceHandle'));
         if isfield(tr,'RefRepCount'),
-            NumRef=tr.RefRepCount;
+            NumRef = tr.RefRepCount;
         else
-            NumRef=1;
+            NumRef = 1;
         end
     else
       switch par.MaxRef
@@ -65,7 +65,7 @@ if IsLookup
 end
 temp = [];
 ReferenceMaxIndex = par.ReferenceMaxIndex;
-if IsLookup
+if IsLookup&&exist('LookupTable','var')
     ReferenceMaxIndex = sum(LookupTable);
 end
 % here, we try to specify the real number of references per trial, and
@@ -78,7 +78,7 @@ while sum(temp) < ReferenceMaxIndex      % while not all the references are cove
     if isempty(NumRef)  % if not and if NumRef is empty just finish it
         temp = [temp ReferenceMaxIndex-sum(temp)]; % temp holds the number of references in each trial
 %     elseif sum(temp)+NumRef(1)+(IsDiscrim & ~IsSham(1)) <= ReferenceMaxIndex % can we add NumRef(1)?
-    elseif all(LookupTable==0) % only references
+    elseif exist('LookupTable','var')&&all(LookupTable==0) % only targets
         temp = []; break;
     elseif sum(temp)+NumRef(1) <= ReferenceMaxIndex % can we add NumRef(1)?
         temp = [temp NumRef(1)]; % if so, add it and circle NumRef
@@ -121,8 +121,11 @@ end
 % also, if its not a sham. 
 % Now generate random sequences for each trial
 
-% RandIndex = randperm(par.ReferenceMaxIndex);
-RandIndex = repmat(1:par.ReferenceMaxIndex,1,ceil(sum(LookupTable)/par.ReferenceMaxIndex));
+if ~exist('LookupTable','var')
+  RandIndex = randperm(par.ReferenceMaxIndex);
+else
+  RandIndex = repmat(1:par.ReferenceMaxIndex,1,ceil(sum(LookupTable)/par.ReferenceMaxIndex));
+end
 RandIndex = RandIndex(randperm(length(RandIndex)));
 for cnt1=1:length(RefNumTemp)
     if ~(ReferenceMaxIndex==1)
