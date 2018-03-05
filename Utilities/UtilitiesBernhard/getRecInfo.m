@@ -92,7 +92,7 @@ end
 
 %% LOAD MANTA FILE
 if LOADMFILE
-  if strcmp(I.Recorder,'MANTA');
+  if strcmp(I.Recorder,'MANTA')
     % LOAD FIRST MANTA MAT FILE
     MANTAFileBase = [I.IdentifierFull,'.001.mat'];
     MANTAFile = [I.DataPath,MANTAFileBase];

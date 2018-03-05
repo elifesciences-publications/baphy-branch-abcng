@@ -29,7 +29,7 @@ if IsLookup
     else
       switch par.MaxRef
         case 7 % Ratio Ref/Tar = 5  % Initial LookupTable in the UMD paradigm
-          LookupTable = [3 4 7 3 2 7 3 1 4 1 5 7 2 1 6 4 7 2 1 7 2 5 1 3 2 1 7 4 7 5 6];
+          LookupTable = [3 4 7 3 2 3 1 4 1 5 2 1 6 4 7 2 1 2 5 1 3 2 1 4 5 6];  % 18/02/26-YB: 22% [7/31] of catch before!
         case 6 % Ratio Ref/Tar = 4
           LookupTable = [3 1 4 6 2 6 2 1 3 1 3 6 4 2 5 1 1 5 2 6];
         case 5 % Ratio Ref/Tar = 3
