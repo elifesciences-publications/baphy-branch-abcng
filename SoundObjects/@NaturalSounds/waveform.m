@@ -29,10 +29,25 @@ end
 [p, ~, ~] = fileparts(mfilename('fullpath'));
 switch O.StimulusType
     case 'PilotScrambling'
-        soundpath = 'M:\Lab\AudioFiles\pilot-stimuli-scrambling-MAT';
-        load([p filesep 'stim-orders-ferret.mat']);
+%         soundpath = 'M:\Lab\AudioFiles\pilot-stimuli-scrambling-MAT';
+%         load([p filesep 'stim-orders-ferret.mat']);
+        soundpath = 'M:\Lab\AudioFiles\Scrambling';
+        stim_order = {};
+        colC = 0;
+        for ii = get(O,'InitialOrder'):...
+                min([length(dir([p filesep 'ScramblingOrder' filesep '*.mat'])) , ...
+                get(O,'InitialOrder')+10])
+            temp = load([p filesep 'ScramblingOrder' filesep 'r' num2str(ii) '.mat']);
+            for SesN = 1:size(temp.stim_order,2)
+                colC = colC + 1;
+                for rC = 1:size(temp.stim_order,1)
+                    stim_order{rC,colC} = temp.stim_order{rC,SesN};
+                end
+            end
+        end
 end
-SessionNum = 1+floor((Global_TrialNb-1)/get(O,'MaxIndex'));
+SessionNum = 1+floor((Global_TrialNb-1)/(get(O,'MaxIndex')));
+Index = Global_TrialNb-((SessionNum-1)*get(O,'MaxIndex'));
 % ff = ;
 % fInd = find(ff=='-'); fInd = fInd(2);
 FN = stim_order{Index,SessionNum};
