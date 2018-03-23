@@ -34,6 +34,7 @@ exptparams.LogDuration = exptparams.LogDuration+LogDurationExtra;
 %   EarlyWindow = EarlyWindow + get(StimEvents(end-2).StartTime);
 % end
 AutomaticReward = get(o,'AutomaticReward');
+DelayAutomaticReward = 0.25;
 RH = get(exptparams.TrialObject,'ReferenceHandle'); TH = get(exptparams.TrialObject,'TargetHandle');
 LickEvents = [];
 SoundStopped = 0;
@@ -187,7 +188,7 @@ while CurrentTime < exptparams.LogDuration % BE removed +0.05 here (which screws
         MotorOn = 1;
     end
     
-    if ~Ref && ( Lick || (AutomaticReward&&(CurrentTime>(TarResponseWin(1)+AutomaticReward))) ) &&...
+    if ~Ref && ( Lick || (AutomaticReward&&(CurrentTime>(TarResponseWin(1)+DelayAutomaticReward))) ) &&...
             mod(StimPos,2) && ~isequal(TarFlag,StimPos)
         % if she licks in target response window
         TimeOutFlag = 0;
@@ -196,7 +197,7 @@ while CurrentTime < exptparams.LogDuration % BE removed +0.05 here (which screws
             PumpDuration = RewardAmount/globalparams.PumpMlPerSec.Pump;
         elseif AutomaticReward
             LickEV.Note = 'AUTOMATIC REWARD';
-            PumpDuration = (1/2)*RewardAmount/globalparams.PumpMlPerSec.Pump;
+            PumpDuration = RewardAmount/globalparams.PumpMlPerSec.Pump;
         end
         LickEvents = AddEvent(LickEvents, LickEV, TrialIndex);
         break;
@@ -259,7 +260,11 @@ end
 
 if TimeOutFlag>0
     ThisTime = clock;
-    TimeOut = ifstr2num(get(o,'TimeOut'));
+    if Ref        
+        TimeOut = ifstr2num(get(o,'TimeOut'));
+    else
+        TimeOut = ifstr2num(get(o,'TimeOutEarly'));
+    end
 %     TimeOut = TimeOut * (1+2*FalseAlarm);  % 16/10-YB
     while etime(clock,ThisTime) < (TimeOut+exptparams.LogDuration+ExtraDuration-CurrentTime)
         drawnow;
