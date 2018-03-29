@@ -179,7 +179,7 @@ while CurrentTime < exptparams.LogDuration % BE removed +0.05 here (which screws
     end
     if (Lick) && (~Ref && mod(EarlyPos,2)) && get(o,'StopOnEarly')
         % if she licks in early window, terminate the trial immediately, and give her timeout.
-        ResponseTime = CurrentTime;
+		ResponseTime = CurrentTime;
         LickEvents = AddEvent(LickEvents,'LICK,EARLY',TrialIndex,ResponseTime,[]);
         ev = IOStopSound(HW); SoundStopped = 1;
         LickEvents = AddEvent(LickEvents, ev, TrialIndex);

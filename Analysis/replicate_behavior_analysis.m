@@ -8,6 +8,7 @@ end
 %parmfile='/auto/data/daq/Portabello/training2012/Portabello_2012_11_20_TSP_5.m';
 [pathname,basename]=fileparts(parmfile);
 
+global globalparams
 LoadMFile(parmfile);
 % if its a RefTar module, create the objects:
 if strcmpi(globalparams.Module,'Reference Target')
