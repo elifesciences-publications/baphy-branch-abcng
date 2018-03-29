@@ -42,7 +42,7 @@ if IsLookup
           LookupTable = [1 2 2 1 2 1 1 1 1 0 0];
         case 1 % Ratio Ref/Tar = 1
           if par.ReferenceMaxIndex==par.TargetMaxIndex
-            LookupTable = [ones(1,par.ReferenceMaxIndex) zeros(1,par.TargetMaxIndex)];
+            LookupTable = [ones(1,par.ReferenceMaxIndex*6) zeros(1,par.TargetMaxIndex*6)];
           else
             LookupTable = [0 1 1 0 0 1 0 1 0 0 1 1];
           end
@@ -145,13 +145,13 @@ if par.ReferenceMaxIndex==par.TargetMaxIndex && par.MaxRef==1
     c = 0;
     for tn = find(temp==0)
         c = c+1;
-        TargetIndex{tn} = ShuffledTarIndex(c);
+        TargetIndex{tn} = ShuffledTarIndex(mod(c,length(ShuffledTarIndex))+1);
     end
     RefTrialIndex = cell(1,2*par.ReferenceMaxIndex);
     c = 0;
     for tn = find(temp==1)
         c = c+1;
-        RefTrialIndex{tn} = ShuffledRefIndex(c);
+        RefTrialIndex{tn} = ShuffledRefIndex(mod(c,length(ShuffledRefIndex))+1);
     end 
 elseif par.MaxRef==0
     TotalTrials = 1; RefTrialIndex{1} = [];
