@@ -161,10 +161,8 @@ while CurrentTime < exptparams.LogDuration % BE removed +0.05 here (which screws
 %         break;
     end
     if (Lick) && Ref && mod(StimPos,2) && ~isequal(RefFlag,StimPos) %% for including licks in the ref early window:% & (Ref && mod(EarlyPos,2))
-        % RefFlag: we want to add to the FalseAlarm only once for each
-        % reference.
-        % if she licks in reference response window, add to the false alarm
-        % rate
+        % RefFlag: we want to add to the FalseAlarm only once for each reference.
+        % if she licks in reference response window, add to the false alarm rate
         if strcmpi(get(o,'TurnOnLight'),'FalseAlarm')
             [ll,ev] = IOLightSwitch (HW, 1, .2);
             LickEvents = AddEvent(LickEvents, ev, TrialIndex);
@@ -179,9 +177,8 @@ while CurrentTime < exptparams.LogDuration % BE removed +0.05 here (which screws
         ResponseTime = CurrentTime;
         LickEvents = AddEvent(LickEvents,'LICK,FA',TrialIndex,ResponseTime,[]);
     end
-    if (Lick) && (~Ref && mod(EarlyPos,2))
-        % if she licks in early window, terminate the trial immediately, and
-        % give her timeout.
+    if (Lick) && (~Ref && mod(EarlyPos,2)) && get(o,'StopOnEarly')
+        % if she licks in early window, terminate the trial immediately, and give her timeout.
         ResponseTime = CurrentTime;
         LickEvents = AddEvent(LickEvents,'LICK,EARLY',TrialIndex,ResponseTime,[]);
         ev = IOStopSound(HW); SoundStopped = 1;
