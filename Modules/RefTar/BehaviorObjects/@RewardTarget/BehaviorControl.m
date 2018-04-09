@@ -74,6 +74,9 @@ for cnt1 = 1:length(StimEvents)
       if ~strcmpi(class(RH),'TorcToneDiscrim') || ( strcmpi(class(RH),'TorcToneDiscrim') && isempty(strfind(upper(StimName),'TORC')) )
         RefResponseWin = [RefResponseWin StimEvents(cnt1).StartTime + EarlyWindow ...
           StimEvents(cnt1).StartTime + EarlyWindow + get(o,'ResponseWindow')];
+%         if length(RefResponseWin)>2 && RefResponseWin(end-2)>RefResponseWin(end-1)
+%             RefResponseWin(end-2) = RefResponseWin(end-1);
+%         end
         NumRef = NumRef + 1;
         RefLightWin = [RefLightWin StimEvents(cnt1).StartTime StimEvents(cnt1).StartTime+tardur];
         RefEarlyWin = [RefEarlyWin StimEvents(cnt1).StartTime ...
@@ -86,6 +89,8 @@ for cnt1 = 1:length(StimEvents)
         TarEarlyWin = [TarEarlyWin StimEvents(cnt1).StartTime ...
           StimEvents(cnt1).StartTime + EarlyWindow];
         TarLightWin = [TarLightWin StimEvents(cnt1).StartTime StimEvents(cnt1).StartTime+tardur];
+%         if length(RefResponseWin)>1 && RefResponseWin(end-2)>RefResponseWin(end-1)
+%         end
       end
       if ~isempty(findstr(StimName,'SNR'))
           SNR = str2num(StimName( (findstr(StimName,'SNR')+3): (findstr(StimName,'Channel')-1) ));
