@@ -27,6 +27,7 @@ RefEarlyWin = [];
 TarResponseWin = [];
 TarEarlyWin    = [];
 NumRef = 0;
+StopOnEarly = get(o,'StopOnEarly');
 % first, we find all the relevant time windows, which are ResponseWindow
 % after reference and target, and EarlyWindow after target. Each sequence
 % starts with $ sign.
@@ -68,15 +69,13 @@ exptparams.RefResponseWin  = RefResponseWin;
 % and TarResponseWin has specifies the begining and end of the target
 % Response window, ex.: [6.2 6.4]
 exptparams.TarResponseWin = TarResponseWin;
-% and early window specifies the begining and end of the target early
-% window:
+% and early window specifies the begining and end of the target early window:
 exptparams.TarEarlyWin = TarEarlyWin;
 % change the lick to positive edge only:
 LickData = max(0,diff(LickData));
 % what we need to procude here are:
 %  1) histogram of first lick for each reference and target
-%  2) false alarm for each reference, and hit for target at different
-%       positions
+%  2) false alarm for each reference, and hit for target at different positions
 %
 % first, extract the relevant lick data:
 RefFalseAlarm = 0; RefFirstLick = NaN; PlayedNumRef = 0; TrialCut = 0;
@@ -95,14 +94,14 @@ for cnt2 = 1:NumRef
     end
 end
 NumRef = PlayedNumRef;
-if isempty(TarResponseWin)   %for no target (sham trial)  by py&9/6/2012
+if isempty(TarResponseWin) %for no target (sham trial)  by py&9/6/2012
     TarResponseLick=[];
 else
     TarResponseLick = LickData(max(1,round(fs*TarResponseWin(1))):min(length(LickData),round(fs*TarResponseWin(2))));
 end
 % in an ineffective trial, discard the lick during target because target was never played:
 FalseAlarm = sum(RefFalseAlarm)/NumRef;
-if isempty(TarResponseWin)   %for no target (sham trial)  by py&9/6/2012
+if isempty(TarResponseWin) || StopOnEarly==0    %for no target (sham trial)  by py&9/6/2012
     TarEarlyLick=[];
 else
 %     TarEarlyLick = LickData(fs*max(1,TarEarlyWin(1)):min(length(LickData),fs*TarEarlyWin(2)));
