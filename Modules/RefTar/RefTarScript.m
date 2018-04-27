@@ -182,6 +182,7 @@ while ContinueExp == 1
         if strcmpi(AINames{i}(1:min(end,5)),'Diode') RespIndices(end+1) = i; ScalingF(end+1) = 3260; end
         if strcmpi(AINames{i}(1:min(end,5)),'Pupil') RespIndices(end+1) = i; ScalingF(end+1) = 3260; end
         if strcmpi(AINames{i}(1:min(end,4)),'walk') RespIndices(end+1) = i; ScalingF(end+1) = 1; end
+%         if strcmpi(AINames{i}(1:min(end,3)),'ABR') RespIndices(end+1) = i; ScalingF(end+1) = 1; end
       end
       Data.Responses = Data.Aux(:,RespIndices).*repmat(ScalingF,size(Data.Aux,1),1);   % 16/02-YB: add scaling factor to eye data to make them integrer and compatible with 'short' saving in evpwrite
       exptparams.RespSensors = AINames(RespIndices);

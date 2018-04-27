@@ -74,6 +74,9 @@ for cnt1 = 1:length(StimEvents)
       if ~strcmpi(class(RH),'TorcToneDiscrim') || ( strcmpi(class(RH),'TorcToneDiscrim') && isempty(strfind(upper(StimName),'TORC')) )
         RefResponseWin = [RefResponseWin StimEvents(cnt1).StartTime + EarlyWindow ...
           StimEvents(cnt1).StartTime + EarlyWindow + get(o,'ResponseWindow')];
+%         if length(RefResponseWin)>2 && RefResponseWin(end-2)>RefResponseWin(end-1)
+%             RefResponseWin(end-2) = RefResponseWin(end-1);
+%         end
         NumRef = NumRef + 1;
         RefLightWin = [RefLightWin StimEvents(cnt1).StartTime StimEvents(cnt1).StartTime+tardur];
         RefEarlyWin = [RefEarlyWin StimEvents(cnt1).StartTime ...
@@ -86,6 +89,8 @@ for cnt1 = 1:length(StimEvents)
         TarEarlyWin = [TarEarlyWin StimEvents(cnt1).StartTime ...
           StimEvents(cnt1).StartTime + EarlyWindow];
         TarLightWin = [TarLightWin StimEvents(cnt1).StartTime StimEvents(cnt1).StartTime+tardur];
+%         if length(RefResponseWin)>1 && RefResponseWin(end-2)>RefResponseWin(end-1)
+%         end
       end
       if ~isempty(findstr(StimName,'SNR'))
           SNR = str2num(StimName( (findstr(StimName,'SNR')+3): (findstr(StimName,'Channel')-1) ));
@@ -161,10 +166,8 @@ while CurrentTime < exptparams.LogDuration % BE removed +0.05 here (which screws
 %         break;
     end
     if (Lick) && Ref && mod(StimPos,2) && ~isequal(RefFlag,StimPos) %% for including licks in the ref early window:% & (Ref && mod(EarlyPos,2))
-        % RefFlag: we want to add to the FalseAlarm only once for each
-        % reference.
-        % if she licks in reference response window, add to the false alarm
-        % rate
+        % RefFlag: we want to add to the FalseAlarm only once for each reference.
+        % if she licks in reference response window, add to the false alarm rate
         if strcmpi(get(o,'TurnOnLight'),'FalseAlarm')
             [ll,ev] = IOLightSwitch (HW, 1, .2);
             LickEvents = AddEvent(LickEvents, ev, TrialIndex);
@@ -179,10 +182,9 @@ while CurrentTime < exptparams.LogDuration % BE removed +0.05 here (which screws
         ResponseTime = CurrentTime;
         LickEvents = AddEvent(LickEvents,'LICK,FA',TrialIndex,ResponseTime,[]);
     end
-    if (Lick) && (~Ref && mod(EarlyPos,2))
-        % if she licks in early window, terminate the trial immediately, and
-        % give her timeout.
-        ResponseTime = CurrentTime;
+    if (Lick) && (~Ref && mod(EarlyPos,2)) && get(o,'StopOnEarly')
+        % if she licks in early window, terminate the trial immediately, and give her timeout.
+		ResponseTime = CurrentTime;
         LickEvents = AddEvent(LickEvents,'LICK,EARLY',TrialIndex,ResponseTime,[]);
         ev = IOStopSound(HW); SoundStopped = 1;
         LickEvents = AddEvent(LickEvents, ev, TrialIndex);

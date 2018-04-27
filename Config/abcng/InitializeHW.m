@@ -83,7 +83,7 @@ switch globalparams.HWSetup
     HW=niCreateDI(HW,DAQID,'port1/line6','Fixation');
     
     %% ANALOG INPUT
-    HW=niCreateAI(HW,DAQID,'ai0:6','Touch,Microphone,PupilD,EyeX,Diode,PsyTriggers,EyeY',['/',DAQID,'/PFI0']); 
+    HW=niCreateAI(HW,DAQID,'ai0:6','Touch,Microphone,PupilD,EyeX,Diode,ABR,EyeY',['/',DAQID,'/PFI0']); 
     % 16/08-YB: was before HW=niCreateAI(HW,DAQID,'ai0:7','Touch,Microphone,EyeX,EyeY,Diode,PsyTriggers,PupilD',['/',DAQID,'/PFI0'])
     %HW2 =niCreateAIOnline(HW2,'Dev1','ai0:1','OnlineEyeX,OnlineEyeY',['/','Dev1','/PFI0']);  % monitor eye position online; triggered by 'TrigOnlineAI'
     
