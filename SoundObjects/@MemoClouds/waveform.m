@@ -15,7 +15,7 @@ prestim   = zeros(round(PreStimSilence*fs),1);
 poststim  = zeros(round(PostStimSilence*fs),1);
 w         = [];
 ev        = [];
-%% INITIALIZE Trevor's click train OBJECT
+%% INITIALIZE Trevor's memoclick OBJECT
 sP.fs = fs; %sample-frequency
 sP.tpersecond = get(o,'tonespersecond'); % number of tones per second: set for Yves to give left-most point of Expt 2
 sP.cperoctave = get(o,'chperoctave'); % number of channels per octave: set for Yves to give left-most point of Expt 2

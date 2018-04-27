@@ -10,7 +10,6 @@ PreStimSilence  = get(o,'PreStimSilence');
 PostStimSilence = get(o,'PostStimSilence');
 
 %% PARAMETERS OF MemoClicks OBJECT
-
 RateRC    = get(o,'RateRCPercent');
 RateRefRC = get(o,'RateRefRCPercent');
 MemoClickRepetition = get(o,'MemoClickRepetition');
@@ -22,7 +21,6 @@ ev        = [];
 MemoClickNb    = get(o,'MemoClickNb');
 
 %% INITIALIZE Daniel's click train OBJECT
-
 sP.fs         = fs;
 sP.replength  = get(o,'ClickTrainDur'); % duration of a single repeat
 sP.nreps      = get(o,'nreps'); % number of repeats
@@ -36,7 +34,6 @@ sP.mingap     = get(o,'mingap');
 sP.clicktimes = get(o,'ClickTimes');
 
 %% Create an instance of TORC object:
-
 PutTORC = strcmpi(get(o,'IntroduceTORC'),'yes');
 
 if PutTORC
@@ -50,7 +47,6 @@ if PutTORC
 end
 
 %% RANDOM NUMBER GENERATOR
-
 Key      = get(o,'Key');
 TrialKey = RandStream('mrg32k3a','Seed',Key(1));
 PastRef  = get(o,'PastRef');
@@ -58,7 +54,6 @@ PastRef  = get(o,'PastRef');
 
 %% Pointer to the position in RandSequence
 % PastRef STORES THE PREVIOUS INDEX
-
 if isempty(PastRef)  % First trial
     RefNow = 0;
     o      = set(o,'PastRef',[PastRef index]);
@@ -104,7 +99,6 @@ ev     = AddEvent(ev,'PreStimSilence',[],0,PreStimSilence);
 w      = [w ; prestim(:)];
 
 %% GENERATE CLICK TRAINS
-
 for j = (RefNow+1) : (RefNow+index)
     
     sP.stimtype  = RandSequence(RandPick(j));      % stimulus type: 0 is C, 1 is RC, 2 is RefRC
@@ -136,7 +130,6 @@ for j = (RefNow+1) : (RefNow+index)
 end
 
 %% END WITH TORC
-
 TorcSequence = [];
 if PutTORC
     [wTarg, eTorc] = waveform(TorcObj, 1);    % so far, only 1 TORC pattern
@@ -151,7 +144,7 @@ else
     w = w*50/max(w);
 end
     
-%%
+%% POST-STIM SILENCE
 w = [w ; poststim(:)];
 ev = AddEvent(ev, 'PostSilence', [], ev(end).StopTime, ev(end).StopTime + PostStimSilence);
 
