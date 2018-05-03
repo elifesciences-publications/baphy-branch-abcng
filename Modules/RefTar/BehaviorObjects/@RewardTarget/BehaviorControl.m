@@ -93,7 +93,8 @@ for cnt1 = 1:length(StimEvents)
 %         end
       end
       if ~isempty(findstr(StimName,'SNR'))
-          SNR = str2num(StimName( (findstr(StimName,'SNR')+3): (findstr(StimName,'Channel')-1) ));
+          SNR = str2num(StimName( (findstr(StimName,'SNR')+3): end));
+%           SNR = str2num(StimName( (findstr(StimName,'SNR')+3): (findstr(StimName,'Channel')-1) ));
       end
     end
     

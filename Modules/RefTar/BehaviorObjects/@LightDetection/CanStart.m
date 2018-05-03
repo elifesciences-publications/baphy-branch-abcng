@@ -7,13 +7,13 @@ if strcmpi(get(o,'TurnOffLight'),'Ineffective')
     ev = IOLightSwitch(HW,1);
 end
 
-if TrialIndex==1
+if 0%TrialIndex==1
     PumpDuration = 2*get(o,'PumpDuration');
     tic;  %added by pby
     ev = IOControlPump (HW,'start',PumpDuration);
     pause(PumpDuration);
     if strcmpi(get(o,'TurnOnLight'),'BehaveOrPassive')
-        [ll,ev] = IOLightSwitch (HW, 1);
+        [ll,ev] = IOLightSwitch (HW,1);
     end
     pause(1);
 end

@@ -156,6 +156,12 @@ if par.ReferenceMaxIndex==par.TargetMaxIndex && par.MaxRef==1
 elseif par.MaxRef==0
     TotalTrials = 1; RefTrialIndex{1} = [];
 end
+for cnt1=(length(RefTrialIndex)+1):length(TargetIndex)
+    RefTrialIndex {cnt1} = [];
+end
+for cnt1=(length(TargetIndex)+1):length(RefTrialIndex)
+    TargetIndex {cnt1} = [];
+end
 
 o = set(o,'ReferenceIndices',RefTrialIndex);
 o = set(o,'TargetIndices',TargetIndex);

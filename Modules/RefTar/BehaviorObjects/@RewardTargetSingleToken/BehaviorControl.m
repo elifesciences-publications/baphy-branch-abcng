@@ -192,12 +192,11 @@ while CurrentTime < exptparams.LogDuration % BE removed +0.05 here (which screws
             mod(StimPos,2) && ~isequal(TarFlag,StimPos)
         % if she licks in target response window
         TimeOutFlag = 0;
+        PumpDuration = RewardAmount/globalparams.PumpMlPerSec.Pump;
         if Lick
             LickEV.Note = 'LICK,HIT';
-            PumpDuration = RewardAmount/globalparams.PumpMlPerSec.Pump;
         elseif AutomaticReward
             LickEV.Note = 'AUTOMATIC REWARD';
-            PumpDuration = RewardAmount/globalparams.PumpMlPerSec.Pump;
         end
         LickEvents = AddEvent(LickEvents, LickEV, TrialIndex);
         break;
@@ -217,8 +216,9 @@ while CurrentTime < exptparams.LogDuration % BE removed +0.05 here (which screws
 end
 
 % STOP SOUND
-if ~SoundStopped
+if StopFlag&&~SoundStopped
   evStopSound = IOStopSound(HW);
+  SoundStopped = 1;
 end
 % DELIVER WATER
 if PumpDuration > 0
@@ -230,6 +230,12 @@ if PumpDuration > 0
     else
         fprintf(['\t Lick on Target detected @ ',num2str(CurrentTime),'s ... ']);
     end
+end
+if ~StopFlag
+    pause(max([0,TarResponseWin(2)-IOGetTimeStamp(HW)]))
+end
+if ~SoundStopped
+    evStopSound = IOStopSound(HW);
 end
 % LEAVE THE SPOUT IN FRONT OF THE SNOUT
 % IF WATER IS DELIVERED AND MOTOR ON

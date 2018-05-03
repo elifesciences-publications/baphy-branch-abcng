@@ -25,7 +25,7 @@ StopTargetFA = get(o,'StopTargetFA');
 % RefEarlyWin = [];
 % TarResponseWin = [];
 % TarEarlyWin    = [];
-NumRef = 1;
+NumRef = 0;
 % first, we find all the relevant time windows, which are ResponseWindow
 % after reference and target, and EarlyWindow after target. Each sequence
 % starts with $ sign.
@@ -65,24 +65,24 @@ LickData = max(0,diff(LickData));
 %       positions
 %
 % first, extract the relavant lick data:
-RefFalseAlarm = 0;RefFirstLick = NaN;
+RefFalseAlarm = 0; RefFirstLick = NaN;
 RefResponseWin = exptparams.RefResponseWin;% if lick during light off period;
 TarEarlyWin = exptparams.TarEarlyWin;
 TarResponseWin = exptparams.TarResponseWin;
 for cnt2 = 1:NumRef
     cnt1 = (cnt2-1)*2+1;
-    RefResponseLicks{cnt2} = LickData(max(1,fs*RefResponseWin(cnt1)):min(length(LickData),fs*RefResponseWin(cnt1+1)));
+    RefResponseLicks{cnt2} = LickData(max([1,round(fs*RefResponseWin(cnt1))]):min(length(LickData),fs*RefResponseWin(cnt1+1)));
 %     RefEarlyLicks{cnt2} = LickData(max(1,fs*RefEarlyWin(cnt1)):min(length(LickData),fs*RefEarlyWin(cnt1+1)));
     temp = find(RefResponseLicks{cnt2},1)/fs;
     if ~isempty(temp), RefFirstLick(cnt2) = temp; else RefFirstLick(cnt2) = nan;end
     RefFalseAlarm(cnt2) = double(~isempty(find(RefResponseLicks{cnt2},1)));
 end
-TarResponseLick = LickData(max(1,fs*TarResponseWin(1)):min(length(LickData),fs*TarResponseWin(2)));
+TarResponseLick = LickData(max([1,round(fs*TarResponseWin(1))]):min(length(LickData),fs*TarResponseWin(2)));
 % in an ineffective trial, discard the lick during target because target
 % was never played:
 % FalseAlarm = sum(RefFalseAlarm)*diff(TarResponseWin)/diff(RefResponseWin);
 FalseAlarm = sum(RefFalseAlarm);
-TarEarlyLick = LickData(fs*max(1,TarEarlyWin(1)):min(length(LickData),fs*TarEarlyWin(2)));
+TarEarlyLick = LickData(max([1,round(fs*TarEarlyWin(1))]):min(length(LickData),fs*TarEarlyWin(2)));
 if (FalseAlarm>=StopTargetFA)  % in ineffective
     TarResponseLick = zeros(size(TarResponseLick));
     TarEarlyLick    = zeros(size(TarEarlyLick));
@@ -91,9 +91,9 @@ if ~isempty(find(TarEarlyLick,1)) % in early
     TarResponseLick = zeros(size(TarResponseLick));
 end    
 TarFirstLick = find([TarEarlyLick ;TarResponseLick],1)/fs;
-if isempty(TarFirstLick), TarFirstLick = nan;end
+if isempty(TarFirstLick), TarFirstLick = nan; end
 % a special performance is calculated here for the graph that shows the hit
-% and false alram based on the position of the target/reference:
+% and false alarm based on the position of the target/reference:
 % record the first lick time for ref and tar
 if isfield(exptparams,'FirstLick') 
     exptparams.FirstLick.Tar(end+1) = TarFirstLick;
@@ -113,7 +113,7 @@ else
 end
 perf(cnt2).ThisTrial    = '??';
 if NumRef
-    perf(cnt2).FalseAlarm   = FalseAlarm; % sum of false alarams divided by num of ref
+    perf(cnt2).FalseAlarm   = FalseAlarm; % sum of false alarms divided by num of ref
 else
     perf(cnt2).FalseAlarm = NaN;
 end
@@ -133,28 +133,25 @@ perf(cnt2).MissRate         = sum(cat(1,perf.Miss)) / TotalWarn;
 perf(cnt2).EarlyRate        = sum(cat(1,perf.EarlyTrial))/TotalWarn;
 perf(cnt2).WarningRate      = sum(cat(1,perf.WarningTrial))/TrialIndex;
 perf(cnt2).IneffectiveRate  = sum(cat(1,perf.Ineffective))/TrialIndex;
-% this is for trials without Reference. We dont count them in FalseAlarm
-% calculation:
+% this is for trials without Reference. We dont count them in FalseAlarm calculation:
 tt = cat(1,perf.FalseAlarm);
 tt(find(isnan(tt)))=[];
 perf(cnt2).FalseAlarmRate   = sum(tt)/length(tt);
 perf(cnt2).DiscriminationRate = perf(cnt2).HitRate * (1-perf(cnt2).FalseAlarmRate);
-%also, calculate the stuff for this trial block:
-RecentIndex = max(1 , TrialIndex-exptparams.TrialBlock+1):TrialIndex;
+% also, calculate the stuff for this trial block:
+RecentIndex = max(1 , TrialIndex-25+1):TrialIndex;
 tt = cat(1,perf(RecentIndex).FalseAlarm);
 tt(find(isnan(tt)))=[];
 perf(cnt2).RecentFalseAlarmRate   = sum(tt)/length(tt);
 perf(cnt2).RecentHitRate         = sum(cat(1,perf(RecentIndex).Hit))/sum(cat(1,perf(RecentIndex).WarningTrial));
 perf(cnt2).RecentDiscriminationRate = perf(cnt2).RecentHitRate * (1-perf(cnt2).RecentFalseAlarmRate);
 %
-
 % now determine what this trial is:
 if perf(cnt2).Hit, perf(cnt2).ThisTrial = 'Hit';end
 if perf(cnt2).Miss, perf(cnt2).ThisTrial = 'Miss';end
 if perf(cnt2).EarlyTrial, perf(cnt2).ThisTrial = 'Early';end
 if perf(cnt2).Ineffective, perf(cnt2).ThisTrial = 'Ineffective';end
-% change all rates to percentage. If its not rate, put the sum and
-% 'out of' at the end
+% change all rates to percentage. If its not rate, put the sum and 'out of' at the end
 PerfFields = fieldnames(perf);
 for cnt1 = 1:length(PerfFields)
     if isinf(perf(cnt2).(PerfFields{cnt1})) , perf(cnt2).(PerfFields{cnt1}) = 0;end
@@ -176,7 +173,7 @@ perfPer.WarningTrial(2) = TrialIndex;
 perfPer.ReferenceLickTrial = TrialIndex;
 perfPer.FalseAlarm(2) = TrialIndex;
 %
-% now position hit and false alram:
+% now position hit and false alarm:
 if ~isfield(exptparams,'PositionHit')  || (size(exptparams.PositionHit,1)<NumRef+1) 
     exptparams.PositionHit(NumRef+1,1:2) = 0;
 end
@@ -196,11 +193,10 @@ end
 exptparams.Performance(cnt2) = perf(cnt2);
 exptparams.Performance(cnt2+1) = perfPer;
 %%%%%
-% if the animal did not lick at all in the last two experiment, stop the
-% trial:
+% if the animal did not lick at all in the last two experiment, stop the trial:
 if isfield(exptparams,'Performance') && (length(exptparams.Performance)>2)
-    DidSheLick = cat(1,exptparams.Performance(end-2:end-1).LickRate);
-    if sum(DidSheLick) == 0, StopExperiment = 1;end
+%     DidSheLick = cat(1,exptparams.Performance(end-2:end-1).LickRate);
+%     if sum(DidSheLick) == 0, StopExperiment = 1;end
 end
 if isfield(exptparams,'Water')
     exptparams.Performance(end).Water = exptparams.Water .* globalparams.PumpMlPerSec.Pump;

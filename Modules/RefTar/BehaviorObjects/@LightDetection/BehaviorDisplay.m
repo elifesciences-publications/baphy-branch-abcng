@@ -1,5 +1,5 @@
-function exptparams = BehaviorDisplay (o, HW, StimEvents, globalparams, exptparams, TrialIndex, ...
-    AIData, TrialSound)
+function exptparams = BehaviorDisplay (o, HW, StimEvents, globalparams, exptparams,...
+    TrialIndex,AIData, TrialSound)
 % BehaviorDisplay method of RewardTarget behavior
 % Main duties of this method is to display a figure with:
 %  Title that has the info about ferret, ref, tar, date, time
@@ -30,6 +30,7 @@ subplot(4,4,1:4);
 % create the title:
 HWSetup = BaphyMainGuiItems('HWSetup');
 titleMes = ['Ferret: ' globalparams.Ferret '     Reference: ' ...
+    'Water: ',num2str(exptparams.Water),' | ',...
     get(exptparams.TrialObject,'ReferenceClass') '     Target: ' ...
     get(exptparams.TrialObject,'TargetClass') '     Rig: ' , HWSetup{1+globalparams.HWSetup} '       ' ...
     num2str(exptparams.StartTime(1:3),'Date: %1.0f-%1.0f-%1.0f') '     ' ...
@@ -89,27 +90,33 @@ if isempty(AIData) && isempty(TrialSound)
     drawnow;
     return;
 end
-% display Hitrate, FalseAlarmRate.
-subplot(4,4,1:4),plot(100*cat(1,exptparams.Performance(1:end-1).HitRate),'o-','LineWidth',2,...
+% display HitRate, FalseAlarmRate.
+subplot(4,4,1:4); hold on;
+plot(100*cat(1,exptparams.Performance(1:end-1).HitRate),'o-','LineWidth',2,...
     'MarkerFaceColor',[1 .5 .5],'MarkerSize',5,'color',[1 .5 .5]);
-hold on;
 plot(100*cat(1,exptparams.Performance(1:end-1).FalseAlarmRate),'<-','LineWidth',2,...
     'MarkerFaceColor',[.1 .5 .1],'MarkerSize',5,'color',[.1 .5 .1]);
+plot(100*cat(1,exptparams.Performance(1:end-1).RecentHitRate),'o-','LineWidth',2,...
+    'MarkerFaceColor',[1 .8 .8],'MarkerSize',5,'color',[1 .8 .8]);
+plot(100*cat(1,exptparams.Performance(1:end-1).RecentFalseAlarmRate),'<-','LineWidth',2,...
+    'MarkerFaceColor',[.1 .8 .1],'MarkerSize',5,'color',[.1 .8 .1]);
+plot(100*cat(1,exptparams.Performance(1:end-1).EarlyRate),'<-','LineWidth',2,...
+    'MarkerFaceColor',[.2 .2 .2],'MarkerSize',5,'color',[.2 .2 .2]);
 % also, show which trials were Ineffective:
 AllIneffective = cat(1,exptparams.Performance(1:TrialIndex).Ineffective);
 AllIneffective(find(AllIneffective==0))=nan;
 plot(110*AllIneffective,'r*','markersize',10);
 axis ([0 (TrialIndex+1) 0 115]);
 title(titleMes,'FontWeight','bold','interpreter','none');
-h=legend({'HR','FAR','Inef'},'Location','SouthWest');
+h=legend({'HR','FAR','RecentHR','RecentFAR','EarlyR','Inef'},'Location','SouthWest');
 LegPos = get(h,'position');
 set(h,'fontsize',8);
 LegPos(1) = 0.005; % put the legend on the far left of the screen
 set(h,'position', LegPos);
 xlabel('Trial Number','FontWeight','bold');
 % display the lick signal and the boundaries:
-h = subplot(4,4,5:8);plot(AIData);
-axis ([0 length(AIData) 0 1.5]);
+h = subplot(4,4,5:8); plot(AIData);
+if ~isempty(AIData); axis ([0 length(AIData) 0 1.5]); end
 set(h,'XTickLabel',get(h,'Xtick')/fs); % convert to seconds
 xlabel('Time (seconds)','FontWeight','bold');
 % First, draw the boundries of Reference and Target
@@ -129,18 +136,20 @@ for cnt1 = 1:length(StimEvents)
                 'color',c,'FontWeight','bold','HorizontalAlignment','center');
         else
             c=[1 .5 .5];
-            line([fs*StimEvents(cnt1).StopTime fs*StimEvents(cnt1).StopTime],[0 .5],'color',c,...
-                'LineStyle','--','LineWidth',2);
-            line([fs*(StimEvents(cnt1).StopTime+LFdur) fs*(StimEvents(cnt1).StopTime+LFdur)],[0 .5],'color',c,...
-                'LineStyle','--','LineWidth',2);
-            line([fs*StimEvents(cnt1).StopTime fs*(StimEvents(cnt1).StopTime+LFdur)], [.5 .5],'color',c,...
-                'LineStyle','--','LineWidth',2);
-            text(fs*(StimEvents(cnt1).StopTime+StimEvents(cnt1).StopTime+LFdur)/2, .6, 'L',...
-                'color',c,'FontWeight','bold','HorizontalAlignment','center');
+            if ~strcmp(get(o,'FlickerLight'),'RespWin')
+                line([fs*StimEvents(cnt1).StopTime fs*StimEvents(cnt1).StopTime],[0 .5],'color',c,...
+                    'LineStyle','--','LineWidth',2);
+                line([fs*(StimEvents(cnt1).StopTime+LFdur) fs*(StimEvents(cnt1).StopTime+LFdur)],[0 .5],'color',c,...
+                    'LineStyle','--','LineWidth',2);
+                line([fs*StimEvents(cnt1).StopTime fs*(StimEvents(cnt1).StopTime+LFdur)], [.5 .5],'color',c,...
+                    'LineStyle','--','LineWidth',2);
+                text(fs*(StimEvents(cnt1).StopTime+StimEvents(cnt1).StopTime+LFdur)/2, .6, 'L',...
+                    'color',c,'FontWeight','bold','HorizontalAlignment','center');
+            end
         end
     end
 end
-% Second, draw the boundry of response window, and early window:
+% Second, draw the boundary of response window, and early window:
 for cnt1 = 1:2:length(exptparams.RefResponseWin)
     line([fs*exptparams.RefResponseWin(cnt1) fs*exptparams.RefResponseWin(cnt1+1)],[1.1 1.1],...
         'color','k','LineStyle','-','LineWidth',2);
