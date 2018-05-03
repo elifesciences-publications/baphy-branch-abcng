@@ -96,4 +96,5 @@ switch get(o,'RandomSequence')
 %       ev = [ev(1) evtemp ev(end)];
     
 end
-w = 5 * w/max(abs(w));
+% w = 5 * w/max(abs(w));
+w = 5*(w/std(w(w~=0)));

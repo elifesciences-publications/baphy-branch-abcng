@@ -22,7 +22,6 @@ ev        = [];
 MemoClickNb    = get(o,'MemoClickNb');
 
 %% INITIALIZE Daniel's click train OBJECT
-
 sP.fs         = fs;
 sP.replength  = get(o,'ClickTrainDur'); % duration of a single repeat
 sP.nreps      = get(o,'nreps'); % number of repeats
@@ -36,7 +35,6 @@ sP.mingap     = get(o,'mingap');
 sP.clicktimes = get(o,'ClickTimes');
 
 %% Create an instance of TORC object:
-
 PutTORC = strcmpi(get(o,'IntroduceTORC'),'yes');
 
 if PutTORC
@@ -50,7 +48,6 @@ if PutTORC
 end
 
 %% RANDOM NUMBER GENERATOR
-
 Key      = get(o,'Key');
 TrialKey = RandStream('mrg32k3a','Seed',Key(1));
 PastRef  = get(o,'PastRef');
@@ -104,7 +101,6 @@ ev     = AddEvent(ev,'PreStimSilence',[],0,PreStimSilence);
 w      = [w ; prestim(:)];
 
 %% GENERATE CLICK TRAINS
-
 for j = (RefNow+1) : (RefNow+index)
     
     sP.stimtype  = RandSequence(RandPick(j));      % stimulus type: 0 is C, 1 is RC, 2 is RefRC

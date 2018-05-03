@@ -15,11 +15,14 @@ switch nargin
       'lowchannel','edit',86.1328,...% 22050/2^8
       'highchannel','edit',22050,...
       'ReseedKey','edit',[],...
-      'MaxIndex','edit', 1});
+      'MaxIndex','edit', 1,...
+      'MemoCloudNb','edit',1,...
+      'MemoCloudRepetition','edit',25});
     
     % ToneCloud
     o.RateRTCPercent         = 25;
     o.RateRefRTCPercent      = 25;
+    o.MemoCloudRepetition    = 25;
     o.SegDur                 = 0.5;
     o.nreps                  = 3;
     o.ToneCloudDur           = o.SegDur*o.nreps;
@@ -29,6 +32,7 @@ switch nargin
     o.lowchannel             = 86.1328; % = 22050/2^8
     o.highchannel            = 22050;
     o.tonedur                = 0.05;
+    o.MemoCloudNb             = 1;
     
     % Stim conditions    
     o.MaxIndex                    = 1;  % no. of conditions

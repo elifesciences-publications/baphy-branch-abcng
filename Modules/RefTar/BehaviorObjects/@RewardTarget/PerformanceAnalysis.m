@@ -157,10 +157,11 @@ perf(cnt2).EarlyTrial   = double(~isempty(find(TarEarlyLick,1)));
 perf(cnt2).Hit          = double(perf(cnt2).WarningTrial && ~perf(cnt2).EarlyTrial && ~isempty(find(TarResponseLick,1))); % if there is a lick in target response window, its a hit
 perf(cnt2).Miss         = double(perf(cnt2).WarningTrial && ~perf(cnt2).EarlyTrial && ~perf(cnt2).Hit);
 MaxRef = get(exptparams.TrialObject,'MaxRef');
+if length(MaxRef)==2; MaxRef = MaxRef(2); end
 if MaxRef == 1   % specific case where lick post REF and lick during TAR are counted as ineffective
-    perf(cnt2).Catch         = double((get(exptparams.TrialObject,'MaxRef'))==NumRef);
+    perf(cnt2).Catch         = double(MaxRef==NumRef);
 else
-    perf(cnt2).Catch         = double((get(exptparams.TrialObject,'MaxRef'))==NumRef);
+    perf(cnt2).Catch         = double(MaxRef==NumRef);
 end
 perf(cnt2).ReferenceLickTrial = double((perf(cnt2).FalseAlarm>0));
 %
@@ -196,16 +197,16 @@ end
 tt = cat(1,perf.FalseAlarm);
 tt(find(isnan(tt)))=[];
 perf(cnt2).FalseAlarmRate   = sum(tt)/length(tt);
-% perf(cnt2).DiscriminationRate = perf(cnt2).HitRate * (1-perf(cnt2).FalseAlarmRate);
+perf(cnt2).DiscriminationRate = perf(cnt2).HitRate * (1-perf(cnt2).FalseAlarmRate);
 if perf(cnt2).HitRate==0
-  perf(cnt2).DiscriminationRate = 0;
+  perf(cnt2).dPrime = 0;
 elseif perf(cnt2).FaRate==0
-  perf(cnt2).DiscriminationRate = 0;
+  perf(cnt2).dPrime = 0;
 elseif perf(cnt2).HitRate==1
   HitRate = (sum(cat(1,perf.Hit))-1) / TotalWarnAndNoCatch;
-  perf(cnt2).DiscriminationRate =  norminv(HitRate)-norminv(perf(cnt2).FaRate);
+  perf(cnt2).dPrime =  norminv(HitRate)-norminv(perf(cnt2).FaRate);
 else
-  perf(cnt2).DiscriminationRate =  norminv(perf(cnt2).HitRate)-norminv(perf(cnt2).FaRate);
+  perf(cnt2).dPrime =  norminv(perf(cnt2).HitRate)-norminv(perf(cnt2).FaRate);
 end
 %also, calculate the stuff for this trial block:
 AverageSteps = 10;
@@ -215,7 +216,7 @@ tt(find(isnan(tt)))=[];
 RecentTotalWarnAndNoCatch = sum([perf(RecentIndex).WarningTrial] & ~[perf(RecentIndex).Catch]);
 perf(cnt2).RecentFalseAlarmRate   = sum(tt)/length(tt);
 perf(cnt2).RecentHitRate         = sum(cat(1,perf(RecentIndex).Hit))/RecentTotalWarnAndNoCatch;
-% perf(cnt2).RecentDiscriminationRate = perf(cnt2).RecentHitRate * (1-perf(cnt2).RecentFalseAlarmRate);
+perf(cnt2).RecentDiscriminationRate = perf(cnt2).RecentHitRate * (1-perf(cnt2).RecentFalseAlarmRate);
 
 % now determine what this trial is:
 if perf(cnt2).Hit, perf(cnt2).ThisTrial = 'Hit';end
@@ -223,7 +224,7 @@ if perf(cnt2).Miss, perf(cnt2).ThisTrial = 'Miss';end
 if perf(cnt2).Miss&&perf(cnt2).Catch, perf(cnt2).ThisTrial = 'CR';end
 if perf(cnt2).EarlyTrial, perf(cnt2).ThisTrial = 'Early';end
 if perf(cnt2).Ineffective, perf(cnt2).ThisTrial = 'Ineffective';end
-fprintf(['d''=' num2str(perf(cnt2).DiscriminationRate) '  /  ' upper( perf(cnt2).ThisTrial ) '  '])
+fprintf(['DR=' num2str(perf(cnt2).DiscriminationRate) ' / d''=' num2str(perf(cnt2).dPrime) '  /  ' upper( perf(cnt2).ThisTrial ) '  '])
 % change all rates to percentage. If its not rate, put the sum and 'out of' at the end
 PerfFields = fieldnames(perf);
 for cnt1 = 1:length(PerfFields)

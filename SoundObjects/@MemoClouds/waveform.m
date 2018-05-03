@@ -11,10 +11,13 @@ PostStimSilence = get(o,'PostStimSilence');
 %% PARAMETERS OF MemoClouds OBJECT
 RateRTC    = get(o,'RateRTCPercent');
 RateRefRTC = get(o,'RateRefRTCPercent');
+MemoCloudRepetition = get(o,'MemoCloudRepetition');
 prestim   = zeros(round(PreStimSilence*fs),1);
 poststim  = zeros(round(PostStimSilence*fs),1);
 w         = [];
 ev        = [];
+MemoCloudNb    = get(o,'MemoCloudNb');
+
 %% INITIALIZE Trevor's click train OBJECT
 sP.fs = fs; %sample-frequency
 sP.tpersecond = get(o,'tonespersecond'); % number of tones per second: set for Yves to give left-most point of Expt 2
@@ -37,7 +40,7 @@ sP.generationtime = 0.5;%used in my expt program to ensure that the gap between 
 
 %% RANDOM NUMBER GENERATOR
 Key      = get(o,'Key');
-TrialKey = RandStream('mrg32k3a','Seed',Key);
+TrialKey = RandStream('mrg32k3a','Seed',Key(1));
 PastRef  = get(o,'PastRef');
 
 %% Pointer to the position in RandSequence
@@ -55,39 +58,60 @@ elseif length(PastRef) > TrialNum && index ~= PastRef(TrialNum)
 end
 
 %% Sequences of 0 1 2 (refnoise)
-RandSequence = [ones(1,floor(RateRTC)) 2*ones(1,floor(RateRefRTC)) zeros(1,floor((100-RateRTC - RateRefRTC)))];
-RandPick     = [];
-for i = 1:4
-    RandPick = [RandPick TrialKey.randperm(100)];
+if MemoCloudNb==1
+    PermNb = 4;
+elseif MemoCloudNb>1
+    PermNb = 1;
 end
+% RandSequence = [ones(1,floor(RateRTC)) 2*ones(1,floor(RateRefRTC)) zeros(1,floor((100-RateRTC - RateRefRTC)))];
+% for i = 1:4
+%     RandPick = [RandPick TrialKey.randperm(100)];
+% end
+RandPick = []; RandSequence = []; tmpRefRCpatterns = [];
+for MemoCloudNum = 1:MemoCloudNb
+    RS = [ones(1,floor(MemoCloudRepetition*RateRTC/RateRefRTC)) 2*ones(1,MemoCloudRepetition)...
+        zeros(1,floor(MemoCloudRepetition*(100-RateRTC-RateRefRTC)/RateRefRTC))];
+    RandSequence = [RandSequence RS];
+    tmpRefRCpatterns = [tmpRefRCpatterns ones(1,MemoCloudRepetition)*MemoCloudNum];
+    for i = 1:PermNb
+        RandPick = [RandPick TrialKey.randperm(length(RS))+(MemoCloudNum-1)*length(RS)];
+    end
+end
+RefRCpatterns = zeros(1,length(RandSequence));
+RefRCpatterns(RandSequence==2) = tmpRefRCpatterns;
 
 ev     = AddEvent(ev,'PreStimSilence',[],0,PreStimSilence);
 w      = [w ; prestim(:)];
 
 %% GENERATE TONE CLOUD
-sP.refnoise= RandSequence(RandPick(RefNow+1)); % stimulus type: 0 is C, 1 is RC, 2 is RefRC
-StimulusType = get(o,'Stimulus');
-o = set(o,'Stimulus',[StimulusType sP.refnoise]);
+for j = (RefNow+1) : (RefNow+index)
+    
+    sP.refnoise= RandSequence(RandPick(RefNow+1)); % stimulus type: 0 is C, 1 is RC, 2 is RefRC
+    StimulusType = get(o,'Stimulus');
+    o = set(o,'Stimulus',[StimulusType sP.refnoise]);
 
-if sP.refnoise == 2
-    sP.seed = Key;
-else
-    sP.seed = Key*(RefNow+1);
+    if sP.refnoise == 2
+        RefRCpatternNum = RefRCpatterns(RandPick(j));
+        sP.seed = Key(RefRCpatternNum);
+    else
+        sP.seed = Key(1)*(RefNow+1);
+    end
+    if sP.refnoise==1 || sP.refnoise==2
+        sP.repetitionflag = 1;
+    else sP.repetitionflag = 0;
+    end
+    Seed = get(o,'Seeds');
+    o = set(o,'Seeds',[Seed sP.seed]);
+
+    [wSeq, sP] =  gentonecloud21(sP);
+    w = [w ; wSeq(:)];
+    ev = AddEvent(ev,  ['MemoCloud ',  num2str(TrialNum),  '; Type: ' num2str(sP.refnoise) '; Seed: ' num2str(sP.seed)],  [ ] , ev(end).StopTime,  ev(end).StopTime + length(wSeq(:))/fs );
+
+    %% POST-STIM SILENCE
+    w = [w ; poststim(:)];
+    ev = AddEvent(ev, 'PostSilence', [], ev(end).StopTime, ev(end).StopTime + PostStimSilence);
+
 end
-if sP.refnoise==1 || sP.refnoise==2
-    sP.repetitionflag = 1;
-else sP.repetitionflag = 0;
-end
-Seed = get(o,'Seeds');
-o = set(o,'Seeds',[Seed sP.seed]);
-
-[wSeq, sP] =  gentonecloud21(sP);
-w = [w ; wSeq(:)];
-ev = AddEvent(ev,  ['MemoCloud ',  num2str(TrialNum),  '; Type: ' num2str(sP.refnoise) '; Seed: ' num2str(sP.seed)],  [ ] , ev(end).StopTime,  ev(end).StopTime + length(wSeq(:))/fs );
-
-%% POST-STIM SILENCE
-w = [w ; poststim(:)];
-ev = AddEvent(ev, 'PostSilence', [], ev(end).StopTime, ev(end).StopTime + PostStimSilence);
 
 if exist('Mode','var') && strcmp(Mode,'Simulation'); return; end
     
