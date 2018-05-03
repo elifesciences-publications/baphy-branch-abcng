@@ -10,7 +10,6 @@ PreStimSilence  = get(o,'PreStimSilence');
 PostStimSilence = get(o,'PostStimSilence');
 
 %% PARAMETERS OF MemoClicks OBJECT
-
 RateRC    = get(o,'RateRCPercent');
 RateRefRC = get(o,'RateRefRCPercent');
 MemoClickRepetition = get(o,'MemoClickRepetition');
@@ -55,7 +54,6 @@ PastRef  = get(o,'PastRef');
 
 %% Pointer to the position in RandSequence
 % PastRef STORES THE PREVIOUS INDEX
-
 if isempty(PastRef)  % First trial
     RefNow = 0;
     o      = set(o,'PastRef',[PastRef index]);
@@ -132,7 +130,6 @@ for j = (RefNow+1) : (RefNow+index)
 end
 
 %% END WITH TORC
-
 TorcSequence = [];
 if PutTORC
     [wTarg, eTorc] = waveform(TorcObj, 1);    % so far, only 1 TORC pattern
@@ -147,7 +144,7 @@ else
     w = w*50/max(w);
 end
     
-%%
+%% POST-STIM SILENCE
 w = [w ; poststim(:)];
 ev = AddEvent(ev, 'PostSilence', [], ev(end).StopTime, ev(end).StopTime + PostStimSilence);
 
