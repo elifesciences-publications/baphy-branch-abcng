@@ -98,9 +98,10 @@ switch globalparams.HWSetup
         HW=niCreateAO(HW,DAQID,'ao0:1','SoundOut1,SoundOut2',['/',DAQID,'/PFI1']);
         HW.Calibration.Speaker = ['RS',globalparams.HWSetupName];
       case {6}
-        HW=niCreateAO(HW,DAQID,'ao0:3','SoundOut1,SoundOut2,SoundOut3,SoundOut4',['/',DAQID,'/PFI1']);          
-%         HW.Calibration(1).Speaker = ['VISATON59',globalparams.HWSetupName,'Right'];
-%         HW.Calibration(2).Speaker = ['VISATON59',globalparams.HWSetupName,'Left'];
+        HW=niCreateAO(HW,DAQID,'ao0:3','SoundOut1,SoundOut2,SoundOut3,SoundOut4',['/',DAQID,'/PFI1']);
+%         DAQID = 'D1'; % NI BOARD ID WHICH CONTROLS STIMULUS & BEHAVIOR
+%         niResetDevice(DAQID);
+%         HW=niCreateAO(HW,DAQID,'ao0:3','SoundOut5,SoundOut6,SoundOut7,SoundOut8',['/',DAQID,'/PFI1']);
         HW.Calibration(1).Speaker = ['VISATON59',globalparams.HWSetupName,'_ch00'];
         HW.Calibration(2).Speaker = ['VISATON59',globalparams.HWSetupName,'_ch01'];
         HW.Calibration(2).Microphone = 'GRAS46BE';

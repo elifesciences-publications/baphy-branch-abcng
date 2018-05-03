@@ -251,11 +251,11 @@ while CurrentTime < exptparams.LogDuration % BE removed +0.05 here (which screws
         TarFlag = StimPos;
     end
     
-    %CurrentTime = IOGetTimeStamp(HW);
-    tmp = IOGetTimeStamp(HW);
+    tmp = CurrentTime;
+    CurrentTime = IOGetTimeStamp(HW);
     
     % leave it here in case something goes wrong
-    if tmp > (CurrentTime+0.05) && ~SoundStopped
+    if tmp > (CurrentTime+0.06) && ~SoundStopped
       disp('***')
       disp('Problem with interval.')
       disp('***')
@@ -263,6 +263,9 @@ while CurrentTime < exptparams.LogDuration % BE removed +0.05 here (which screws
     CurrentTime = tmp;
     
 end
+
+CurrentTimePostLoop = IOGetTimeStamp(HW);
+fprintf(['*** LoopTime ',num2str(CurrentTimePostLoop-tmp),'s ... ']);
 
 if ~SoundStopped
   evStopSound = IOStopSound(HW);

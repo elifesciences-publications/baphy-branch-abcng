@@ -27,28 +27,58 @@ if IsLookup
             NumRef = 1;
         end
     else
-      switch par.MaxRef
-        case 7 % Ratio Ref/Tar = 5  % Initial LookupTable in the UMD paradigm
-          LookupTable = [3 4 7 3 2 3 1 4 1 5 2 1 6 4 7 2 1 2 5 1 3 2 1 4 5 6];  % 18/02/26-YB: 22% [7/31] of catch before! Now 8%
-        case 6 % Ratio Ref/Tar = 4
-          LookupTable = [3 1 4 6 2 6 2 1 3 1 3 6 4 2 5 1 1 5 2 6];
-        case 5 % Ratio Ref/Tar = 3
-          LookupTable = [3 1 2 5 1 1 3 3 4 4 1 2 1 1 2 3 4 3 5 4 2 1 5 2];
-        case 4 % Ratio Ref/Tar = 2.5
-          LookupTable = [1 2 3 4 2 2 2 3 1];
-        case 3 % Ratio Ref/Tar = 2
-          LookupTable = [1 1 1 1 1 2 2 2 2 1 3 3];
-        case 2 % Ratio Ref/Tar = 1.5
-          LookupTable = [1 2 2 1 2 1 1 1 1 0 0];
-        case 1 % Ratio Ref/Tar = 1
-          if par.ReferenceMaxIndex==par.TargetMaxIndex
-            LookupTable = [ones(1,par.ReferenceMaxIndex*6) zeros(1,par.TargetMaxIndex*6)];
-          else
-            LookupTable = [0 1 1 0 0 1 0 1 0 0 1 1];
-          end
-        case 0
-            LookupTable = 0;
-      end
+        switch par.MaxRefPar
+            case 'None'
+                switch par.MaxRef
+%                     case 20
+%                         LookupTable = [];
+%                         RefNbLst = [ 18    16    14    12    11     9     8     7     6     6     5     4     4     3     3     2];
+%                         for RefNb = 5:20
+%                             LookupTable = [LookupTable RefNb*ones(1,RefNbLst(RefNb-4))];
+%                         end
+                    case 7 % Ratio Ref/Tar = 5  % Initial LookupTable in the UMD paradigm
+                        LookupTable = [3 4 7 3 2 3 1 4 1 5 2 1 6 4 7 2 1 2 5 1 3 2 1 4 5 6];  % 18/02/26-YB: 22% [7/31] of catch before! Now 8%
+                    case 6 % Ratio Ref/Tar = 4
+                        LookupTable = [3 1 4 6 2 6 2 1 3 1 3 6 4 2 5 1 1 5 2 6];
+                    case 5 % Ratio Ref/Tar = 3
+                        LookupTable = [3 1 2 5 1 1 3 3 4 4 1 2 1 1 2 3 4 3 5 4 2 1 5 2];
+                    case 4 % Ratio Ref/Tar = 2.5
+                        LookupTable = [1 2 3 4 2 2 2 3 1];
+                    case 3 % Ratio Ref/Tar = 2
+                        LookupTable = [1 1 1 1 1 2 2 2 2 1 3 3];
+                    case 2 % Ratio Ref/Tar = 1.5
+                        LookupTable = [1 2 2 1 2 1 1 1 1 0 0];
+                    case 1 % Ratio Ref/Tar = 1
+                        if par.ReferenceMaxIndex==par.TargetMaxIndex
+                            LookupTable = [ones(1,par.ReferenceMaxIndex) zeros(1,par.TargetMaxIndex)];
+                        else
+                            LookupTable = [0 1 1 0 0 1 0 1 0 0 1 1];
+                        end
+                    case 0
+                        LookupTable = 0;
+                    otherwise
+                        Range = par.MaxRef;
+                        [PoissonSamples,BinX] = PoissonProcessPsychophysics(1.5/Range,Range,150,[],15);
+                        BinX = unique(round(BinX));
+                        RefNbLst = histc(PoissonSamples,BinX);
+                        LookupTable = [];
+                        for RefNb = 1:length(BinX)
+                            LookupTable = [LookupTable BinX(RefNb)*ones(1,RefNbLst(RefNb))];
+                        end
+                end
+            case 'FixedMaxRef'
+                LookupTable = [ones(1,10)*(par.MaxRef-1) par.MaxRef];
+            case 'Range'
+                Range = diff(par.MaxRef);
+                [PoissonSamples,BinX] = PoissonProcessPsychophysics(1.5/Range,Range,150,[],15);
+                BinX = unique(round(BinX));
+                RefNbLst = histc(PoissonSamples,BinX);
+                BinX = BinX+par.MaxRef(1);
+                LookupTable = [];
+                for RefNb = 1:length(BinX)
+                    LookupTable = [LookupTable BinX(RefNb)*ones(1,RefNbLst(RefNb))];
+                end
+        end
 % Rt = sum(LookupTable)/(length(LookupTable)-length(find(LookupTable==ii))); disp([ii Rt]);
 % clear w; for kk=1:ii; w(kk)=length(find(LookupTable==kk)); end; disp(w)
 
