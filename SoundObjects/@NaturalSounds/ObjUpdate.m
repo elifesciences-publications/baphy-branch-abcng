@@ -31,7 +31,8 @@ end
 [p, ~, ~] = fileparts(mfilename('fullpath'));
 switch O.StimulusType
     case 'PilotScrambling'
-        load([p filesep 'stim-orders-ferret.mat']);
+%         load([p filesep 'stim-orders-ferret.mat']);
+        load([p filesep 'ScramblingOrder' filesep 'r1.mat']);
         sounds = stim_order(:,1);
 end
 O = set(O,'MaxIndex',numel(sounds));

@@ -132,7 +132,7 @@ if 1,
     options.Resize='off';
     options.Interpreter='none';
     switch lower(globalparams.Tester)
-		case {'yves','jennifer','jonatan','anna','thibaut','celian','rupesh','jeff','xinhe'}; answer = defaultanswer;
+		case {'yves','jennifer','jonatan','thibaut','celian','rupesh','jeffrey','mehdi','jeff','xinhe'};; answer = defaultanswer;
         otherwise answer=inputdlg(prompt,name,numlines,defaultanswer,options);
     end
     if ~isempty(answer),

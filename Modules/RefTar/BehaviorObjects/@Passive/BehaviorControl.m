@@ -82,7 +82,7 @@ if ExtraDuration~=0
   ev = IOStopSound(HW);
   Events = AddEvent(Events, ev, TrialIndex);
   while CurrentTime < (exptparams.LogDuration+ExtraDuration)
-    if (mod(CurrentTime,1) < 0.005) && ( (exptparams.LogDuration+ExtraDuration-3)>CurrentTime ) && (LightState == 0)
+    if (mod(CurrentTime,1) < 0.005) && ( (exptparams.LogDuration+ExtraDuration-4)>CurrentTime ) && (LightState == 0)
       [LightState, ev] = IOLightSwitch(HW,1,0.0,[],0,0,'LightR');
     elseif LightState == 1
       [LightState, ev] = IOLightSwitch(HW,0,0.0,[],0,0,'LightR');

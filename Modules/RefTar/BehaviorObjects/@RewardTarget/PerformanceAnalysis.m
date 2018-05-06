@@ -27,6 +27,7 @@ RefEarlyWin = [];
 TarResponseWin = [];
 TarEarlyWin    = [];
 NumRef = 0;
+StopOnEarly = get(o,'StopOnEarly');
 % first, we find all the relevant time windows, which are ResponseWindow
 % after reference and target, and EarlyWindow after target. Each sequence
 % starts with $ sign.
@@ -36,7 +37,7 @@ for cnt1 = 1:length(StimEvents);
         if ~isempty(RefResponseWin)  % the response window should not go to the next sound!
             RefResponseWin(end) = min(RefResponseWin(end), StimEvents(cnt1).StartTime);
         end
-        if strcmpi(StimRefOrTar,'Reference')          
+        if strcmpi(StimRefOrTar,'Reference')
           if ~strcmpi(class(RH),'TorcToneDiscrim') || ( strcmpi(class(RH),'TorcToneDiscrim') && isempty(strfind(upper(StimName),'TORC')) )
             RefEarlyWin = [RefEarlyWin StimEvents(cnt1).StartTime ...
               StimEvents(cnt1).StartTime + get(o,'EarlyWindow')];
@@ -52,7 +53,10 @@ for cnt1 = 1:length(StimEvents);
               StimEvents(cnt1).StartTime + get(o,'EarlyWindow')];
           end
           if ~isempty(findstr(StimName,'SNR'))
-              SNR = str2num(StimName( (findstr(StimName,'SNR')+3): (findstr(StimName,'Channel')-1) ));
+              SNRlocusStart = findstr(StimName,'SNR')+3;
+              SNRlocusEnd = min( [SNRlocusStart+find(isletter(StimName((SNRlocusStart+1):end)),1,'first')-1 ,...
+                  length(StimName)]);
+              SNR = str2num(StimName( SNRlocusStart:SNRlocusEnd ));
           end
         end
     end
@@ -65,15 +69,13 @@ exptparams.RefResponseWin  = RefResponseWin;
 % and TarResponseWin has specifies the begining and end of the target
 % Response window, ex.: [6.2 6.4]
 exptparams.TarResponseWin = TarResponseWin;
-% and early window specifies the begining and end of the target early
-% window:
+% and early window specifies the begining and end of the target early window:
 exptparams.TarEarlyWin = TarEarlyWin;
 % change the lick to positive edge only:
 LickData = max(0,diff(LickData));
 % what we need to procude here are:
 %  1) histogram of first lick for each reference and target
-%  2) false alarm for each reference, and hit for target at different
-%       positions
+%  2) false alarm for each reference, and hit for target at different positions
 %
 % first, extract the relevant lick data:
 RefFalseAlarm = 0; RefFirstLick = NaN; PlayedNumRef = 0; TrialCut = 0;
@@ -92,14 +94,14 @@ for cnt2 = 1:NumRef
     end
 end
 NumRef = PlayedNumRef;
-if isempty(TarResponseWin)   %for no target (sham trial)  by py&9/6/2012
+if isempty(TarResponseWin) %for no target (sham trial)  by py&9/6/2012
     TarResponseLick=[];
 else
     TarResponseLick = LickData(max(1,round(fs*TarResponseWin(1))):min(length(LickData),round(fs*TarResponseWin(2))));
 end
 % in an ineffective trial, discard the lick during target because target was never played:
 FalseAlarm = sum(RefFalseAlarm)/NumRef;
-if isempty(TarResponseWin)   %for no target (sham trial)  by py&9/6/2012
+if isempty(TarResponseWin) || StopOnEarly==0    %for no target (sham trial)  by py&9/6/2012
     TarEarlyLick=[];
 else
 %     TarEarlyLick = LickData(fs*max(1,TarEarlyWin(1)):min(length(LickData),fs*TarEarlyWin(2)));
@@ -158,10 +160,11 @@ perf(cnt2).EarlyTrial   = double(~isempty(find(TarEarlyLick,1)));
 perf(cnt2).Hit          = double(perf(cnt2).WarningTrial && ~perf(cnt2).EarlyTrial && ~isempty(find(TarResponseLick,1))); % if there is a lick in target response window, its a hit
 perf(cnt2).Miss         = double(perf(cnt2).WarningTrial && ~perf(cnt2).EarlyTrial && ~perf(cnt2).Hit);
 MaxRef = get(exptparams.TrialObject,'MaxRef');
+if length(MaxRef)==2; MaxRef = MaxRef(2); end
 if MaxRef == 1   % specific case where lick post REF and lick during TAR are counted as ineffective
-    perf(cnt2).Catch         = double((get(exptparams.TrialObject,'MaxRef'))==NumRef);
+    perf(cnt2).Catch         = double(MaxRef==NumRef);
 else
-    perf(cnt2).Catch         = double((get(exptparams.TrialObject,'MaxRef'))==NumRef);
+    perf(cnt2).Catch         = double(MaxRef==NumRef);
 end
 perf(cnt2).ReferenceLickTrial = double((perf(cnt2).FalseAlarm>0));
 %
@@ -197,16 +200,16 @@ end
 tt = cat(1,perf.FalseAlarm);
 tt(find(isnan(tt)))=[];
 perf(cnt2).FalseAlarmRate   = sum(tt)/length(tt);
-% perf(cnt2).DiscriminationRate = perf(cnt2).HitRate * (1-perf(cnt2).FalseAlarmRate);
+perf(cnt2).DiscriminationRate = perf(cnt2).HitRate * (1-perf(cnt2).FalseAlarmRate);
 if perf(cnt2).HitRate==0
-  perf(cnt2).DiscriminationRate = 0;
+  perf(cnt2).dPrime = 0;
 elseif perf(cnt2).FaRate==0
-  perf(cnt2).DiscriminationRate = 0;
+  perf(cnt2).dPrime = 0;
 elseif perf(cnt2).HitRate==1
   HitRate = (sum(cat(1,perf.Hit))-1) / TotalWarnAndNoCatch;
-  perf(cnt2).DiscriminationRate =  norminv(HitRate)-norminv(perf(cnt2).FaRate);
+  perf(cnt2).dPrime =  norminv(HitRate)-norminv(perf(cnt2).FaRate);
 else
-  perf(cnt2).DiscriminationRate =  norminv(perf(cnt2).HitRate)-norminv(perf(cnt2).FaRate);
+  perf(cnt2).dPrime =  norminv(perf(cnt2).HitRate)-norminv(perf(cnt2).FaRate);
 end
 %also, calculate the stuff for this trial block:
 AverageSteps = 10;
@@ -216,7 +219,7 @@ tt(find(isnan(tt)))=[];
 RecentTotalWarnAndNoCatch = sum([perf(RecentIndex).WarningTrial] & ~[perf(RecentIndex).Catch]);
 perf(cnt2).RecentFalseAlarmRate   = sum(tt)/length(tt);
 perf(cnt2).RecentHitRate         = sum(cat(1,perf(RecentIndex).Hit))/RecentTotalWarnAndNoCatch;
-% perf(cnt2).RecentDiscriminationRate = perf(cnt2).RecentHitRate * (1-perf(cnt2).RecentFalseAlarmRate);
+perf(cnt2).RecentDiscriminationRate = perf(cnt2).RecentHitRate * (1-perf(cnt2).RecentFalseAlarmRate);
 
 % now determine what this trial is:
 if perf(cnt2).Hit, perf(cnt2).ThisTrial = 'Hit';end
@@ -224,7 +227,7 @@ if perf(cnt2).Miss, perf(cnt2).ThisTrial = 'Miss';end
 if perf(cnt2).Miss&&perf(cnt2).Catch, perf(cnt2).ThisTrial = 'CR';end
 if perf(cnt2).EarlyTrial, perf(cnt2).ThisTrial = 'Early';end
 if perf(cnt2).Ineffective, perf(cnt2).ThisTrial = 'Ineffective';end
-fprintf(['d''=' num2str(perf(cnt2).DiscriminationRate) '  /  ' upper( perf(cnt2).ThisTrial ) '  '])
+fprintf(['DR=' num2str(perf(cnt2).DiscriminationRate) ' / d''=' num2str(perf(cnt2).dPrime) '  /  ' upper( perf(cnt2).ThisTrial ) '  '])
 % change all rates to percentage. If its not rate, put the sum and 'out of' at the end
 PerfFields = fieldnames(perf);
 for cnt1 = 1:length(PerfFields)
