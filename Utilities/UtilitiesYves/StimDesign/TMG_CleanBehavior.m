@@ -149,6 +149,7 @@ function [Behavior,Bits,LickData] = TMG_CleanBehavior(globalparams,exptparams,ex
     % 2) CLEAN ANALOG CHANNELS
     % Check for artefacts
     if ~isempty(FileDateStr); Recording = str2num(FileDateStr(5:6)); Penetration = num2str(FileDateStr(1:3)); Depth = num2str(FileDateStr(4));else Penetration=[]; Depth=[]; Recording=[]; end
+    if isempty(Recording); Penetration = 'inf'; end  % Pure ferret psychophysics
     if strcmpi(EVPname(1:7),'morbier')&&str2num(Penetration)>41%1%num2str(FileDateStr(1:3))<=40%(length(find(l>=935 & l<=970))/length(l)) > 0.03 % (length(find(l>=925 & l<=975))/length(l)) > 0.035
         Duration2Play = 0;
     else
