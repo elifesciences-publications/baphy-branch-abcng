@@ -125,5 +125,6 @@ event(3) = struct('Note',['PostStimSilence , ' files{index}],...
     'StartTime',PreStimSilence+Duration, 'StopTime',PreStimSilence+Duration+PostStimSilence,'Trial',[]);
 
 if max(abs(w))>0,
-    w = 5*w/max(abs(w));
+%     w = 5*w/max(abs(w));
+    w = 5 .* w ./ std(w(w~=0));
 end

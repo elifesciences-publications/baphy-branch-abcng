@@ -37,7 +37,7 @@ for cnt1 = 1:length(StimEvents);
         if ~isempty(RefResponseWin)  % the response window should not go to the next sound!
             RefResponseWin(end) = min(RefResponseWin(end), StimEvents(cnt1).StartTime);
         end
-        if strcmpi(StimRefOrTar,'Reference')          
+        if strcmpi(StimRefOrTar,'Reference')
           if ~strcmpi(class(RH),'TorcToneDiscrim') || ( strcmpi(class(RH),'TorcToneDiscrim') && isempty(strfind(upper(StimName),'TORC')) )
             RefEarlyWin = [RefEarlyWin StimEvents(cnt1).StartTime ...
               StimEvents(cnt1).StartTime + get(o,'EarlyWindow')];
@@ -53,7 +53,10 @@ for cnt1 = 1:length(StimEvents);
               StimEvents(cnt1).StartTime + get(o,'EarlyWindow')];
           end
           if ~isempty(findstr(StimName,'SNR'))
-              SNR = str2num(StimName( (findstr(StimName,'SNR')+3): (findstr(StimName,'Channel')-1) ));
+              SNRlocusStart = findstr(StimName,'SNR')+3;
+              SNRlocusEnd = min( [SNRlocusStart+find(isletter(StimName((SNRlocusStart+1):end)),1,'first')-1 ,...
+                  length(StimName)]);
+              SNR = str2num(StimName( SNRlocusStart:SNRlocusEnd ));
           end
         end
     end

@@ -175,16 +175,22 @@ if par.ReferenceMaxIndex==par.TargetMaxIndex && par.MaxRef==1
     c = 0;
     for tn = find(temp==0)
         c = c+1;
-        TargetIndex{tn} = ShuffledTarIndex(c);
+        TargetIndex{tn} = ShuffledTarIndex(mod(c,length(ShuffledTarIndex))+1);
     end
     RefTrialIndex = cell(1,2*par.ReferenceMaxIndex);
     c = 0;
     for tn = find(temp==1)
         c = c+1;
-        RefTrialIndex{tn} = ShuffledRefIndex(c);
+        RefTrialIndex{tn} = ShuffledRefIndex(mod(c,length(ShuffledRefIndex))+1);
     end 
 elseif par.MaxRef==0
     TotalTrials = 1; RefTrialIndex{1} = [];
+end
+for cnt1=(length(RefTrialIndex)+1):length(TargetIndex)
+    RefTrialIndex {cnt1} = [];
+end
+for cnt1=(length(TargetIndex)+1):length(RefTrialIndex)
+    TargetIndex {cnt1} = [];
 end
 
 o = set(o,'ReferenceIndices',RefTrialIndex);

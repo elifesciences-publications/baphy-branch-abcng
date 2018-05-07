@@ -8,7 +8,7 @@ function M = maxLocalStd(X,SR,Window)
 % SS = std(WX);
 % M = max(SS);
 
-Conseq0 = 0.15;   % s
+Conseq0 = 0.02;   % s
 Min0length = round(Conseq0*SR);
 Ind2remove = [];
 Ind0 = find(X==0);
@@ -20,7 +20,7 @@ if length(Ind0)~=length(X)
       if Length0>=Min0length
         Ind2remove = [Ind2remove Ind0(Xnum):(Ind0(Xnum)+Length0)];
       end
-      Xnum = find(Ind0(Xnum:end)>(Ind0(Xnum)+Length0),1,'first')+Xnum-1;;
+      Xnum = find(Ind0(Xnum:end)>(Ind0(Xnum)+Length0),1,'first')+Xnum-1;
     elseif isempty(Length0)
       if length(Ind0)>=(Xnum+Min0length)
         Ind2remove = [Ind2remove Ind0(Xnum):Ind0(end)];
