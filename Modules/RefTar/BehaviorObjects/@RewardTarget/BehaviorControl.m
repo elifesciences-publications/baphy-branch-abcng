@@ -259,8 +259,6 @@ while CurrentTime < exptparams.LogDuration % BE removed +0.05 here (which screws
       disp('Problem with interval.')
       disp('***')
     end
-    CurrentTime = tmp;
-    
 end
 
 CurrentTimePostLoop = IOGetTimeStamp(HW);
