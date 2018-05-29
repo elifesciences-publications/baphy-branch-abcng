@@ -74,13 +74,14 @@ if ~mod(TrialIndex,exptparams.TrialBlock) || (isempty(AIData) && isempty(TrialSo
     if isfield(exptparams, 'Performance')
         text(.1, ind, num2str(exptparams.Performance(end).HitRate,'%2.0f'),'FontWeight','bold','HorizontalAlignment','center','color','b');
         text(.2, ind, num2str(exptparams.Performance(end).FalseAlarmRate,'%2.0f'),'FontWeight','bold','HorizontalAlignment','center');
-        text(.3, ind, num2str(exptparams.Performance(end).DiscriminationRate,'%2.0f'),'FontWeight','bold','HorizontalAlignment','center','color','b');
+        text(.3, ind, num2str(exptparams.Performance(end).dPrime,'%2.0f'),'FontWeight','bold','HorizontalAlignment','center','color','b');     
         text(.4, ind, num2str(exptparams.Performance(end).EarlyRate,'%2.0f'),'FontWeight','bold','HorizontalAlignment','center');
         text(.5, ind, num2str(exptparams.Performance(end).WarningRate,'%2.0f'),'FontWeight','bold','color','b','HorizontalAlignment','center');
         text(.6, ind, num2str(exptparams.Performance(end).IneffectiveRate,'%2.0f'),'FontWeight','bold','HorizontalAlignment','center');
         text(.7, ind, num2str(exptparams.Performance(end).RecentHitRate,'%2.0f'),'FontWeight','bold','color','b','HorizontalAlignment','center');
         text(.8, ind, num2str(exptparams.Performance(end).RecentFalseAlarmRate,'%2.0f'),'FontWeight','bold','HorizontalAlignment','center');
-        text(.9, ind, num2str(exptparams.Performance(end).RecentDiscriminationRate,'%2.0f'),'FontWeight','bold','color','b','HorizontalAlignment','center');
+        text(.9, ind, num2str(exptparams.Performance(end).DiscriminationRate,'%2.0f'),'FontWeight','bold','color','b','HorizontalAlignment','center');   
+        %         text(.9, ind, num2str(exptparams.Performance(end).RecentDiscriminationRate,'%2.0f'),'FontWeight','bold','color','b','HorizontalAlignment','center');
         %         text(.14, ind, num2str(exptparams.Performance(end).LickRate,'%2.0f'),'FontWeight','bold','color','b','HorizontalAlignment','center');
         %         text(.14, ind, num2str(exptparams.Performance(end).LickRate,'%2.0f'),'FontWeight','bold','color','b','HorizontalAlignment','center');
         %         text(.14, ind, num2str(exptparams.Performance(end).LickRate,'%2.0f'),'FontWeight','bold','color','b','HorizontalAlignment','center');
@@ -101,20 +102,26 @@ if isempty(AIData) && isempty(TrialSound)
     return;
 end
 % display Hitrate, FalseAlarmRate.
-subplot(4,4,1:4),plot(cat(1,exptparams.Performance(1:end-1).HitRate),'o-','LineWidth',2,...
+subplot(4,4,1:4), hold on;
+plot(cat(1,exptparams.Performance(1:end-1).HitRate),'o-','LineWidth',2,...
     'MarkerFaceColor',[1 .5 .5],'MarkerSize',5,'color',[1 .5 .5]);
-hold on;
+plot(cat(1,exptparams.Performance(1:end-1).RecentHitRate),'x-','LineWidth',2,...
+    'MarkerFaceColor',[.1 .1 .1],'MarkerSize',5,'color',HF_whiten([1 .5 .5],0.75));
 plot(cat(1,exptparams.Performance(1:end-1).FalseAlarmRate),'<-','LineWidth',2,...
     'MarkerFaceColor',[.1 .5 .1],'MarkerSize',5,'color',[.1 .5 .1]);
-plot(cat(1,exptparams.Performance(1:end-1).DiscriminationRate),'x-','LineWidth',2,...
+plot(cat(1,exptparams.Performance(1:end-1).RecentFalseAlarmRate),'x-','LineWidth',2,...
+    'MarkerFaceColor',[.1 .1 .1],'MarkerSize',5,'color',HF_whiten([.1 .5 .1],0.75));
+plot(cat(1,exptparams.Performance(1:end-1).dPrime),'x-','LineWidth',2,...
     'MarkerFaceColor',[.1 .1 .1],'MarkerSize',5,'color',[.1 .1 .1]);
+plot(cat(1,exptparams.Performance(1:end-1).DiscriminationRate),'x-','LineWidth',2,...
+    'MarkerFaceColor',[.35 .35 .35],'MarkerSize',5,'color',[.35 .35 .35]);
 % also, show which trials were Ineffective:
 AllIneffective = cat(1,exptparams.Performance(1:TrialIndex).Ineffective);
 AllIneffective(find(AllIneffective==0))=nan;
 plot(1.1*AllIneffective,'r*','markersize',10);
 axis ([0 (TrialIndex+1) 0 1.15]);
 title(titleMes,'FontWeight','bold','interpreter','none');
-h=legend({'HR','FAR','d''','Inef'},'Location','SouthWest');
+h=legend({'HR','RecentHR','FAR','RecentFAR','d''','DR','Inef'},'Location','SouthWest');
 LegPos = get(h,'position');
 set(h,'fontsize',8);
 LegPos(1) = 0.005; % put the legend on the far left of the screen
@@ -181,7 +188,8 @@ LegPos = get(h,'position');
 set(h,'fontsize',8);
 LegPos(1) = 0.005; % put the legend on the far left of the screen
 set(h,'position', LegPos);
-% and last, show the hit and false alarm for each position:
+
+% HR and FAR for each token position
 subplot(4,4,13:14); hold off;
 plot(100*exptparams.PositionHit(:,1)./exptparams.PositionHit(:,2),'marker','o',...
     'markersize',10,'color',[1 .5 .5],'linewidth',2);
@@ -190,7 +198,7 @@ if isfield(exptparams,'PositionFalseAlarm')
     plot(100*exptparams.PositionFalseAlarm(:,1)./exptparams.PositionFalseAlarm(:,2),...
     'marker','o','markersize',10,'color',[.1 .5 .1],'linewidth',2);
 end
-axis tight;a=axis;
+axis tight; a = axis;
 axis ([a(1) a(2) 0 100]);
 xlabel('Position');
 h=legend({'Hit','FlsAl'});
@@ -199,3 +207,16 @@ set(h,'fontsize',8);
 LegPos(1) = 0.005; % put the legend on the far left of the screen
 set(h,'position', LegPos);
 drawnow;
+
+% HR for SNR (if any)
+if isfield(exptparams.Performance,'SNRlst')
+    subplot(4,4,15:16); hold off;
+    plot(exptparams.Performance(end-1).SNRlst,...
+        100*exptparams.Performance(end-1).SNR_HR,'marker','o',...
+        'markersize',10,'color',[1 .5 .5],'linewidth',2);
+    axis tight; a = axis;
+    axis ([a(1) a(2) 0 100]);
+    xlabel('SNR'); ylabel('HR [%]')
+    drawnow;
+end
+

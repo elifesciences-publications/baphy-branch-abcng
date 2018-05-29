@@ -16,7 +16,7 @@ if RegenerateStim
         [Stimuli,ChangeTimes,options,Behavior] = TMG_ResynthesizeStim(mFile(1:end-2),'RootAdress',LocalRootFolder);
         Stimuli.ChangeTimes = ChangeTimes;
         save([DistantRootFolder mFile(1:end-2) '_ToneClouds.mat'],...
-            '-struct','Stimuli','waveform','PreChangeToneMatrix','PostChangeToneMatrix','SoundStatistics','ChangeTimes');
+            '-struct','Stimuli','FreqRanges','waveform','PreChangeToneMatrix','PostChangeToneMatrix','SoundStatistics','ChangeTimes');
         if ~isempty(Behavior); save([DistantRootFolder mFile(1:end-2) '_Behavior.mat'],'Behavior'); end
     end
 end
@@ -25,8 +25,7 @@ if CheckTrial
     % events
     TrialStopEventsInd = strcmpi({exptevents.Note},'TRIALSTOP');
     % lfp
-    EndRecInd = find(~isletter(mFile),1,'first')+5;
-    cd(['raw/' mFile(1:EndRecInd)]);
+    cd(['raw/' mFile(1:(find(mFile=='_',1,'first')-1))]);
     evpfiles = dir([mFile(1:end-2) '*']);
     [~,~,~,~,rL,LTrialIdx] = evpread(evpfiles(1).name,'lfpchans',1);
     cd ..; cd ..;

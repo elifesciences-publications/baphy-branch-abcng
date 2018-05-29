@@ -17,7 +17,7 @@ fwrite(BaphyMANTAConn,MSG);
 if ~exist('ACK','var') | ~isempty(ACK)
   % COLLECT RESPONSE
   tic;
-  while ~get(BaphyMANTAConn,'BytesAvailable') & toc<5  pause(0.01); end;  pause(0.1);
+  while ~get(BaphyMANTAConn,'BytesAvailable') & toc<10  pause(0.01); end;  pause(0.1);
   RESP = char(fread(BaphyMANTAConn,get(BaphyMANTAConn,'BytesAvailable'))');
   % REMOVE LINEFEEDS
   RESP = RESP(find(int8(RESP)~=10));

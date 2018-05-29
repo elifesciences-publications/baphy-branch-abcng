@@ -20,33 +20,65 @@ IsLookUp = 1;
 %
 if IsLookup
     if strcmpi(par.TargetClass,'none'),
-        tr=get(get(exptparams.TrialObject,'ReferenceHandle'));
+        tr = get(get(exptparams.TrialObject,'ReferenceHandle'));
         if isfield(tr,'RefRepCount'),
-            NumRef=tr.RefRepCount;
+            NumRef = tr.RefRepCount;
         else
-            NumRef=1;
+            NumRef = 1;
         end
     else
-      switch par.MaxRef
-        case 7 % Ratio Ref/Tar = 5  % Initial LookupTable in the UMD paradigm
-          LookupTable = [3 4 7 3 2 7 3 1 4 1 5 7 2 1 6 4 7 2 1 7 2 5 1 3 2 1 7 4 7 5 6];
-        case 6 % Ratio Ref/Tar = 4
-          LookupTable = [3 1 4 6 2 6 2 1 3 1 3 6 4 2 5 1 1 5 2 6];
-        case 5 % Ratio Ref/Tar = 3
-          LookupTable = [3 1 2 5 1 1 3 3 4 4 1 2 1 1 2 3 4 3 5 4 2 1 5 2];
-        case 4 % Ratio Ref/Tar = 2.5
-          LookupTable = [1 2 3 4 2 2 2 3 1];
-        case 3 % Ratio Ref/Tar = 2
-          LookupTable = [1 1 1 1 1 2 2 2 2 1 3 3];
-        case 2 % Ratio Ref/Tar = 1.5
-          LookupTable = [1 2 2 1 2 1 1 1 1 0 0];
-        case 1 % Ratio Ref/Tar = 1
-          if par.ReferenceMaxIndex==par.TargetMaxIndex
-            LookupTable = [ones(1,par.ReferenceMaxIndex) zeros(1,par.TargetMaxIndex)];
-          else
-            LookupTable = [0 1 1 0 0 1 0 1 0 0 1 1];
-          end
-      end
+        switch par.MaxRefPar
+            case 'None'
+                switch par.MaxRef
+%                     case 20
+%                         LookupTable = [];
+%                         RefNbLst = [ 18    16    14    12    11     9     8     7     6     6     5     4     4     3     3     2];
+%                         for RefNb = 5:20
+%                             LookupTable = [LookupTable RefNb*ones(1,RefNbLst(RefNb-4))];
+%                         end
+                    case 7 % Ratio Ref/Tar = 5  % Initial LookupTable in the UMD paradigm
+                        LookupTable = [3 4 7 3 2 3 1 4 1 5 2 1 6 4 7 2 1 2 5 1 3 2 1 4 5 6];  % 18/02/26-YB: 22% [7/31] of catch before! Now 8%
+                    case 6 % Ratio Ref/Tar = 4
+                        LookupTable = [3 1 4 6 2 6 2 1 3 1 3 6 4 2 5 1 1 5 2 6];
+                    case 5 % Ratio Ref/Tar = 3
+                        LookupTable = [3 1 2 5 1 1 3 3 4 4 1 2 1 1 2 3 4 3 5 4 2 1 5 2];
+                    case 4 % Ratio Ref/Tar = 2.5
+                        LookupTable = [1 2 3 4 2 2 2 3 1];
+                    case 3 % Ratio Ref/Tar = 2
+                        LookupTable = [1 1 1 1 1 2 2 2 2 1 3 3];
+                    case 2 % Ratio Ref/Tar = 1.5
+                        LookupTable = [1 2 2 1 2 1 1 1 1 0 0];
+                    case 1 % Ratio Ref/Tar = 1
+                        if par.ReferenceMaxIndex==par.TargetMaxIndex
+                            LookupTable = [ones(1,par.ReferenceMaxIndex) zeros(1,par.TargetMaxIndex)];
+                        else
+                            LookupTable = [0 1 1 0 0 1 0 1 0 0 1 1];
+                        end
+                    case 0
+                        LookupTable = 0;
+                    otherwise
+                        Range = par.MaxRef;
+                        [PoissonSamples,BinX] = PoissonProcessPsychophysics(1.5/Range,Range,150,[],15);
+                        BinX = unique(round(BinX));
+                        RefNbLst = histc(PoissonSamples,BinX);
+                        LookupTable = [];
+                        for RefNb = 1:length(BinX)
+                            LookupTable = [LookupTable BinX(RefNb)*ones(1,RefNbLst(RefNb))];
+                        end
+                end
+            case 'FixedMaxRef'
+                LookupTable = [ones(1,10)*(par.MaxRef-1) par.MaxRef];
+            case 'Range'
+                Range = diff(par.MaxRef);
+                [PoissonSamples,BinX] = PoissonProcessPsychophysics(1.5/Range,Range,150,[],15);
+                BinX = unique(round(BinX));
+                RefNbLst = histc(PoissonSamples,BinX);
+                BinX = BinX+par.MaxRef(1);
+                LookupTable = [];
+                for RefNb = 1:length(BinX)
+                    LookupTable = [LookupTable BinX(RefNb)*ones(1,RefNbLst(RefNb))];
+                end
+        end
 % Rt = sum(LookupTable)/(length(LookupTable)-length(find(LookupTable==ii))); disp([ii Rt]);
 % clear w; for kk=1:ii; w(kk)=length(find(LookupTable==kk)); end; disp(w)
 
@@ -63,6 +95,9 @@ if IsLookup
 end
 temp = [];
 ReferenceMaxIndex = par.ReferenceMaxIndex;
+if IsLookup&&exist('LookupTable','var')
+    ReferenceMaxIndex = sum(LookupTable);
+end
 % here, we try to specify the real number of references per trial, and
 % determine how many trials are needed to cover all the references. If its
 % a detect case, its easy. Add from NumRef to trials until the sum of
@@ -73,7 +108,12 @@ while sum(temp) < ReferenceMaxIndex      % while not all the references are cove
     if isempty(NumRef)  % if not and if NumRef is empty just finish it
         temp = [temp ReferenceMaxIndex-sum(temp)]; % temp holds the number of references in each trial
 %     elseif sum(temp)+NumRef(1)+(IsDiscrim & ~IsSham(1)) <= ReferenceMaxIndex % can we add NumRef(1)?
+    elseif exist('LookupTable','var')&&all(LookupTable==0) % only targets
+        temp = []; break;
     elseif sum(temp)+NumRef(1) <= ReferenceMaxIndex % can we add NumRef(1)?
+        temp = [temp NumRef(1)]; % if so, add it and circle NumRef
+        NumRef = circshift (NumRef, -1);
+    elseif ReferenceMaxIndex==1  % case of Noise or WN for instance
         temp = [temp NumRef(1)]; % if so, add it and circle NumRef
         NumRef = circshift (NumRef, -1);
     else
@@ -87,7 +127,10 @@ else
 end
 % Lets specify which trials are sham:
 TotalTrials = length(RefNumTemp);
-if (get(o,'NumberOfTarPerTrial') ~= 0) && (~strcmpi(get(o,'TargetClass'),'None')) 
+if isempty(RefNumTemp)
+    TargetIndex = 1:par.TargetMaxIndex;
+    TargetIndex = mat2cell(TargetIndex(randperm(par.TargetMaxIndex)),1,ones(1,par.TargetMaxIndex));
+elseif(get(o,'NumberOfTarPerTrial') ~= 0) && (~strcmpi(get(o,'TargetClass'),'None')) 
     if ~IsLookup
         NotShamNumber = floor((100-par.ShamPercentage) * TotalTrials / 100); % how many shams do we have??
         allTrials  = randperm(TotalTrials); %
@@ -107,13 +150,23 @@ end
 % them in the trial. But in discrim case, we put one index in the target
 % also, if its not a sham. 
 % Now generate random sequences for each trial
-RandIndex = randperm(par.ReferenceMaxIndex);
+
+if ~exist('LookupTable','var')
+  RandIndex = randperm(par.ReferenceMaxIndex);
+else
+  RandIndex = repmat(1:par.ReferenceMaxIndex,1,ceil(sum(LookupTable)/par.ReferenceMaxIndex));
+end
+RandIndex = RandIndex(randperm(length(RandIndex)));
 for cnt1=1:length(RefNumTemp)
-    RefTrialIndex {cnt1} = RandIndex (1:RefNumTemp(cnt1));
-    RandIndex (1:RefNumTemp(cnt1)) = [];
+    if ~(ReferenceMaxIndex==1)
+        RefTrialIndex {cnt1} = RandIndex (1:RefNumTemp(cnt1));
+        RandIndex (1:RefNumTemp(cnt1)) = [];
+    else
+        RefTrialIndex {cnt1} = ones(1,RefNumTemp(cnt1));
+    end
 end
 
-if par.ReferenceMaxIndex==par.TargetMaxIndex
+if par.ReferenceMaxIndex==par.TargetMaxIndex && par.MaxRef==1
     temp = LookupTable(randperm(length(LookupTable)));
     TotalTrials = length(temp);
     ShuffledTarIndex = randperm(par.TargetMaxIndex);
@@ -122,14 +175,22 @@ if par.ReferenceMaxIndex==par.TargetMaxIndex
     c = 0;
     for tn = find(temp==0)
         c = c+1;
-        TargetIndex{tn} = ShuffledTarIndex(c);
+        TargetIndex{tn} = ShuffledTarIndex(mod(c,length(ShuffledTarIndex))+1);
     end
     RefTrialIndex = cell(1,2*par.ReferenceMaxIndex);
     c = 0;
     for tn = find(temp==1)
         c = c+1;
-        RefTrialIndex{tn} = ShuffledRefIndex(c);
+        RefTrialIndex{tn} = ShuffledRefIndex(mod(c,length(ShuffledRefIndex))+1);
     end 
+elseif par.MaxRef==0
+    TotalTrials = 1; RefTrialIndex{1} = [];
+end
+for cnt1=(length(RefTrialIndex)+1):length(TargetIndex)
+    RefTrialIndex {cnt1} = [];
+end
+for cnt1=(length(TargetIndex)+1):length(RefTrialIndex)
+    TargetIndex {cnt1} = [];
 end
 
 o = set(o,'ReferenceIndices',RefTrialIndex);

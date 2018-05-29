@@ -9,10 +9,12 @@ function exptparams = BehaviorDisplay (O, HW, StimEvents, globalparams, exptpara
 % - Put information in figure (textstring, so that it will be saved) : 
 %    Water given, Reference, Target, StartTime
 % 
-% BE 2011/7
+% YB/BE 2011/07
 
 %% SETUP
-if ~TrialIndex return; end % IN CASE BREAK WITHOUT A SINGLE TRIAL
+if ~TrialIndex || strcmp( get(get(exptparams.TrialObject,'TargetHandle'),'descriptor') , 'MemoNoise' )
+  return;
+end % IN CASE BREAK WITHOUT A SINGLE TRIAL
 DCtmp = HF_axesDivide(1,[1,0.5,1.5,1.2],[0.1,0.1,0.85,0.85],[],[0.1,0.7,0.7]);
 DCtmp2 = HF_axesDivide([1,1],1,DCtmp{end},0.4,[ ]);
 DC = [DCtmp(1:end-1);DCtmp2(:)];

@@ -6,6 +6,7 @@ switch nargin
   case 0  % if no input arguments, create a default object
     Fields = {...
       'StimulusType','popupmenu','PilotScrambling',...
+      'InitialOrder','edit',2,...
       };
     [p, ~, ~] = fileparts(mfilename('fullpath'));
     
@@ -19,14 +20,15 @@ switch nargin
     
     switch O.StimulusType
         case 'PilotScrambling'
-            load([p filesep 'stim-orders-ferret.mat']);
+%             load([p filesep 'stim-orders-ferret.mat']);
+            load([p filesep 'ScramblingOrder' filesep 'r1.mat']);
             sounds = stim_order(:,1);
             S = SoundObject ('NaturalSounds', 100000, 0, 0.4, 0.4, sounds, numel(sounds), Fields);
     end
     O.Names = sounds;
     O.Duration = NaN;
     O.VarFieldNames = {};  O.VarFieldInds = []; O.Par = [];
-    O.RunClass = 'NSD'; 
+    O.RunClass = 'NSD';
     O = class(O, 'NaturalSounds', S);
     O = ObjUpdate(O);
     

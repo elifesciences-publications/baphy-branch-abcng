@@ -34,6 +34,7 @@ exptparams.LogDuration = exptparams.LogDuration+LogDurationExtra;
 %   EarlyWindow = EarlyWindow + get(StimEvents(end-2).StartTime);
 % end
 AutomaticReward = get(o,'AutomaticReward');
+DelayAutomaticReward = 0.25;
 RH = get(exptparams.TrialObject,'ReferenceHandle'); TH = get(exptparams.TrialObject,'TargetHandle');
 LickEvents = [];
 SoundStopped = 0;
@@ -187,16 +188,15 @@ while CurrentTime < exptparams.LogDuration % BE removed +0.05 here (which screws
         MotorOn = 1;
     end
     
-    if ~Ref && ( Lick || (AutomaticReward&&(CurrentTime>(TarResponseWin(1)+AutomaticReward))) ) &&...
+    if ~Ref && ( Lick || (AutomaticReward&&(CurrentTime>(TarResponseWin(1)+DelayAutomaticReward))) ) &&...
             mod(StimPos,2) && ~isequal(TarFlag,StimPos)
         % if she licks in target response window
         TimeOutFlag = 0;
+        PumpDuration = RewardAmount/globalparams.PumpMlPerSec.Pump;
         if Lick
             LickEV.Note = 'LICK,HIT';
-            PumpDuration = RewardAmount/globalparams.PumpMlPerSec.Pump;
         elseif AutomaticReward
             LickEV.Note = 'AUTOMATIC REWARD';
-            PumpDuration = (1/2)*RewardAmount/globalparams.PumpMlPerSec.Pump;
         end
         LickEvents = AddEvent(LickEvents, LickEV, TrialIndex);
         break;
@@ -206,7 +206,7 @@ while CurrentTime < exptparams.LogDuration % BE removed +0.05 here (which screws
     tmp = IOGetTimeStamp(HW);
     
     % leave it here in case something goes wrong
-    if tmp > (CurrentTime+0.020) && ~MotorOn
+    if tmp > (CurrentTime+0.050) && ~MotorOn
       disp('***')
       disp('Problem with trig interval.')
       disp('***')
@@ -216,8 +216,9 @@ while CurrentTime < exptparams.LogDuration % BE removed +0.05 here (which screws
 end
 
 % STOP SOUND
-if ~SoundStopped
+if StopFlag&&~SoundStopped
   evStopSound = IOStopSound(HW);
+  SoundStopped = 1;
 end
 % DELIVER WATER
 if PumpDuration > 0
@@ -229,6 +230,12 @@ if PumpDuration > 0
     else
         fprintf(['\t Lick on Target detected @ ',num2str(CurrentTime),'s ... ']);
     end
+end
+if ~StopFlag
+    pause(max([0,TarResponseWin(2)-IOGetTimeStamp(HW)]))
+end
+if ~SoundStopped
+    evStopSound = IOStopSound(HW);
 end
 % LEAVE THE SPOUT IN FRONT OF THE SNOUT
 % IF WATER IS DELIVERED AND MOTOR ON
@@ -259,7 +266,11 @@ end
 
 if TimeOutFlag>0
     ThisTime = clock;
-    TimeOut = ifstr2num(get(o,'TimeOut'));
+    if Ref        
+        TimeOut = ifstr2num(get(o,'TimeOut'));
+    else
+        TimeOut = ifstr2num(get(o,'TimeOutEarly'));
+    end
 %     TimeOut = TimeOut * (1+2*FalseAlarm);  % 16/10-YB
     while etime(clock,ThisTime) < (TimeOut+exptparams.LogDuration+ExtraDuration-CurrentTime)
         drawnow;

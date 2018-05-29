@@ -8,6 +8,7 @@ end
 %parmfile='/auto/data/daq/Portabello/training2012/Portabello_2012_11_20_TSP_5.m';
 [pathname,basename]=fileparts(parmfile);
 
+global globalparams
 LoadMFile(parmfile);
 % if its a RefTar module, create the objects:
 if strcmpi(globalparams.Module,'Reference Target')
@@ -35,7 +36,7 @@ if strcmpi(globalparams.Module,'Reference Target')
     exptparams.BehaveObject = BehaveObject;
 end
 if isfield(exptparams,'Performance'),
-    exptparams = rmfield(exptparams,'Performance');
+%     exptparams = rmfield(exptparams,'Performance');
 end
 exptparams.OfflineAnalysis = 1;
 
