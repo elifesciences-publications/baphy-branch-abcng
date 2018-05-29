@@ -108,13 +108,10 @@ switch globalparams.HWSetup
     %% COMMUNICATE WITH MANTA
     if Physiology  [HW,globalparams] = IOConnectWithManta(HW,globalparams); end
     
-  case {4,7} % TWO PHOTON and ePHY BOOTHS IN BIOLOGY
-%     DAQID = 'D5'; % NI BOARD ID WHICH CONTROLS STIMULUS & BEHAVIOR
-%     version with USB 6259 board
-    DAQID = 'Dev4'; % NI BOARD ID WHICH CONTROLS STIMULUS & BEHAVIOR 
- %    version with PCIe 6259 board
-    HW.params.fsAO = 500000;
-
+  case {4} % TWO PHOTON BOOTH IN BIOLOGY
+      DAQID = 'Dev4'; % NI BOARD ID WHICH CONTROLS STIMULUS & BEHAVIOR
+      %    version with PCIe 6259 board
+      HW.params.fsAO = 500000;
     niResetDevice(DAQID);
     
     %% DIGITAL IO
@@ -145,10 +142,42 @@ switch globalparams.HWSetup
     HW.OPTICAL = struct([]);     
     
     %% SETUP SPEAKER CALIBRATION
-    HW.Calibration.Speaker = ['Tweeter',globalparams.HWSetupName];
+    HW.Calibration.Speaker = ['Tweeter_',globalparams.HWSetupName];
     HW.Calibration.Microphone = 'GRAS46BE';
-    HW.Calibration = IOLoadCalibration(HW.Calibration);    
+    HW.Calibration = IOLoadCalibration(HW.Calibration);
     
+case {7} %ePHY BOOTHS IN BIOLOGY
+    DAQID = 'D0'; % NI BOARD ID WHICH CONTROLS STIMULUS & BEHAVIOR
+    HW.params.fsAO = 500000;
+    niResetDevice(DAQID);
+    
+     %% DIGITAL IO
+    HW=niCreateDO(HW,DAQID,'port0/line0:1,port2/line0:1','TrigAI,TrigAO,TrigAIInv,TrigAOInv','InitState',[0 0 1 1]);
+    HW=niCreateDO(HW,DAQID,'port0/line6','TrigOnlineAI','InitState',0);  % monitor eye position online
+    HW=niCreateDO(HW,DAQID,'port0/line2','EyeFixationInitiated','InitState',0);
+    HW=niCreateDO(HW,DAQID,'port0/line3','EyeFixationTerminated','InitState',0);
+    HW=niCreateDO(HW,DAQID,'port2/line3','Light','InitState',0);
+    HW=niCreateDO(HW,DAQID,'port0/line7','LightR','InitState',0);
+    HW=niCreateDO(HW,DAQID,'port0/line4','LightL','InitState',0);
+    HW=niCreateDO(HW,DAQID,'port1/line5','Pump','InitState',0);
+    HW=niCreateDO(HW,DAQID,'port1/line7','PumpMotor','InitState',0);
+    HW=niCreateDI(HW,DAQID,'port0/line5','Touch');
+    HW=niCreateDI(HW,DAQID,'port1/line6','Fixation');
+    
+    %% ANALOG INPUT
+    HW=niCreateAI(HW,DAQID,'ai0:6','Touch,Microphone,PupilD,EyeX,Diode,PsyTriggers,EyeY',['/',DAQID,'/PFI0']); 
+    
+    %% ANALOG OUTPUT
+    HW=niCreateAO(HW,DAQID,'ao0:1','SoundOut1,SoundOut2',['/',DAQID,'/PFI1']);
+    
+    %% SETUP SPEAKER CALIBRATION
+    HW.Calibration.Speaker = ['Tweeter_',globalparams.HWSetupName];
+    HW.Calibration.Microphone = 'GRAS46BE';
+    HW.Calibration = IOLoadCalibration(HW.Calibration);
+    
+    %% COMMUNICATE WITH MANTA
+    if Physiology  [HW,globalparams] = IOConnectWithManta(HW,globalparams); end
+        
   case {11} % Psychophysics Booth
     DAQID = 'D0'; % NI BOARD ID WHICH CONTROLS STIMULUS & BEHAVIOR
     niResetDevice(DAQID);
