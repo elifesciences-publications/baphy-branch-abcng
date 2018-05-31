@@ -28,6 +28,17 @@ TarResponseWin = [];
 TarEarlyWin    = [];
 NumRef = 0;
 StopOnEarly = get(o,'StopOnEarly');
+MaxRef = get(exptparams.TrialObject,'MaxRef');
+if ~isempty(cell2mat(strfind(fieldnames(exptparams.TrialObject),'MaxRefPar')))
+    switch get(exptparams.TrialObject,'MaxRefPar')
+        case 'FixedMaxRef'
+            MaxRef = MaxRef;
+        case 'Range'
+        	MaxRef = MaxRef(2);
+        case 'RangeWithCatch'
+            MaxRef = MaxRef(3);
+    end
+end
 % first, we find all the relevant time windows, which are ResponseWindow
 % after reference and target, and EarlyWindow after target. Each sequence
 % starts with $ sign.
@@ -61,7 +72,10 @@ for cnt1 = 1:length(StimEvents);
         end
     end
 end
-% STIM,OFF';
+% case of catch when ref & tar RW are of different lengths
+if NumRef>=2 && (get(o,'ResponseWindow') + get(o,'EarlyWindow'))>(RefResponseWin(3)-RefResponseWin(1)) && MaxRef==NumRef
+    RefResponseWin(end) = RefResponseWin(end-1)+(RefResponseWin(3)-RefResponseWin(1))-get(o,'EarlyWindow');
+end
 
 % now, RefResponseWin is a vector that has the start and stop point of each
 % reference response window, ex.: [1.2 1.4 3.2 3.4 5.2 5.4]
@@ -82,11 +96,15 @@ RefFalseAlarm = 0; RefFirstLick = NaN; PlayedNumRef = 0; TrialCut = 0;
 for cnt2 = 1:NumRef
     cnt1 = (cnt2-1)*2+1;
     if ~TrialCut
-        RefResponseLicks{cnt2} = LickData(max(1,round(fs*RefResponseWin(cnt1))):min(length(LickData),round(fs*RefResponseWin(cnt1+1))));
         RefEarlyLicks{cnt2} = LickData(max(1,round(fs*RefEarlyWin(cnt1))):min(length(LickData),round(fs*RefEarlyWin(cnt1+1))));
+        RefResponseLicks{cnt2} = LickData(max(1,round(fs*RefResponseWin(cnt1))):min(length(LickData),round(fs*RefResponseWin(cnt1+1))));
         temp = find([RefEarlyLicks{cnt2}; RefResponseLicks{cnt2}],1)/fs;
         if ~isempty(temp), RefFirstLick(cnt2) = temp; else RefFirstLick(cnt2) = nan;end
-        RefFalseAlarm(cnt2) = double(~isempty(find(RefResponseLicks{cnt2},1)));
+        if get(o,'StopOnEarly')==2  % lick on Ref Early counts
+            RefFalseAlarm(cnt2) = double(~isempty(find([RefEarlyLicks{cnt2}; RefResponseLicks{cnt2}],1)));
+        else
+            RefFalseAlarm(cnt2) = double(~isempty(find(RefResponseLicks{cnt2},1)));
+        end
         PlayedNumRef = PlayedNumRef+1;
         if (sum(RefFalseAlarm)/NumRef)>=StopTargetFA
             TrialCut = 1;
@@ -95,7 +113,7 @@ for cnt2 = 1:NumRef
 end
 NumRef = PlayedNumRef;
 if isempty(TarResponseWin) %for no target (sham trial)  by py&9/6/2012
-    TarResponseLick=[];
+    TarResponseLick = [];
 else
     TarResponseLick = LickData(max(1,round(fs*TarResponseWin(1))):min(length(LickData),round(fs*TarResponseWin(2))));
 end
@@ -159,13 +177,7 @@ perf(cnt2).EarlyTrial   = double(~isempty(find(TarEarlyLick,1)));
 %
 perf(cnt2).Hit          = double(perf(cnt2).WarningTrial && ~perf(cnt2).EarlyTrial && ~isempty(find(TarResponseLick,1))); % if there is a lick in target response window, its a hit
 perf(cnt2).Miss         = double(perf(cnt2).WarningTrial && ~perf(cnt2).EarlyTrial && ~perf(cnt2).Hit);
-MaxRef = get(exptparams.TrialObject,'MaxRef');
-if length(MaxRef)==2; MaxRef = MaxRef(2); end
-if MaxRef == 1   % specific case where lick post REF and lick during TAR are counted as ineffective
-    perf(cnt2).Catch         = double(MaxRef==NumRef);
-else
-    perf(cnt2).Catch         = double(MaxRef==NumRef);
-end
+perf(cnt2).Catch         = double(MaxRef==NumRef);
 perf(cnt2).ReferenceLickTrial = double((perf(cnt2).FalseAlarm>0));
 %
 perf(cnt2).LickRate = length(find(LickData)) / length(LickData);

@@ -59,7 +59,7 @@ case 0
     RefTarO.MaxRef = 4;
     RefTarO.MaxRefPar = 'None';
     RefTarO.UserDefinableFields = {'OveralldB','edit',65,'RelativeTarRefdB',...
-        'edit',0,'MaxRef','edit',4,'MaxRefPar','popupmenu','None|FixedMaxRef|Range'};
+        'edit',0,'MaxRef','edit',4,'MaxRefPar','popupmenu','None|FixedMaxRef|Range|RangeWithCatch'};
     RefTarO = class(RefTarO,'ReferenceTarget');
     RefTarO = ObjUpdate(RefTarO);
 case 1

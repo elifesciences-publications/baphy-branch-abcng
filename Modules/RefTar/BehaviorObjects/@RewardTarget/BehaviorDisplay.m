@@ -149,7 +149,7 @@ for cnt1 = 1:length(StimEvents)
             'color',c,'FontWeight','bold','HorizontalAlignment','center');
     end
 end
-% Second, draw the boundry of response window, and early window:
+% Second, draw the boundary of response and early windows:
 for cnt1 = 1:2:length(exptparams.RefResponseWin)
     line([fs*exptparams.RefResponseWin(cnt1) fs*exptparams.RefResponseWin(cnt1+1)],[1.1 1.1],...
         'color','k','LineStyle','-','LineWidth',2);

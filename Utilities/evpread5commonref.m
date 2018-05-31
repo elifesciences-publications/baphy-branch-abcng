@@ -18,6 +18,8 @@ Force = useCommonRef == 2;
 
 % NUMBER OF CHANNELS PER BANK (IN PLEXON SYSTEM)
 NAv = 16; 
+% NUMBER OF CHANNELS PER BANK (IN BLACKROCK SYSTEM)
+NAv = 32; 
 
  if ~exist(FileNameMean,'file') | Force
    % GET CURRENT SET OF FILES

@@ -84,7 +84,7 @@ switch IODriver(HW)
             end
         end
         
-        for AInum=1%:length(HW.AI(1)),
+        for AInum=1:length(HW.AI(1)),
           niStop(HW.AI(AInum));
         end
         

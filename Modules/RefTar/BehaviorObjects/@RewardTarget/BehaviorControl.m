@@ -101,6 +101,18 @@ for cnt1 = 1:length(StimEvents)
   end
 end
 
+MaxRef = get(exptparams.TrialObject,'MaxRef');
+if ~isempty(cell2mat(strfind(fieldnames(exptparams.TrialObject),'MaxRefPar')))
+    switch get(exptparams.TrialObject,'MaxRefPar')
+        case 'FixedMaxRef'
+            MaxRef = MaxRef;
+        case 'Range'
+        	MaxRef = MaxRef(2);
+        case 'RangeWithCatch'
+            MaxRef = MaxRef(3);
+    end
+end
+Catch = (MaxRef==NumRef);
 [LightStateR, ev] = IOLightSwitch(HW,1,0,[],0,0,'LightR');
 % we monitor the lick until the end plus response time and postargetlick
 LastLick = 0;
@@ -145,10 +157,12 @@ while CurrentTime < exptparams.LogDuration % BE removed +0.05 here (which screws
         Ref = 1;  % we are in reference part of the sound
         EarlyPos = length(find(RefEarlyWin<CurrentTime)); % not used so far since early exists only for tar
     else % if we are in target part
-        StimPos = length(find(TarResponseWin<CurrentTime));
-        EarlyPos = length(find(TarEarlyWin<CurrentTime));
-        LightPos = length(find(TarLightWin<CurrentTime));
-        Ref = 0;
+        if ~Catch
+            StimPos = length(find(TarResponseWin<CurrentTime));
+            EarlyPos = length(find(TarEarlyWin<CurrentTime));
+            LightPos = length(find(TarLightWin<CurrentTime));
+            Ref = 0;
+        else break; end
     end
     if StopFlag && (FalseAlarm>=StopTargetFA)
         % ineffective sound:
@@ -166,22 +180,28 @@ while CurrentTime < exptparams.LogDuration % BE removed +0.05 here (which screws
 %         while(IOGetTimeStamp(HW)<exptparams.LogDuration), end;
 %         break;
     end
-    if (Lick) && Ref && mod(StimPos,2) && ~isequal(RefFlag,StimPos) %% for including licks in the ref early window:% & (Ref && mod(EarlyPos,2))
-        % RefFlag: we want to add to the FalseAlarm only once for each reference.
-        % if she licks in reference response window, add to the false alarm rate
-        if strcmpi(get(o,'TurnOnLight'),'FalseAlarm')
-            [ll,ev] = IOLightSwitch (HW, 1, .2);
-            LickEvents = AddEvent(LickEvents, ev, TrialIndex);
+    if (Lick) && Ref
+        if mod(StimPos,2) && ~isequal(RefFlag,StimPos) %% for including licks in the ref early window:% & (Ref && mod(EarlyPos,2))
+            % RefFlag: we want to add to the FalseAlarm only once for each reference.
+            % if she licks in reference response window, add to the false alarm rate
+            if strcmpi(get(o,'TurnOnLight'),'FalseAlarm')
+                [ll,ev] = IOLightSwitch (HW, 1, .2);
+                LickEvents = AddEvent(LickEvents, ev, TrialIndex);
+            end
+            if strcmpi(get(o,'Shock'),'FalseAlarm') && StimPos>length(StimIndex)-2 %apply only to last ref
+                ev = IOControlShock (HW, .2, 'Start');
+                LickEvents = AddEvent(LickEvents, ev, TrialIndex);
+            end
+            
+            FalseAlarm = FalseAlarm + 1/NumRef;
+            ResponseTime = CurrentTime;
+            LickEvents = AddEvent(LickEvents,'LICK,FA',TrialIndex,ResponseTime,[]);
+        elseif get(o,'StopOnEarly')==2  % lick on Ref Early counts
+            RefFlag = StimPos;
+            FalseAlarm = FalseAlarm + 1/NumRef;
+            ResponseTime = CurrentTime;
+            LickEvents = AddEvent(LickEvents,'LICK,EARLY',TrialIndex,ResponseTime,[]);
         end
-        if strcmpi(get(o,'Shock'),'FalseAlarm') && StimPos>length(StimIndex)-2 %apply only to last ref
-            ev = IOControlShock (HW, .2, 'Start');
-            LickEvents = AddEvent(LickEvents, ev, TrialIndex);
-        end
-        
-        RefFlag = StimPos;
-        FalseAlarm = FalseAlarm + 1/NumRef;
-        ResponseTime = CurrentTime;
-        LickEvents = AddEvent(LickEvents,'LICK,FA',TrialIndex,ResponseTime,[]);
     end
     if (Lick) && (~Ref && mod(EarlyPos,2)) && get(o,'StopOnEarly')
         % if she licks in early window, terminate the trial immediately, and give her timeout.

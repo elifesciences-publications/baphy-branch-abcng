@@ -37,6 +37,11 @@ exptevents = []; ContinueExp = 1; exptparams.TotalRepetitions = 0; TrialIndex = 
 exptparams.StartTime = clock; exptparams.Water = 0;
 laststoptime=now;
 
+% Start VIDEO if ePhy
+if strfind(globalparams.Physiology,'Yes'); try
+    FFmpeg_Interface('start',globalparams.mfilename(1:end-2));
+end; end
+
 % ADD DESCRIPTIVE COMMENTS
 exptparams.comment = [...
   'Experiment: ',class(exptparams.BehaveObject),' ',...
@@ -70,7 +75,6 @@ while ContinueExp == 1
     exptparams = RandomizeSequence(exptparams.TrialObject, exptparams, globalparams, iRep, 1);
     
     iTrial=0;
-    exptparams.NoTargetInTrialCount = [];%Added by CB 10/11/15
     while iTrial<get(exptparams.TrialObject,'NumberOfTrials') % TRIAL LOOP
       TrialIndexLst(end+1) = TrialIndexLst(end)+1;
       TrialIndex = TrialIndex + 1; % MAIN TRIAL COUNTER
@@ -182,7 +186,7 @@ while ContinueExp == 1
         if strcmpi(AINames{i}(1:min(end,5)),'Diode') RespIndices(end+1) = i; ScalingF(end+1) = 3260; end
         if strcmpi(AINames{i}(1:min(end,5)),'Pupil') RespIndices(end+1) = i; ScalingF(end+1) = 3260; end
         if strcmpi(AINames{i}(1:min(end,4)),'walk') RespIndices(end+1) = i; ScalingF(end+1) = 1; end
-%         if strcmpi(AINames{i}(1:min(end,3)),'ABR') RespIndices(end+1) = i; ScalingF(end+1) = 1; end
+        if strcmpi(AINames{i}(1:min(end,3)),'ABR') RespIndices(end+1) = i; ScalingF(end+1) = 1; end
       end
       Data.Responses = Data.Aux(:,RespIndices).*repmat(ScalingF,size(Data.Aux,1),1);   % 16/02-YB: add scaling factor to eye data to make them integrer and compatible with 'short' saving in evpwrite
       exptparams.RespSensors = AINames(RespIndices);
@@ -214,6 +218,45 @@ while ContinueExp == 1
           MSG = ['STOP',HW.MANTA.COMterm,HW.MANTA.MSGterm];
           [RESP,HW] = IOSendMessageManta(HW,MSG,'STOP OK','',1);
       end
+      
+      %% Dirty bit under testing by Yves, to cancel the pre-trial high-pitch noise when the TrigAI line was set to low
+      % Bc of this noise, due to connection of the TrigAI with the second NI (MANTA ones), I have to pseudo trigger
+      aiidx=find(strcmp({HW.Didx.Name},'TrigAI'));
+      aoidx=find(strcmp({HW.Didx.Name},'TrigAO'));
+      TriggerDIO=HW.Didx(aiidx).Task; % WARNING : THIS ASSUMES EVERYTHING IS ON ONE TASK
+      
+      % IF A BILATERAL TRIGGER IS USED ADD THOSE TRIGGERS
+      aiidxInv=find(strcmp({HW.Didx.Name},'TrigAIInv'));
+      aoidxInv=find(strcmp({HW.Didx.Name},'TrigAOInv'));
+      if ~isempty(aiidxInv) aiidx = [aiidx,aiidxInv]; end
+      if ~isempty(aoidxInv) aoidx = [aoidx,aoidxInv]; end
+      
+      AITriggerChan=[HW.Didx(aiidx).Line];
+      AOTriggerChan=[HW.Didx(aoidx).Line];
+      v=niGetValue(HW.DIO(TriggerDIO));
+      vstop=v;
+      if HW.params.syncAIAO,
+          % triggering both AI and AO
+          vstop([AITriggerChan AOTriggerChan])=...
+              HW.DIO(TriggerDIO).InitState([AITriggerChan AOTriggerChan]);
+          v([AITriggerChan AOTriggerChan])=...
+              1-vstop([AITriggerChan AOTriggerChan]);
+      else
+          % only triggering AI
+          vstop([AITriggerChan])=HW.DIO(TriggerDIO).InitState([AITriggerChan]);
+          v([AITriggerChan])=1-vstop([AITriggerChan]);
+      end
+      for AInum=1:length(HW.AI(1)),
+          niStop(HW.AI(AInum));
+      end
+      
+      % HW=niStart(HW);
+      % make sure not triggering
+      niPutValue(HW.DIO(TriggerDIO),vstop);
+      
+      % now actually trigger
+      niPutValue(HW.DIO(TriggerDIO),v);
+      %%
       
       % PLOT BEHAVIOR ANALYSIS
       exptparams = BehaviorDisplay(BehaveObject, HW, StimEvents, globalparams, ...
@@ -273,7 +316,8 @@ while ContinueExp == 1
     
     % WRITE MFILE
     if ~isempty(globalparams.mfilename),
-      WriteMFile(globalparams,exptparams,exptevents,1);
+%       WriteMFile(globalparams,exptparams,exptevents,1);
+      WriteMFileY(globalparams,exptparams,exptevents,0);  % faster version that does not re-write all the exptevents, but just copy them from the last run
     else
       disp('TEST MODE. Not saving mfile');
     end
@@ -290,6 +334,9 @@ while ContinueExp == 1
     end
   end
 end % CHECK FOR CONTINUING EXPERIMENT
+if strfind(globalparams.Physiology,'Yes'); try
+    FFmpeg_Interface('stop');
+end; end
 exptparams.StopTime = clock;
 if ~isfield(exptparams,'volreward') exptparams.volreward = exptparams.Water; end
 

@@ -68,8 +68,8 @@ if IsLookup
                 end
             case 'FixedMaxRef'
                 LookupTable = [ones(1,10)*(par.MaxRef-1) par.MaxRef];
-            case 'Range'
-                Range = diff(par.MaxRef);
+            case {'Range','RangeWithCatch'}
+                Range = diff(par.MaxRef(1:2));
                 [PoissonSamples,BinX] = PoissonProcessPsychophysics(1.5/Range,Range,150,[],15);
                 BinX = unique(round(BinX));
                 RefNbLst = histc(PoissonSamples,BinX);
@@ -77,6 +77,10 @@ if IsLookup
                 LookupTable = [];
                 for RefNb = 1:length(BinX)
                     LookupTable = [LookupTable BinX(RefNb)*ones(1,RefNbLst(RefNb))];
+                end
+                if strcmp(par.MaxRefPar,'RangeWithCatch')
+                    LookupTable(LookupTable==par.MaxRef(3)) = [];
+                    LookupTable = [ LookupTable ones(1,round(length(LookupTable)*par.MaxRef(4)/(1-par.MaxRef(4)))) * par.MaxRef(3) ];
                 end
         end
 % Rt = sum(LookupTable)/(length(LookupTable)-length(find(LookupTable==ii))); disp([ii Rt]);

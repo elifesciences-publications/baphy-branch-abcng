@@ -58,8 +58,8 @@ switch HW.params.HWSetup
 
     % INTRODUCE STEREO IF NOT RETURNED BY SOUND OBJECT
     % OVERWRITES THE SECOND AO CHANNEL (ASSUMES THAT LIGHT IS NOT CONNECTED)
-    if ~strcmpi(IODriver(HW),'NIDAQMX') && size(stim,2)<length(HW.AO.Channel)  stim(:,2) = zeros(size(stim)); end
-    if strcmpi(IODriver(HW),'NIDAQMX') && size(stim,2)<HW.AO.NumChannels  stim(:,2) = zeros(size(stim)); end
+    if ~strcmpi(IODriver(HW),'NIDAQMX') && size(stim,2)<length(HW.AO.Channel)  stim(:,2) = stim(:,1); end
+    if strcmpi(IODriver(HW),'NIDAQMX') && size(stim,2)<HW.AO.NumChannels  stim(:,2) = stim(:,1); end
     
     % IN ORDER TO USE THE NEW LOUDNESS DETERMINATION METHOD
     % LOUDNESS_ADJUSTED can be set in a sound object, if it wants to adjust
@@ -130,7 +130,7 @@ switch HW.params.HWSetup
      
       % duplicate sound on the 2 channels if no analog stim on the 2nd one
       global SecondChannelAO;
-      if ~isempty(SecondChannelAO) && ~SecondChannelAO && SpeakerNb == 1
+      if (isempty(SecondChannelAO) || (~isempty(SecondChannelAO) && ~SecondChannelAO)) && SpeakerNb == 1
         stim(:,2) = stim(:,1);
       % fill in empty AO channels with zeros %14/09-YB: from Steve' code
       elseif  ~isempty(SecondChannelAO) && ~SecondChannelAO && size(stim,2)<HW.AO(1).NumChannels  
@@ -153,8 +153,8 @@ switch HW.params.HWSetup
     
        set(HW.AO, 'SampleRate', HW.params.fsAO);
        set(HW.AO, 'BufferingMode','Auto'); % bug fix, SVD 2006-09-27
-       
-    
+
+
        %% SEND STIMULUS TO CARD
        HW.StimLength = size(stim,1)/HW.params.fsAO;
        putdata(HW.AO, stim);
