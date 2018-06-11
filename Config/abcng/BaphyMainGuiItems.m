@@ -66,7 +66,7 @@ switch field
          else
             varargout{1}=fileparts(tempname);
          end
-      case {1,2,3,4,5,6} % PHYSIOLOGY SETUPS
+      case {1,2,3,4,5,6,7} % PHYSIOLOGY SETUPS
         varargout{1}='D:\Data\';
       case {11} % PSYCHOPHYSICSSETUP
         varargout = {'C:\Data\'};

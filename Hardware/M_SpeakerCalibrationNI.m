@@ -8,9 +8,9 @@ function R  = M_SpeakerCalibrationNI(varargin)
 % M_SpeakerCalibrationNI('Speaker','VISATON59LB1multiSpeakersLeft','SR',100000,'DeviceIn','Dev1','DeviceOut','D0','dBSPLRef',70);
 % TWO PHOTON
 % Calibration on 1 NI card:
-% M_SpeakerCalibrationNI46('Speaker','Tweeter_2P','DeviceIn','Dev4','DeviceOut','Dev4','ChOut',0:1,'SR',500000,'LowFreq',1000,'HighFreq',75000);
+% M_SpeakerCalibrationNI('Speaker','Tweeter_2P','DeviceIn','Dev4','DeviceOut','Dev4','ChOut',0:1,'SR',500000,'LowFreq',1000,'HighFreq',75000);
 % Calibration on 2 NI cards:
-% M_SpeakerCalibrationNI46('Speaker','Tweeter_2P','DeviceIn','D4','DeviceOut','Dev4','ChOut',0,'SR',500000,'LowFreq',1000,'HighFreq',75000);
+% M_SpeakerCalibrationNI('Speaker','Tweeter_2P','DeviceIn','D4','DeviceOut','Dev4','ChOut',0,'SR',500000,'LowFreq',1000,'HighFreq',75000);
 
 Dirs = setgetDirs;
 
@@ -65,6 +65,7 @@ fprintf(['\n === Calibrating Speaker [ ',P.Speaker,' ] on DAQ Devices ',...
   '(IN : ',P.DeviceIn,' Ch. ',n2s(P.ChIn),', OUT : ',P.DeviceOut,' Ch. ',n2s(P.ChOut),' at SR=',n2s(P.SR),') ===\n']);
 
 P.SameDevice = strcmp(P.DeviceIn,P.DeviceOut);
+if P.SameDevice && P.SR>100000; P.SameDevice = 2; end
 if P.SameDevice P.Device = P.DeviceIn; end
 
 P = LF_loudnessParameters(P);
@@ -169,7 +170,7 @@ switch P.SameDevice
 %     end
     set([AI,AO],'SampleRate',P.SR);
     
-  case 0 % SEPARATE DEVICES, SERVICED BY NIDAQmx DIRECT CALLS
+  case {0,2} % SEPARATE DEVICES, SERVICED BY NIDAQmx DIRECT CALLS
     % SETUP ANALOG IN TASK
     S = DAQmxResetDevice(P.DeviceIn);  if S NI_MSG(S); end
 
@@ -189,21 +190,23 @@ switch P.SameDevice
     S = DAQmxCreateLinScale('JustVolts',1,0,NI_decode('DAQmx_Val_Volts'),'JustVolts');  if S NI_MSG(S); end
     
     % INITIALIZE MICROPHONE CHANNEL
-    S = DAQmxCreateAIMicrophoneChan(AI,['/',P.DeviceIn,'/ai0'],'Microphone',...
-      NI_decode('DAQmx_Val_PseudoDiff'),NI_decode('DAQmx_Val_Pascals'),...
-      4,120,NI_decode('DAQmx_Val_Internal'),0.0021,[ ]);  if S NI_MSG(S); end
+%     S = DAQmxCreateAIMicrophoneChan(AI,['/',P.DeviceIn,'/ai0'],'Microphone',...
+%       NI_decode('DAQmx_Val_PseudoDiff'),NI_decode('DAQmx_Val_Pascals'),...
+%       4,120,NI_decode('DAQmx_Val_Internal'),0.0021,[ ]);  if S NI_MSG(S); end
+    S = DAQmxCreateAIVoltageChan(AI,['/',P.DeviceIn,'/ai0'],'Microphone',...
+      NI_decode('DAQmx_Val_RSE'),-10,10,NI_decode('DAQmx_Val_Volts'),[]);   if S NI_MSG(S); end
 
     % INITIALIZE VOLTAGE CHANNEL
     S = DAQmxCreateAIVoltageChan(AI,['/',P.DeviceIn,'/ai1'],'SoundIn1',...
-      NI_decode('DAQmx_Val_PseudoDiff'),-10,10,NI_decode('DAQmx_Val_Volts'),[]);   if S NI_MSG(S); end
+      NI_decode('DAQmx_Val_Diff'),-10,10,NI_decode('DAQmx_Val_Volts'),[]);   if S NI_MSG(S); end
 
     % INITIALIZE VOLTAGE CHANNEL
     S = DAQmxCreateAIVoltageChan(AI,['/',P.DeviceIn,'/ai2'],'SoundIn2',...
-      NI_decode('DAQmx_Val_PseudoDiff'),-10,10,NI_decode('DAQmx_Val_Volts'),[]);   if S NI_MSG(S); end
+      NI_decode('DAQmx_Val_Diff'),-10,10,NI_decode('DAQmx_Val_Volts'),[]);   if S NI_MSG(S); end
 
     % SET SAMPLING RATE
     S = DAQmxSetSampClkRate(AI,P.SR); if S NI_MSG(S); end
-
+    
     % SET TRIGGER
     S = DAQmxSetStartTrigType(AI,NI_decode('DAQmx_Val_None')); if S NI_MSG(S); end
 
@@ -230,7 +233,7 @@ switch P.SameDevice
 
     % SET TRIGGER
     S = DAQmxSetStartTrigType(AO,NI_decode('DAQmx_Val_None')); if S NI_MSG(S); end
-
+    
   otherwise error('Case not known.');
 end
    
@@ -268,7 +271,7 @@ switch P.SameDevice
     D.SignalsCut = Signal; D.ResponseCut = Response;
     D.ResponseCut = D.ResponseCut/0.004; % 17/07-YB: doc from GRAS46BE mike
     
-  case 0; % SEPARATE DEVICES, SERVICED BY NIDAQmx DRIVER
+  case {0,2}; % SEPARATE DEVICES, SERVICED BY NIDAQmx DRIVER
    
     S = DAQmxCfgSampClkTiming(AI,'',...
       P.SR,...
@@ -326,8 +329,9 @@ switch P.SameDevice
       
     % REDUCE TO SELECTED RANGE
     Range = [P.PreSteps:P.PreSteps+length(Signal)+P.PostSteps];
-    D.SignalsCut = D.RecordedSignals(Range,:); 
-    D.ResponseCut = D.RecordedResponse(Range,1);
+%     D.SignalsCut = D.RecordedSignals(Range,:);
+    Signal = FinalSignal(Range,:); D.SignalsCut = Signal; 
+    D.ResponseCut = D.RecordedResponse(Range,1)/0.004;
     % STOP TASKS
     S = DAQmxStopTask(AI);    if S NI_MSG(S); end
     S = DAQmxStopTask(AO);  if S NI_MSG(S); end
@@ -338,7 +342,7 @@ end
 
 function LF_clearTasks(AI,AO,P)
 switch P.SameDevice
-  case 0; % SEPARATE DEVICES, SERVICED BY NIDAQmx DRIVER
+  case {0,2}; % SEPARATE DEVICES, SERVICED BY NIDAQmx DRIVER
     % REMOVE TASKS
     S = DAQmxClearTask(AI); if S NI_MSG(S); end;
     S = DAQmxClearTask(AO); if S NI_MSG(S); end;

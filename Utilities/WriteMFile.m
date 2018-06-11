@@ -50,5 +50,5 @@ end
 
 % Check if .mat file exists, if so, delete it
 [Path,Name,Ext] = fileparts(globalparams.mfilename);
-MatFile = [Path,filesep,'tmp',filesep,Name,'.mat'];;
+MatFile = [Path,filesep,'tmp',filesep,Name,'.mat'];
 if exist(MatFile,'file')  delete(MatFile); end

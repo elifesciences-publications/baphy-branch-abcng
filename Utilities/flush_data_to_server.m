@@ -178,6 +178,10 @@ for ii=1:length(RecsDB),
           DestRawPath=''; DestRawPathTrue='';
         end
         
+        if exist([globalparams(1).mfilename 'p4'],'file')
+            movefile([globalparams(1).mfilename 'p4'],DestPath);
+        end
+        
         %% LAST: COPY MFILE
         % so that it won't try to update database without this happening.
         if VERBOSE fprintf(['Copying M-File [ ',escapeMasker(MFile),' => ',escapeMasker(DestPath),' ] \n']); end

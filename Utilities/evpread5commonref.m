@@ -16,6 +16,8 @@ if ~strcmp(LastFileName,FileNameBase) LastNFiles = []; end
 
 Force = useCommonRef == 2;
 
+% NUMBER OF CHANNELS PER BANK (IN PLEXON SYSTEM)
+% NAv = 16;
 % NUMBER OF CHANNELS PER BANK (IN BLACKROCK SYSTEM)
 NAv = 32; 
 

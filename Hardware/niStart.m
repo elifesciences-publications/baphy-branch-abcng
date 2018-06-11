@@ -31,7 +31,7 @@ for ii=1:length(HW.DIO),
   end
 end
 
-for ii=1%:length(HW.AI), %15/12-YB: starts only 1 AI acquisition bc the 2nd one is started in CanStart beforehand for @RewardEyeFixation
+for ii=1:length(HW.AI),
   S = DAQmxStartTask(HW.AI(ii).Ptr);
   if S NI_MSG(S); end
 end
