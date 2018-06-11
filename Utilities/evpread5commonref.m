@@ -7,7 +7,7 @@ persistent LastNFiles LastFileName
 FilePieces=strsep(FileName,'.',1);
 FileNameBase = [ ];
 for i=1:length(FilePieces)-3  FileNameBase = [FileNameBase,FilePieces{i},'.'];  end
-FileNameMean = [FileNameBase,FilePieces{i+1},'.mean.bin'];      ;
+FileNameMean = [FileNameBase,FilePieces{i+1},'.mean.bin'];
 
 % FILE WERE READ DURING WRITING (CAUGHT IN EVPREAD)
 if useCommonRef==-1 delete(FileNameMean); CommonRef = NaN; return; end
@@ -16,8 +16,8 @@ if ~strcmp(LastFileName,FileNameBase) LastNFiles = []; end
 
 Force = useCommonRef == 2;
 
-% NUMBER OF CHANNELS PER BANK (IN PLEXON SYSTEM)
-NAv = 16; 
+% NUMBER OF CHANNELS PER BANK (IN BLACKROCK SYSTEM)
+NAv = 32; 
 
  if ~exist(FileNameMean,'file') | Force
    % GET CURRENT SET OF FILES
@@ -41,12 +41,12 @@ NAv = 16;
    LastFileName = FileNameBase;
    
    % DETERMINE AVERAGING INDICES
-   AverageBySetsOf16 = (mod(NFiles,NAv)==0);
-   switch AverageBySetsOf16
+   AverageBySetsOf32 = (mod(NFiles,NAv)==0);
+   switch AverageBySetsOf32
      case 1; % AVERAGE ONLY WITHIN BANKS
        NBanks = round(NFiles/NAv);
        for i=1:NBanks AverageInds{i} = [round((i-1)*NAv +1) : round(i*NAv)]; end
-       BanksByChannel = repmat(1:ceil(NFiles/NAv),16,1);
+       BanksByChannel = repmat(1:ceil(NFiles/NAv),32,1);
        BanksByChannel = BanksByChannel(:);
        
      case 0; % AVERAGE ALL FILES

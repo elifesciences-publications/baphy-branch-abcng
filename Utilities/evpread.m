@@ -328,7 +328,7 @@ switch EVPVERSION
             if isempty(trs); disp('evpread: trial empty! I try again.'); pause(0.5); end
         end
         if USECOMMONREFERENCE
-          % COMPUTE COMMONE REFERENCE
+          % COMPUTE COMMON REFERENCE
           cFilename=[fileroot,sprintf('.%03d.%d.evp',trialidx,1)]; % COMMON REF INDEPENDENT OF EL.
           if cc == 1
             [CommonRef,BanksByChannel] = ...
